@@ -11,7 +11,6 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerDebugSnapshot;
@@ -305,54 +304,37 @@ public final class Scp079ProcessingManager {
             return;
         }
 
-        ScpClassifiedDirectiveModulesConfig.Debug debug =
-                ScpClassifiedDirectiveModulesConfig.get().debug;
-        boolean energyVisible = debug.showScp079EnergyHud;
-        boolean decisionVisible = debug.showScp079DecisionLogHud;
-        boolean spawnTimersVisible = debug.showScpSpawnTimersHud;
-        boolean active = energyVisible && isActive(player.serverLevel());
-        int roundedPower = energyVisible
-                ? Math.round(getPower(player.serverLevel())) : 0;
-        int roundedDiscovery = energyVisible
-                ? Math.round(Scp079FacilityAccessManager.discoveryProgress(
-                        player.getServer())) : 0;
-        boolean auxiliaryOnline = energyVisible
-                && Scp079FacilityAccessManager.auxiliaryPowerOnline(
+        boolean active = isActive(player.serverLevel());
+        int roundedPower = Math.round(getPower(player.serverLevel()));
+        int roundedDiscovery = Math.round(
+                Scp079FacilityAccessManager.discoveryProgress(
+                        player.getServer()));
+        boolean auxiliaryOnline =
+                Scp079FacilityAccessManager.auxiliaryPowerOnline(
                         player.getServer());
-        boolean hostPresent = energyVisible
-                && Scp079FacilityAccessManager.hasPhysicalScp079(
-                        player.getServer());
-        boolean protocolExposed = energyVisible
-                && Scp079FacilityAccessManager.protocolExposed(
-                        player.getServer());
-        List<RoamerDebugSnapshot> roamers = spawnTimersVisible
-                ? RoamerManager.debugSnapshots(player) : List.of();
-        Scp079DecisionLog.Snapshot decisionSnapshot = decisionVisible
-                ? Scp079DecisionLog.snapshot(player.getServer())
-                : new Scp079DecisionLog.Snapshot(-1L, List.of());
+        boolean hostPresent = Scp079FacilityAccessManager.hasPhysicalScp079(
+                player.getServer());
+        boolean protocolExposed = Scp079FacilityAccessManager.protocolExposed(
+                player.getServer());
+        List<RoamerDebugSnapshot> roamers = RoamerManager.debugSnapshots(player);
+        Scp079DecisionLog.Snapshot decisionSnapshot =
+                Scp079DecisionLog.snapshot(player.getServer());
 
-        ClientSnapshot next = new ClientSnapshot(energyVisible, decisionVisible,
-                active, roundedPower, roundedDiscovery, auxiliaryOnline,
-                hostPresent, protocolExposed, spawnTimersVisible, roamers,
-                decisionSnapshot.version());
+        ClientSnapshot next = new ClientSnapshot(active, roundedPower,
+                roundedDiscovery, auxiliaryOnline, hostPresent,
+                protocolExposed, roamers, decisionSnapshot.version());
         ClientSnapshot previous = LAST_CLIENT_SYNC.get(player.getUUID());
 
         if (previous == null || !next.sameCoreState(previous)) {
-            ScpEntityNetwork.syncDebugState(player, energyVisible, active,
+            ScpEntityNetwork.syncDebugState(player, true, active,
                     roundedPower, roundedDiscovery, auxiliaryOnline,
-                    hostPresent, protocolExposed, spawnTimersVisible, roamers);
+                    hostPresent, protocolExposed, true, roamers);
         }
 
-        if (decisionVisible) {
-            if (previous == null || !previous.decisionVisible()
-                    || previous.decisionVersion()
-                    != decisionSnapshot.version()) {
-                ScpEntityNetwork.syncScp079Decisions(player, true,
-                        decisionSnapshot);
-            }
-        } else if (previous != null && previous.decisionVisible()) {
-            ScpEntityNetwork.syncScp079Decisions(player, false,
-                    new Scp079DecisionLog.Snapshot(-1L, List.of()));
+        if (previous == null
+                || previous.decisionVersion() != decisionSnapshot.version()) {
+            ScpEntityNetwork.syncScp079Decisions(player, true,
+                    decisionSnapshot);
         }
 
         LAST_CLIENT_SYNC.put(player.getUUID(), next);
@@ -460,26 +442,22 @@ public final class Scp079ProcessingManager {
         }
     }
 
-    private record ClientSnapshot(boolean energyVisible,
-            boolean decisionVisible, boolean active, int roundedPower,
+    private record ClientSnapshot(boolean active, int roundedPower,
             int roundedDiscovery, boolean auxiliaryOnline,
             boolean hostPresent, boolean protocolExposed,
-            boolean spawnTimersVisible, List<RoamerDebugSnapshot> roamers,
-            long decisionVersion) {
+            List<RoamerDebugSnapshot> roamers, long decisionVersion) {
         private ClientSnapshot {
             roamers = roamers == null ? List.of() : List.copyOf(roamers);
         }
 
         private boolean sameCoreState(ClientSnapshot other) {
             return other != null
-                    && energyVisible == other.energyVisible
                     && active == other.active
                     && roundedPower == other.roundedPower
                     && roundedDiscovery == other.roundedDiscovery
                     && auxiliaryOnline == other.auxiliaryOnline
                     && hostPresent == other.hostPresent
                     && protocolExposed == other.protocolExposed
-                    && spawnTimersVisible == other.spawnTimersVisible
                     && roamers.equals(other.roamers);
         }
     }

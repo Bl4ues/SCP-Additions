@@ -35,10 +35,11 @@ public final class StealthDebugConfigCenterExtension {
     private static final int ACCENT = 0xFFC99B18;
     private static final int WHITE = 0xFFF7F8FC;
     private static final int MUTED = 0xFF9CA3AF;
-    private static final int PALE_GOLD = 0xFFE3C865;
-    private static final int CLIENT_BADGE = 0xFF071524;
+    private static final int CLIENT_SCOPE = 0xFF79D58B;
+    private static final int BADGE_BACKGROUND = 0xE6081022;
     private static final int ON = 0xFF79D58B;
     private static final int OFF = 0xFFFF8B8B;
+    private static final float BADGE_SCALE = 0.74F;
 
     private static final List<DebugPreference> PREFERENCES = List.of(
             DebugPreference.SCP_079_ENERGY,
@@ -81,6 +82,45 @@ public final class StealthDebugConfigCenterExtension {
         graphics.drawString(font,
                 ScpFonts.roboto("Client-side changes are saved immediately."),
                 layout.x() + 106, layout.bottomY() + 6, MUTED, false);
+
+        // These rows are injected after the native toggle screen is built, so
+        // render their scope/state in the final GUI pass. This keeps them above
+        // the Configuration Center's own high-Z button/badge passes and makes
+        // them visually identical to the CLIENT rows in General & Modules.
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, 1800.0F);
+        for (int index = 0; index < PREFERENCES.size(); index++) {
+            renderScopeAndState(graphics, font, layout,
+                    layout.rowY() + index * ROW_HEIGHT, PREFERENCES.get(index));
+        }
+        graphics.pose().popPose();
+    }
+
+    private static void renderScopeAndState(GuiGraphics graphics, Font font,
+            Layout layout, int top, DebugPreference preference) {
+        int right = layout.x() + layout.width();
+        int textY = top + Math.max(1, (22 - font.lineHeight) / 2);
+
+        Component badge = ScpFonts.roboto("CLIENT");
+        int scaledWidth = Math.round(font.width(badge) * BADGE_SCALE);
+        int scaledHeight = Math.max(6,
+                Math.round(font.lineHeight * BADGE_SCALE));
+        int badgeRight = right - 58;
+        int badgeX = badgeRight - scaledWidth;
+        int badgeY = top + Math.max(1, (22 - scaledHeight) / 2);
+        graphics.fill(badgeX - 4, top + 2, badgeRight + 3, top + 20,
+                BADGE_BACKGROUND);
+        graphics.pose().pushPose();
+        graphics.pose().translate(badgeX, badgeY, 0.0F);
+        graphics.pose().scale(BADGE_SCALE, BADGE_SCALE, 1.0F);
+        graphics.drawString(font, badge, 0, 0, CLIENT_SCOPE, false);
+        graphics.pose().popPose();
+
+        boolean enabled = preference.enabled();
+        Component state = ScpFonts.roboto(enabled ? "ON" : "OFF");
+        graphics.drawString(font, state,
+                right - 14 - font.width(state), textY,
+                enabled ? ON : OFF, false);
     }
 
     private static void hideServerBackedControls(ScreenEvent.Init.Post event,
@@ -205,24 +245,8 @@ public final class StealthDebugConfigCenterExtension {
 
             Font font = Minecraft.getInstance().font;
             Component title = ScpFonts.roboto(preference.label);
-            int textY = top + Math.max(1, (getHeight() - 8) / 2);
+            int textY = top + Math.max(1, (getHeight() - font.lineHeight) / 2);
             graphics.drawString(font, title, left + 16, textY, WHITE, false);
-
-            Component scope = ScpFonts.roboto("CLIENT");
-            int scopeWidth = font.width(scope) + 12;
-            int stateReserve = 54;
-            int scopeX = right - stateReserve - scopeWidth - 12;
-            graphics.fill(scopeX, top + 2, scopeX + scopeWidth, bottom - 2,
-                    CLIENT_BADGE);
-            graphics.drawString(font, scope,
-                    scopeX + (scopeWidth - font.width(scope)) / 2,
-                    textY, PALE_GOLD, false);
-
-            boolean enabled = preference.enabled();
-            Component state = ScpFonts.roboto(enabled ? "ON" : "OFF");
-            graphics.drawString(font, state,
-                    right - 14 - font.width(state), textY,
-                    enabled ? ON : OFF, false);
         }
 
         @Override
@@ -266,7 +290,8 @@ public final class StealthDebugConfigCenterExtension {
             Component label = getMessage();
             graphics.drawString(font, label,
                     left + Math.max(5, (getWidth() - font.width(label)) / 2),
-                    top + Math.max(1, (getHeight() - 8) / 2), WHITE, false);
+                    top + Math.max(1, (getHeight() - font.lineHeight) / 2),
+                    WHITE, false);
         }
 
         @Override

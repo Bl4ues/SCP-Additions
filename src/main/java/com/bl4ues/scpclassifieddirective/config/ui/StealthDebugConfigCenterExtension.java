@@ -16,7 +16,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Adds an explicitly individual/client-local stealth readout option to Debug Tools. */
+/** Adds the client-local player stealth readout option to Debug Tools. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, value = Dist.CLIENT)
 public final class StealthDebugConfigCenterExtension {
     private static final String EXTENDED_TOGGLE_SCREEN =
@@ -25,11 +25,11 @@ public final class StealthDebugConfigCenterExtension {
 
     private static final int NAVY = 0xFF0D1116;
     private static final int NAVY_HOVER = 0xFF1A2028;
-    private static final int BORDER = 0xFF3A424D;
-    private static final int BORDER_HOVER = 0xFFC99B18;
     private static final int ACCENT = 0xFFC99B18;
     private static final int WHITE = 0xFFF7F8FC;
     private static final int MUTED = 0xFF9CA3AF;
+    private static final int PALE_GOLD = 0xFFE3C865;
+    private static final int CLIENT_BADGE = 0xFF071524;
     private static final int ON = 0xFF79D58B;
     private static final int OFF = 0xFFFF8B8B;
 
@@ -53,7 +53,7 @@ public final class StealthDebugConfigCenterExtension {
 
         Layout layout = layout(screen);
         event.getGuiGraphics().drawString(Minecraft.getInstance().font,
-                ScpFonts.roboto("INDIVIDUAL · Saved locally for this client only."),
+                ScpFonts.roboto("Shows the local player's current stealth value."),
                 layout.x() + 2, layout.rowY() + 24, MUTED, false);
     }
 
@@ -78,13 +78,12 @@ public final class StealthDebugConfigCenterExtension {
 
     private static final class LocalStealthButton extends AbstractButton {
         private LocalStealthButton(int x, int y, int width, int height) {
-            super(x, y, width, height, label());
+            super(x, y, width, height, ScpFonts.roboto("Player Stealth HUD"));
         }
 
         @Override
         public void onPress() {
             StealthDebugClientPreferences.toggleStealthHud();
-            setMessage(label());
         }
 
         @Override
@@ -95,41 +94,36 @@ public final class StealthDebugConfigCenterExtension {
             int top = getY();
             int right = left + getWidth();
             int bottom = top + getHeight();
-            int border = hovered ? BORDER_HOVER : BORDER;
 
             graphics.fill(left, top, right, bottom,
                     hovered ? NAVY_HOVER : NAVY);
-            graphics.fill(left, top, right, top + 1, border);
-            graphics.fill(left, bottom - 1, right, bottom, border);
-            graphics.fill(left, top, left + 1, bottom, border);
-            graphics.fill(right - 1, top, right, bottom, border);
-            graphics.fill(left + 1, top + 1,
-                    left + (hovered ? 4 : 2), bottom - 1, ACCENT);
+            graphics.fill(left, top, left + (hovered ? 5 : 4), bottom, ACCENT);
 
             Font font = Minecraft.getInstance().font;
-            String plain = getMessage().getString();
-            String state = StealthDebugClientPreferences.showStealthHud()
-                    ? "ON" : "OFF";
-            String prefix = plain.substring(0, plain.length() - state.length());
-            Component prefixText = ScpFonts.roboto(prefix);
-            Component stateText = ScpFonts.roboto(state);
-            int total = font.width(prefixText) + font.width(stateText);
-            int textX = left + Math.max(5, (getWidth() - total) / 2);
+            Component title = ScpFonts.roboto("Player Stealth HUD");
             int textY = top + Math.max(1, (getHeight() - 8) / 2);
-            graphics.drawString(font, prefixText, textX, textY, WHITE, false);
-            graphics.drawString(font, stateText, textX + font.width(prefixText),
-                    textY, "ON".equals(state) ? ON : OFF, false);
+            graphics.drawString(font, title, left + 16, textY, WHITE, false);
+
+            Component scope = ScpFonts.roboto("CLIENT");
+            int scopeWidth = font.width(scope) + 12;
+            int stateReserve = 54;
+            int scopeX = right - stateReserve - scopeWidth - 12;
+            graphics.fill(scopeX, top + 2, scopeX + scopeWidth, bottom - 2,
+                    CLIENT_BADGE);
+            graphics.drawString(font, scope,
+                    scopeX + (scopeWidth - font.width(scope)) / 2,
+                    textY, PALE_GOLD, false);
+
+            boolean enabled = StealthDebugClientPreferences.showStealthHud();
+            Component state = ScpFonts.roboto(enabled ? "ON" : "OFF");
+            graphics.drawString(font, state,
+                    right - 14 - font.width(state), textY,
+                    enabled ? ON : OFF, false);
         }
 
         @Override
         protected void updateWidgetNarration(NarrationElementOutput output) {
             defaultButtonNarrationText(output);
-        }
-
-        private static Component label() {
-            return ScpFonts.roboto("Player Stealth Debug HUD: "
-                    + (StealthDebugClientPreferences.showStealthHud()
-                    ? "ON" : "OFF"));
         }
     }
 }

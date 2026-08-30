@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.anomalous;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
@@ -28,7 +29,7 @@ public final class Item006Block extends Block {
     }
 
     @Override
-    public Component getName() {
+    public MutableComponent getName() {
         return Component.literal("Item #006, Vol. I");
     }
 

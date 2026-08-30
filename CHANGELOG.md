@@ -75,15 +75,14 @@
 
 ## Anomalous Items
 
-- Added **Item #006, Vol. I** as the first Log of Anomalous Items entry.
+- Added Item #006, Vol. I as the first Log of Anomalous Items entry.
 
 ## SCP-914
 
-- Completely rebuilt SCP-914 as a single large GeckoLib machine with hidden multiblock reservation and collision cells instead of the former collection of visible component blocks;
-- Added obstruction-aware placement for the full machine footprint, with blocked cells highlighted before placement;
-- Reworked the configuration dial into a physical contextual control that can be held and dragged directly on the placed model, with smooth client motion, mechanical detents, server-authoritative settings, gear feedback, and snap-to-setting release behavior;
-- Reworked the winding key into a physical contextual **Start** control anchored to the key itself;
-- Rebuilt the 15-second refining cycle around the new model animation, physical intake/output chamber volumes, door timing, machine audio, and the existing configurable SCP-914 transformation recipes;
+- Completely rebuilt SCP-914 as a single large machine;
+- Reworked the configuration dial into a physical contextual control that can be held and dragged directly on the placed model, with smooth client motion, and snap-to-setting release behavior;
+- Reworked the winding key into a physical contextual **Start** control anchored to the key;
+- Rebuilt the refining cycle around the new model animation, and the existing configurable SCP-914 transformation recipes;
 - Removed the obsolete SCP-914 assembly kit, component blocks, component items, GUI, generated procedures, models, textures, and contextual-interaction definitions.
 
 ## SCP-330

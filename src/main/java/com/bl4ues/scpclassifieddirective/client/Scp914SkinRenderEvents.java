@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -16,6 +17,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.data.Scp914SkinManager;
+import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
 import com.bl4ues.scpclassifieddirective.network.ScpClassifiedDirectiveModVariables;
 
 import java.io.InputStream;
@@ -65,6 +67,12 @@ public final class Scp914SkinRenderEvents {
             return;
         }
 
+        PlayerModel<?> customModel = cached.playerModel();
+        HazmatSuitClientEvents.OuterLayerVisibility hiddenOuterLayers = null;
+        if (customModel != null && HazmatSuitAccess.isFullyEquipped(player)) {
+            hiddenOuterLayers = HazmatSuitClientEvents.hideOuterLayers(customModel);
+        }
+
         event.setCanceled(true);
         RENDERING.set(true);
         try {
@@ -82,6 +90,10 @@ public final class Scp914SkinRenderEvents {
                     "Failed to render SCP-914 skin {} for {}",
                     variables.scp914Skin, player.getScoreboardName(), exception);
         } finally {
+            if (customModel != null && hiddenOuterLayers != null) {
+                HazmatSuitClientEvents.restoreOuterLayers(
+                        customModel, hiddenOuterLayers);
+            }
             RENDERING.set(false);
         }
     }
@@ -173,12 +185,28 @@ public final class Scp914SkinRenderEvents {
                 com.mojang.blaze3d.vertex.PoseStack.class,
                 MultiBufferSource.class,
                 int.class);
-        return new CachedRenderer(modified, renderer, renderMethod);
+
+        PlayerModel<?> playerModel = null;
+        try {
+            Object resolvedModel = rendererType.getMethod("getModel").invoke(renderer);
+            if (resolvedModel instanceof PlayerModel<?> model) {
+                playerModel = model;
+            }
+        } catch (ReflectiveOperationException exception) {
+            ScpClassifiedDirectiveMod.LOGGER.debug(
+                    "Kleiders renderer {} does not expose a PlayerModel; "
+                            + "Hazmat outer-layer suppression will use the vanilla path only",
+                    RENDERER_CLASS);
+        }
+
+        return new CachedRenderer(
+                modified, renderer, renderMethod, playerModel);
     }
 
     private record CachedRenderer(
             long modified,
             Object renderer,
-            Method renderMethod) {
+            Method renderMethod,
+            PlayerModel<?> playerModel) {
     }
 }

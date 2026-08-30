@@ -37,7 +37,9 @@ public final class CreativeTabPresentation {
         updateTabIcons();
         CreativeModeTab selected = CreativeModeInventoryScreen.selectedTab;
         if (screen.searchBox.getValue().isEmpty()) {
-            if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
+            if (selected == ScpClassifiedDirectiveModTabs.SCP_CLASSIFIED_DIRECTIVE.get()) {
+                ensureItemSectionLayout(screen);
+            } else if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
                 ensureFacilitySectionLayout(screen);
             } else if (selected ==
                     ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get()) {
@@ -56,7 +58,9 @@ public final class CreativeTabPresentation {
         }
 
         if (screen.searchBox.getValue().isEmpty()) {
-            if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
+            if (selected == ScpClassifiedDirectiveModTabs.SCP_CLASSIFIED_DIRECTIVE.get()) {
+                renderItemHeaders(screen, event.getGuiGraphics());
+            } else if (selected == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
                 renderFacilityHeaders(screen, event.getGuiGraphics());
             } else if (selected ==
                     ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get()) {
@@ -83,6 +87,12 @@ public final class CreativeTabPresentation {
         if (stacks.isEmpty()) return;
         int index = Math.floorMod(step, stacks.size());
         tab.iconItemStack = stacks.get(index).copy();
+    }
+
+    private static void ensureItemSectionLayout(
+            CreativeModeInventoryScreen screen) {
+        ensureSectionLayout(screen,
+                ScpClassifiedDirectiveModTabs.itemCreativeTabDisplayStacks());
     }
 
     private static void ensureFacilitySectionLayout(
@@ -115,6 +125,21 @@ public final class CreativeTabPresentation {
             if (!items.get(i).isEmpty()) return false;
         }
         return true;
+    }
+
+    private static void renderItemHeaders(
+            CreativeModeInventoryScreen screen, GuiGraphics graphics) {
+        int currentRow = rowIndexForScroll(screen.scrollOffs,
+                screen.getMenu().items.size());
+        int sectionRow = 0;
+        int left = screen.getGuiLeft() + 8;
+        int top = screen.getGuiTop() + 17;
+        for (ScpClassifiedDirectiveModTabs.CreativeSection section :
+                ScpClassifiedDirectiveModTabs.itemCreativeSections()) {
+            renderHeader(graphics, section.sprite(), sectionRow, currentRow,
+                    left, top);
+            sectionRow += 1 + (section.items().size() + 8) / 9;
+        }
     }
 
     private static void renderFacilityHeaders(

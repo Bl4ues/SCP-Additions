@@ -3,10 +3,14 @@ package com.bl4ues.scpclassifieddirective.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -23,6 +27,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -46,7 +51,7 @@ public class Scp426Block extends Block implements SimpleWaterloggedBlock {
     public Scp426Block() {
         super(BlockBehaviour.Properties.of()
                 .sound(SoundType.METAL)
-                .strength(30.0F, 10.0F)
+                .strength(1.5F, 10.0F)
                 .noOcclusion()
                 .isRedstoneConductor((state, level, pos) -> false));
         registerDefaultState(stateDefinition.any()
@@ -93,6 +98,19 @@ public class Scp426Block extends Block implements SimpleWaterloggedBlock {
     public VoxelShape getCollisionShape(BlockState state, BlockGetter world,
             BlockPos pos, CollisionContext context) {
         return getShape(state, world, pos, context);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+            Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+
+        ItemStack toaster = new ItemStack(asItem());
+        if (!player.addItem(toaster)) {
+            player.drop(toaster, false);
+        }
+        level.removeBlock(pos, false);
+        return InteractionResult.CONSUME;
     }
 
     @Override

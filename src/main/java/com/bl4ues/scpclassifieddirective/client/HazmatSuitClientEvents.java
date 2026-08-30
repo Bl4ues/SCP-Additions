@@ -6,6 +6,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
@@ -59,7 +60,7 @@ public final class HazmatSuitClientEvents {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
         if (!HazmatSuitAccess.isFullyEquipped(event.getEntity())) {
             return;

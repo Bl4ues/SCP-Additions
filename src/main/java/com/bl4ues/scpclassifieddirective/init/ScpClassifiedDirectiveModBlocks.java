@@ -6,6 +6,7 @@ import net.minecraftforge.registries.DeferredRegister;
 
 import net.minecraft.world.level.block.Block;
 
+import com.bl4ues.scpclassifieddirective.anomalous.Item006Block;
 import com.bl4ues.scpclassifieddirective.block.TeslaTerminalOffBlock;
 import com.bl4ues.scpclassifieddirective.block.TeslaTerminalBlockBlock;
 import com.bl4ues.scpclassifieddirective.block.TeslaRechargeBlock;
@@ -75,6 +76,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
 public class ScpClassifiedDirectiveModBlocks {
 	public static final DeferredRegister<Block> REGISTRY = DeferredRegister.create(ForgeRegistries.BLOCKS, ScpClassifiedDirectiveMod.MODID);
+	public static final RegistryObject<Block> ITEM_006 = REGISTRY.register("item_006", Item006Block::new);
 	public static final RegistryObject<Block> BUTTON_ROFF = REGISTRY.register("button_roff", () -> new ButtonRoffBlock());
 	public static final RegistryObject<Block> BUTTON_LOFF = REGISTRY.register("button_loff", () -> new ButtonLoffBlock());
 	public static final RegistryObject<Block> TESLA_GATE = REGISTRY.register("tesla_gate", () -> new TeslaGateBlock());

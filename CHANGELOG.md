@@ -73,6 +73,10 @@
 - With Simple Voice Chat available, dead players speaking through the multiplayer death/spectating call are relayed positionally from the active SCP-1576 so nearby living players can hear them;
 - Active SCP-1576 sessions emit acoustic evidence from the communicator's physical position, allowing hearing-based systems such as SCP-939 to react to the voices it reproduces.
 
+## Anomalous Items
+
+- Added **Item #006, Vol. I** (**Glowing Rock**) as the first Log of Anomalous Items entry, with a placeable model, model-matched collision, and amethyst-like block sounds.
+
 ## SCP-914
 
 - Completely rebuilt SCP-914 as a single large GeckoLib machine with hidden multiblock reservation and collision cells instead of the former collection of visible component blocks;

@@ -112,7 +112,7 @@ public class ScpClassifiedDirectiveModTabs {
      * list preserves the numeric SCP ordering while sharing one creative tab.
      */
     public static List<ItemStack> anomalousItemStacks() {
-        return List.of();
+        return List.of(new ItemStack(ScpClassifiedDirectiveModItems.ITEM_006.get()));
     }
 
     public static List<CreativeSection> anomalyCreativeSections() {

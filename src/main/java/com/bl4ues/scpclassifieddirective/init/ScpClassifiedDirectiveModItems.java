@@ -9,11 +9,13 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 
+import com.bl4ues.scpclassifieddirective.anomalous.Item006BlockItem;
 import com.bl4ues.scpclassifieddirective.item.*;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
 public class ScpClassifiedDirectiveModItems {
 	public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, ScpClassifiedDirectiveMod.MODID);
+	public static final RegistryObject<Item> ITEM_006 = REGISTRY.register("item_006", () -> new Item006BlockItem(ScpClassifiedDirectiveModBlocks.ITEM_006.get()));
 	public static final RegistryObject<Item> BUTTON_ROFF = block(ScpClassifiedDirectiveModBlocks.BUTTON_ROFF);
 	public static final RegistryObject<Item> BUTTON_LOFF = block(ScpClassifiedDirectiveModBlocks.BUTTON_LOFF);
 	public static final RegistryObject<Item> TESLA_GATE = REGISTRY.register("tesla_gate", () -> new TeslaGateBlockItem(ScpClassifiedDirectiveModBlocks.TESLA_GATE.get()));

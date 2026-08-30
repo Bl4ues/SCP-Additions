@@ -265,7 +265,9 @@
 
 ## Creative inventory organization
 
-- Standardized the creative-tab names as **SCP: Classified Directive - SCPs**, **SCP: Classified Directive - Items**, and **SCP: Classified Directive - Blocks**;
+- Standardized the creative-tab names as **SCP: Classified Directive - Anomalies**, **SCP: Classified Directive - Items**, and **SCP: Classified Directive - Blocks**;
+- Organized the Items tab under five graphical headers in this order: **Access & Security**, **Equipment**, **Tools & Utility**, **Consumable**, and **Miscellaneous**;
+- Moved the blue, pink, and yellow SCP-330 candies from vanilla **Food & Drinks** into the Items tab's **Consumable** section;
 - Organized facility content under ten headers in this order: **Functional**, **Decoration**, **General**, **Core Room**, and **Zones**;
 - Added **Alternative Metal Wall (Bottom)**, **Rest Area Corner Floor**, and **Kitchen Corner Floor** to **LCZ - Sublevel 1**;
 - Added fixed-orientation automatic transitions from Rest Area Corner Floor to Metal Floor and from Blue Floor to Kitchen Corner Floor.

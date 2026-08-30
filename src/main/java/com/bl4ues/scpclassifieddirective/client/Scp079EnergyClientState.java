@@ -23,15 +23,12 @@ import java.util.Map;
 /** Client-only snapshot used by the optional developer HUDs. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, value = Dist.CLIENT)
 public final class Scp079EnergyClientState {
-    private static boolean energyVisible;
-    private static boolean decisionLogVisible;
     private static boolean active;
     private static float energy;
     private static float discovery;
     private static boolean auxiliaryOnline;
     private static boolean hostPresent;
     private static boolean protocolExposed;
-    private static boolean spawnTimersVisible;
     private static final Map<RoamerType, ClientRoamerSnapshot> ROAMERS =
             new EnumMap<>(RoamerType.class);
     private static final List<ClientDecisionSnapshot> DECISIONS =
@@ -45,14 +42,12 @@ public final class Scp079EnergyClientState {
             boolean isAuxiliaryOnline, boolean hasHost,
             boolean isProtocolExposed, boolean shouldShowSpawnTimers,
             List<RoamerEntry> entries) {
-        energyVisible = shouldShowEnergy;
         active = systemActive;
         energy = Math.max(0.0F, Math.min(100.0F, currentEnergy));
         discovery = Math.max(0.0F, Math.min(100.0F, discoveryProgress));
         auxiliaryOnline = isAuxiliaryOnline;
         hostPresent = hasHost;
         protocolExposed = isProtocolExposed;
-        spawnTimersVisible = shouldShowSpawnTimers;
         ROAMERS.clear();
         long now = clientGameTick();
         if (entries != null) {
@@ -66,9 +61,8 @@ public final class Scp079EnergyClientState {
 
     public static void replaceDecisions(boolean shouldShow,
             List<DecisionEntry> entries) {
-        decisionLogVisible = shouldShow;
         DECISIONS.clear();
-        if (!shouldShow || entries == null) return;
+        if (entries == null) return;
         long now = clientGameTick();
         for (DecisionEntry entry : entries) {
             DECISIONS.add(new ClientDecisionSnapshot(entry.sequence(),
@@ -79,11 +73,11 @@ public final class Scp079EnergyClientState {
     }
 
     public static boolean visible() {
-        return energyVisible;
+        return StealthDebugClientPreferences.showScp079EnergyHud();
     }
 
     public static boolean decisionLogVisible() {
-        return decisionLogVisible;
+        return StealthDebugClientPreferences.showScp079DecisionLogHud();
     }
 
     public static boolean active() {
@@ -100,11 +94,11 @@ public final class Scp079EnergyClientState {
     public static boolean protocolExposed() { return protocolExposed; }
 
     public static boolean spawnTimersVisible() {
-        return spawnTimersVisible;
+        return StealthDebugClientPreferences.showScpSpawnTimersHud();
     }
 
     public static List<ClientDecisionSnapshot> decisions() {
-        if (!decisionLogVisible) return List.of();
+        if (!decisionLogVisible()) return List.of();
         long now = clientGameTick();
         List<ClientDecisionSnapshot> visible = new ArrayList<>();
         for (ClientDecisionSnapshot decision : DECISIONS) {
@@ -126,15 +120,12 @@ public final class Scp079EnergyClientState {
     }
 
     public static void clear() {
-        energyVisible = false;
-        decisionLogVisible = false;
         active = false;
         energy = 0.0F;
         discovery = 0.0F;
         auxiliaryOnline = false;
         hostPresent = false;
         protocolExposed = false;
-        spawnTimersVisible = false;
         ROAMERS.clear();
         DECISIONS.clear();
     }

@@ -3,11 +3,8 @@ package com.bl4ues.scpclassifieddirective.init;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
@@ -89,7 +86,8 @@ public class ScpClassifiedDirectiveModTabs {
         return List.of(
                 new ItemStack(ScpClassifiedDirectiveModItems.SCP_330_BLUE_CANDY.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.SCP_330_PINK_CANDY.get()),
-                new ItemStack(ScpClassifiedDirectiveModItems.SCP_330_YELLOW_CANDY.get()));
+                new ItemStack(ScpClassifiedDirectiveModItems.SCP_330_YELLOW_CANDY.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.SCP_1176HONEY.get()));
     }
 
     public static List<ItemStack> miscellaneousStacks() {
@@ -195,13 +193,5 @@ public class ScpClassifiedDirectiveModTabs {
                 new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
                         "textures/gui/facility_sections/" + sprite + ".png"),
                 List.copyOf(items));
-    }
-
-    @SubscribeEvent
-    public static void buildTabContentsVanilla(
-            BuildCreativeModeTabContentsEvent tabData) {
-        if (tabData.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
-            tabData.accept(ScpClassifiedDirectiveModItems.SCP_1176HONEY.get());
-        }
     }
 }

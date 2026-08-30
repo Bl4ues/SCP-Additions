@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.anomalous;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
@@ -37,7 +38,7 @@ public final class Item006Block extends Block {
     public void appendHoverText(ItemStack stack, BlockGetter level,
             List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(Component.literal("Glowing Rock"));
+        tooltip.add(Component.literal("Glowing Rock").withStyle(ChatFormatting.GRAY));
     }
 
     @Override

@@ -52,7 +52,7 @@ public class ScpClassifiedDirectiveModTabs {
             REGISTRY.register("sc_padditions_sc_ps", () ->
                     CreativeModeTab.builder()
                             .title(Component.literal(
-                                    "SCP: Classified Directive Anomalies"))
+                                    "SCP: Classified Directive - Anomalies"))
                             .icon(() -> new ItemStack(Scp012Module.SCP_012_ITEM.get()))
                             .displayItems((parameters, output) ->
                                     anomalyTabStacks().forEach(output::accept))

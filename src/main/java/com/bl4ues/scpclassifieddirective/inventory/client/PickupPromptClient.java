@@ -17,6 +17,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.fml.ModList;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -37,6 +38,7 @@ public final class PickupPromptClient {
     private static final double SOFT_AIM_RADIUS_SQR = 0.58D * 0.58D;
     private static final float MODEL_OUTLINE_SCALE = 1.04F;
     private static final int PICKUP_CLICK_COOLDOWN_TICKS = 5;
+    private static final boolean ITEM_PHYSIC_LOADED = ModList.get().isLoaded("itemphysic");
 
     private static ItemEntity target;
     private static boolean useWasDown = false;
@@ -92,9 +94,6 @@ public final class PickupPromptClient {
         int screenX = Mth.clamp(point.x(), 28, screenWidth - 28);
         int screenY = Mth.clamp(point.y(), 28, screenHeight - 28);
 
-        // The prompt's semantic anchor is the palm/finger contact point in the
-        // artwork, not the geometric center of the 128x128 texture. Keeping
-        // this explicit lets the entire icon + labels follow the item center.
         int iconX = screenX - Math.round(ICON_SIZE * PICKUP_HOTSPOT_X);
         int iconY = screenY - Math.round(ICON_SIZE * PICKUP_HOTSPOT_Y);
         int textX = iconX + ICON_SIZE + 4;
@@ -199,14 +198,10 @@ public final class PickupPromptClient {
     }
 
     /**
-     * Mirrors the visual center used by vanilla's ItemEntityRenderer rather
-     * than only following the entity physics box. ItemEntity rendering adds a
-     * sinusoidal vertical bob without moving the entity itself, which is why
-     * a pure bounding-box anchor visibly lagged behind the floating model.
-     *
-     * Entity translation remains interpolated so mods that physically move
-     * the ItemEntity continue to be followed, while the vanilla bob phase is
-     * reconstructed from getSpin() instead of reaching into private fields.
+     * Mirrors the active item renderer's visual center. Vanilla bobs an item
+     * without moving its entity, while ItemPhysic deliberately leaves grounded
+     * items visually at rest. The compatibility check stays entirely optional:
+     * no ItemPhysic class is linked into our client code.
      */
     private static Vec3 renderedItemCenter(ItemEntity item,
             float partialTick) {
@@ -215,13 +210,13 @@ public final class PickupPromptClient {
         double interpolatedY = Mth.lerp(partialTick, item.yOld, item.getY());
         double interpolatedZ = Mth.lerp(partialTick, item.zOld, item.getZ());
 
-        // ItemEntity#getSpin(0) = age / 20 + bob phase offset. Deriving the
-        // phase this way keeps us on the public API and matches the renderer's
-        // sin((age + partialTick) / 10 + bobOffset) vertical movement.
-        float bobPhaseOffset = item.getSpin(0.0F)
-                - ((float) item.getAge() / 20.0F);
-        float visualBob = Mth.sin(((float) item.getAge() + partialTick)
-                / 10.0F + bobPhaseOffset) * 0.1F + 0.1F;
+        float visualBob = 0.0F;
+        if (!(ITEM_PHYSIC_LOADED && item.onGround())) {
+            float bobPhaseOffset = item.getSpin(0.0F)
+                    - ((float) item.getAge() / 20.0F);
+            visualBob = Mth.sin(((float) item.getAge() + partialTick)
+                    / 10.0F + bobPhaseOffset) * 0.1F + 0.1F;
+        }
 
         return center.add(interpolatedX - item.getX(),
                 interpolatedY - item.getY() + visualBob,

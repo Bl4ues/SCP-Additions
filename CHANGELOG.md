@@ -75,7 +75,7 @@
 
 ## Anomalous Items
 
-- Added **Item #006, Vol. I** (**Glowing Rock**) as the first Log of Anomalous Items entry, with a placeable model, model-matched collision, and amethyst-like block sounds.
+- Added **Item #006, Vol. I** as the first Log of Anomalous Items entry.
 
 ## SCP-914
 

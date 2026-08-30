@@ -66,14 +66,28 @@ public final class HazmatSuitClientEvents {
         }
 
         PlayerModel<?> model = event.getRenderer().getModel();
-        HIDDEN_OUTER_LAYERS.putIfAbsent(model,
-                new OuterLayerVisibility(
-                        model.hat.visible,
-                        model.jacket.visible,
-                        model.leftSleeve.visible,
-                        model.rightSleeve.visible,
-                        model.leftPants.visible,
-                        model.rightPants.visible));
+        if (!HIDDEN_OUTER_LAYERS.containsKey(model)) {
+            HIDDEN_OUTER_LAYERS.put(model, hideOuterLayers(model));
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRenderPlayerPost(RenderPlayerEvent.Post event) {
+        PlayerModel<?> model = event.getRenderer().getModel();
+        OuterLayerVisibility previous = HIDDEN_OUTER_LAYERS.remove(model);
+        if (previous != null) {
+            restoreOuterLayers(model, previous);
+        }
+    }
+
+    static OuterLayerVisibility hideOuterLayers(PlayerModel<?> model) {
+        OuterLayerVisibility previous = new OuterLayerVisibility(
+                model.hat.visible,
+                model.jacket.visible,
+                model.leftSleeve.visible,
+                model.rightSleeve.visible,
+                model.leftPants.visible,
+                model.rightPants.visible);
 
         model.hat.visible = false;
         model.jacket.visible = false;
@@ -81,16 +95,11 @@ public final class HazmatSuitClientEvents {
         model.rightSleeve.visible = false;
         model.leftPants.visible = false;
         model.rightPants.visible = false;
+        return previous;
     }
 
-    @SubscribeEvent
-    public static void onRenderPlayerPost(RenderPlayerEvent.Post event) {
-        PlayerModel<?> model = event.getRenderer().getModel();
-        OuterLayerVisibility previous = HIDDEN_OUTER_LAYERS.remove(model);
-        if (previous == null) {
-            return;
-        }
-
+    static void restoreOuterLayers(PlayerModel<?> model,
+            OuterLayerVisibility previous) {
         model.hat.visible = previous.hat;
         model.jacket.visible = previous.jacket;
         model.leftSleeve.visible = previous.leftSleeve;
@@ -99,7 +108,7 @@ public final class HazmatSuitClientEvents {
         model.rightPants.visible = previous.rightPants;
     }
 
-    private record OuterLayerVisibility(boolean hat, boolean jacket,
+    record OuterLayerVisibility(boolean hat, boolean jacket,
             boolean leftSleeve, boolean rightSleeve,
             boolean leftPants, boolean rightPants) {
     }

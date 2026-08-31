@@ -79,7 +79,9 @@ public class ScpClassifiedDirectiveModTabs {
     }
 
     public static List<ItemStack> toolsUtilityStacks() {
-        return List.of(new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()));
+        return List.of(
+                new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()),
+                new ItemStack(DocumentItems.getDocument()));
     }
 
     public static List<ItemStack> consumableStacks() {
@@ -97,8 +99,7 @@ public class ScpClassifiedDirectiveModTabs {
                 new ItemStack(ScpClassifiedDirectiveModItems.CREDIT_CARD.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.PIECES_OF_PAPER.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.COIN.get()),
-                new ItemStack(ScpClassifiedDirectiveModItems.EMPTY_CUP.get()),
-                new ItemStack(DocumentItems.getDocument()));
+                new ItemStack(ScpClassifiedDirectiveModItems.EMPTY_CUP.get()));
     }
 
     public static List<CreativeSection> itemCreativeSections() {

@@ -27,12 +27,15 @@ public final class StealthModulesRowVisualFix {
     private static final String EXTENDED_TOGGLE_SCREEN =
             "com.bl4ues.scpclassifieddirective.config.ui.Scp079ModulesScreenExtension$ExtendedToggleScreen";
     private static final String MODULES_TITLE = "General & Modules";
+    private static final String DESCRIPTION =
+            "Smooth crouch/crawl movement and global visual-perception framework.";
 
     private static final int PANEL = 0xFF0B0E12;
     private static final int NAVY = 0xFF0D1116;
     private static final int NAVY_HOVER = 0xFF1A2028;
     private static final int ACCENT = 0xFFC99B18;
     private static final int WHITE = 0xFFF7F8FC;
+    private static final int MUTED = 0xFF9CA3AF;
     private static final int SERVER_SCOPE = 0xFFFFC56D;
     private static final int BADGE_BACKGROUND = 0xE6081022;
     private static final int ON = 0xFF79D58B;
@@ -75,7 +78,8 @@ public final class StealthModulesRowVisualFix {
         if (editor == null || state == null) return;
 
         boolean enabled = stateLabel.endsWith("ON");
-        boolean hovered = editor.isHoveredOrFocused() || state.isHoveredOrFocused();
+        boolean editorHovered = editor.isHoveredOrFocused();
+        boolean hovered = editorHovered || state.isHoveredOrFocused();
         int slide = ConfigCenterVisuals.contentOffsetX();
         int left = editor.getX() + slide;
         int top = editor.getY();
@@ -105,6 +109,16 @@ public final class StealthModulesRowVisualFix {
         int badgeRight = right - 58;
         int badgeX = badgeRight - scaledWidth;
         int badgeY = top + Math.max(1, (bottom - top - scaledHeight) / 2);
+
+        // A quiet affordance that only brightens over the configurable body.
+        Component configure = ScpFonts.roboto("CONFIG >");
+        int configureX = badgeX - 12 - font.width(configure);
+        int titleEnd = left + 16 + font.width(title);
+        if (configureX >= titleEnd + 12) {
+            graphics.drawString(font, configure, configureX, textY,
+                    editorHovered ? SERVER_SCOPE : MUTED, false);
+        }
+
         graphics.fill(badgeX - 4, top + 2, badgeRight + 3, bottom - 2,
                 BADGE_BACKGROUND);
         graphics.pose().pushPose();
@@ -118,10 +132,11 @@ public final class StealthModulesRowVisualFix {
                 right - 14 - font.width(stateText), textY,
                 enabled ? ON : OFF, false);
 
-        // The base screen still prints its historical SERVER-SIDE annotation
-        // on the description line. Cover only that obsolete right-hand area;
-        // the normal description on the left is untouched.
-        graphics.fill(right - 160, bottom, right, top + 34, PANEL);
+        // Replace the base screen's shortened description and obsolete
+        // SERVER-SIDE annotation with the complete ordinary description line.
+        graphics.fill(left, bottom, right, top + 34, PANEL);
+        graphics.drawString(font, ScpFonts.roboto(DESCRIPTION),
+                left + 2, top + 24, MUTED, false);
         graphics.pose().popPose();
     }
 

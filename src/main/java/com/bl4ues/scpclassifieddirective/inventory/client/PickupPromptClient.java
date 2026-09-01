@@ -9,8 +9,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.OutlineBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -36,11 +34,11 @@ public final class PickupPromptClient {
     private static final float ITEM_TEXT_SCALE = 1.85F;
     private static final double MAX_PICKUP_REACH = 2.25D;
     private static final double SOFT_AIM_RADIUS_SQR = 0.58D * 0.58D;
-    private static final float MODEL_OUTLINE_SCALE = 1.04F;
     private static final int PICKUP_CLICK_COOLDOWN_TICKS = 5;
     private static final boolean ITEM_PHYSIC_LOADED = ModList.get().isLoaded("itemphysic");
 
     private static ItemEntity target;
+    private static boolean targetWasGlowing;
     private static boolean useWasDown = false;
     private static int pickupCooldownTicks = 0;
 
@@ -61,7 +59,7 @@ public final class PickupPromptClient {
             pickupCooldownTicks--;
         }
 
-        target = findTarget(mc, player);
+        setTarget(findTarget(mc, player));
 
         boolean useDown = mc.options.keyUse.isDown();
         boolean pressedThisTick = useDown && !useWasDown;
@@ -125,42 +123,6 @@ public final class PickupPromptClient {
         drawScaledString(g, mc, target.getItem().getHoverName().getString(), textX, itemY, ITEM_TEXT_SCALE, TEXT_WHITE);
     }
 
-    public static void renderWorldOutline(PoseStack poseStack, Camera camera) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || mc.player == null || mc.screen != null || target == null || !target.isAlive()) {
-            return;
-        }
-
-        Vec3 cameraPosition = camera.getPosition();
-        AABB bounds = target.getBoundingBox();
-        Vec3 center = bounds.getCenter();
-
-        double x = target.getX() - cameraPosition.x;
-        double y = target.getY() - cameraPosition.y;
-        double z = target.getZ() - cameraPosition.z;
-        double cx = center.x - cameraPosition.x;
-        double cy = center.y - cameraPosition.y;
-        double cz = center.z - cameraPosition.z;
-
-        OutlineBufferSource outline = mc.renderBuffers().outlineBufferSource();
-        outline.setColor(255, 255, 255, 165);
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.depthMask(false);
-
-        poseStack.pushPose();
-        poseStack.translate(cx, cy, cz);
-        poseStack.scale(MODEL_OUTLINE_SCALE, MODEL_OUTLINE_SCALE, MODEL_OUTLINE_SCALE);
-        poseStack.translate(-cx, -cy, -cz);
-        mc.getEntityRenderDispatcher().render(target, x, y, z, target.getYRot(), mc.getFrameTime(), poseStack, outline, LightTexture.FULL_BRIGHT);
-        poseStack.popPose();
-
-        outline.endOutlineBatch();
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
-    }
-
     private static ItemEntity findTarget(Minecraft mc, LocalPlayer player) {
         Vec3 eye = player.getEyePosition(1.0F);
         Vec3 look = player.getViewVector(1.0F).normalize();
@@ -195,6 +157,32 @@ public final class PickupPromptClient {
         boolean directBoxHit = item.getBoundingBox().inflate(0.35D).clip(eye, eye.add(look.scale(reach))).isPresent();
         if (!directBoxHit && lineDistanceSqr > SOFT_AIM_RADIUS_SQR) return Double.MAX_VALUE;
         return lineDistanceSqr + (alongRay * 0.015D);
+    }
+
+    /**
+     * Uses Minecraft's own entity-outline pipeline instead of re-rendering a
+     * scaled, full-bright copy of the item. The glowing flag is changed only on
+     * the local client while this item owns the pickup prompt, so the renderer's
+     * exact silhouette becomes the white outline mask without changing gameplay.
+     */
+    private static void setTarget(ItemEntity next) {
+        if (target == next) return;
+        clearTarget();
+        target = next;
+        if (target == null) return;
+
+        targetWasGlowing = target.isCurrentlyGlowing();
+        if (!targetWasGlowing) {
+            target.setGlowingTag(true);
+        }
+    }
+
+    private static void clearTarget() {
+        if (target != null && target.isAlive() && !targetWasGlowing) {
+            target.setGlowingTag(false);
+        }
+        target = null;
+        targetWasGlowing = false;
     }
 
     /**
@@ -259,10 +247,6 @@ public final class PickupPromptClient {
         pose.scale(scale, scale, 1.0F);
         g.drawString(mc.font, ScpFonts.roboto(text), 0, 0, color, true);
         pose.popPose();
-    }
-
-    private static void clearTarget() {
-        target = null;
     }
 
     private record ScreenPoint(int x, int y) {

@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "scp_classified_directive:scp_914",
+    "scp_classified_directive:scp_914_reservation",
+    "scp_classified_directive:scp_914_collision",
+    "scp_classified_directive:scp_914_door_collision"
+  ]
+}

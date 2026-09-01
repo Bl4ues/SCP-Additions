@@ -274,10 +274,11 @@ public final class ScpClassifiedDirectiveModulesConfig {
 			maxAcquireDelayTicks = MAX_ACQUIRE_DELAY_TICKS;
 			darknessFloor = DARKNESS_FLOOR;
 			minimumCloseRange = MINIMUM_CLOSE_RANGE;
-			if (perceptionRules == null) perceptionRules = new ArrayList<>();
 
+			List<PerceptionRule> sourceRules = perceptionRules == null
+					? defaultPerceptionRules() : perceptionRules;
 			List<PerceptionRule> editableRules = new ArrayList<>();
-			for (PerceptionRule rule : perceptionRules) {
+			for (PerceptionRule rule : sourceRules) {
 				if (rule == null) continue;
 				rule.normalize();
 				if (!isIntegratedPerceptionEntity(rule.entity)) {

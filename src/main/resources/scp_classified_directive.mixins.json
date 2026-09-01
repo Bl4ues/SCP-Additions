@@ -77,7 +77,8 @@
     "client.Scp939PinnedPlayerRotationMixin",
     "client.Scp939ModelPolishMixin",
     "client.PlayerSmoothCrouchMixin",
-    "client.Scp714ComaPromptMixin"
+    "client.Scp714ComaPromptMixin",
+    "client.LevelRendererEntityTargetAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

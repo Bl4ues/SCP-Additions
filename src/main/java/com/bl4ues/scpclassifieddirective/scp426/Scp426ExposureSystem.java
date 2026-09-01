@@ -2,6 +2,8 @@ package com.bl4ues.scpclassifieddirective.scp426;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
+import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
+import com.bl4ues.scpclassifieddirective.inventory.network.Scp426ExposureSyncPacket;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
@@ -22,21 +24,16 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class Scp426ExposureSystem {
-    // The environment is sampled every two seconds. Exposure is deliberately
-    // not a per-tick system; this keeps the toaster's passive behavior cheap
-    // while making the visual achievement reasonably responsive.
     private static final int SAMPLE_TICKS = 40;
     private static final int HORIZONTAL_RADIUS = 7;
     private static final int VERTICAL_RADIUS = 4;
     private static final double MAX_DISTANCE_SQR = 64.0D;
 
-    // Exposure is stored in seconds. It rises at real-time speed while the
-    // player shares a direct, unobstructed environment with SCP-426 and fades
-    // at half speed while away.
     private static final double MAX_EXPOSURE = 1200.0D;
     private static final double EXPOSURE_GAIN = SAMPLE_TICKS / 20.0D;
     private static final double EXPOSURE_LOSS = EXPOSURE_GAIN * 0.5D;
@@ -134,6 +131,8 @@ public final class Scp426ExposureSystem {
             exposure = Math.max(0.0D, exposure - EXPOSURE_LOSS);
         }
         data.putDouble(EXPOSURE_KEY, exposure);
+        ModNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                new Scp426ExposureSyncPacket(exposure));
 
         if (contact.seen()) {
             awardIdentityCrisis(player);
@@ -160,8 +159,6 @@ public final class Scp426ExposureSystem {
                 continue;
             }
 
-            // The authored toaster is only ~0.33 blocks tall. A vanilla block
-            // center ray (Y + 0.5) would pass over it, so target its actual body.
             Vec3 center = new Vec3(pos.getX() + 0.5D, pos.getY() + 0.16D,
                     pos.getZ() + 0.5D);
             if (eye.distanceToSqr(center) > MAX_DISTANCE_SQR) continue;
@@ -239,8 +236,6 @@ public final class Scp426ExposureSystem {
         if (exposure < TIER_1) return;
 
         if (exposure >= TIER_2) {
-            // A tiny mechanical joke rather than a meaningful food buff: bread
-            // restores one extra hunger point once the identification is strong.
             player.getFoodData().eat(1, 0.2F);
         }
 
@@ -278,9 +273,6 @@ public final class Scp426ExposureSystem {
         long lastBreak = data.getLong(LAST_BREAK_KEY);
         long lastPickup = data.getLong(LAST_PICKUP_KEY);
 
-        // A freshly broken block is normally picked up immediately. Preserve
-        // the break thought instead of replacing it with another action-bar
-        // line. Later, genuinely completed pickups still get their own response.
         if (now - lastBreak <= 40L || now - lastPickup <= 40L) return;
 
         data.putLong(LAST_PICKUP_KEY, now);

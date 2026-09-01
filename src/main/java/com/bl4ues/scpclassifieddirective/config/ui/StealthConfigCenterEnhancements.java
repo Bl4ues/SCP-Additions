@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.config.ui;
 
+import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.google.gson.Gson;
@@ -69,6 +70,20 @@ public final class StealthConfigCenterEnhancements {
         } catch (Exception ignored) {
             return fallback;
         }
+    }
+
+    private static String ruleId(JsonObject rule) {
+        if (rule == null || !rule.has("entity")) return "";
+        try {
+            return rule.get("entity").getAsString().trim();
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    private static boolean integratedRule(JsonObject rule) {
+        return ScpClassifiedDirectiveModulesConfig.isIntegratedPerceptionEntity(
+                ruleId(rule));
     }
 
     private abstract static class StealthScreen extends Screen {
@@ -271,6 +286,7 @@ public final class StealthConfigCenterEnhancements {
             for (int index = scroll; index < end; index++) {
                 JsonObject rule = rules.get(index).isJsonObject()
                         ? rules.get(index).getAsJsonObject() : new JsonObject();
+                if (integratedRule(rule)) continue;
                 int rowY = y + (index - scroll) * ROW_HEIGHT + 12;
                 final int ruleIndex = index;
                 button(x + width - 126, rowY, 76, 24,
@@ -293,6 +309,12 @@ public final class StealthConfigCenterEnhancements {
             ResourceLocation id = ResourceLocation.tryParse(raw);
             if (id == null || !ForgeRegistries.ENTITY_TYPES.containsKey(id)) {
                 notice = "Unknown entity id: " + raw;
+                noticeGood = false;
+                return;
+            }
+            if (ScpClassifiedDirectiveModulesConfig
+                    .isIntegratedPerceptionEntity(raw)) {
+                notice = "That SCP uses an integrated perception profile.";
                 noticeGood = false;
                 return;
             }
@@ -322,7 +344,15 @@ public final class StealthConfigCenterEnhancements {
         }
 
         private void removeRule(int index) {
-            if (index >= 0 && index < rules().size()) rules().remove(index);
+            if (index < 0 || index >= rules().size()) return;
+            JsonElement element = rules().get(index);
+            if (element.isJsonObject()
+                    && integratedRule(element.getAsJsonObject())) {
+                notice = "Integrated SCP perception profiles cannot be removed.";
+                noticeGood = false;
+                return;
+            }
+            rules().remove(index);
             scroll = Math.max(0, Math.min(scroll, Math.max(0, rules().size() - 1)));
             notice = "Removed perception rule.";
             noticeGood = true;
@@ -354,7 +384,7 @@ public final class StealthConfigCenterEnhancements {
                 float partialTick) {
             ConfigCenterVisuals.renderBackdrop(this, graphics, mouseX, mouseY);
             drawPanel(graphics, "Mob Perception Rules",
-                    "Entity-specific sensory behavior for the integrated stealth model.");
+                    "Integrated SCP profiles are shown for reference; other mob rules remain editable.");
             drawEditBox(graphics, addId);
             int x = panelX() + 16;
             int y = panelY() + 97;
@@ -378,6 +408,12 @@ public final class StealthConfigCenterEnhancements {
                         x + 12, rowY + 21, MUTED, false);
                 graphics.drawString(font, ScpFonts.roboto(traits(rule)),
                         x + 12, rowY + 36, ACCENT, false);
+                if (integratedRule(rule)) {
+                    Component label = ScpFonts.roboto("INTEGRATED");
+                    graphics.drawString(font, label,
+                            x + width - 12 - font.width(label), rowY + 21,
+                            ACCENT, false);
+                }
             }
             if (rules.size() == 0) {
                 graphics.drawCenteredString(font,

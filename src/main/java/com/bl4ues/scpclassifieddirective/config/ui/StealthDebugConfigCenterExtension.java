@@ -45,7 +45,8 @@ public final class StealthDebugConfigCenterExtension {
             DebugPreference.SCP_079_ENERGY,
             DebugPreference.SCP_079_DECISIONS,
             DebugPreference.SPAWN_TIMERS,
-            DebugPreference.PLAYER_STEALTH
+            DebugPreference.PLAYER_STEALTH,
+            DebugPreference.SCP_426_EXPOSURE
     );
 
     private StealthDebugConfigCenterExtension() {
@@ -75,18 +76,19 @@ public final class StealthDebugConfigCenterExtension {
         Layout layout = layout(screen);
         GuiGraphics graphics = event.getGuiGraphics();
         Font font = Minecraft.getInstance().font;
-        DebugPreference stealth = DebugPreference.PLAYER_STEALTH;
-        graphics.drawString(font, ScpFonts.roboto(stealth.description),
-                layout.x() + 2,
-                layout.rowY() + 3 * ROW_HEIGHT + 24, MUTED, false);
+
+        // The native screen supplies descriptions for the original three rows.
+        // Draw descriptions only for local rows added beyond that base list.
+        for (int index = 3; index < PREFERENCES.size(); index++) {
+            DebugPreference preference = PREFERENCES.get(index);
+            graphics.drawString(font, ScpFonts.roboto(preference.description),
+                    layout.x() + 2,
+                    layout.rowY() + index * ROW_HEIGHT + 24, MUTED, false);
+        }
         graphics.drawString(font,
                 ScpFonts.roboto("Client-side changes are saved immediately."),
                 layout.x() + 106, layout.bottomY() + 6, MUTED, false);
 
-        // These rows are injected after the native toggle screen is built, so
-        // render their scope/state in the final GUI pass. This keeps them above
-        // the Configuration Center's own high-Z button/badge passes and makes
-        // them visually identical to the CLIENT rows in General & Modules.
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, 0.0F, 1800.0F);
         for (int index = 0; index < PREFERENCES.size(); index++) {
@@ -155,7 +157,7 @@ public final class StealthDebugConfigCenterExtension {
 
     private static Layout layout(Screen screen) {
         int panelWidth = Math.min(620, screen.width - 20);
-        int panelHeight = Math.min(240, screen.height - 16);
+        int panelHeight = Math.min(274, screen.height - 16);
         int panelX = ConfigCenterVisuals.contentLeft(screen.width, panelWidth);
         int panelY = Math.max(8, (screen.height - panelHeight) / 2);
         return new Layout(panelX + 16, panelY + 44, panelWidth - 32,
@@ -173,7 +175,9 @@ public final class StealthDebugConfigCenterExtension {
         SPAWN_TIMERS("SCP Spawn Timers HUD",
                 "Shows each roamer's state, countdown, and latest scheduler result."),
         PLAYER_STEALTH("Player Stealth HUD",
-                "Shows the local player's current stealth value.");
+                "Shows the local player's current stealth value."),
+        SCP_426_EXPOSURE("SCP-426 Exposure HUD",
+                "Shows the local player's SCP-426 exposure, percentage, and tier.");
 
         private final String label;
         private final String description;
@@ -193,6 +197,8 @@ public final class StealthDebugConfigCenterExtension {
                         StealthDebugClientPreferences.showScpSpawnTimersHud();
                 case PLAYER_STEALTH ->
                         StealthDebugClientPreferences.showStealthHud();
+                case SCP_426_EXPOSURE ->
+                        StealthDebugClientPreferences.showScp426ExposureHud();
             };
         }
 
@@ -206,6 +212,8 @@ public final class StealthDebugConfigCenterExtension {
                         StealthDebugClientPreferences.toggleScpSpawnTimersHud();
                 case PLAYER_STEALTH ->
                         StealthDebugClientPreferences.toggleStealthHud();
+                case SCP_426_EXPOSURE ->
+                        StealthDebugClientPreferences.toggleScp426ExposureHud();
             }
         }
     }
@@ -266,6 +274,7 @@ public final class StealthDebugConfigCenterExtension {
             StealthDebugClientPreferences.setShowScp079DecisionLogHud(false);
             StealthDebugClientPreferences.setShowScpSpawnTimersHud(false);
             StealthDebugClientPreferences.setShowStealthHud(false);
+            StealthDebugClientPreferences.setShowScp426ExposureHud(false);
         }
 
         @Override

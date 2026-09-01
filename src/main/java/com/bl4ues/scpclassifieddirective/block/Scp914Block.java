@@ -2,11 +2,13 @@ package com.bl4ues.scpclassifieddirective.block;
 
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Protection;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -28,6 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -43,7 +46,10 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     public Scp914Block() {
         super(BlockBehaviour.Properties.of()
                 .mapColor(MapColor.METAL)
-                .strength(6.0F, 1200.0F)
+                .strength(Scp914Protection.HARDNESS,
+                        Scp914Protection.BLAST_RESISTANCE)
+                .requiresCorrectToolForDrops()
+                .pushReaction(PushReaction.BLOCK)
                 .sound(SoundType.METAL)
                 .noOcclusion());
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
@@ -91,6 +97,19 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
         return Shapes.block();
+    }
+
+    @Override
+    public float getDestroyProgress(BlockState state, Player player,
+            BlockGetter level, BlockPos pos) {
+        return Scp914Protection.canMine(player)
+                ? super.getDestroyProgress(state, player, level, pos) : 0.0F;
+    }
+
+    @Override
+    public boolean canEntityDestroy(BlockState state, BlockGetter level,
+            BlockPos pos, Entity entity) {
+        return false;
     }
 
     @Override

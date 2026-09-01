@@ -1,0 +1,18 @@
+{
+  "targets": [
+    "pickup_mask",
+    "pickup_edge"
+  ],
+  "passes": [
+    {
+      "name": "scp_classified_directive:pickup_outline_edge",
+      "intarget": "pickup_mask",
+      "outtarget": "pickup_edge"
+    },
+    {
+      "name": "scp_classified_directive:pickup_outline_composite",
+      "intarget": "pickup_edge",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

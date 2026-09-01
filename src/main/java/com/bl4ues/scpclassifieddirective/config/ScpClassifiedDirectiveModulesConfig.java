@@ -274,10 +274,20 @@ public final class ScpClassifiedDirectiveModulesConfig {
 			maxAcquireDelayTicks = MAX_ACQUIRE_DELAY_TICKS;
 			darknessFloor = DARKNESS_FLOOR;
 			minimumCloseRange = MINIMUM_CLOSE_RANGE;
-			if (perceptionRules == null) perceptionRules = defaultPerceptionRules();
+			if (perceptionRules == null) perceptionRules = new ArrayList<>();
+
+			List<PerceptionRule> editableRules = new ArrayList<>();
 			for (PerceptionRule rule : perceptionRules) {
-				if (rule != null) rule.normalize();
+				if (rule == null) continue;
+				rule.normalize();
+				if (!isIntegratedPerceptionEntity(rule.entity)) {
+					editableRules.add(rule);
+				}
 			}
+
+			List<PerceptionRule> normalizedRules = integratedPerceptionRules();
+			normalizedRules.addAll(editableRules);
+			perceptionRules = normalizedRules;
 		}
 	}
 
@@ -315,8 +325,19 @@ public final class ScpClassifiedDirectiveModulesConfig {
 		}
 	}
 
-	private static List<PerceptionRule> defaultPerceptionRules() {
+	public static boolean isIntegratedPerceptionEntity(String entity) {
+		if (entity == null) return false;
+		return switch (entity.trim()) {
+			case "scp_classified_directive:scp_106",
+					"scp_classified_directive:scp_173",
+					"scp_classified_directive:scp_939" -> true;
+			default -> false;
+		};
+	}
+
+	private static List<PerceptionRule> integratedPerceptionRules() {
 		List<PerceptionRule> rules = new ArrayList<>();
+
 		PerceptionRule scp106 = new PerceptionRule("scp_classified_directive:scp_106");
 		scp106.omniscient = true;
 		rules.add(scp106);
@@ -329,6 +350,11 @@ public final class ScpClassifiedDirectiveModulesConfig {
 		scp173.visibilityMultiplier = 1.35D;
 		scp173.acquireDelayMultiplier = 0.55D;
 		rules.add(scp173);
+		return rules;
+	}
+
+	private static List<PerceptionRule> defaultPerceptionRules() {
+		List<PerceptionRule> rules = integratedPerceptionRules();
 
 		PerceptionRule spider = new PerceptionRule("minecraft:spider");
 		spider.nightVision = true;

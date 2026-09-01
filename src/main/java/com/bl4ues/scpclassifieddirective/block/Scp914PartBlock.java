@@ -2,10 +2,12 @@ package com.bl4ues.scpclassifieddirective.block;
 
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Protection;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -20,6 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -148,7 +151,10 @@ public final class Scp914PartBlock extends Block {
         // helper kinds so a full core cell can never leak its shape into a thin frame
         // cell that happens to share the same block state role.
         return BlockBehaviour.Properties.of()
-                .strength(6.0F, 1200.0F)
+                .strength(Scp914Protection.HARDNESS,
+                        Scp914Protection.BLAST_RESISTANCE)
+                .requiresCorrectToolForDrops()
+                .pushReaction(PushReaction.BLOCK)
                 .sound(SoundType.METAL)
                 .noOcclusion()
                 .noLootTable()
@@ -215,6 +221,19 @@ public final class Scp914PartBlock extends Block {
     public VoxelShape getVisualShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
         return Shapes.empty();
+    }
+
+    @Override
+    public float getDestroyProgress(BlockState state, Player player,
+            BlockGetter level, BlockPos pos) {
+        return Scp914Protection.canMine(player)
+                ? super.getDestroyProgress(state, player, level, pos) : 0.0F;
+    }
+
+    @Override
+    public boolean canEntityDestroy(BlockState state, BlockGetter level,
+            BlockPos pos, Entity entity) {
+        return false;
     }
 
     private static VoxelShape reservationShape(BlockGetter level, BlockPos pos,

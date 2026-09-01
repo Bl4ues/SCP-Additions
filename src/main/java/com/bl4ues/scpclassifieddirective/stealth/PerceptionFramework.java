@@ -53,10 +53,23 @@ public final class PerceptionFramework {
         boolean integrated = rule != null
                 && ScpClassifiedDirectiveModulesConfig
                         .isIntegratedPerceptionEntity(rule.entity);
-        // Disabling Advanced Crouch & Stealth removes generic player stealth and
-        // user-authored mob rules, but the SCP-106/173/939 sensory profiles are
-        // authored parts of those SCPs and remain authoritative at all times.
-        if (!settings.enabled && !integrated) return true;
+
+        if (!settings.enabled) {
+            // The optional framework is off: no posture/light stealth and no
+            // user-authored mob rules. Integrated SCP senses remain part of the
+            // SCPs themselves. 106 stays omniscient, 939 stays acoustic/blind,
+            // and visual SCPs such as 173 fall back to their native targeting.
+            if (!integrated) return true;
+            if (rule.omniscient) return true;
+
+            LivingEntity lastAttacker = observer.getLastHurtByMob();
+            if (lastAttacker == target) return true;
+
+            if (rule.blind) {
+                return canAcquireAcoustically(observer, target, rule, settings);
+            }
+            return true;
+        }
 
         if (rule != null && rule.omniscient) return true;
 

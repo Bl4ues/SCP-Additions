@@ -26,6 +26,7 @@ public final class StealthDebugClientPreferences {
     private static boolean showScp079DecisionLogHud;
     private static boolean showScpSpawnTimersHud;
     private static boolean showStealthHud;
+    private static boolean showScp426ExposureHud;
 
     private StealthDebugClientPreferences() {
     }
@@ -98,6 +99,23 @@ public final class StealthDebugClientPreferences {
         return showStealthHud;
     }
 
+    public static synchronized boolean showScp426ExposureHud() {
+        loadIfNeeded();
+        return showScp426ExposureHud;
+    }
+
+    public static synchronized void setShowScp426ExposureHud(boolean enabled) {
+        loadIfNeeded();
+        if (showScp426ExposureHud == enabled) return;
+        showScp426ExposureHud = enabled;
+        save();
+    }
+
+    public static synchronized boolean toggleScp426ExposureHud() {
+        setShowScp426ExposureHud(!showScp426ExposureHud());
+        return showScp426ExposureHud;
+    }
+
     private static void loadIfNeeded() {
         if (loaded) return;
         loaded = true;
@@ -105,6 +123,7 @@ public final class StealthDebugClientPreferences {
         showScp079DecisionLogHud = false;
         showScpSpawnTimersHud = false;
         showStealthHud = false;
+        showScp426ExposureHud = false;
         if (Files.notExists(PATH)) return;
 
         try {
@@ -115,6 +134,7 @@ public final class StealthDebugClientPreferences {
                     "show_scp_079_decision_log_hud", false);
             showScpSpawnTimersHud = bool(root, "show_scp_spawn_timers_hud", false);
             showStealthHud = bool(root, "show_stealth_hud", false);
+            showScp426ExposureHud = bool(root, "show_scp_426_exposure_hud", false);
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.warn(
                     "Could not read client debug preferences from {}", PATH,
@@ -139,6 +159,7 @@ public final class StealthDebugClientPreferences {
             root.addProperty("show_scp_079_decision_log_hud", showScp079DecisionLogHud);
             root.addProperty("show_scp_spawn_timers_hud", showScpSpawnTimersHud);
             root.addProperty("show_stealth_hud", showStealthHud);
+            root.addProperty("show_scp_426_exposure_hud", showScp426ExposureHud);
             Files.writeString(PATH, GSON.toJson(root) + System.lineSeparator(),
                     StandardCharsets.UTF_8);
         } catch (Exception exception) {

@@ -38,7 +38,6 @@ public final class PickupPromptClient {
     private static final boolean ITEM_PHYSIC_LOADED = ModList.get().isLoaded("itemphysic");
 
     private static ItemEntity target;
-    private static boolean targetWasGlowing;
     private static boolean useWasDown = false;
     private static int pickupCooldownTicks = 0;
 
@@ -59,7 +58,7 @@ public final class PickupPromptClient {
             pickupCooldownTicks--;
         }
 
-        setTarget(findTarget(mc, player));
+        target = findTarget(mc, player);
 
         boolean useDown = mc.options.keyUse.isDown();
         boolean pressedThisTick = useDown && !useWasDown;
@@ -76,6 +75,10 @@ public final class PickupPromptClient {
     public static boolean hasActiveTarget() {
         Minecraft mc = Minecraft.getInstance();
         return mc.player != null && mc.level != null && mc.screen == null && target != null && target.isAlive();
+    }
+
+    static ItemEntity outlineTarget() {
+        return target;
     }
 
     public static void render(GuiGraphics g, int screenWidth, int screenHeight, float partialTick) {
@@ -160,32 +163,6 @@ public final class PickupPromptClient {
     }
 
     /**
-     * Uses Minecraft's own entity-outline pipeline instead of re-rendering a
-     * scaled, full-bright copy of the item. The glowing flag is changed only on
-     * the local client while this item owns the pickup prompt, so the renderer's
-     * exact silhouette becomes the white outline mask without changing gameplay.
-     */
-    private static void setTarget(ItemEntity next) {
-        if (target == next) return;
-        clearTarget();
-        target = next;
-        if (target == null) return;
-
-        targetWasGlowing = target.isCurrentlyGlowing();
-        if (!targetWasGlowing) {
-            target.setGlowingTag(true);
-        }
-    }
-
-    private static void clearTarget() {
-        if (target != null && target.isAlive() && !targetWasGlowing) {
-            target.setGlowingTag(false);
-        }
-        target = null;
-        targetWasGlowing = false;
-    }
-
-    /**
      * Mirrors the active item renderer's visual center. Vanilla bobs an item
      * without moving its entity, while ItemPhysic deliberately leaves grounded
      * items visually at rest. The compatibility check stays entirely optional:
@@ -247,6 +224,10 @@ public final class PickupPromptClient {
         pose.scale(scale, scale, 1.0F);
         g.drawString(mc.font, ScpFonts.roboto(text), 0, 0, color, true);
         pose.popPose();
+    }
+
+    private static void clearTarget() {
+        target = null;
     }
 
     private record ScreenPoint(int x, int y) {

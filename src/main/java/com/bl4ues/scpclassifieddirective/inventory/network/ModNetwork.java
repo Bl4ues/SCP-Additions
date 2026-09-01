@@ -12,7 +12,7 @@ import com.bl4ues.scpclassifieddirective.config.ui.ConfigCenterNetwork;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "19";
+    private static final String PROTOCOL_VERSION = "20";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -60,6 +60,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, RequestCraftingStatePacket.class, RequestCraftingStatePacket::encode, RequestCraftingStatePacket::decode, RequestCraftingStatePacket::handle);
         CHANNEL.registerMessage(id++, CraftingActionPacket.class, CraftingActionPacket::encode, CraftingActionPacket::decode, CraftingActionPacket::handle);
         CHANNEL.registerMessage(id++, Scp914DialPacket.class, Scp914DialPacket::encode, Scp914DialPacket::decode, Scp914DialPacket::handle);
+        CHANNEL.registerMessage(id++, Scp426ExposureSyncPacket.class, Scp426ExposureSyncPacket::encode, Scp426ExposureSyncPacket::decode, Scp426ExposureSyncPacket::handle);
         ConfigCenterNetwork.register(CHANNEL, id);
     }
 

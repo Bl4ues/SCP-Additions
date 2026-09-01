@@ -49,9 +49,15 @@ public final class PerceptionFramework {
 
         ScpClassifiedDirectiveModulesConfig.Stealth settings =
                 ScpClassifiedDirectiveModulesConfig.get().stealth;
-        if (!settings.enabled) return true;
-
         ScpClassifiedDirectiveModulesConfig.PerceptionRule rule = ruleFor(observer);
+        boolean integrated = rule != null
+                && ScpClassifiedDirectiveModulesConfig
+                        .isIntegratedPerceptionEntity(rule.entity);
+        // Disabling Advanced Crouch & Stealth removes generic player stealth and
+        // user-authored mob rules, but the SCP-106/173/939 sensory profiles are
+        // authored parts of those SCPs and remain authoritative at all times.
+        if (!settings.enabled && !integrated) return true;
+
         if (rule != null && rule.omniscient) return true;
 
         // Retaliation is direct knowledge, not visual acquisition. A blind mob

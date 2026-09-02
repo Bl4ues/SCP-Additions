@@ -44,7 +44,7 @@
 - Corrosion left by SCP-106 continuously slows Survival players who walk over it;
 - SCP-106 can phase through solid blocks, moving more slowly while inside them and leaving temporary portals on the surfaces it enters and exits;
 - If the player creates too much distance, SCP-106 can disappear and re-emerge ahead of the player's path;
-- Tesla Gates repel SCP-106, forcing it to sink away and preventing the next two natural spawn checks;
+- Tesla Gates repel SCP-106, forcing it to sink away and suppressing the next three natural spawn checks on Safe and the next two on Euclid/Keter; Thaumiel runs no natural roamer checks;
 - Hunts can end quickly or continue for several minutes depending on how long SCP-106 remains interested in the target; players can create distance, but cannot lose SCP-106 before the hunt ends.
 
 ## SCP-939
@@ -56,7 +56,7 @@
 - Added a close-range bite attack and a committed pounce attack that physically launches SCP-939 toward prey;
 - Successful SCP-939 attacks have a one-in-three chance to inflict **Bleeding**, turning otherwise survivable injuries into persistent blood loss until the victim is healed;
 - Successful pounces knock the victim prone and pin them beneath SCP-939;
-- Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue;
+- Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue; its reaction window is more generous on Safe/Thaumiel, uses the baseline timing on Euclid, and is tighter on Keter;
 - Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim;
 - Added a dedicated breath reserve which becomes relevant only at immediate pass-by distance, entering at approximately 2.5 blocks with unobstructed line of sight and clearing around 2.75 blocks to prevent HUD flicker;
 - Added a rebindable **Hold Breath** control and HUD meter; holding breath suppresses normal breathing acoustic stimuli until the reserve is exhausted, at which point the player is forced to gasp loudly and temporarily cannot continue holding their breath;
@@ -135,6 +135,7 @@
 - Replaced redstone-based facility access with a powered Facility Diagnostic Terminal and a Auxiliary Power Unit;
 - SCP-079 now requires a physical computer in the world, begins hidden protocol discovery only after a powered diagnostic scan, learns faster from door use and Tesla activity, and gains AP regeneration only after completing access discovery;
 - Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
+- Added difficulty-scaled processing costs: SCP-079 actions consume more AP on Thaumiel and Safe, use their authored baseline cost on Euclid, and consume less AP on Keter;
 - Added a strategic expenditure model that protects emergency reserves, tracks recent spending and repeated tactical lanes, permits brief high-power bursts, becomes increasingly conservative below 60% power, and reserves sub-30% expenditure for exceptional traps or critical device opportunities;
 - SCP-079 now evaluates action utility against cost, remaining power, recent expenditure, repeated-action pressure, and the strategic importance of the requesting subsystem instead of spending whenever an action is merely affordable;
 - SCP-079 now reacts differently depending on the threat chasing the player, using doors, temporary access denial, and nearby Tesla Gates when useful;
@@ -275,9 +276,11 @@
 ## Roamer spawning and developer tools
 
 - Added natural spawn cycles for SCP-173, SCP-106, and SCP-939, with separate `173spawn`, `106spawn`, and `939spawn` gamerules;
-- SCP-106 begins checking for a possible encounter earlier than SCP-939 and SCP-173, while all three continue with recurring checks afterward;
+- Reworked natural encounters around one global scheduler per SCP instead of one timer per player; when a global check succeeds, one valid Survival player is selected at random as the encounter target;
+- Safe, Euclid, and Keter now use progressively more aggressive initial and recurring encounter-check intervals, while Thaumiel disables natural roamer checks entirely;
+- Each valid Survival player shortens the global check interval by 10%, capped at a 50% reduction with five or more players; player-count changes proportionally rescale the remaining timer instead of restarting it;
 - When another roamer is already active, additional roamer encounters become less likely, but rare overlapping encounters are still possible;
-- Spawn timers stop while a matching roamer is active and restart after it dies or despawns;
+- SCP-106 and SCP-173 stop their matching spawn timer while active and restart it after dying or despawning, while SCP-939 keeps checking with its existing population penalty so overlapping SCP-939 encounters remain possible;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106|scp939>`, and `/roamerForceSpawn <scp173|scp106|scp939>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
 - Added sparse natural Roomba encounters on approved facility flooring;

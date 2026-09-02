@@ -11,24 +11,19 @@ import java.util.Locale;
 
 /** Central registry for SCP entities that own a recurring spawn cycle. */
 public enum RoamerType {
-    SCP_173("scp173", "SCP-173", true, 6000, 6000),
-    SCP_106("scp106", "SCP-106", true, 2400, 6000),
-    SCP_939("scp939", "SCP-939", true, 3600, 6000);
+    SCP_173("scp173", "SCP-173", true),
+    SCP_106("scp106", "SCP-106", true),
+    SCP_939("scp939", "SCP-939", true);
 
     private final String commandId;
     private final String displayName;
     private final boolean spawnImplemented;
-    private final int initialSpawnDelayTicks;
-    private final int spawnIntervalTicks;
 
     RoamerType(String commandId, String displayName,
-            boolean spawnImplemented, int initialSpawnDelayTicks,
-            int spawnIntervalTicks) {
+            boolean spawnImplemented) {
         this.commandId = commandId;
         this.displayName = displayName;
         this.spawnImplemented = spawnImplemented;
-        this.initialSpawnDelayTicks = initialSpawnDelayTicks;
-        this.spawnIntervalTicks = spawnIntervalTicks;
     }
 
     public String commandId() {
@@ -41,14 +36,6 @@ public enum RoamerType {
 
     public boolean spawnImplemented() {
         return spawnImplemented;
-    }
-
-    public int initialSpawnDelayTicks() {
-        return initialSpawnDelayTicks;
-    }
-
-    public int spawnIntervalTicks() {
-        return spawnIntervalTicks;
     }
 
     public GameRules.Key<GameRules.BooleanValue> spawnRule() {

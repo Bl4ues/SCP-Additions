@@ -23,7 +23,6 @@ import com.bl4ues.scpclassifieddirective.roamer.RoamerType;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp173SpawnEvents {
-    public static final int SPAWN_CHECK_INTERVAL_TICKS = 6000;
     private static final int SPAWN_CHANCE_BOUND = 3;
     private static final int OTHER_ROAMER_CHANCE_BOUND = 5;
     private static final int SPAWN_ATTEMPTS = 96;
@@ -48,11 +47,13 @@ public final class Scp173SpawnEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END
                 || event.player.level().isClientSide
-                || !(event.player instanceof ServerPlayer player)
-                || !RoamerManager.pollSpawnCheck(player,
-                RoamerType.SCP_173)) {
+                || !(event.player instanceof ServerPlayer driver)) {
             return;
         }
+
+        ServerPlayer player = RoamerManager.pollSpawnTarget(driver,
+                RoamerType.SCP_173);
+        if (player == null) return;
 
         Scp173Entity existing = findAnyScp173(player);
         if (existing != null) {

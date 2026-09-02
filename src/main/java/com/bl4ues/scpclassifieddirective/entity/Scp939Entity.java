@@ -7,6 +7,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -109,6 +110,8 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
     private static final int POUNCE_COOLDOWN_TICKS = 20 * 9;
     private static final int PIN_LAND_TICKS = 17;
     public static final int STRUGGLE_WINDOW_TICKS = 36;
+    private static final int SAFE_STRUGGLE_WINDOW_TICKS = 48;
+    private static final int KETER_STRUGGLE_WINDOW_TICKS = 28;
     public static final int STRUGGLE_SUCCESS_REQUIRED = 3;
     public static final int STRUGGLE_FAILURE_LIMIT = 3;
     private static final int PIN_DAMAGE_INTERVAL_TICKS = 24;
@@ -171,6 +174,15 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
                 .add(Attributes.ARMOR, 5.0D)
                 .add(Attributes.FOLLOW_RANGE, 64.0D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.55D);
+    }
+
+    public static int struggleWindowTicks(Difficulty difficulty) {
+        if (difficulty == null) return STRUGGLE_WINDOW_TICKS;
+        return switch (difficulty) {
+            case PEACEFUL, EASY -> SAFE_STRUGGLE_WINDOW_TICKS;
+            case NORMAL -> STRUGGLE_WINDOW_TICKS;
+            case HARD -> KETER_STRUGGLE_WINDOW_TICKS;
+        };
     }
 
     @Override
@@ -412,7 +424,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         pinProgress = 0;
         pinFailures = 0;
         pinExpectedKey = random.nextBoolean() ? 1 : 0;
-        pinWindowTicks = STRUGGLE_WINDOW_TICKS;
+        pinWindowTicks = struggleWindowTicks(level().getDifficulty());
         pinLandTicks = PIN_LAND_TICKS;
         pounceLaunched = false;
         pounceTargetPosition = null;
@@ -513,7 +525,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         if (random.nextFloat() < 0.35F) {
             pinExpectedKey = random.nextBoolean() ? 1 : 0;
         }
-        pinWindowTicks = STRUGGLE_WINDOW_TICKS;
+        pinWindowTicks = struggleWindowTicks(level().getDifficulty());
         ServerPlayer player = pinnedPlayer();
         if (player != null) syncPin(player);
     }

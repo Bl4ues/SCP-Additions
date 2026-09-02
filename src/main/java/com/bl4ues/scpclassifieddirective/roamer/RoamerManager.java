@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.roamer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -19,18 +20,17 @@ import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
 /**
- * Shared lifecycle and scheduling state for SCP entities with their own spawn
- * cycle. No world scan runs continuously: entity activity is tracked through
- * join/leave events, and spawn checks remain owned by each roamer scheduler.
+ * Shared lifecycle and global scheduling state for SCP entities with their own
+ * natural encounter cycle. Each roamer owns one server-wide timer. When a
+ * check becomes due, one valid survival player is selected at random as the
+ * encounter target.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -38,7 +38,7 @@ public final class RoamerManager {
     private static final AABB WORLD_BOUNDS = new AABB(-30000000.0D,
             -2048.0D, -30000000.0D, 30000000.0D, 4096.0D,
             30000000.0D);
-    private static final Map<MinecraftServer, ServerState> STATES =
+    private static final java.util.Map<MinecraftServer, ServerState> STATES =
             new WeakHashMap<>();
 
     private RoamerManager() {
@@ -51,7 +51,7 @@ public final class RoamerManager {
         if (server == null) return;
         synchronized (STATES) {
             for (RoamerType type : RoamerType.values()) {
-                normalizePlayer(player, type, data(server, type));
+                normalizeScheduler(server, type, data(server, type));
             }
         }
     }
@@ -60,13 +60,16 @@ public final class RoamerManager {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         MinecraftServer server = event.getEntity().getServer();
         if (server == null) return;
-        UUID playerId = event.getEntity().getUUID();
+        UUID leavingPlayer = event.getEntity().getUUID();
         synchronized (STATES) {
             ServerState state = STATES.get(server);
             if (state == null) return;
+            if (!validPlayers(server, leavingPlayer).isEmpty()) return;
             for (RoamerData data : state.data.values()) {
-                data.nextCheckTicks.remove(playerId);
-                data.lastResults.remove(playerId);
+                data.nextCheckTick = -1;
+                if (data.activeEntityIds.isEmpty()) {
+                    data.lastResult = RoamerResult.PAUSED_NO_VALID_PLAYERS;
+                }
             }
         }
     }
@@ -96,21 +99,45 @@ public final class RoamerManager {
         if (server != null) markRemoved(server, type, entity.getUUID());
     }
 
-    /** Returns true once when this player's scheduler reaches its next check. */
-    public static boolean pollSpawnCheck(ServerPlayer player, RoamerType type) {
-        MinecraftServer server = player == null ? null : player.getServer();
-        if (server == null || type == null) return false;
+    /**
+     * Returns one random valid encounter target exactly once when the global
+     * scheduler reaches its next check. Any player tick may drive the poll; the
+     * selected target does not need to be that player.
+     */
+    public static ServerPlayer pollSpawnTarget(ServerPlayer driver,
+            RoamerType type) {
+        MinecraftServer server = driver == null ? null : driver.getServer();
+        if (server == null || type == null) return null;
         synchronized (STATES) {
             RoamerData data = data(server, type);
-            if (normalizePlayer(player, type, data) != RoamerState.COUNTDOWN) {
-                return false;
+            if (normalizeScheduler(server, type, data)
+                    != RoamerState.COUNTDOWN) {
+                return null;
             }
+
             int currentTick = server.getTickCount();
-            int nextTick = data.nextCheckTicks.get(player.getUUID());
-            if (currentTick < nextTick) return false;
-            data.nextCheckTicks.put(player.getUUID(), currentTick
-                    + Math.max(1, type.spawnIntervalTicks()));
-            return true;
+            if (currentTick < data.nextCheckTick) return null;
+
+            List<ServerPlayer> candidates = validPlayers(server, null);
+            if (candidates.isEmpty()) {
+                data.nextCheckTick = -1;
+                data.lastResult = RoamerResult.PAUSED_NO_VALID_PLAYERS;
+                return null;
+            }
+
+            Difficulty difficulty = currentDifficulty(server);
+            int recurringDelay = RoamerDifficultyPolicy.recurringDelayTicks(
+                    type, difficulty);
+            if (recurringDelay < 0) {
+                data.nextCheckTick = -1;
+                data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
+                return null;
+            }
+            data.nextCheckTick = currentTick + Math.max(1, recurringDelay);
+
+            ServerPlayer randomSource = candidates.get(0);
+            return candidates.get(randomSource.getRandom()
+                    .nextInt(candidates.size()));
         }
     }
 
@@ -119,8 +146,8 @@ public final class RoamerManager {
         MinecraftServer server = player == null ? null : player.getServer();
         if (server == null || type == null) return;
         synchronized (STATES) {
-            data(server, type).lastResults.put(player.getUUID(),
-                    result == null ? RoamerResult.NONE : result);
+            data(server, type).lastResult = result == null
+                    ? RoamerResult.NONE : result;
         }
     }
 
@@ -130,20 +157,17 @@ public final class RoamerManager {
         synchronized (STATES) {
             RoamerData data = data(server, type);
             data.activeEntityIds.add(entityId);
-            boolean concurrent = allowsConcurrentInstances(type);
-            if (!concurrent) data.nextCheckTicks.clear();
+            data.lastResult = RoamerResult.SPAWNED;
+            if (!allowsConcurrentInstances(type)) {
+                data.nextCheckTick = -1;
+                return;
+            }
 
-            int next = server.getTickCount()
-                    + Math.max(1, type.spawnIntervalTicks());
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                UUID playerId = player.getUUID();
-                data.lastResults.put(playerId, RoamerResult.SPAWNED);
-                if (concurrent && !data.nextCheckTicks.containsKey(playerId)
-                        && type.spawnImplemented() && moduleEnabled(type)
-                        && !data.contained && isSpawnRuleEnabled(server, type)
-                        && !player.isCreative() && !player.isSpectator()) {
-                    data.nextCheckTicks.put(playerId, next);
-                }
+            if (data.nextCheckTick < 0 && canSchedule(server, type, data)) {
+                schedule(server, type, data,
+                        RoamerDifficultyPolicy.recurringDelayTicks(type,
+                                currentDifficulty(server)),
+                        RoamerResult.SPAWNED);
             }
         }
     }
@@ -156,7 +180,7 @@ public final class RoamerManager {
             data.activeEntityIds.remove(entityId);
             if (data.activeEntityIds.isEmpty()
                     && !allowsConcurrentInstances(type)) {
-                restartAllSchedules(server, type, data,
+                restartSchedule(server, type, data,
                         RoamerResult.DESPAWNED_TIMER_RESET);
             }
         }
@@ -196,12 +220,11 @@ public final class RoamerManager {
         }
         synchronized (STATES) {
             RoamerData data = data(server, type);
-            RoamerState state = normalizePlayer(player, type, data);
+            RoamerState state = normalizeScheduler(server, type, data);
             int nextCheckTick = state == RoamerState.COUNTDOWN
-                    ? data.nextCheckTicks.getOrDefault(player.getUUID(), -1)
-                    : -1;
+                    ? data.nextCheckTick : -1;
             return new RoamerDebugSnapshot(type, state,
-                    resultFor(player, type, data, state), nextCheckTick);
+                    resultFor(type, data, state), nextCheckTick);
         }
     }
 
@@ -230,17 +253,23 @@ public final class RoamerManager {
         synchronized (STATES) {
             RoamerData data = data(server, type);
             if (!enabled || !type.spawnImplemented() || !moduleEnabled(type)) {
-                data.nextCheckTicks.clear();
-                RoamerResult result = !type.spawnImplemented()
+                data.nextCheckTick = -1;
+                data.lastResult = !type.spawnImplemented()
                         ? RoamerResult.NOT_IMPLEMENTED
                         : !moduleEnabled(type)
                                 ? RoamerResult.MODULE_DISABLED
                                 : RoamerResult.RULE_DISABLED;
-                setResultForAll(server, data, result);
-            } else if (!data.contained && (data.activeEntityIds.isEmpty()
+                return;
+            }
+            if (!RoamerDifficultyPolicy.schedulesEnabled(
+                    currentDifficulty(server))) {
+                data.nextCheckTick = -1;
+                data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
+                return;
+            }
+            if (!data.contained && (data.activeEntityIds.isEmpty()
                     || allowsConcurrentInstances(type))) {
-                scheduleAll(server, type, data, type.initialSpawnDelayTicks(),
-                        RoamerResult.TIMER_STARTED);
+                scheduleInitial(server, type, data, RoamerResult.TIMER_STARTED);
             }
         }
     }
@@ -253,13 +282,12 @@ public final class RoamerManager {
             RoamerData data = data(server, type);
             data.contained = contained;
             if (contained) {
-                data.nextCheckTicks.clear();
+                data.nextCheckTick = -1;
             } else if ((data.activeEntityIds.isEmpty()
                     || allowsConcurrentInstances(type))
                     && isSpawnRuleEnabled(server, type)
                     && type.spawnImplemented() && moduleEnabled(type)) {
-                scheduleAll(server, type, data, type.initialSpawnDelayTicks(),
-                        RoamerResult.TIMER_STARTED);
+                scheduleInitial(server, type, data, RoamerResult.TIMER_STARTED);
             }
         }
     }
@@ -294,7 +322,7 @@ public final class RoamerManager {
             }
             if (!loaded.isEmpty() && data.activeEntityIds.isEmpty()
                     && !allowsConcurrentInstances(type)) {
-                restartAllSchedules(server, type, data,
+                restartSchedule(server, type, data,
                         RoamerResult.DESPAWNED_TIMER_RESET);
             }
         }
@@ -309,96 +337,119 @@ public final class RoamerManager {
         return removed;
     }
 
-    private static RoamerState normalizePlayer(ServerPlayer player,
+    private static RoamerState normalizeScheduler(MinecraftServer server,
             RoamerType type, RoamerData data) {
-        UUID playerId = player.getUUID();
+        Difficulty difficulty = currentDifficulty(server);
+        if (data.scheduledDifficulty != difficulty) {
+            data.scheduledDifficulty = difficulty;
+            data.nextCheckTick = -1;
+        }
+
         if (!type.spawnImplemented()) {
-            data.nextCheckTicks.remove(playerId);
-            data.lastResults.put(playerId, RoamerResult.NOT_IMPLEMENTED);
+            data.nextCheckTick = -1;
+            data.lastResult = RoamerResult.NOT_IMPLEMENTED;
             return RoamerState.DISABLED;
         }
         if (!moduleEnabled(type)) {
-            data.nextCheckTicks.remove(playerId);
-            data.lastResults.put(playerId, RoamerResult.MODULE_DISABLED);
+            data.nextCheckTick = -1;
+            data.lastResult = RoamerResult.MODULE_DISABLED;
+            return RoamerState.DISABLED;
+        }
+        if (!RoamerDifficultyPolicy.schedulesEnabled(difficulty)) {
+            data.nextCheckTick = -1;
+            data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
             return RoamerState.DISABLED;
         }
         if (data.contained) {
-            data.nextCheckTicks.remove(playerId);
+            data.nextCheckTick = -1;
             return RoamerState.CONTAINED;
         }
-        if (!isSpawnRuleEnabled(player.getServer(), type)) {
-            data.nextCheckTicks.remove(playerId);
-            data.lastResults.put(playerId, RoamerResult.RULE_DISABLED);
+        if (!isSpawnRuleEnabled(server, type)) {
+            data.nextCheckTick = -1;
+            data.lastResult = RoamerResult.RULE_DISABLED;
             return RoamerState.DISABLED;
         }
         if (!data.activeEntityIds.isEmpty()
                 && !allowsConcurrentInstances(type)) {
-            data.nextCheckTicks.remove(playerId);
-            data.lastResults.put(playerId, RoamerResult.SPAWNED);
+            data.nextCheckTick = -1;
+            data.lastResult = RoamerResult.SPAWNED;
             return RoamerState.SPAWNED;
         }
-        if (player.isSpectator()) {
-            data.nextCheckTicks.remove(playerId);
-            data.lastResults.put(playerId, RoamerResult.PAUSED_SPECTATOR);
+
+        if (validPlayers(server, null).isEmpty()) {
+            data.nextCheckTick = -1;
+            data.lastResult = RoamerResult.PAUSED_NO_VALID_PLAYERS;
             return RoamerState.PAUSED;
         }
-        if (player.isCreative()) {
-            data.nextCheckTicks.remove(playerId);
-            data.lastResults.put(playerId, RoamerResult.PAUSED_CREATIVE);
-            return RoamerState.PAUSED;
+
+        if (data.nextCheckTick < 0) {
+            scheduleInitial(server, type, data, RoamerResult.TIMER_STARTED);
         }
-        if (!data.nextCheckTicks.containsKey(playerId)) {
-            data.nextCheckTicks.put(playerId, player.getServer().getTickCount()
-                    + Math.max(1, type.initialSpawnDelayTicks()));
-            RoamerResult previous = data.lastResults.get(playerId);
-            if (previous == null || previous == RoamerResult.RULE_DISABLED
-                    || previous == RoamerResult.MODULE_DISABLED
-                    || previous == RoamerResult.PAUSED_CREATIVE
-                    || previous == RoamerResult.PAUSED_SPECTATOR) {
-                data.lastResults.put(playerId, RoamerResult.TIMER_STARTED);
-            }
-        }
-        return RoamerState.COUNTDOWN;
+        return data.nextCheckTick >= 0
+                ? RoamerState.COUNTDOWN : RoamerState.DISABLED;
     }
 
-    private static RoamerResult resultFor(ServerPlayer player, RoamerType type,
-            RoamerData data, RoamerState state) {
+    private static RoamerResult resultFor(RoamerType type, RoamerData data,
+            RoamerState state) {
         if (!type.spawnImplemented()) return RoamerResult.NOT_IMPLEMENTED;
-        if (!moduleEnabled(type)) return RoamerResult.MODULE_DISABLED;
-        if (state == RoamerState.DISABLED) return RoamerResult.RULE_DISABLED;
         if (state == RoamerState.SPAWNED) return RoamerResult.SPAWNED;
-        if (state == RoamerState.PAUSED) {
-            return player.isSpectator() ? RoamerResult.PAUSED_SPECTATOR
-                    : RoamerResult.PAUSED_CREATIVE;
-        }
-        return data.lastResults.getOrDefault(player.getUUID(),
-                RoamerResult.NONE);
+        return data.lastResult;
     }
 
-    private static void restartAllSchedules(MinecraftServer server,
+    private static void restartSchedule(MinecraftServer server,
             RoamerType type, RoamerData data, RoamerResult result) {
-        scheduleAll(server, type, data, type.spawnIntervalTicks(), result);
+        schedule(server, type, data,
+                RoamerDifficultyPolicy.recurringDelayTicks(type,
+                        currentDifficulty(server)), result);
     }
 
-    private static void scheduleAll(MinecraftServer server, RoamerType type,
+    private static void scheduleInitial(MinecraftServer server,
+            RoamerType type, RoamerData data, RoamerResult result) {
+        schedule(server, type, data,
+                RoamerDifficultyPolicy.initialDelayTicks(type,
+                        currentDifficulty(server)), result);
+    }
+
+    private static void schedule(MinecraftServer server, RoamerType type,
             RoamerData data, int delayTicks, RoamerResult result) {
-        data.nextCheckTicks.clear();
-        int next = server.getTickCount() + Math.max(1, delayTicks);
-        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            data.lastResults.put(player.getUUID(), result);
-            if (type.spawnImplemented() && moduleEnabled(type)
-                    && !data.contained && isSpawnRuleEnabled(server, type)
-                    && !player.isCreative() && !player.isSpectator()) {
-                data.nextCheckTicks.put(player.getUUID(), next);
+        if (delayTicks < 0 || !canSchedule(server, type, data)) {
+            data.nextCheckTick = -1;
+            if (!RoamerDifficultyPolicy.schedulesEnabled(
+                    currentDifficulty(server))) {
+                data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
             }
+            return;
         }
+        data.nextCheckTick = server.getTickCount() + Math.max(1, delayTicks);
+        data.lastResult = result == null ? RoamerResult.NONE : result;
     }
 
-    private static void setResultForAll(MinecraftServer server,
-            RoamerData data, RoamerResult result) {
+    private static boolean canSchedule(MinecraftServer server, RoamerType type,
+            RoamerData data) {
+        return type.spawnImplemented() && moduleEnabled(type)
+                && !data.contained && isSpawnRuleEnabled(server, type)
+                && RoamerDifficultyPolicy.schedulesEnabled(
+                        currentDifficulty(server))
+                && (data.activeEntityIds.isEmpty()
+                        || allowsConcurrentInstances(type))
+                && !validPlayers(server, null).isEmpty();
+    }
+
+    private static List<ServerPlayer> validPlayers(MinecraftServer server,
+            UUID excludedPlayer) {
+        List<ServerPlayer> players = new ArrayList<>();
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            data.lastResults.put(player.getUUID(), result);
+            if (excludedPlayer != null
+                    && excludedPlayer.equals(player.getUUID())) continue;
+            if (!player.isAlive() || player.isCreative()
+                    || player.isSpectator()) continue;
+            players.add(player);
         }
+        return players;
+    }
+
+    private static Difficulty currentDifficulty(MinecraftServer server) {
+        return server.getWorldData().getDifficulty();
     }
 
     /** SCP-939 can have overlapping encounters; other roamers remain exclusive. */
@@ -444,9 +495,10 @@ public final class RoamerManager {
     }
 
     private static final class RoamerData {
-        private final Map<UUID, Integer> nextCheckTicks = new HashMap<>();
-        private final Map<UUID, RoamerResult> lastResults = new HashMap<>();
         private final Set<UUID> activeEntityIds = new HashSet<>();
+        private int nextCheckTick = -1;
+        private RoamerResult lastResult = RoamerResult.NONE;
+        private Difficulty scheduledDifficulty;
         private boolean contained;
     }
 }

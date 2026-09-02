@@ -223,10 +223,13 @@ public final class Scp939ClientEvents {
                 Scp939Entity.STRUGGLE_FAILURE_LIMIT,
                 ConfigCenterVisuals.RED);
 
+        int windowTicks = minecraft.level == null
+                ? Scp939Entity.STRUGGLE_WINDOW_TICKS
+                : Scp939Entity.struggleWindowTicks(
+                        minecraft.level.getDifficulty());
         int remaining = Mth.clamp(Scp939ClientState.pinWindowTicks(), 0,
-                Scp939Entity.STRUGGLE_WINDOW_TICKS);
-        float timeRatio = remaining
-                / (float) Scp939Entity.STRUGGLE_WINDOW_TICKS;
+                windowTicks);
+        float timeRatio = remaining / (float) windowTicks;
         int barX = x + 11;
         int barY = y + 43;
         int barWidth = panelWidth - 22;

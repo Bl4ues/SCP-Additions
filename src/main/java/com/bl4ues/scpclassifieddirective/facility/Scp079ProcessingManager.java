@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.facility;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -106,15 +107,18 @@ public final class Scp079ProcessingManager {
         }
     }
 
-    /** Raw affordability check. Strategic permission is applied by trySpend. */
+    /** Affordability uses the difficulty-adjusted AP cost. */
     public static boolean canAfford(ServerLevel level, double cost) {
-        return cost <= 0.0D || getPower(level) + 0.0001D >= cost;
+        double adjustedCost = adjustedActionCost(level, cost);
+        return adjustedCost <= 0.0D
+                || getPower(level) + 0.0001D >= adjustedCost;
     }
 
     public static boolean trySpend(ServerLevel level, double cost) {
         if (level == null || cost < 0.0D || !isActive(level)) return false;
         MinecraftServer server = level.getServer();
         SpendProfile profile = inferSpendProfile();
+        double adjustedCost = adjustedActionCost(level, cost);
         synchronized (STATES) {
             State state = state(server, true);
             state.active = true;
@@ -122,14 +126,14 @@ public final class Scp079ProcessingManager {
             long now = server.getTickCount();
             pruneStrategicHistory(state, now);
             double power = state.data.power();
-            if (power + 0.0001D < cost
+            if (power + 0.0001D < adjustedCost
                     || !strategicallyPermitted(state, now, power,
-                    cost, profile)) {
+                    adjustedCost, profile)) {
                 return false;
             }
-            state.data.setPower(power - cost);
-            if (cost > 0.0D) {
-                state.recentSpend.addLast(new SpendSample(now, cost,
+            state.data.setPower(power - adjustedCost);
+            if (adjustedCost > 0.0D) {
+                state.recentSpend.addLast(new SpendSample(now, adjustedCost,
                         profile.purpose()));
                 state.lastPurposeTick.put(profile.purpose(), now);
             }
@@ -137,17 +141,32 @@ public final class Scp079ProcessingManager {
         }
     }
 
-    /** Refunds a reserved cost when a world mutation becomes invalid mid-action. */
+    /** Refunds the same difficulty-adjusted cost reserved by trySpend. */
     public static void refund(ServerLevel level, double amount) {
         if (level == null || amount <= 0.0D) return;
         MinecraftServer server = level.getServer();
+        double adjustedAmount = adjustedActionCost(level, amount);
         synchronized (STATES) {
             State state = state(server, isActive(level));
             state.active = isActive(level);
             update(server, state);
-            state.data.setPower(state.data.power() + amount);
-            refundRecentSpend(state, amount);
+            state.data.setPower(state.data.power() + adjustedAmount);
+            refundRecentSpend(state, adjustedAmount);
         }
+    }
+
+    public static double adjustedActionCost(ServerLevel level,
+            double baseCost) {
+        if (baseCost <= 0.0D) return Math.max(0.0D, baseCost);
+        Difficulty difficulty = level == null
+                ? Difficulty.NORMAL : level.getDifficulty();
+        double multiplier = switch (difficulty) {
+            case PEACEFUL -> 1.50D;
+            case EASY -> 1.25D;
+            case NORMAL -> 1.00D;
+            case HARD -> 0.80D;
+        };
+        return baseCost * multiplier;
     }
 
     private static boolean strategicallyPermitted(State state, long now,

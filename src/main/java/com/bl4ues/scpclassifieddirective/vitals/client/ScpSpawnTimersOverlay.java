@@ -84,10 +84,10 @@ public final class ScpSpawnTimersOverlay {
         if (snapshot.state() == RoamerState.SPAWNED)
             return "ACTIVE INSTANCE · TIMER STOPPED";
         return switch (snapshot.result()) {
-            case NONE -> "COUNTDOWN ACTIVE";
-            case TIMER_STARTED -> "SPAWN ENABLED · TIMER STARTED";
+            case NONE -> "GLOBAL COUNTDOWN ACTIVE";
+            case TIMER_STARTED -> "GLOBAL TIMER STARTED";
             case SPAWNED -> "LAST CHECK: SPAWN SUCCESSFUL";
-            case DESPAWNED_TIMER_RESET -> "DESPAWNED · FULL TIMER RESTARTED";
+            case DESPAWNED_TIMER_RESET -> "DESPAWNED · GLOBAL TIMER RESTARTED";
             case CHANCE_FAILED -> "LAST CHECK: CHANCE FAILED";
             case CHANCE_FAILED_OTHER_ROAMER -> "LAST CHECK: OTHER ROAMER REDUCED CHANCE";
             case NO_VALID_POSITION -> "LAST CHECK: NO VALID POSITION";
@@ -95,8 +95,9 @@ public final class ScpSpawnTimersOverlay {
             case RULE_DISABLED -> "SPAWN GAMERULE IS OFF";
             case MODULE_DISABLED -> "ENTITY MODULE IS OFF";
             case NOT_IMPLEMENTED -> "SPAWN SYSTEM NOT IMPLEMENTED";
-            case PAUSED_CREATIVE -> "PAUSED WHILE PLAYER IS CREATIVE";
-            case PAUSED_SPECTATOR -> "PAUSED WHILE PLAYER IS SPECTATING";
+            case PAUSED_CREATIVE, PAUSED_SPECTATOR,
+                    PAUSED_NO_VALID_PLAYERS -> "WAITING FOR A VALID SURVIVAL PLAYER";
+            case DIFFICULTY_DISABLED -> "THAUMIEL · NATURAL CHECKS DISABLED";
         };
     }
 

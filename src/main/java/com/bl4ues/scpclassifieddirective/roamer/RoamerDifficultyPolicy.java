@@ -5,6 +5,8 @@ import net.minecraft.world.Difficulty;
 /** Difficulty-specific timing rules for natural roamer encounters. */
 public final class RoamerDifficultyPolicy {
     private static final int TICKS_PER_MINUTE = 20 * 60;
+    private static final double PLAYER_REDUCTION_PER_PLAYER = 0.10D;
+    private static final double MAX_PLAYER_REDUCTION = 0.50D;
 
     private RoamerDifficultyPolicy() {
     }
@@ -57,6 +59,24 @@ public final class RoamerDifficultyPolicy {
             };
             case PEACEFUL -> 0;
         });
+    }
+
+    /**
+     * Each valid survival player shortens the global encounter interval by 10%,
+     * capped at 50% for five or more players.
+     */
+    public static double playerIntervalMultiplier(int validPlayerCount) {
+        int players = Math.max(0, validPlayerCount);
+        double reduction = Math.min(MAX_PLAYER_REDUCTION,
+                players * PLAYER_REDUCTION_PER_PLAYER);
+        return 1.0D - reduction;
+    }
+
+    public static int scaleDelayForPlayers(int baseDelayTicks,
+            int validPlayerCount) {
+        if (baseDelayTicks < 0) return -1;
+        return Math.max(1, (int) Math.round(baseDelayTicks
+                * playerIntervalMultiplier(validPlayerCount)));
     }
 
     private static int minutes(int minutes) {

@@ -46,10 +46,13 @@ public final class Scp939SpawnEvents {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END
                 || event.player.level().isClientSide
-                || !(event.player instanceof ServerPlayer player)
-                || !RoamerManager.pollSpawnCheck(player, RoamerType.SCP_939)) {
+                || !(event.player instanceof ServerPlayer driver)) {
             return;
         }
+
+        ServerPlayer player = RoamerManager.pollSpawnTarget(driver,
+                RoamerType.SCP_939);
+        if (player == null) return;
 
         MinecraftServer server = player.getServer();
         if (server == null) return;

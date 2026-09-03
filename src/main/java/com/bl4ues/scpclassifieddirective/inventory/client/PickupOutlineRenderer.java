@@ -24,10 +24,10 @@ import java.util.Map;
 /**
  * Produces a thin Secret Lab-style pickup outline.
  *
- * <p>The real item renderer is used only to build an off-screen alpha mask.
- * A one-pixel post pass extracts the exterior edge and composites that edge
- * over the already-rendered world. Nothing is scaled, full-brightened, or
- * recolored in the actual item render.</p>
+ * <p>The target item is rendered into an off-screen outline mask while the
+ * world rendering pipeline is still in a geometry-safe stage. The completed
+ * mask is then processed and composited over the final scene at AFTER_LEVEL.
+ * Nothing is scaled, full-brightened, or recolored in the visible item render.</p>
  */
 public final class PickupOutlineRenderer {
     private static final ResourceLocation POST_CHAIN = new ResourceLocation(
@@ -44,20 +44,21 @@ public final class PickupOutlineRenderer {
     private static int framebufferWidth = -1;
     private static int framebufferHeight = -1;
     private static boolean unavailable;
+    private static boolean maskReady;
 
     private PickupOutlineRenderer() {
     }
 
-    public static void render(PoseStack poseStack, Camera camera) {
+    /** Capture world-space item geometry while entity-like rendering is valid. */
+    public static void captureMask(PoseStack poseStack, Camera camera) {
+        maskReady = false;
+
         Minecraft minecraft = Minecraft.getInstance();
         ItemEntity item = PickupPromptClient.outlineTarget();
-        if (minecraft.level == null || minecraft.player == null
-                || minecraft.screen != null || minecraft.options.hideGui
-                || item == null || !item.isAlive() || unavailable) {
+        if (!canRender(minecraft, item) || !ensurePostChain(minecraft)) {
             return;
         }
 
-        if (!ensurePostChain(minecraft)) return;
         RenderTarget mask = postChain.getTempTarget(MASK_TARGET);
         RenderTarget edge = postChain.getTempTarget(EDGE_TARGET);
         if (mask == null || edge == null) return;
@@ -75,13 +76,37 @@ public final class PickupOutlineRenderer {
         try {
             accessor.scpclassifieddirective$setEntityTarget(mask);
             renderMask(minecraft, item, poseStack, camera);
+            maskReady = true;
         } finally {
             accessor.scpclassifieddirective$setEntityTarget(previousEntityTarget);
             minecraft.getMainRenderTarget().bindWrite(false);
         }
+    }
+
+    /** Composite the captured outline over the fully rendered scene. */
+    public static void composite() {
+        if (!maskReady) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        ItemEntity item = PickupPromptClient.outlineTarget();
+        if (!canRender(minecraft, item) || !ensurePostChain(minecraft)) {
+            maskReady = false;
+            return;
+        }
 
         postChain.process(minecraft.getFrameTime());
         minecraft.getMainRenderTarget().bindWrite(false);
+        maskReady = false;
+    }
+
+    private static boolean canRender(Minecraft minecraft, ItemEntity item) {
+        return minecraft.level != null
+                && minecraft.player != null
+                && minecraft.screen == null
+                && !minecraft.options.hideGui
+                && item != null
+                && item.isAlive()
+                && !unavailable;
     }
 
     private static void renderMask(Minecraft minecraft, ItemEntity item,

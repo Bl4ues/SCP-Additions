@@ -79,11 +79,9 @@ public final class ContextPromptClient {
         boolean useDown = minecraft.options.keyUse.isDown();
         boolean rightClickPressed = useDown && !useWasDown;
         useWasDown = useDown;
-        boolean contextPressed = Keybinds.CONTEXT_INTERACT.consumeClick();
 
         if (target != null && cooldownTicks <= 0
-                && ((rightClickPressed && target.allowRightClick())
-                || (contextPressed && target.allowE()))) {
+                && rightClickPressed && target.allowRightClick()) {
             ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(
                     target.pos(), target.entityId(), target.entity(),
                     Screen.hasShiftDown(), Screen.hasControlDown(),
@@ -257,10 +255,12 @@ public final class ContextPromptClient {
                             && !rule.action().isBlank();
                     ResourceLocation icon = ContextPromptIcons.resolve(
                             rule.icon(), rule.id());
+                    // Legacy E-only rules are migrated behaviorally to the vanilla
+                    // use control instead of becoming dead configuration entries.
+                    boolean allowUse = rule.allowRightClick() || rule.allowE();
                     best = new ContextTarget(rulePos, 0, false, anchor,
                             rule.interactionKey(), rule.action(), name,
-                            showAction, showName, rule.allowE(),
-                            rule.allowRightClick(), icon,
+                            showAction, showName, allowUse, icon,
                             (float) rule.promptScale(),
                             rule.allowOffscreen(), score);
                 }
@@ -324,11 +324,11 @@ public final class ContextPromptClient {
                             && !rule.action().isBlank();
                     ResourceLocation icon = ContextPromptIcons.resolve(
                             rule.icon(), rule.id());
+                    boolean allowUse = rule.allowRightClick() || rule.allowE();
                     best = new ContextTarget(entity.blockPosition(),
                             entity.getId(), true, anchor,
                             rule.interactionKey(), rule.action(), name,
-                            showAction, showName, rule.allowE(),
-                            rule.allowRightClick(), icon,
+                            showAction, showName, allowUse, icon,
                             (float) rule.promptScale(),
                             rule.allowOffscreen(), score);
                 }
@@ -382,30 +382,30 @@ public final class ContextPromptClient {
             double reach, boolean directHit, int priority,
             boolean preciseAim, double preciseAimRadiusSqr,
             boolean allowOffscreen) {
-    Vec3 toPoint = point.subtract(eye);
-    double distanceSqr = toPoint.lengthSqr();
-    if (distanceSqr > reach * reach) return Double.MAX_VALUE;
-    double distance = Math.sqrt(distanceSqr);
-    Vec3 direction = distance <= 0.001D ? look
-            : toPoint.scale(1.0D / distance);
-    double dot = direction.dot(look);
-    double alongRay = toPoint.dot(look);
-    if ((!allowOffscreen && alongRay <= 0.0D) || alongRay > reach) {
-        return Double.MAX_VALUE;
+        Vec3 toPoint = point.subtract(eye);
+        double distanceSqr = toPoint.lengthSqr();
+        if (distanceSqr > reach * reach) return Double.MAX_VALUE;
+        double distance = Math.sqrt(distanceSqr);
+        Vec3 direction = distance <= 0.001D ? look
+                : toPoint.scale(1.0D / distance);
+        double dot = direction.dot(look);
+        double alongRay = toPoint.dot(look);
+        if ((!allowOffscreen && alongRay <= 0.0D) || alongRay > reach) {
+            return Double.MAX_VALUE;
+        }
+        double centerPenalty;
+        if (dot > 0.0D) {
+            Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
+            centerPenalty = closest.distanceToSqr(point);
+        } else {
+            centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
+        }
+        if (preciseAim && centerPenalty > preciseAimRadiusSqr) {
+            return Double.MAX_VALUE;
+        }
+        return centerPenalty + distance * 0.035D - priority * 0.01D
+                - (directHit ? 0.35D : 0.0D);
     }
-    double centerPenalty;
-    if (dot > 0.0D) {
-        Vec3 closest = eye.add(look.scale(Math.max(0.0D, alongRay)));
-        centerPenalty = closest.distanceToSqr(point);
-    } else {
-        centerPenalty = 0.58D * 0.58D + (1.0D - dot) * 0.35D;
-    }
-    if (preciseAim && centerPenalty > preciseAimRadiusSqr) {
-        return Double.MAX_VALUE;
-    }
-    return centerPenalty + distance * 0.035D - priority * 0.01D
-            - (directHit ? 0.35D : 0.0D);
-}
 
     private static boolean isElevatorButton(String interactionKey) {
         return isElevatorStationButton(interactionKey)
@@ -530,9 +530,9 @@ public final class ContextPromptClient {
 
     private record ContextTarget(BlockPos pos, int entityId, boolean entity,
             Vec3 anchor, String interactionKey, String action, String name,
-            boolean showAction, boolean showName, boolean allowE,
-            boolean allowRightClick, ResourceLocation icon,
-            float promptScale, boolean allowOffscreen, double score) {
+            boolean showAction, boolean showName, boolean allowRightClick,
+            ResourceLocation icon, float promptScale, boolean allowOffscreen,
+            double score) {
         private boolean isAlive(Minecraft minecraft) {
             if (minecraft.level == null) return false;
             if (entity) {

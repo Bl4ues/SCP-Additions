@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
+import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
@@ -20,10 +21,25 @@ import java.util.List;
         VoiceProfileModulesUi.class
 }, remap = false)
 public abstract class ConfigWidgetRegistrationMixin {
-    @SuppressWarnings("unchecked")
-    @Inject(method = "addRenderableWidget", at = @At("HEAD"), cancellable = true)
-    private static void scpClassifiedDirective$registerReplacementWidget(
+    @Inject(
+            method = "addRenderableWidget(Lnet/minecraft/client/gui/screens/Screen;Lnet/minecraft/client/gui/components/Button;)V",
+            at = @At("HEAD"), cancellable = true, require = 0)
+    private static void scpClassifiedDirective$registerButtonWidget(
             Screen screen, Button button, CallbackInfo callback) {
+        registerWidget(screen, button, callback);
+    }
+
+    @Inject(
+            method = "addRenderableWidget(Lnet/minecraft/client/gui/screens/Screen;Lnet/minecraft/client/gui/components/AbstractButton;)V",
+            at = @At("HEAD"), cancellable = true, require = 0)
+    private static void scpClassifiedDirective$registerAbstractButtonWidget(
+            Screen screen, AbstractButton button, CallbackInfo callback) {
+        registerWidget(screen, button, callback);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void registerWidget(Screen screen, AbstractButton button,
+            CallbackInfo callback) {
         // These screens already render their replacement buttons from their own
         // button list. The missing production step is registering the button as
         // a GUI event listener so Screen can dispatch mouse/keyboard input to it.

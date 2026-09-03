@@ -22,11 +22,7 @@ public class ClientKeyHandler {
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
-        if (Keybinds.OPEN_SCP_INVENTORY.consumeClick()
-                && InventoryModuleRuntimeState.isEnabledForClient()) {
-            ClientNetwork.requestInventorySync();
-            Minecraft.getInstance().setScreen(new ScpInventoryScreen());
-        }
+        openScpInventoryFromVanillaKey();
 
         while (Keybinds.STOW_HELD_ITEM.consumeClick()) {
             stowHeldItem();
@@ -35,6 +31,25 @@ public class ClientKeyHandler {
         while (Keybinds.QUICK_SAVE.consumeClick()) {
             quickSave();
         }
+    }
+
+    private static void openScpInventoryFromVanillaKey() {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (!InventoryModuleRuntimeState.isEnabledForClient()
+                || player == null || minecraft.screen != null
+                || !player.isAlive() || player.isSpectator()) {
+            return;
+        }
+
+        boolean requested = false;
+        while (minecraft.options.keyInventory.consumeClick()) {
+            requested = true;
+        }
+        if (!requested) return;
+
+        ClientNetwork.requestInventorySync();
+        minecraft.setScreen(new ScpInventoryScreen());
     }
 
     private static void quickSave() {

@@ -57,8 +57,10 @@ public class ContextConfigSavePacket {
         this.name = name == null ? "" : name;
         this.showName = showName;
         this.range = range;
-        this.allowE = allowE;
-        this.allowRightClick = allowRightClick;
+        // Convert legacy E permission into vanilla Use/right-click permission.
+        // Both-false remains valid for physical controls such as the SCP-914 dial.
+        this.allowE = false;
+        this.allowRightClick = allowRightClick || allowE;
         this.allowOffscreen = allowOffscreen;
         this.useItem = normalize(useItem, "hand");
         this.icon = normalize(icon, this.useItem);

@@ -65,14 +65,8 @@ public final class Scp714ComaPromptClient {
             if (minecraft.screen instanceof AbstractContainerScreen<?>) {
                 minecraft.setScreen(null);
             }
-            while (Keybinds.OPEN_SCP_INVENTORY.consumeClick()) {
-                // A comatose player cannot reopen the SCP inventory.
-            }
             while (Keybinds.STOW_HELD_ITEM.consumeClick()) {
-                // Nor can they manipulate carried items through hotkeys.
-            }
-            while (Keybinds.CONTEXT_INTERACT.consumeClick()) {
-                // Consume interaction presses while unconscious.
+                // A comatose player cannot manipulate carried items through hotkeys.
             }
             useWasDown = minecraft.options.keyUse.isDown();
             return;
@@ -92,10 +86,8 @@ public final class Scp714ComaPromptClient {
         boolean useDown = minecraft.options.keyUse.isDown();
         boolean rightClickPressed = useDown && !useWasDown;
         useWasDown = useDown;
-        boolean contextPressed = Keybinds.CONTEXT_INTERACT.consumeClick();
 
-        if (target != null && cooldownTicks <= 0
-                && (rightClickPressed || contextPressed)) {
+        if (target != null && cooldownTicks <= 0 && rightClickPressed) {
             ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(
                     target.blockPosition(), target.getId(), true,
                     false, false,

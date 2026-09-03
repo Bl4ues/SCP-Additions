@@ -14,7 +14,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Client owner for the independent PLACEABLE entry in the custom hotbar. */
+/** Client owner for the independent PLACEABLE-style entry in the custom hotbar. */
 @Mod.EventBusSubscriber(modid = "scp_classified_directive", value = Dist.CLIENT)
 public final class PlaceableHotbarSessionClient {
     private static int activeSlot = -1;
@@ -26,8 +26,7 @@ public final class PlaceableHotbarSessionClient {
 
     public static void start(int hotbarSlot, int sourceSlot, ItemStack stack) {
         if (hotbarSlot < 0 || hotbarSlot >= 9 || stack == null
-                || stack.isEmpty()
-                || ScpItemClassifier.getType(stack) != ScpItemType.PLACEABLE) {
+                || stack.isEmpty() || !isSupportedSessionItem(stack)) {
             clear();
             return;
         }
@@ -66,13 +65,13 @@ public final class PlaceableHotbarSessionClient {
         }
 
         ItemStack actual = player.getInventory().items.get(activeSlot);
-        // A placed block consumes the real hotbar stack. Unlike USABLE mirrors,
-        // PLACEABLE entries must never be recreated client-side after that.
+        // A placed/consumed real hotbar item must never be recreated client-side
+        // after vanilla has removed it.
         if (actual.isEmpty()) {
             clear();
             return;
         }
-        if (ScpItemClassifier.getType(actual) != ScpItemType.PLACEABLE
+        if (!isSupportedSessionItem(actual)
                 || !isSameSingleItem(actual, activeStack)) {
             clear();
             return;
@@ -105,11 +104,17 @@ public final class PlaceableHotbarSessionClient {
         }
         ItemStack actual = player.getInventory().items.get(activeSlot);
         if (!actual.isEmpty() && !activeStack.isEmpty()
-                && ScpItemClassifier.getType(actual) == ScpItemType.PLACEABLE
+                && isSupportedSessionItem(actual)
                 && isSameSingleItem(actual, activeStack)) {
             player.getInventory().setItem(activeSlot, ItemStack.EMPTY);
             player.getInventory().setChanged();
         }
+    }
+
+    private static boolean isSupportedSessionItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        return ScpItemClassifier.getType(stack) == ScpItemType.PLACEABLE
+                || ScpItemClassifier.getEquipmentSlot(stack).isPresent();
     }
 
     private static boolean isSameSingleItem(ItemStack left, ItemStack right) {

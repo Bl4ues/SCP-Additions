@@ -25,6 +25,7 @@ public final class Item006Block extends Block {
         super(BlockBehaviour.Properties.of()
                 .sound(SoundType.AMETHYST)
                 .strength(1.5F, 3.0F)
+                .lightLevel(state -> 12)
                 .noOcclusion()
                 .isRedstoneConductor((state, level, pos) -> false));
     }

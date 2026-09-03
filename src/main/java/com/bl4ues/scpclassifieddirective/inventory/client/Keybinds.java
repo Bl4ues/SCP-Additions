@@ -7,22 +7,6 @@ import org.lwjgl.glfw.GLFW;
 
 public class Keybinds {
 
-    public static final KeyMapping OPEN_SCP_INVENTORY = new KeyMapping(
-            "key.scp_classified_directive.open_inventory",
-            KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_TAB,
-            "key.categories.scp_classified_directive"
-    );
-
-    public static final KeyMapping CONTEXT_INTERACT = new KeyMapping(
-            "key.scp_classified_directive.context_interact",
-            KeyConflictContext.IN_GAME,
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_E,
-            "key.categories.scp_classified_directive"
-    );
-
     public static final KeyMapping CONTEXT_CONFIG_SELECT = new KeyMapping(
             "key.scp_classified_directive.context_config_select",
             KeyConflictContext.UNIVERSAL,

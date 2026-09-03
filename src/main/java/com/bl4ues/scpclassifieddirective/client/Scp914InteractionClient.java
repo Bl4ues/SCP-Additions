@@ -2,7 +2,6 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
-import com.bl4ues.scpclassifieddirective.inventory.client.Keybinds;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.bl4ues.scpclassifieddirective.inventory.network.Scp914DialPacket;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
@@ -62,8 +61,7 @@ public final class Scp914InteractionClient {
             return;
         }
 
-        boolean interactDown = Keybinds.CONTEXT_INTERACT.isDown()
-                || minecraft.options.keyUse.isDown();
+        boolean interactDown = minecraft.options.keyUse.isDown();
         if (activePos == null) {
             if (interactDown) beginDrag(minecraft);
         } else if (!interactDown) {

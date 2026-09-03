@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 import com.bl4ues.scpclassifieddirective.inventory.client.gui.ScpInventoryScreen;
 import com.bl4ues.scpclassifieddirective.inventory.network.CraftingActionPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -21,7 +22,7 @@ public final class CraftingWorldDropClientEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onKeyPressed(ScreenEvent.KeyPressed.Pre event) {
         if (!(event.getScreen() instanceof ScpInventoryScreen screen)
-                || !Keybinds.OPEN_SCP_INVENTORY.matches(
+                || !Minecraft.getInstance().options.keyInventory.matches(
                         event.getKeyCode(), event.getScanCode())) {
             return;
         }

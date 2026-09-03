@@ -2,6 +2,9 @@ package com.bl4ues.scpclassifieddirective.inventory.network;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextConfigSaveService;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextEntityConfigManager;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -65,7 +68,7 @@ public class ContextConfigSavePacket {
         this.useItem = normalize(useItem, "hand");
         this.icon = normalize(icon, this.useItem);
         this.requiredItem = normalize(requiredItem, "");
-        this.variantsJson = normalize(variantsJson, "[]");
+        this.variantsJson = normalizeVariantInputs(variantsJson);
         this.clickFace = normalize(clickFace, "front");
         this.rotateWith = normalize(rotateWith, "none");
         this.anchorX = anchorX;
@@ -155,9 +158,45 @@ public class ContextConfigSavePacket {
         ctx.get().setPacketHandled(true);
     }
 
+    private static String normalizeVariantInputs(String json) {
+        try {
+            JsonElement parsed = JsonParser.parseString(normalize(json, "[]"));
+            if (!parsed.isJsonArray()) return "[]";
+            for (JsonElement element : parsed.getAsJsonArray()) {
+                if (!element.isJsonObject()) continue;
+                JsonObject object = element.getAsJsonObject();
+                JsonObject input = object.has("input")
+                        && object.get("input").isJsonObject()
+                        ? object.getAsJsonObject("input") : new JsonObject();
+                boolean legacyE = booleanValue(input, "allowE",
+                        booleanValue(object, "allowE", false));
+                boolean rightClick = booleanValue(input, "allowRightClick",
+                        booleanValue(object, "allowRightClick", false));
+                input.addProperty("allowE", false);
+                input.addProperty("allowRightClick", rightClick || legacyE);
+                object.add("input", input);
+                object.remove("allowE");
+                object.remove("allowRightClick");
+            }
+            return parsed.toString();
+        } catch (Exception ignored) {
+            return "[]";
+        }
+    }
+
+    private static boolean booleanValue(JsonObject object, String key,
+            boolean fallback) {
+        try {
+            return object.has(key) && !object.get(key).isJsonNull()
+                    ? object.get(key).getAsBoolean() : fallback;
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
     private static int variantCount(String json) {
         try {
-            var parsed = com.google.gson.JsonParser.parseString(json);
+            JsonElement parsed = JsonParser.parseString(json);
             return parsed.isJsonArray() ? parsed.getAsJsonArray().size() : 0;
         } catch (Exception ignored) {
             return 0;

@@ -31,6 +31,17 @@ public final class CraftingWorldDropClientEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
+        if (!(event.getScreen() instanceof ScpInventoryScreen screen)
+                || !Minecraft.getInstance().options.keyInventory
+                        .matchesMouse(event.getButton())) {
+            return;
+        }
+        screen.onClose();
+        event.setCanceled(true);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
         if (event.getButton() != 0
                 || !(event.getScreen() instanceof ScpInventoryScreen screen)) {

@@ -57,8 +57,10 @@ public class ContextConfigOpenPacket {
         this.name = name == null ? "" : name;
         this.showName = showName;
         this.range = range;
-        this.allowE = allowE;
-        this.allowRightClick = allowRightClick;
+        // E is no longer a contextual-interaction control. Preserve old E-only
+        // definitions by exposing them to editors as vanilla Use/right-click.
+        this.allowE = false;
+        this.allowRightClick = allowRightClick || allowE;
         this.allowOffscreen = allowOffscreen;
         this.likelyRightClick = likelyRightClick;
         this.useItem = normalize(useItem, "hand");

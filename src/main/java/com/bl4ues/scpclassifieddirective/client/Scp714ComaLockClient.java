@@ -141,11 +141,9 @@ public final class Scp714ComaLockClient {
             lockKey(hotbar);
         }
 
-        // Drain SCP: Classified Directive gameplay mappings too. The server also
-        // rejects authoritative item actions, so a late or forged packet cannot
-        // turn a coma into an inventory-management minigame.
-        lockKey(Keybinds.OPEN_SCP_INVENTORY);
-        lockKey(Keybinds.CONTEXT_INTERACT);
+        // Drain the remaining SCP: Classified Directive gameplay mappings too.
+        // The server also rejects authoritative item actions, so a late or forged
+        // packet cannot turn a coma into an inventory-management minigame.
         lockKey(Keybinds.CONTEXT_CONFIG_SELECT);
         lockKey(Keybinds.STOW_HELD_ITEM);
         lockKey(Keybinds.QUICK_SAVE);

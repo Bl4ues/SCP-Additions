@@ -53,7 +53,9 @@ public final class ClientPacketHandlers {
         ScpItemType type = activeStack.isEmpty()
                 ? ScpItemType.MISCELLANEOUS
                 : ScpItemClassifier.getType(activeStack);
-        boolean placeable = type == ScpItemType.PLACEABLE;
+        boolean heldEquipment = !activeStack.isEmpty()
+                && ScpItemClassifier.getEquipmentSlot(activeStack).isPresent();
+        boolean placeable = type == ScpItemType.PLACEABLE || heldEquipment;
 
         if (hotbarSlot >= 0 && hotbarSlot < 9 && !activeStack.isEmpty()) {
             activeStack.setCount(1);
@@ -84,8 +86,13 @@ public final class ClientPacketHandlers {
             minecraft.execute(() -> applyHotbarItem(hotbarSlot, activeStack));
         }
 
-        Component prompt = Component.literal(placeable
-                ? "Right click to place" : "Right click to use");
+        Component prompt;
+        if (heldEquipment) {
+            prompt = Component.literal("Item held in hand");
+        } else {
+            prompt = Component.literal(placeable
+                    ? "Right click to place" : "Right click to use");
+        }
         if (InventoryModuleRuntimeState.actionBarsRobotoForClient()) {
             prompt = ScpFonts.roboto(prompt);
         }

@@ -13,8 +13,10 @@ public final class PickupPromptWorldEvents {
 
     @SubscribeEvent
     public static void renderPickupOutline(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-            PickupOutlineRenderer.render(event.getPoseStack(), event.getCamera());
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            PickupOutlineRenderer.captureMask(event.getPoseStack(), event.getCamera());
+        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+            PickupOutlineRenderer.composite();
         }
     }
 }

@@ -82,19 +82,22 @@ public class ClientKeyHandler {
         ItemStack held = player.getMainHandItem();
         if (held.isEmpty()) return;
 
-        if (ScpItemClassifier.getEquipmentSlot(held).orElse(null)
-                == ScpEquipmentSlot.WEAPON) {
-            ModNetwork.CHANNEL.sendToServer(new EquipmentActionPacket(
-                    ScpEquipmentSlot.WEAPON.name(),
-                    EquipmentActionPacket.ACTION_UNEQUIP));
-            return;
-        }
-
         int selectedSlot = player.getInventory().selected;
         if (PlaceableHotbarSessionClient.returnSelectedSession(selectedSlot)) {
             return;
         }
         if (UsableHotbarSessionClient.returnSelectedSession(selectedSlot)) {
+            return;
+        }
+
+        // A weapon may also have been explicitly pulled into the hand through
+        // Hold Item. Temporary hand sessions must be returned before treating a
+        // weapon-shaped stack as an equipped weapon mirror.
+        if (ScpItemClassifier.getEquipmentSlot(held).orElse(null)
+                == ScpEquipmentSlot.WEAPON) {
+            ModNetwork.CHANNEL.sendToServer(new EquipmentActionPacket(
+                    ScpEquipmentSlot.WEAPON.name(),
+                    EquipmentActionPacket.ACTION_UNEQUIP));
             return;
         }
 

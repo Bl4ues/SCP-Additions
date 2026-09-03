@@ -7,26 +7,31 @@ in vec2 oneTexel;
 
 out vec4 fragColor;
 
+float occupancy(vec4 sampleColor) {
+    float rgb = max(sampleColor.r, max(sampleColor.g, sampleColor.b));
+    return max(sampleColor.a, rgb);
+}
+
 void main() {
-    float center = texture(DiffuseSampler, texCoord).a;
+    float center = occupancy(texture(DiffuseSampler, texCoord));
     float neighbor = 0.0;
 
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord + vec2(oneTexel.x, 0.0)).a);
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord - vec2(oneTexel.x, 0.0)).a);
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord + vec2(0.0, oneTexel.y)).a);
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord - vec2(0.0, oneTexel.y)).a);
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord + oneTexel).a);
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord - oneTexel).a);
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord + vec2(oneTexel.x, -oneTexel.y)).a);
-    neighbor = max(neighbor, texture(DiffuseSampler,
-            texCoord + vec2(-oneTexel.x, oneTexel.y)).a);
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord + vec2(oneTexel.x, 0.0))));
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord - vec2(oneTexel.x, 0.0))));
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord + vec2(0.0, oneTexel.y))));
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord - vec2(0.0, oneTexel.y))));
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord + oneTexel)));
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord - oneTexel)));
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord + vec2(oneTexel.x, -oneTexel.y))));
+    neighbor = max(neighbor, occupancy(texture(DiffuseSampler,
+            texCoord + vec2(-oneTexel.x, oneTexel.y))));
 
     float outside = 1.0 - smoothstep(0.06, 0.30, center);
     float nearby = smoothstep(0.08, 0.42, neighbor);

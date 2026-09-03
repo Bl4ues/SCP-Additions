@@ -12,6 +12,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
@@ -20,10 +21,18 @@ import com.bl4ues.scpclassifieddirective.network.QuickSavePacket;
 @Mod.EventBusSubscriber(modid = "scp_classified_directive", value = Dist.CLIENT)
 public class ClientKeyHandler {
 
+    /**
+     * Consume the vanilla inventory mapping before Minecraft handles it. Polling
+     * the KeyMapping rather than a raw keyboard event also honors mouse rebinds.
+     */
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.START) return;
+        openScpInventoryFromVanillaKey();
+    }
+
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
-        openScpInventoryFromVanillaKey();
-
         while (Keybinds.STOW_HELD_ITEM.consumeClick()) {
             stowHeldItem();
         }

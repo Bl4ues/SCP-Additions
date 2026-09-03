@@ -32,6 +32,7 @@ public class InventoryActionPacket {
     public static final String ACTION_DROP = "DROP";
     public static final String ACTION_USE = "USE";
     public static final String ACTION_EQUIP = "EQUIP";
+    public static final String ACTION_HOLD = "HOLD";
 
     private static final int VANILLA_HOTBAR_START = 0;
     private static final int VANILLA_HOTBAR_END_EXCLUSIVE = 9;
@@ -76,6 +77,7 @@ public class InventoryActionPacket {
                     case ACTION_DROP -> moveSlotToWorld(player, inventory, msg.slot);
                     case ACTION_USE -> useSlot(player, inventory, msg.slot);
                     case ACTION_EQUIP -> equipSlot(player, inventory, msg.slot);
+                    case ACTION_HOLD -> holdSlot(player, inventory, msg.slot);
                     default -> {
                     }
                 }
@@ -110,6 +112,17 @@ public class InventoryActionPacket {
         if (type == ScpItemType.USABLE) {
             useUsableSlot(player, inventory, slot);
         }
+    }
+
+    private static void holdSlot(ServerPlayer player, IScpInventory inventory,
+            int slot) {
+        ItemStack stack = inventory.getInventoryItem(slot);
+        if (stack.isEmpty()
+                || ScpItemClassifier.getEquipmentSlot(stack).isEmpty()) {
+            return;
+        }
+        PlaceableHotbarSessionEvents.activateHeldEquipmentSession(player,
+                inventory, slot);
     }
 
     private static void consumeSlot(ServerPlayer player, IScpInventory inventory, int slot, ItemStack stack) {

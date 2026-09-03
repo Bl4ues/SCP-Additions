@@ -40,13 +40,39 @@ public final class ScpInventoryContextualControlsClient {
                 && minecraft.player != null
                 && minecraft.player.isCreative()) {
             event.addListener(new CreativeInventoryButton(
-                    Math.max(8, event.getScreen().width - BUTTON_WIDTH - 8),
-                    8));
+                    creativeButtonX(event.getScreen()), 8));
         }
 
         if (event.getScreen() instanceof ContextAnchorEditorScreen) {
             hideObsoleteInputSelector(event.getScreen());
         }
+    }
+
+    /**
+     * ScpInventoryScreen consumes its own inventory-area mouse routing before
+     * Screen can dispatch to externally registered listeners. Catch this one
+     * control before that routing so the visible Creative button is functional.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
+        if (event.getButton() != 0
+                || !(event.getScreen() instanceof ScpInventoryScreen screen)) {
+            return;
+        }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || !minecraft.player.isCreative()) return;
+
+        int x = creativeButtonX(screen);
+        int y = 8;
+        if (event.getMouseX() < x || event.getMouseX() > x + BUTTON_WIDTH
+                || event.getMouseY() < y
+                || event.getMouseY() > y + BUTTON_HEIGHT) {
+            return;
+        }
+
+        openCreativeInventory();
+        event.setCanceled(true);
     }
 
     /** The editor rebuilds its own widgets without another Init event. */
@@ -55,6 +81,10 @@ public final class ScpInventoryContextualControlsClient {
         if (event.getScreen() instanceof ContextAnchorEditorScreen) {
             hideObsoleteInputSelector(event.getScreen());
         }
+    }
+
+    private static int creativeButtonX(Screen screen) {
+        return Math.max(8, screen.width - BUTTON_WIDTH - 8);
     }
 
     private static void hideObsoleteInputSelector(Screen screen) {

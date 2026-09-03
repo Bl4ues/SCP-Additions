@@ -22,12 +22,13 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Server-side owner for PLACEABLE hotbar entries.
+ * Server-side owner for PLACEABLE-style temporary hand entries.
  *
- * Placeables intentionally do not share the singular active-usable capability.
  * The real one-item stack lives in the vanilla hotbar while it is active, which
- * lets block placement consume it normally while still allowing one USABLE and
- * one PLACEABLE entry to coexist in the custom hotbar.
+ * lets block placement and ordinary held-item interactions work normally while
+ * the authoritative item remains part of the SCP Inventory flow. Equipment is
+ * admitted only through the explicit Hold Item action and keeps its equipment
+ * classification for quick-equip and slot behavior.
  */
 @Mod.EventBusSubscriber(modid = "scp_classified_directive")
 public final class PlaceableHotbarSessionEvents {
@@ -40,6 +41,17 @@ public final class PlaceableHotbarSessionEvents {
 
     public static boolean activatePlaceableSession(ServerPlayer player,
             IScpInventory inventory, int sourceSlot) {
+        return activateSession(player, inventory, sourceSlot, false);
+    }
+
+    public static boolean activateHeldEquipmentSession(ServerPlayer player,
+            IScpInventory inventory, int sourceSlot) {
+        return activateSession(player, inventory, sourceSlot, true);
+    }
+
+    private static boolean activateSession(ServerPlayer player,
+            IScpInventory inventory, int sourceSlot,
+            boolean allowEquipment) {
         if (!ScpClassifiedDirectiveModulesConfig.get().inventory.enabled
                 || player == null || inventory == null || player.isCreative()
                 || player.isSpectator() || !inventory.isValidMainSlot(sourceSlot)) {
@@ -47,10 +59,13 @@ public final class PlaceableHotbarSessionEvents {
         }
 
         ItemStack requested = inventory.getInventoryItem(sourceSlot);
-        if (requested.isEmpty()
-                || ScpItemClassifier.getType(requested) != ScpItemType.PLACEABLE) {
-            return false;
-        }
+        if (requested.isEmpty()) return false;
+
+        ScpItemType type = ScpItemClassifier.getType(requested);
+        boolean ordinaryPlaceable = type == ScpItemType.PLACEABLE;
+        boolean heldEquipment = allowEquipment
+                && ScpItemClassifier.getEquipmentSlot(requested).isPresent();
+        if (!ordinaryPlaceable && !heldEquipment) return false;
 
         int oldSlot = findTrackedPlaceableSlot(player);
         if (oldSlot >= 0) {
@@ -154,7 +169,7 @@ public final class PlaceableHotbarSessionEvents {
             ItemStack stack = getHotbarStack(player, hotbarSlot);
             if (isPlaceableSessionStack(stack)
                     || (!stack.isEmpty()
-                    && ScpItemClassifier.getType(stack) == ScpItemType.PLACEABLE
+                    && isSupportedSessionItem(stack)
                     && isSameSingleItem(stack, current.stack()))) {
                 return current;
             }
@@ -210,7 +225,13 @@ public final class PlaceableHotbarSessionEvents {
     private static boolean isPlaceableSessionStack(ItemStack stack) {
         return stack != null && !stack.isEmpty()
                 && ScpPickupRouter.isUsableSession(stack)
-                && ScpItemClassifier.getType(stack) == ScpItemType.PLACEABLE;
+                && isSupportedSessionItem(stack);
+    }
+
+    private static boolean isSupportedSessionItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        return ScpItemClassifier.getType(stack) == ScpItemType.PLACEABLE
+                || ScpItemClassifier.getEquipmentSlot(stack).isPresent();
     }
 
     private static void restoreOrDrop(ServerPlayer player,
@@ -291,7 +312,7 @@ public final class PlaceableHotbarSessionEvents {
             ACTIVE.remove(player.getUUID());
             return;
         }
-        if (ScpItemClassifier.getType(stack) != ScpItemType.PLACEABLE) {
+        if (!isSupportedSessionItem(stack)) {
             ACTIVE.remove(player.getUUID());
             return;
         }
@@ -313,7 +334,7 @@ public final class PlaceableHotbarSessionEvents {
         if (!(event.getPlayer() instanceof ServerPlayer player)) return;
         ItemStack tossed = event.getEntity().getItem();
         if (tossed == null || tossed.isEmpty()
-                || ScpItemClassifier.getType(tossed) != ScpItemType.PLACEABLE
+                || !isSupportedSessionItem(tossed)
                 || !ScpPickupRouter.isUsableSession(tossed)) {
             return;
         }

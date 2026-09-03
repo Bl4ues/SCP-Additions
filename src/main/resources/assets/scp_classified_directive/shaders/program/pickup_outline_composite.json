@@ -1,17 +1,15 @@
 {
-  "blend": {
-    "func": "add",
-    "srcrgb": "srcalpha",
-    "dstrgb": "1-srcalpha"
-  },
   "vertex": "minecraft:blit",
-  "fragment": "minecraft:blit",
+  "fragment": "scp_classified_directive:pickup_outline_composite",
   "attributes": [
     "Position"
   ],
   "samplers": [
     {
       "name": "DiffuseSampler"
+    },
+    {
+      "name": "EdgeSampler"
     }
   ],
   "uniforms": [
@@ -32,14 +30,6 @@
       "count": 2,
       "values": [
         1.0, 1.0
-      ]
-    },
-    {
-      "name": "ColorModulate",
-      "type": "float",
-      "count": 4,
-      "values": [
-        1.0, 1.0, 1.0, 1.0
       ]
     }
   ]

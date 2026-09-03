@@ -55,6 +55,7 @@
     "client.MainMenuSettingsPanelCompatMixin",
     "client.PauseMenuSettingsPanelCompatMixin",
     "client.ConfigWidgetRegistrationMixin",
+    "client.CrosshairConfigWidgetRegistrationMixin",
     "client.ContextConfigClientEventsCompatMixin",
     "client.CustomDeathScreenPreferenceMixin",
     "client.DeathScreenCaptureMixin",

@@ -8,8 +8,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -45,12 +45,20 @@ public final class ScpInventoryContextualControlsClient {
         }
 
         if (event.getScreen() instanceof ContextAnchorEditorScreen) {
-            hideObsoleteInputSelector(event);
+            hideObsoleteInputSelector(event.getScreen());
         }
     }
 
-    private static void hideObsoleteInputSelector(ScreenEvent.Init.Post event) {
-        for (GuiEventListener listener : event.getListenersList()) {
+    /** The editor rebuilds its own widgets without another Init event. */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onScreenRender(ScreenEvent.Render.Pre event) {
+        if (event.getScreen() instanceof ContextAnchorEditorScreen) {
+            hideObsoleteInputSelector(event.getScreen());
+        }
+    }
+
+    private static void hideObsoleteInputSelector(Screen screen) {
+        for (GuiEventListener listener : screen.children()) {
             if (!(listener instanceof AbstractButton button)) continue;
             String label = button.getMessage().getString();
             if (label.startsWith("Input:")) {

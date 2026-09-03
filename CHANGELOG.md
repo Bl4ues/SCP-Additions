@@ -75,7 +75,8 @@
 
 ## Anomalous Items
 
-- Added Item #006, Vol. I as the first Log of Anomalous Items entry.
+- Added Item #006, Vol. I as the first Log of Anomalous Items entry;
+- Item #006's **Glowing Rock** now emits a soft light when placed.
 
 ## SCP-914
 
@@ -175,6 +176,7 @@
 - Extended the custom **Open to LAN** panel to host controls injected into vanilla's LAN screen by compatible mods, preserving their callbacks and settings while keeping the SCP: Classified Directive presentation;
 - Reworked SCP Inventory controls around Minecraft's existing **Inventory** binding as a QoL change: while the module is enabled, the player's normal Inventory key or mouse binding opens and closes SCP Inventory in Survival and Adventure, and opens SCP Inventory first in Creative with a dedicated **Creative Inventory** button leading to the vanilla creative interface; removed the former dedicated **Tab** inventory keybind;
 - Removed **E** as a separate Contextual Interactions input option; contextual actions now use Minecraft's normal **Use / Place** binding, legacy `allowE` configurations migrate to that input automatically, and physical controls that deliberately have no generic click remain unaffected;
+- Added **Hold Item** to equipment context menus in SCP Inventory, allowing equipment and accessories to be moved temporarily into the active hand without changing their equipment category or Quick Equip behavior;
 - Crafting items can now be dragged outside the SCP Inventory interface to drop them into the world;
 - Rebuilt the Configuration Center to match the new main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth entry and exit transitions while retaining the existing configuration editors and validation logic;
 - Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
@@ -188,7 +190,7 @@
 - Added default-enabled modules that hide empty first-person hands and remove the vanilla experience bar, level indicator, experience-orb rendering, and XP pickup and level-up sounds;
 - Added a default-enabled custom oxygen meter that replaces vanilla air bubbles, appears beneath the crosshair, shifts from light blue toward red as air runs out, adds a progressively stronger suffocation vignette, and darkens the screen further with each drowning-damage pulse until air recovery;
 - Added a default-enabled custom hotbar, available only while SCP Inventory is enabled, that replaces the vanilla bar with a centered list of occupied slots, category labels, navy-and-gold selected-item styling, compact scrolling that skips empty slots, and one blank selection between the end and beginning of the list;
-- Added the **Stow Held Item** control, bound to H by default, which returns an active Usable item or equipped Weapon to the SCP Inventory without dropping it;
+- Added the **Stow Held Item** control, bound to H by default, which returns active Usable, Placeable, or temporarily held Equipment items to SCP Inventory and still unequips an equipped Weapon when appropriate;
 - Added a default-enabled module that renders Action Bar messages in Roboto;
 - Added native full-bright emissive overlays for  block textures without requiring an external emissive-texture mod, while retaining LabPBR material emission for compatible shader packs;
 - Split configuration modules into personal presentation preferences and host-authoritative gameplay rules: each player can independently choose their HUD, crosshair, custom hotbar, voice profile, presentation audio, music suppression, and accessibility settings without operator permission, while mechanics that alter gameplay or the world remain controlled by the host;

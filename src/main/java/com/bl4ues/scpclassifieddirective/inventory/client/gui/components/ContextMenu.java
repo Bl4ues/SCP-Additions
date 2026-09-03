@@ -59,6 +59,7 @@ public class ContextMenu {
             hintMode = HintMode.PLACEABLE;
         } else if (isEquipmentType(type)) {
             options.add(new MenuOption("EQUIP", "Equip Item"));
+            options.add(new MenuOption("HOLD", "Hold Item"));
             options.add(new MenuOption("DROP", "Drop Item"));
             hintMode = HintMode.EQUIP;
         } else {

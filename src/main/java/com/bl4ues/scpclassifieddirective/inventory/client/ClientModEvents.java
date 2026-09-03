@@ -83,8 +83,6 @@ public final class ClientModEvents {
 
     @SubscribeEvent
     public static void registerKeys(RegisterKeyMappingsEvent event) {
-        event.register(Keybinds.OPEN_SCP_INVENTORY);
-        event.register(Keybinds.CONTEXT_INTERACT);
         event.register(Keybinds.CONTEXT_CONFIG_SELECT);
         event.register(Keybinds.STOW_HELD_ITEM);
         event.register(Keybinds.QUICK_SAVE);

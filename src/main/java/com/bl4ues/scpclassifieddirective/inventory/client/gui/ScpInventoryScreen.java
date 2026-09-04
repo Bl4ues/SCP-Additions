@@ -16,6 +16,8 @@ import com.bl4ues.scpclassifieddirective.inventory.client.gui.components.StatusP
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
 import com.bl4ues.scpclassifieddirective.inventory.network.InventoryActionPacket;
+import com.bl4ues.scpclassifieddirective.inventory.network.InventoryPdaStatePacket;
+import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Axis;
@@ -176,6 +178,7 @@ public class ScpInventoryScreen extends Screen {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
+        ModNetwork.CHANNEL.sendToServer(InventoryPdaStatePacket.request(true));
 
         mc.player.getCapability(ScpInventoryCapability.INSTANCE).ifPresent(inv -> {
             inventory = inv;
@@ -983,6 +986,7 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public void removed() {
         captureSessionState();
+        ModNetwork.CHANNEL.sendToServer(InventoryPdaStatePacket.request(false));
         super.removed();
     }
 

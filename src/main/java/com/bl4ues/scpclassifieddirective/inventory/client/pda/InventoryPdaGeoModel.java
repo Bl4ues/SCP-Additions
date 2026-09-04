@@ -7,6 +7,7 @@ import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 
 public final class InventoryPdaGeoModel extends GeoModel<InventoryPdaAnimatable> {
+    private boolean thirdPerson;
     private static final ResourceLocation MODEL = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "geo/gui/inventory_pda.geo.json");
     private static final ResourceLocation TEXTURE = new ResourceLocation(
@@ -36,7 +37,11 @@ public final class InventoryPdaGeoModel extends GeoModel<InventoryPdaAnimatable>
         super.setCustomAnimations(animatable, instanceId, state);
         // The GUI is drawn as a full-bright dynamic surface over this opening.
         setHidden("screen_surface", true);
-        setHidden("screen_back", true);
+        setHidden("screen_back", !thirdPerson);
+    }
+
+    void setThirdPerson(boolean thirdPerson) {
+        this.thirdPerson = thirdPerson;
     }
 
     private void setHidden(String boneName, boolean hidden) {

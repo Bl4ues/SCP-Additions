@@ -16,11 +16,21 @@ public final class InventoryPdaRenderer extends GeoObjectRenderer<InventoryPdaAn
     }
 
     public void render(PoseStack poseStack) {
+        renderInternal(poseStack, false);
+    }
+
+    public void renderThirdPerson(PoseStack poseStack) {
+        renderInternal(poseStack, true);
+    }
+
+    private void renderInternal(PoseStack poseStack, boolean thirdPerson) {
         Minecraft minecraft = Minecraft.getInstance();
         MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
+        ((InventoryPdaGeoModel) getGeoModel()).setThirdPerson(thirdPerson);
         render(poseStack, InventoryPdaAnimatable.INSTANCE, buffers,
                 RenderType.entityCutoutNoCull(getTextureLocation(InventoryPdaAnimatable.INSTANCE)),
                 null, LightTexture.FULL_BRIGHT);
         buffers.endBatch();
+        ((InventoryPdaGeoModel) getGeoModel()).setThirdPerson(false);
     }
 }

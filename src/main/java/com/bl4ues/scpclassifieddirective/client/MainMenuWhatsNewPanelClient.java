@@ -40,6 +40,7 @@ public final class MainMenuWhatsNewPanelClient {
             "Reworked survival systems",
             "Custom hotbar and oxygen HUD",
             "Expanded SCP Inventory interfaces",
+            "Physical SCP Inventory PDA",
             "Creative Safe Zones",
             "Custom crosshair",
             "Custom death, saving, and multiplayer spectating",

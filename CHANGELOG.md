@@ -15,6 +15,7 @@
 - Reworked survival systems
 - Custom hotbar and oxygen HUD
 - Expanded SCP Inventory interfaces
+- Physical SCP Inventory PDA
 - Creative Safe Zones
 - Custom crosshair
 - Custom death, saving, and multiplayer spectating
@@ -187,6 +188,7 @@
 - Added an SCP-themed Difficulty to the custom in-game Settings panel, mapping Safe/Euclid/Keter/Thaumiel to Easy/Normal/Hard/Peaceful with dedicated classification artwork and immediate world difficulty switching;
 - Extended the custom **Open to LAN** panel to host controls injected into vanilla's LAN screen by compatible mods, preserving their callbacks and settings while keeping the SCP: Classified Directive presentation;
 - Reworked SCP Inventory controls around Minecraft's existing **Inventory** binding as a QoL change: while the module is enabled, the player's normal Inventory key or mouse binding opens and closes SCP Inventory in Survival and Adventure, and opens SCP Inventory first in Creative with a dedicated **Creative Inventory** button leading to the vanilla creative interface; removed the former dedicated **Tab** inventory keybind;
+- Presented SCP Inventory through an animated physical PDA whose authored screen matches the existing interface, remains emissive and fully interactive, visibly reacts instead of fading during world-drop dragging, rotates closer for expanded document reading, completes its stow animation before every screen transition, and is shown with a privacy-safe static display and a two-handed pose to nearby third-person observers;
 - Removed **E** as a separate Contextual Interactions input option; contextual actions now use Minecraft's normal **Use / Place** binding, legacy `allowE` configurations migrate to that input automatically, and physical controls that deliberately have no generic click remain unaffected;
 - Added **Hold Item** to equipment context menus in SCP Inventory, allowing equipment and accessories to be moved temporarily into the active hand without changing their equipment category or Quick Equip behavior;
 - Crafting items can now be dragged outside the SCP Inventory interface to drop them into the world;

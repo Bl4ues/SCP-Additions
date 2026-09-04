@@ -14,7 +14,8 @@ public abstract class NewGameDifficultyBulletMixin {
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/gui/GuiGraphics;fill(IIIII)V",
                     ordinal = 0,
-                    remap = true))
+                    remap = true),
+            require = 0)
     private static void scpClassifiedDirective$centerDifficultyBullet(
             GuiGraphics graphics, int left, int top, int right, int bottom,
             int color) {

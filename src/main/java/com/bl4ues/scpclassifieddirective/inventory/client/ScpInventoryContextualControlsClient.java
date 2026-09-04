@@ -132,7 +132,7 @@ public final class ScpInventoryContextualControlsClient {
 
     private enum CreativeDestination {
         CREATIVE("Creative Inventory", 0, null),
-        FACILITY("Facility", 1, FacilityModule.SCP_FACILITY_BLOCKS.get()),
+        FACILITY("Blocks", 1, FacilityModule.SCP_FACILITY_BLOCKS.get()),
         ANOMALIES("Anomalies", 2,
                 ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get()),
         ITEMS("Items", 3,

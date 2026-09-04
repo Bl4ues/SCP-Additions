@@ -141,6 +141,15 @@ final class NewGameWorldCard {
         refreshAvailability();
     }
 
+    void setVisibleInViewport(int top, int bottom) {
+        for (GuiEventListener listener : widgets()) {
+            if (listener instanceof AbstractWidget widget) {
+                widget.visible = widget.getY() + widget.getHeight() > top
+                        && widget.getY() < bottom;
+            }
+        }
+    }
+
     void renderBackground(GuiGraphics graphics, int x, int y, int width,
             float alpha) {
         int h = height(width);
@@ -158,12 +167,14 @@ final class NewGameWorldCard {
 
     void renderControls(GuiGraphics graphics, int mouseX, int mouseY,
             float partialTick) {
-        drawEditSurface(graphics, seed);
-        seed.render(graphics, mouseX, mouseY, partialTick);
-        customize.render(graphics, mouseX, mouseY, partialTick);
-        structures.render(graphics, mouseX, mouseY, partialTick);
-        bonusChest.render(graphics, mouseX, mouseY, partialTick);
-        worldType.render(graphics, mouseX, mouseY, partialTick);
+        if (seed.visible) {
+            drawEditSurface(graphics, seed);
+            seed.render(graphics, mouseX, mouseY, partialTick);
+        }
+        if (customize.visible) customize.render(graphics, mouseX, mouseY, partialTick);
+        if (structures.visible) structures.render(graphics, mouseX, mouseY, partialTick);
+        if (bonusChest.visible) bonusChest.render(graphics, mouseX, mouseY, partialTick);
+        if (worldType.visible) worldType.render(graphics, mouseX, mouseY, partialTick);
     }
 
     List<GuiEventListener> widgets() {

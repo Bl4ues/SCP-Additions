@@ -17,6 +17,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 
@@ -63,13 +64,15 @@ public final class AreaUnderConstructionSignModule {
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
         ObjectContainmentUnitModule.register(bus);
+        SurveillanceCameraPlaceholderModule.register(bus);
     }
 
     @SubscribeEvent
-    public static void addObjectContainmentUnit(
+    public static void addIntegratedFunctionalBlocks(
             BuildCreativeModeTabContentsEvent event) {
         if (event.getTab() == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
             event.accept(ObjectContainmentUnitModule.ITEM.get());
+            event.accept(SurveillanceCameraPlaceholderModule.ITEM.get());
         }
     }
 
@@ -90,6 +93,10 @@ public final class AreaUnderConstructionSignModule {
                     addUnique(items,
                             new ItemStack(ObjectContainmentUnitModule.ITEM.get()));
                 }
+            }
+            if (section.sprite().getPath().endsWith("/functionaltab.png")) {
+                addUnique(items, new ItemStack(
+                        SurveillanceCameraPlaceholderModule.ITEM.get()));
             }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     items));

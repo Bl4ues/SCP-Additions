@@ -129,6 +129,10 @@ public final class Scp079PlayableClient {
             stopCamera(minecraft);
             return;
         }
+        if (active && !networkAvailable
+                && minecraft.screen instanceof Scp079FacilityMapScreen) {
+            minecraft.setScreen(null);
+        }
         if (cameraId != null && !cameraId.equals(previousCamera)) {
             interferenceUntil = System.nanoTime() + SWITCH_INTERFERENCE_NANOS;
             zoom = 1.0F;
@@ -173,7 +177,10 @@ public final class Scp079PlayableClient {
         while (minecraft.options.keyInventory.consumeClick()) {
             requested = true;
         }
-        if (requested) Scp079FacilityMapScreen.open();
+        // Always consume Inventory while playing 079 so spectator UI never
+        // leaks through. With Auxiliary Power offline, the key intentionally
+        // does nothing at all.
+        if (requested && networkAvailable) Scp079FacilityMapScreen.open();
     }
 
     /** Spectator is an implementation detail, not a movement mode for SCP-079. */
@@ -500,13 +507,14 @@ public final class Scp079PlayableClient {
             }
         }
         renderPower(graphics, width, height, cyan, white);
-        graphics.drawString(minecraft.font,
-                ScpFonts.roboto("[" + mapKeyLabel(minecraft) + "] FACILITY MAP"),
-                width - 168, height - 57, cyan, false);
-        if (!networkAvailable) {
+        if (networkAvailable) {
             graphics.drawString(minecraft.font,
-                    ScpFonts.roboto("NETWORK OFFLINE"),
-                    width - 168, height - 70, 0xFFB86A6A, false);
+                    ScpFonts.roboto("[" + mapKeyLabel(minecraft) + "] FACILITY MAP"),
+                    width - 168, height - 57, cyan, false);
+        } else {
+            graphics.drawString(minecraft.font,
+                    ScpFonts.roboto("AUXILIARY POWER OFFLINE"),
+                    width - 168, height - 57, 0xFFB86A6A, false);
         }
     }
 

@@ -37,7 +37,6 @@ final class NewGameGameRulesScreen extends Screen {
     private final WorldCreationUiState ui;
     private final GameRules working;
     private final List<RuleRow> rows = new ArrayList<>();
-    private final List<AbstractWidget> rowWidgets = new ArrayList<>();
 
     private NewGameWidgets.ActionButton cancel;
     private NewGameWidgets.ActionButton done;
@@ -54,11 +53,9 @@ final class NewGameGameRulesScreen extends Screen {
 
     @Override
     protected void init() {
-        rowWidgets.clear();
         for (RuleRow row : rows) {
             AbstractWidget widget = row.createWidget(this.font);
             row.widget = widget;
-            rowWidgets.add(widget);
             addRenderableWidget(widget);
         }
         cancel = addRenderableWidget(new NewGameWidgets.ActionButton(
@@ -158,8 +155,8 @@ final class NewGameGameRulesScreen extends Screen {
         for (RuleRow row : rows) {
             if (row.category != previous) {
                 int categoryY = row.y - CATEGORY_HEIGHT + 8;
-                Component category = Component.translatable(
-                        row.category.getDescriptionId());
+                Component category = Component.literal(
+                        humanize(row.category.name()));
                 graphics.drawString(font, ScpFonts.montserrat(category),
                         layout.x + 24, categoryY,
                         fade(ACCENT_BRIGHT, alpha), false);
@@ -269,8 +266,9 @@ final class NewGameGameRulesScreen extends Screen {
             this.category = key.getCategory();
             Component translated = Component.translatable(key.getDescriptionId());
             String resolved = translated.getString();
+            String fallback = humanize(key.toString());
             this.label = resolved.equals(key.getDescriptionId())
-                    ? Component.literal(humanize(key.getId())) : translated;
+                    ? Component.literal(fallback) : translated;
         }
 
         abstract AbstractWidget createWidget(Font font);
@@ -313,8 +311,13 @@ final class NewGameGameRulesScreen extends Screen {
             box.setTextColorUneditable(MUTED);
             box.setValue(Integer.toString(working.getRule(key).get()));
             box.setResponder(value -> {
-                valid = !value.isBlank()
-                        && working.getRule(key).tryDeserialize(value);
+                try {
+                    int parsed = Integer.parseInt(value.trim());
+                    working.getRule(key).set(parsed, null);
+                    valid = true;
+                } catch (NumberFormatException exception) {
+                    valid = false;
+                }
                 box.setTextColor(valid ? TEXT : ERROR);
                 updateValidity();
             });
@@ -342,6 +345,7 @@ final class NewGameGameRulesScreen extends Screen {
                 .replaceAll("([a-z])([A-Z])", "$1 $2");
         StringBuilder out = new StringBuilder();
         for (String word : spaced.split("\\s+")) {
+            if (word.isBlank()) continue;
             if (!out.isEmpty()) out.append(' ');
             out.append(word.substring(0, 1).toUpperCase(Locale.ROOT));
             if (word.length() > 1) out.append(word.substring(1));

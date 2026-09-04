@@ -16,6 +16,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 public class ScpClassifiedDirectiveModItems {
 	public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS, ScpClassifiedDirectiveMod.MODID);
 	public static final RegistryObject<Item> SAFE_ZONE_TOOL = REGISTRY.register("safe_zone_tool", SafeZoneToolItem::new);
+	public static final RegistryObject<Item> SCP_ROLE_SELECTOR = REGISTRY.register("scp_role_selector", ScpRoleSelectorItem::new);
 	public static final RegistryObject<Item> ITEM_006 = REGISTRY.register("item_006", () -> new Item006BlockItem(ScpClassifiedDirectiveModBlocks.ITEM_006.get()));
 	public static final RegistryObject<Item> BUTTON_ROFF = block(ScpClassifiedDirectiveModBlocks.BUTTON_ROFF);
 	public static final RegistryObject<Item> BUTTON_LOFF = block(ScpClassifiedDirectiveModBlocks.BUTTON_LOFF);

@@ -9,29 +9,29 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Comparator;
 
-/**
- * Temporary bridge between the generic SCP role selector item and the playable
- * SCP-079 implementation. Future playable SCPs can replace this with the final
- * selector/menu without changing SCP-079's session backend.
- */
+/** Server-side role selection bridge for the currently playable SCP-079 role. */
 public final class Scp079RoleSelection {
     private Scp079RoleSelection() {
     }
 
-    public static boolean toggle(ServerPlayer player) {
+    public static boolean canOpenSelector(ServerPlayer player) {
         if (player == null || player.getServer() == null) return false;
+        if (Scp079PlayableManager.isController(player)) return true;
+        if (player.isCreative() && player.canUseGameMasterBlocks()) return true;
+        player.displayClientMessage(Component.literal(
+                "The SCP Role Selector is available to Creative operators only."),
+                true);
+        return false;
+    }
+
+    public static boolean selectScp079(ServerPlayer player) {
+        if (player == null || player.getServer() == null) return false;
+        if (Scp079PlayableManager.isController(player)) return true;
         if (!player.isCreative() || !player.canUseGameMasterBlocks()) {
             player.displayClientMessage(Component.literal(
                     "The SCP Role Selector is available to Creative operators only."),
                     true);
             return false;
-        }
-
-        if (Scp079PlayableManager.isController(player)) {
-            Scp079PlayableManager.release(player);
-            player.displayClientMessage(Component.literal(
-                    "Released playable SCP-079 control."), true);
-            return true;
         }
 
         BlockPos host = nearestHost(player);
@@ -47,6 +47,22 @@ public final class Scp079RoleSelection {
                     "Playable SCP-079 control acquired."), true);
         }
         return assumed;
+    }
+
+    public static boolean release(ServerPlayer player) {
+        if (player == null || !Scp079PlayableManager.isController(player)) {
+            return false;
+        }
+        Scp079PlayableManager.release(player);
+        player.displayClientMessage(Component.literal(
+                "Released playable SCP-079 control."), true);
+        return true;
+    }
+
+    /** Temporary compatibility path for the physical-host debug gesture. */
+    public static boolean toggle(ServerPlayer player) {
+        return Scp079PlayableManager.isController(player)
+                ? release(player) : selectScp079(player);
     }
 
     private static BlockPos nearestHost(ServerPlayer player) {

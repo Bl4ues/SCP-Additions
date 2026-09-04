@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.item;
 
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoleSelection;
+import com.bl4ues.scpclassifieddirective.network.ScpRoleSelectorNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,13 +16,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-/**
- * Placeholder entry point for playable SCP roles. For now SCP-079 is the only
- * implemented role, so use toggles that role through the nearest registered
- * SCP-079 host in the current dimension. While control is active, the held
- * selector routes its Use input through the SCP-079 release packet because
- * vanilla spectator mode rejects ordinary item use.
- */
+/** Placeholder item appearance backed by the real playable SCP selector UI. */
 public final class ScpRoleSelectorItem extends Item {
     public ScpRoleSelectorItem() {
         super(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
@@ -32,9 +27,11 @@ public final class ScpRoleSelectorItem extends Item {
             InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (player instanceof ServerPlayer serverPlayer) {
-            boolean changed = Scp079RoleSelection.toggle(serverPlayer);
-            return changed ? InteractionResultHolder.success(stack)
-                    : InteractionResultHolder.fail(stack);
+            if (!Scp079RoleSelection.canOpenSelector(serverPlayer)) {
+                return InteractionResultHolder.fail(stack);
+            }
+            ScpRoleSelectorNetwork.openSelector(serverPlayer);
+            return InteractionResultHolder.success(stack);
         }
         return InteractionResultHolder.sidedSuccess(stack, true);
     }
@@ -48,16 +45,16 @@ public final class ScpRoleSelectorItem extends Item {
     public void appendHoverText(ItemStack stack, Level level,
             List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal(
-                "Temporary Creative tool for testing playable SCP roles.")
+                "Temporary admin item appearance; playable role selection is functional.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Right-click: assume/release SCP-079")
+                "Right-click: open the Playable SCP Selector")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Uses the nearest registered SCP-079 computer in this dimension.")
+                "SCP-079 currently requires a registered physical computer in this dimension.")
                 .withStyle(ChatFormatting.DARK_GRAY));
         tooltip.add(Component.literal(
-                "Debug fallback: sneak-use the physical SCP-079 with an empty hand.")
+                "While controlling SCP-079: sneak + right-click to reopen the selector.")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

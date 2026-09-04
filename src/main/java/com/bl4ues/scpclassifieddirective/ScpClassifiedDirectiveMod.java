@@ -119,6 +119,7 @@ public class ScpClassifiedDirectiveMod {
         SafeZoneNetwork.register();
         StealthNetwork.register();
         com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork.register();
+        com.bl4ues.scpclassifieddirective.network.ScpRoleSelectorNetwork.register();
         com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork.register();
     }
 
@@ -137,7 +138,7 @@ public class ScpClassifiedDirectiveMod {
         Scp914SkinManager.initialize();
     }
 
-    private static final String PROTOCOL_VERSION = "28";
+    private static final String PROTOCOL_VERSION = "29";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
                     new ResourceLocation(MODID, MODID),

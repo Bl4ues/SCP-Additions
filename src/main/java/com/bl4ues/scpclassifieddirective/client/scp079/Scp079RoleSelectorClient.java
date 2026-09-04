@@ -2,7 +2,6 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
-import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -11,11 +10,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
- * Keeps the placeholder role selector usable after SCP-079 moves the player into
- * spectator mode. Vanilla spectator item-use is rejected server-side, so the
- * already-held selector routes its Use click through SCP-079's release packet.
- */
+/** Keeps the selector accessible after SCP-079 has forced spectator mode. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class Scp079RoleSelectorClient {
@@ -29,10 +24,12 @@ public final class Scp079RoleSelectorClient {
         }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.screen != null) return;
-        if (!holdingSelector(minecraft)) return;
+        if (!holdingSelector(minecraft) || !minecraft.options.keyShift.isDown()) {
+            return;
+        }
 
         while (minecraft.options.keyUse.consumeClick()) {
-            Scp079PlayableNetwork.requestRelease();
+            ScpRoleSelectorScreen.open(true);
         }
     }
 

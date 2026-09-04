@@ -19,11 +19,12 @@ public abstract class NewGameDifficultyBulletMixin {
             GuiGraphics graphics, int left, int top, int right, int bottom,
             int color) {
         final int markerSize = 5;
-        // The source marker starts at lineY + 3. Recover lineY, then center
-        // against the actual font line height instead of using a visual guess.
+        // The visible Roboto glyphs sit slightly above the nominal font box.
+        // Recover lineY from the source marker and shift the geometric center
+        // up one logical pixel to match the optical center seen on screen.
         int lineY = top - 3;
         int markerTop = lineY + Math.max(0,
-                (Minecraft.getInstance().font.lineHeight - markerSize) / 2);
+                (Minecraft.getInstance().font.lineHeight - markerSize) / 2) - 1;
         graphics.fill(left, markerTop, left + markerSize,
                 markerTop + markerSize, color);
     }

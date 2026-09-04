@@ -4,7 +4,6 @@ import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -19,7 +18,6 @@ import java.util.function.Consumer;
 
 /** Advanced world-creation actions and compatibility slots for injected options. */
 final class NewGameMoreCard {
-    private static final int TEXT = 0xFFF5F6F7;
     private static final int MUTED = 0xFF9FA6AD;
     private static final int ACCENT = 0xFFC99B18;
     private static final int CARD = 0xB20B0E12;
@@ -47,6 +45,7 @@ final class NewGameMoreCard {
             Consumer<GuiEventListener> currentRegistrar) {
         for (AbstractButton source : sources) {
             String key = sourceKey(source);
+            if (key.isBlank()) continue;
             ForeignBinding binding = foreign.get(key);
             if (binding == null) {
                 binding = new ForeignBinding(source);
@@ -134,8 +133,7 @@ final class NewGameMoreCard {
         graphics.fill(x + 18, y + 18, x + width - 18, y + 19,
                 fade(BORDER, alpha));
         if (!foreign.isEmpty()) {
-            int markerY = width < 620 ? y + 48 + 3 * 40 + 3
-                    : y + 92;
+            int markerY = width < 620 ? y + 48 + 3 * 40 + 3 : y + 92;
             graphics.drawString(Minecraft.getInstance().font,
                     ScpFonts.montserrat("MOD OPTIONS"), x + 24, markerY,
                     fade(MUTED, alpha), false);
@@ -192,6 +190,9 @@ final class NewGameMoreCard {
                 || combined.contains("datapacks")
                 || "gui.cancel".equals(key)
                 || "gui.done".equals(key)
+                || text.equals("game")
+                || text.equals("world")
+                || text.equals("more")
                 || text.equals("create new world")
                 || text.equals("create");
     }

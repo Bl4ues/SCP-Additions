@@ -17,8 +17,9 @@ import java.util.List;
 
 /**
  * Placeholder entry point for playable SCP roles. For now SCP-079 is the only
- * implemented role, so use simply toggles that role on the nearest registered
- * SCP-079 host in the current dimension.
+ * implemented role, so use assumes it through the nearest registered SCP-079
+ * host in the current dimension. The physical-host gesture remains the debug
+ * release fallback while this item is only a temporary selector.
  */
 public final class ScpRoleSelectorItem extends Item {
     public ScpRoleSelectorItem() {
@@ -49,10 +50,13 @@ public final class ScpRoleSelectorItem extends Item {
                 "Temporary Creative tool for testing playable SCP roles.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Right-click: assume/release SCP-079")
+                "Right-click: assume SCP-079")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
                 "Uses the nearest registered SCP-079 computer in this dimension.")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal(
+                "Debug release: sneak-use the physical SCP-079 with an empty hand.")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

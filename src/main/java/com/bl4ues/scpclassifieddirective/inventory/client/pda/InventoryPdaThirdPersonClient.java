@@ -5,7 +5,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.event.TickEvent;
@@ -48,7 +48,7 @@ public final class InventoryPdaThirdPersonClient {
 
     @SubscribeEvent
     public static void onRenderPlayer(RenderPlayerEvent.Post event) {
-        AbstractClientPlayer player = event.getEntity();
+        Player player = event.getEntity();
         PlayerModel<?> model = event.getRenderer().getModel();
         ArmPose previous = ARM_POSES.remove(model);
         if (!OPEN_PLAYERS.contains(player.getUUID())) return;

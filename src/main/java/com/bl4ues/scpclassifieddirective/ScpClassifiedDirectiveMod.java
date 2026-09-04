@@ -31,6 +31,7 @@ import com.bl4ues.scpclassifieddirective.facility.AreaUnderConstructionSignModul
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.TeslaGateTerminalTableModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
+import com.bl4ues.scpclassifieddirective.facility.mapping.network.FacilityMappingNetwork;
 import com.bl4ues.scpclassifieddirective.facility.UBlocksModule;
 import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.LeftDoorButtons;
@@ -117,6 +118,7 @@ public class ScpClassifiedDirectiveMod {
         ScpClassifiedDirectiveModMenus.REGISTRY.register(bus);
         ScpEntityNetwork.register();
         SafeZoneNetwork.register();
+        FacilityMappingNetwork.register();
         StealthNetwork.register();
         com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork.register();
         com.bl4ues.scpclassifieddirective.network.ScpRoleSelectorNetwork.register();
@@ -138,7 +140,7 @@ public class ScpClassifiedDirectiveMod {
         Scp914SkinManager.initialize();
     }
 
-    private static final String PROTOCOL_VERSION = "29";
+    private static final String PROTOCOL_VERSION = "30";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
                     new ResourceLocation(MODID, MODID),

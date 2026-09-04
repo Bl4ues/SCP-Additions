@@ -82,9 +82,9 @@ public class ScpClassifiedDirectiveModTabs {
         return List.of(
                 new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get()),
-                new ItemStack(ScpClassifiedDirectiveModItems.SCP_ROLE_SELECTOR.get()),
                 new ItemStack(FacilityMappingItems.getTool()),
-                new ItemStack(DocumentItems.getDocument()));
+                new ItemStack(DocumentItems.getDocument()),
+                new ItemStack(ScpClassifiedDirectiveModItems.SCP_ROLE_SELECTOR.get()));
     }
 
     public static List<ItemStack> consumableStacks() {

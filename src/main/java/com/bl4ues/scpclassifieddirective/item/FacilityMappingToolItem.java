@@ -18,7 +18,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-/** Creative operator tool that authors logical room floors for surveillance. */
+/** Creative map-making tool that authors logical room floors for surveillance. */
 public final class FacilityMappingToolItem extends Item {
     public FacilityMappingToolItem() {
         super(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
@@ -28,7 +28,7 @@ public final class FacilityMappingToolItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
         if (!(player instanceof ServerPlayer serverPlayer)) {
-            return player != null && player.canUseGameMasterBlocks()
+            return player != null && player.isCreative()
                     ? InteractionResult.SUCCESS : InteractionResult.PASS;
         }
         if (!FacilityMappingManager.canEdit(serverPlayer)) {
@@ -48,7 +48,7 @@ public final class FacilityMappingToolItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player,
             InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!player.isShiftKeyDown() || !player.canUseGameMasterBlocks()) {
+        if (!player.isShiftKeyDown() || !player.isCreative()) {
             return InteractionResultHolder.pass(stack);
         }
         if (player instanceof ServerPlayer serverPlayer) {

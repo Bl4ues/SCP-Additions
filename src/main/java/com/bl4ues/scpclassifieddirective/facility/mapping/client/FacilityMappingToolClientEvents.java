@@ -21,7 +21,7 @@ public final class FacilityMappingToolClientEvents {
     public static void onLeftClick(PlayerInteractEvent.LeftClickBlock event) {
         if (event.getHand() != InteractionHand.MAIN_HAND
                 || !event.getItemStack().is(FacilityMappingItems.getTool())
-                || !event.getEntity().canUseGameMasterBlocks()) return;
+                || !event.getEntity().isCreative()) return;
         FacilityMappingClientState.setSelectionStart(event.getPos());
         FacilityMappingNetwork.requestSelectionStart(event.getPos());
         event.setCanceled(true);

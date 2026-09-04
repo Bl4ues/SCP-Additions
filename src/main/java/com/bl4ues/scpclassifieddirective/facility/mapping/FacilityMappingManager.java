@@ -36,8 +36,7 @@ public final class FacilityMappingManager {
     }
 
     public static boolean canEdit(ServerPlayer player) {
-        return player != null && player.isCreative()
-                && player.canUseGameMasterBlocks();
+        return player != null && player.isCreative();
     }
 
     public static void beginSelection(ServerPlayer player, BlockPos pos) {
@@ -252,8 +251,7 @@ public final class FacilityMappingManager {
         int best = Integer.MAX_VALUE;
         for (FacilityFloorPatch patch : room.patches()) {
             if (pos.getX() >= patch.minX() && pos.getX() <= patch.maxX()
-                    && pos.getZ() >= patch.minZ()
-                    && pos.getZ() <= patch.maxZ()) {
+                    && pos.getZ() >= patch.minZ() && pos.getZ() <= patch.maxZ()) {
                 best = Math.min(best, Math.abs(pos.getY() - patch.y()));
             }
         }

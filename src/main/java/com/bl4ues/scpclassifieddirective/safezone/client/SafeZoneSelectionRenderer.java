@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.safezone.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZone;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneTrack;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -27,6 +28,8 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class SafeZoneSelectionRenderer {
+    private static final double COMPLETED_ZONE_RENDER_DISTANCE = 96.0D;
+    private static final int MAX_COMPLETED_ZONES_RENDERED = 32;
     private static BlockPos cachedStart;
     private static BlockPos cachedEnd;
     private static List<BlockPos> cachedSources = List.of();
@@ -41,14 +44,41 @@ public final class SafeZoneSelectionRenderer {
         }
         Minecraft minecraft = Minecraft.getInstance();
         BlockPos start = SafeZoneClientState.selectionStart();
-        if (start == null || minecraft.level == null
-                || minecraft.player == null
-                || !minecraft.player.getMainHandItem().is(
-                        ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get())) {
+        if (minecraft.level == null || minecraft.player == null
+                || !isHoldingTool(minecraft)) {
             clearCache();
             return;
         }
 
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        MultiBufferSource.BufferSource buffers =
+                minecraft.renderBuffers().bufferSource();
+        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+
+        poseStack.pushPose();
+        poseStack.translate(-camera.x, -camera.y, -camera.z);
+
+        for (SafeZone zone : SafeZoneClientState.nearbyZones(
+                minecraft.level.dimension().location(),
+                minecraft.player.position(), COMPLETED_ZONE_RENDER_DISTANCE,
+                MAX_COMPLETED_ZONES_RENDERED)) {
+            LevelRenderer.renderLineBox(poseStack, lines,
+                    zone.bounds().inflate(0.009D),
+                    1.0F, 1.0F, 1.0F, 0.72F);
+        }
+
+        if (start != null) {
+            renderActiveSelection(minecraft, poseStack, lines, start);
+        } else {
+            clearCache();
+        }
+        poseStack.popPose();
+        buffers.endBatch(RenderType.lines());
+    }
+
+    private static void renderActiveSelection(Minecraft minecraft,
+            PoseStack poseStack, VertexConsumer lines, BlockPos start) {
         BlockPos end = start;
         HitResult hit = minecraft.hitResult;
         if (hit instanceof BlockHitResult blockHit
@@ -66,32 +96,27 @@ public final class SafeZoneSelectionRenderer {
                     ? findSources(minecraft, min, max) : List.of();
         }
 
-        PoseStack poseStack = event.getPoseStack();
-        Vec3 camera = event.getCamera().getPosition();
-        MultiBufferSource.BufferSource buffers =
-                minecraft.renderBuffers().bufferSource();
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-
-        poseStack.pushPose();
-        poseStack.translate(-camera.x, -camera.y, -camera.z);
         AABB selection = new AABB(min.getX(), min.getY(), min.getZ(),
                 max.getX() + 1.0D, max.getY() + 1.0D,
                 max.getZ() + 1.0D).inflate(0.006D);
-        float red = volume <= SafeZoneManager.MAX_SELECTION_VOLUME
-                ? 1.0F : 1.0F;
         float green = volume <= SafeZoneManager.MAX_SELECTION_VOLUME
                 ? 1.0F : 0.18F;
         float blue = volume <= SafeZoneManager.MAX_SELECTION_VOLUME
                 ? 1.0F : 0.08F;
         LevelRenderer.renderLineBox(poseStack, lines, selection,
-                red, green, blue, 0.95F);
+                1.0F, green, blue, 0.95F);
         for (BlockPos source : cachedSources) {
             LevelRenderer.renderLineBox(poseStack, lines,
                     new AABB(source).inflate(0.012D),
                     0.15F, 1.0F, 0.28F, 1.0F);
         }
-        poseStack.popPose();
-        buffers.endBatch(RenderType.lines());
+    }
+
+    private static boolean isHoldingTool(Minecraft minecraft) {
+        return minecraft.player.getMainHandItem().is(
+                ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get())
+                || minecraft.player.getOffhandItem().is(
+                        ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get());
     }
 
     private static List<BlockPos> findSources(Minecraft minecraft,

@@ -1,6 +1,8 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -9,8 +11,6 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.texture.TextureTarget;
-import net.minecraft.client.renderer.RenderTarget;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -49,8 +49,6 @@ public final class Scp079CrtPostProcessor {
         ensureTarget(main.width, main.height);
         if (copyTarget == null) return;
 
-        // Copy the already-composited world colour. Colour-only blitting avoids
-        // importing shaderpack depth/stencil attachments into our target.
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, main.frameBufferId);
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, copyTarget.frameBufferId);
         GL30.glBlitFramebuffer(0, 0, main.width, main.height,
@@ -68,7 +66,6 @@ public final class Scp079CrtPostProcessor {
         Matrix4f matrix = event.getGuiGraphics().pose().last().pose();
         BufferBuilder buffer = Tesselator.getInstance().getBuilder();
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        // Render targets use a bottom-left texture origin, hence the flipped V.
         buffer.vertex(matrix, 0.0F, guiH, 0.0F).uv(0.0F, 0.0F).endVertex();
         buffer.vertex(matrix, guiW, guiH, 0.0F).uv(1.0F, 0.0F).endVertex();
         buffer.vertex(matrix, guiW, 0.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
@@ -80,10 +77,11 @@ public final class Scp079CrtPostProcessor {
     }
 
     private static void ensureTarget(int width, int height) {
-        if (copyTarget != null && copyTarget.width == width
-                && copyTarget.height == height) return;
-        if (copyTarget != null) copyTarget.destroyBuffers();
-        copyTarget = new TextureTarget(width, height, false, Minecraft.ON_OSX);
-        copyTarget.setClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+        if (copyTarget == null) {
+            copyTarget = new TextureTarget(width, height, false, Minecraft.ON_OSX);
+            copyTarget.setClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+        } else if (copyTarget.width != width || copyTarget.height != height) {
+            copyTarget.resize(width, height, Minecraft.ON_OSX);
+        }
     }
 }

@@ -8,10 +8,11 @@ import com.bl4ues.scpclassifieddirective.entity.Scp131BEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp173Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
-import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
+import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,23 +33,32 @@ import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/** Visual/input replacement layer for playable SCP-079. */
+/** Unified visual and contextual-interaction layer for playable SCP-079. */
 public final class Scp079PlayableVisuals {
     private static final ResourceLocation DOOR_ICON = resource(
             "textures/gui/scp079/icons/door.png");
     private static final ResourceLocation TESLA_ICON = resource(
             "textures/gui/scp079/icons/tesla_gate.png");
+    private static final ResourceLocation CAMERA_ICON = resource(
+            "textures/gui/scp079/icons/camera.png");
+
     private static final List<RecognitionBox> RECOGNITION = new ArrayList<>();
-    private static long interferenceSeed;
+    private static final List<InteractionPrompt> PROMPTS = new ArrayList<>();
+    private static List<BlockPos> nearbyCameras = List.of();
+    private static ProjectionContext projectionContext;
+    private static long lastCameraScanTick = Long.MIN_VALUE;
+    private static Vec3 lastCameraScanOrigin = Vec3.ZERO;
 
     private Scp079PlayableVisuals() { }
 
-    /** Replaces the normal 079 inventory-key handler. Shift + Inventory always exits. */
+    /** Inventory opens the map; Shift + Inventory always opens role exit. */
     public static void handleInventoryKey(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START || !Scp079PlayableClient.active()) return;
+        if (event.phase != TickEvent.Phase.START
+                || !Scp079PlayableClient.active()) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.screen != null) return;
         boolean requested = false;
@@ -61,23 +71,22 @@ public final class Scp079PlayableVisuals {
         }
     }
 
-    public static void renderLocalExtras(GuiGraphics graphics) {
-        Minecraft minecraft = Minecraft.getInstance();
-        int width = minecraft.getWindow().getGuiScaledWidth();
-        String label = "SHIFT + " + mapKeyLabel(minecraft) + "  LEAVE SCP ROLE";
-        int textW = minecraft.font.width(ScpFonts.roboto(label));
-        graphics.drawString(minecraft.font, ScpFonts.roboto(label),
-                width - textW - 18, 18, 0xFF8AA2B1, false);
-    }
-
-    /** Captures 2D screen-space face boxes instead of rendering a 3D world AABB. */
+    /**
+     * Capture camera projection and recognition boxes once per world frame.
+     *
+     * The stage check deliberately comes before clearing the list. Render-level
+     * events continue after AFTER_ENTITIES; clearing first used to erase every
+     * identification box before the HUD could display it.
+     */
     public static void captureRecognition(RenderLevelStageEvent event) {
-        RECOGNITION.clear();
         if (!Scp079PlayableClient.cameraMode()
-                || event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
+                || event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            return;
+        }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) return;
 
+        RECOGNITION.clear();
         Camera camera = event.getCamera();
         Vec3 cameraPos = camera.getPosition();
         Vec3 look = new Vec3(camera.getLookVector()).normalize();
@@ -86,46 +95,56 @@ public final class Scp079PlayableVisuals {
         Matrix4f projection = new Matrix4f(event.getProjectionMatrix());
         int guiW = minecraft.getWindow().getGuiScaledWidth();
         int guiH = minecraft.getWindow().getGuiScaledHeight();
+        projectionContext = new ProjectionContext(cameraPos, right, up, look,
+                projection, guiW, guiH);
 
         for (Entity entity : minecraft.level.entitiesForRendering()) {
             if (!(entity instanceof LivingEntity living) || !living.isAlive()
                     || entity == minecraft.player
-                    || entity.position().distanceToSqr(cameraPos) > 42.0D * 42.0D) continue;
+                    || entity.position().distanceToSqr(cameraPos)
+                    > 42.0D * 42.0D) continue;
 
             int color;
             String label;
             if (entity instanceof Player) {
-                color = 0xFF39C8F1;
+                color = 0xFF45D8FF;
                 label = "HUMAN";
             } else {
                 int number = scpNumber(entity);
                 if (number < 0) continue;
-                color = 0xFFFF4B42;
+                color = 0xFFFF5147;
                 label = "SCP-" + String.format(Locale.ROOT, "%03d", number);
             }
 
-            Vec3 center = new Vec3(entity.getX(), entity.getEyeY() + 0.04D,
+            Vec3 center = new Vec3(entity.getX(), entity.getEyeY(),
                     entity.getZ());
             if (!visibleFromCamera(minecraft, cameraPos, center)) continue;
 
-            double halfW = Mth.clamp(entity.getBbWidth() * 0.36D, 0.20D, 0.46D);
-            double halfH = Mth.clamp(entity.getBbHeight() * 0.17D, 0.24D, 0.42D);
-            ScreenPoint tl = project(center.add(right.scale(-halfW)).add(up.scale(halfH)),
-                    cameraPos, right, up, look, projection, guiW, guiH);
-            ScreenPoint tr = project(center.add(right.scale(halfW)).add(up.scale(halfH)),
-                    cameraPos, right, up, look, projection, guiW, guiH);
-            ScreenPoint bl = project(center.add(right.scale(-halfW)).add(up.scale(-halfH)),
-                    cameraPos, right, up, look, projection, guiW, guiH);
-            ScreenPoint br = project(center.add(right.scale(halfW)).add(up.scale(-halfH)),
-                    cameraPos, right, up, look, projection, guiW, guiH);
+            double halfW = Mth.clamp(entity.getBbWidth() * 0.38D,
+                    0.22D, 0.52D);
+            double halfH = Mth.clamp(entity.getBbHeight() * 0.19D,
+                    0.27D, 0.48D);
+            ScreenPoint tl = project(center.add(right.scale(-halfW))
+                    .add(up.scale(halfH)), projectionContext);
+            ScreenPoint tr = project(center.add(right.scale(halfW))
+                    .add(up.scale(halfH)), projectionContext);
+            ScreenPoint bl = project(center.add(right.scale(-halfW))
+                    .add(up.scale(-halfH)), projectionContext);
+            ScreenPoint br = project(center.add(right.scale(halfW))
+                    .add(up.scale(-halfH)), projectionContext);
             if (tl == null || tr == null || bl == null || br == null) continue;
 
-            int minX = Mth.floor(Math.min(Math.min(tl.x, tr.x), Math.min(bl.x, br.x)));
-            int maxX = Mth.ceil(Math.max(Math.max(tl.x, tr.x), Math.max(bl.x, br.x)));
-            int minY = Mth.floor(Math.min(Math.min(tl.y, tr.y), Math.min(bl.y, br.y)));
-            int maxY = Mth.ceil(Math.max(Math.max(tl.y, tr.y), Math.max(bl.y, br.y)));
+            int minX = Mth.floor(Math.min(Math.min(tl.x, tr.x),
+                    Math.min(bl.x, br.x)));
+            int maxX = Mth.ceil(Math.max(Math.max(tl.x, tr.x),
+                    Math.max(bl.x, br.x)));
+            int minY = Mth.floor(Math.min(Math.min(tl.y, tr.y),
+                    Math.min(bl.y, br.y)));
+            int maxY = Mth.ceil(Math.max(Math.max(tl.y, tr.y),
+                    Math.max(bl.y, br.y)));
             if (maxX < 0 || minX > guiW || maxY < 0 || minY > guiH) continue;
-            int minSize = 13;
+
+            int minSize = 18;
             if (maxX - minX < minSize) {
                 int c = (minX + maxX) / 2;
                 minX = c - minSize / 2;
@@ -136,97 +155,180 @@ public final class Scp079PlayableVisuals {
                 minY = c - minSize / 2;
                 maxY = c + minSize / 2;
             }
-            RECOGNITION.add(new RecognitionBox(minX, minY, maxX, maxY, label, color));
+            RECOGNITION.add(new RecognitionBox(minX, minY, maxX, maxY,
+                    label, color));
             if (RECOGNITION.size() >= 64) break;
         }
+
+        refreshNearbyCameras(minecraft, cameraPos);
+    }
+
+    public static void renderLocalHud(GuiGraphics graphics) {
+        Minecraft minecraft = Minecraft.getInstance();
+        int width = minecraft.getWindow().getGuiScaledWidth();
+        int height = minecraft.getWindow().getGuiScaledHeight();
+        Scp079UiTheme.renderFrame(graphics, width, height);
+
+        int x = 36;
+        int y = 31;
+        Scp079UiTheme.draw(graphics, minecraft.font, "SCP-079",
+                x, y, 1.34F, Scp079UiTheme.TEXT);
+        Scp079UiTheme.draw(graphics, minecraft.font, "LOCAL HOST",
+                x, y + 20, 1.20F, Scp079UiTheme.ACCENT);
+
+        FacilityRoomSnapshot room = FacilityMappingClientState.roomAt(
+                Scp079PlayableClient.hostDimension(),
+                Scp079PlayableClient.hostPos());
+        int roomY = y + 43;
+        if (room != null) {
+            String floor = room.floorShortLabel().isBlank()
+                    ? "UNASSIGNED" : room.floorShortLabel();
+            Scp079UiTheme.draw(graphics, minecraft.font, floor.toUpperCase(Locale.ROOT),
+                    x, roomY, 1.12F, Scp079UiTheme.MUTED);
+            if (!room.name().isBlank()) {
+                Scp079UiTheme.draw(graphics, minecraft.font,
+                        room.name().toUpperCase(Locale.ROOT), x, roomY + 17,
+                        1.20F, Scp079UiTheme.TEXT);
+            }
+        }
+
+        String mapKey = mapKeyLabel(minecraft);
+        if (Scp079PlayableClient.networkAvailable()) {
+            drawRight(graphics, minecraft, "[" + mapKey + "]  FACILITY MAP",
+                    width - 36, 32, 1.16F, Scp079UiTheme.ACCENT);
+        } else {
+            drawRight(graphics, minecraft, "AUXILIARY POWER OFFLINE",
+                    width - 36, 32, 1.16F, 0xFFD57D78);
+        }
+        drawRight(graphics, minecraft,
+                "SHIFT + " + mapKey + "  LEAVE SCP ROLE",
+                width - 36, 50, 1.08F, Scp079UiTheme.MUTED);
+        Scp079UiTheme.renderPower(graphics, minecraft,
+                Scp079PlayableClient.power());
     }
 
     public static void renderCameraHud(GuiGraphics graphics) {
         Minecraft minecraft = Minecraft.getInstance();
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
-        renderCrtLens(graphics, width, height);
+        Scp079UiTheme.renderFrame(graphics, width, height);
 
-        Vec3 view = Scp079PlayableClient.viewPosition();
         FacilityRoomSnapshot room = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(), BlockPos.containing(view));
-        graphics.drawString(minecraft.font, ScpFonts.roboto("CAMERA FEED ONLINE"),
-                34, 27, 0xFFD8F5FF, false);
-        int titleY = 44;
+                Scp079PlayableClient.hostDimension(),
+                BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        int x = 36;
+        int y = 31;
         if (room != null) {
-            if (!room.floorShortLabel().isBlank()) {
-                graphics.drawString(minecraft.font, ScpFonts.roboto(room.floorShortLabel()),
-                        34, titleY, 0xFF8FB8C8, false);
-                titleY += 13;
-            }
+            String floor = room.floorShortLabel().isBlank()
+                    ? "UNASSIGNED" : room.floorShortLabel();
+            Scp079UiTheme.draw(graphics, minecraft.font,
+                    floor.toUpperCase(Locale.ROOT), x, y,
+                    1.22F, Scp079UiTheme.ACCENT);
             if (!room.name().isBlank()) {
-                graphics.drawString(minecraft.font,
-                        ScpFonts.titillium(room.name().toUpperCase(Locale.ROOT)),
-                        34, titleY, 0xFFF0FAFF, false);
+                Scp079UiTheme.draw(graphics, minecraft.font,
+                        room.name().toUpperCase(Locale.ROOT), x, y + 19,
+                        1.28F, Scp079UiTheme.TEXT);
             }
         }
 
-        int counterY = 84;
-        graphics.drawString(minecraft.font, ScpFonts.roboto(
-                        "TOTAL LIFEFORMS: " + Scp079TrackingClientState.totalLifeforms()),
-                34, counterY, 0xFFBDEEFF, false);
-        graphics.drawString(minecraft.font, ScpFonts.roboto(
-                        "TARGETS: " + Scp079TrackingClientState.targets()),
-                34, counterY + 12, 0xFFBDEEFF, false);
-        graphics.drawString(minecraft.font, ScpFonts.roboto(
-                        "SCP SUBJECTS: " + Scp079TrackingClientState.scpSubjects()),
-                34, counterY + 24, 0xFFBDEEFF, false);
+        int counterY = y + 58;
+        Scp079UiTheme.draw(graphics, minecraft.font,
+                "TOTAL LIFEFORMS: " + Scp079TrackingClientState.totalLifeforms(),
+                x, counterY, 1.20F, Scp079UiTheme.TEXT);
+        Scp079UiTheme.draw(graphics, minecraft.font,
+                "TARGETS: " + Scp079TrackingClientState.targets(),
+                x, counterY + 18, 1.20F, Scp079UiTheme.TEXT);
+        Scp079UiTheme.draw(graphics, minecraft.font,
+                "SCP SUBJECTS: " + Scp079TrackingClientState.scpSubjects(),
+                x, counterY + 36, 1.20F, Scp079UiTheme.TEXT);
 
-        String map = "OPEN FACILITY MAP  [" + mapKeyLabel(minecraft) + "]";
-        int rightX = width - minecraft.font.width(ScpFonts.roboto(map)) - 34;
-        graphics.drawString(minecraft.font, ScpFonts.roboto(map),
-                rightX, 28, 0xFFD8F5FF, false);
-        String leave = "SHIFT + " + mapKeyLabel(minecraft) + "  LEAVE SCP ROLE";
-        graphics.drawString(minecraft.font, ScpFonts.roboto(leave),
-                width - minecraft.font.width(ScpFonts.roboto(leave)) - 34,
-                42, 0xFF7697A4, false);
-        graphics.drawString(minecraft.font, ScpFonts.roboto("HOLD SHIFT  CURSOR"),
-                width - minecraft.font.width(ScpFonts.roboto("HOLD SHIFT  CURSOR")) - 34,
-                56, 0xFF7697A4, false);
+        String key = mapKeyLabel(minecraft);
+        drawRight(graphics, minecraft, "OPEN FACILITY MAP  [" + key + "]",
+                width - 36, 31, 1.16F, Scp079UiTheme.TEXT);
+        drawRight(graphics, minecraft,
+                "SHIFT + " + key + "  LEAVE SCP ROLE",
+                width - 36, 49, 1.08F, Scp079UiTheme.MUTED);
+        drawRight(graphics, minecraft, "HOLD SHIFT  CURSOR",
+                width - 36, 66, 1.08F, Scp079UiTheme.MUTED);
 
         renderRecognitionBoxes(graphics, minecraft);
-        TargetKind target = aimedTarget(minecraft);
-        if (target != TargetKind.NONE) {
-            ResourceLocation icon = target == TargetKind.TESLA ? TESLA_ICON : DOOR_ICON;
-            int size = 32;
-            int ix = width / 2 - size / 2;
-            int iy = height / 2 - size / 2;
-            RenderSystem.setShaderColor(0.78F, 0.95F, 1.0F, 1.0F);
-            graphics.blit(icon, ix, iy, 0.0F, 0.0F, size, size, 64, 64);
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            String primary = target == TargetKind.DOOR
-                    ? "OPEN / CLOSE  [LMB]  " + cost(5.0D, minecraft)
-                    : "SUPPRESS  [LMB]  " + cost(12.0D, minecraft);
-            graphics.drawString(minecraft.font, ScpFonts.roboto(primary),
-                    width - 202, height / 2 - 4, 0xFFEAF8FF, false);
-            if (target == TargetKind.DOOR) {
-                graphics.drawString(minecraft.font,
-                        ScpFonts.roboto("LOCK  [RMB]  " + cost(12.0D, minecraft)),
-                        width - 202, height / 2 + 10, 0xFFEAF8FF, false);
-            }
-        }
-        renderPower(graphics, minecraft, width, height);
+        refreshPrompts(minecraft);
+        renderPrompts(graphics, minecraft);
+        Scp079UiTheme.renderPower(graphics, minecraft,
+                Scp079PlayableClient.power());
     }
 
-    private static void renderRecognitionBoxes(GuiGraphics graphics, Minecraft minecraft) {
+    /** Compatibility target for older mixin revisions while master converges. */
+    public static void renderLocalExtras(GuiGraphics graphics) {
+        // The complete local-host HUD is rendered by renderLocalHud().
+    }
+
+    /** Route LMB/RMB through the same projected prompt the player can see. */
+    public static boolean handleInteraction(boolean attack, boolean use) {
+        if (!Scp079PlayableClient.cameraMode()) return false;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.screen != null) return false;
+        refreshPrompts(minecraft);
+        ScreenPoint pointer = pointer(minecraft);
+        InteractionPrompt prompt = closestPrompt(pointer, 56.0D);
+
+        // Keep direct centre aiming functional even before the first projected
+        // HUD frame has populated a prompt list.
+        if (prompt == null && !minecraft.options.keyShift.isDown()) {
+            WorldTarget direct = resolveAimedTarget(minecraft);
+            if (direct != null) {
+                prompt = new InteractionPrompt(direct.kind, direct.pos,
+                        new ScreenPoint(minecraft.getWindow().getGuiScaledWidth() * 0.5F,
+                                minecraft.getWindow().getGuiScaledHeight() * 0.5F));
+            }
+        }
+        if (prompt == null) return false;
+
+        if (prompt.kind == TargetKind.CAMERA) {
+            if (attack || use) {
+                FacilityRoomSnapshot room = FacilityMappingClientState.roomAt(
+                        Scp079PlayableClient.hostDimension(), prompt.pos);
+                if (room != null) Scp079PlayableNetwork.requestRoom(room.id());
+            }
+            return true;
+        }
+        if (prompt.kind == TargetKind.DOOR) {
+            if (attack) {
+                Scp079PlayableNetwork.requestAction(
+                        Scp079PlayableManager.ManualAction.PRIMARY, prompt.pos);
+            } else if (use) {
+                Scp079PlayableNetwork.requestAction(
+                        Scp079PlayableManager.ManualAction.LOCK, prompt.pos);
+            }
+            return true;
+        }
+        if (prompt.kind == TargetKind.TESLA) {
+            if (attack) {
+                Scp079PlayableNetwork.requestAction(
+                        Scp079PlayableManager.ManualAction.PRIMARY, prompt.pos);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static void renderRecognitionBoxes(GuiGraphics graphics,
+            Minecraft minecraft) {
+        int guiW = minecraft.getWindow().getGuiScaledWidth();
+        int guiH = minecraft.getWindow().getGuiScaledHeight();
         for (RecognitionBox box : RECOGNITION) {
-            int x1 = Mth.clamp(box.x1, 3, minecraft.getWindow().getGuiScaledWidth() - 4);
-            int y1 = Mth.clamp(box.y1, 14, minecraft.getWindow().getGuiScaledHeight() - 4);
-            int x2 = Mth.clamp(box.x2, x1 + 2, minecraft.getWindow().getGuiScaledWidth() - 3);
-            int y2 = Mth.clamp(box.y2, y1 + 2, minecraft.getWindow().getGuiScaledHeight() - 3);
+            int x1 = Mth.clamp(box.x1, 7, guiW - 8);
+            int y1 = Mth.clamp(box.y1, 20, guiH - 8);
+            int x2 = Mth.clamp(box.x2, x1 + 2, guiW - 7);
+            int y2 = Mth.clamp(box.y2, y1 + 2, guiH - 7);
             int c = box.color;
-            int corner = Math.max(4, Math.min(10, Math.min(x2 - x1, y2 - y1) / 3));
-            // Thin screen-space rectangle with stronger corners, like a camera
-            // recognition reticle rather than a world-space hitbox.
-            graphics.fill(x1, y1, x2, y1 + 1, (c & 0x00FFFFFF) | 0x70000000);
-            graphics.fill(x1, y2 - 1, x2, y2, (c & 0x00FFFFFF) | 0x70000000);
-            graphics.fill(x1, y1, x1 + 1, y2, (c & 0x00FFFFFF) | 0x70000000);
-            graphics.fill(x2 - 1, y1, x2, y2, (c & 0x00FFFFFF) | 0x70000000);
+            int corner = Math.max(6,
+                    Math.min(13, Math.min(x2 - x1, y2 - y1) / 3));
+            int dim = (c & 0x00FFFFFF) | 0x62000000;
+            graphics.fill(x1, y1, x2, y1 + 1, dim);
+            graphics.fill(x1, y2 - 1, x2, y2, dim);
+            graphics.fill(x1, y1, x1 + 1, y2, dim);
+            graphics.fill(x2 - 1, y1, x2, y2, dim);
             graphics.fill(x1, y1, x1 + corner, y1 + 2, c);
             graphics.fill(x1, y1, x1 + 2, y1 + corner, c);
             graphics.fill(x2 - corner, y1, x2, y1 + 2, c);
@@ -235,130 +337,197 @@ public final class Scp079PlayableVisuals {
             graphics.fill(x1, y2 - corner, x1 + 2, y2, c);
             graphics.fill(x2 - corner, y2 - 2, x2, y2, c);
             graphics.fill(x2 - 2, y2 - corner, x2, y2, c);
-            int labelW = minecraft.font.width(ScpFonts.roboto(box.label));
-            int lx = (x1 + x2 - labelW) / 2;
-            graphics.drawString(minecraft.font, ScpFonts.roboto(box.label),
-                    lx, Math.max(3, y1 - 11), c, false);
+            Scp079UiTheme.drawCentered(graphics, minecraft.font, box.label,
+                    (x1 + x2) * 0.5F, Math.max(4, y1 - 15), 1.06F, c);
         }
     }
 
-    /** Shaderpack-safe post overlay: it never replaces the shaderpack framebuffer. */
-    private static void renderCrtLens(GuiGraphics graphics, int width, int height) {
-        long now = System.nanoTime();
-        graphics.fill(0, 0, width, height, 0x1000374B);
-        for (int y = 0; y < height; y += 3) {
-            graphics.fill(0, y, width, y + 1, 0x1B000000);
-        }
+    private static void refreshPrompts(Minecraft minecraft) {
+        PROMPTS.clear();
+        ProjectionContext context = projectionContext;
+        if (context == null || minecraft.level == null) return;
 
-        // Moving phosphor/vertical-sync band.
-        int band = Math.floorMod((int) (now / 16_000_000L), Math.max(1, height + 80)) - 40;
-        graphics.fill(0, band, width, Math.min(height, band + 22), 0x0B9BEAFF);
+        WorldTarget aimed = resolveAimedTarget(minecraft);
+        if (aimed != null) addPrompt(minecraft, aimed, context);
 
-        // True curved-face mask in screen space. This bends the visible aperture
-        // without touching the shaderpack's own framebuffer or render pipeline.
-        int corner = Math.min(34, Math.max(18, Math.min(width, height) / 18));
-        for (int y = 0; y < corner; y++) {
-            double normalized = (corner - y) / (double) corner;
-            int inset = (int) Math.round(corner * Math.sqrt(Math.max(0.0D,
-                    1.0D - (1.0D - normalized) * (1.0D - normalized))));
-            graphics.fill(0, y, inset, y + 1, 0xF4000000);
-            graphics.fill(width - inset, y, width, y + 1, 0xF4000000);
-            graphics.fill(0, height - y - 1, inset, height - y, 0xF4000000);
-            graphics.fill(width - inset, height - y - 1, width, height - y, 0xF4000000);
-        }
-        int edge = 15;
-        for (int i = 0; i < edge; i++) {
-            int alpha = 10 + i * 4;
-            int color = alpha << 24;
-            graphics.fill(i, corner / 2, i + 1, height - corner / 2, color);
-            graphics.fill(width - i - 1, corner / 2, width - i, height - corner / 2, color);
-            graphics.fill(corner / 2, i, width - corner / 2, i + 1, color);
-            graphics.fill(corner / 2, height - i - 1, width - corner / 2, height - i, color);
-        }
-
-        // Small chromatic fringe at the glass edges, subtle enough not to fight
-        // Oculus/Iris colour grading.
-        graphics.fill(8, corner, 10, height - corner, 0x1237B9FF);
-        graphics.fill(width - 10, corner, width - 8, height - corner, 0x12FF493B);
-
-        renderFrame(graphics, width, height);
-        if ((now / 220_000_000L) != interferenceSeed) {
-            interferenceSeed = now / 220_000_000L;
+        Vec3 camera = context.cameraPos;
+        for (BlockPos pos : nearbyCameras) {
+            Vec3 anchor = Vec3.atCenterOf(pos);
+            if (anchor.distanceToSqr(camera) < 2.25D
+                    || anchor.distanceToSqr(camera) > 24.0D * 24.0D
+                    || !visibleFromCamera(minecraft, camera, anchor)) continue;
+            addPrompt(minecraft, new WorldTarget(TargetKind.CAMERA, pos), context);
         }
     }
 
-    private static void renderFrame(GuiGraphics graphics, int width, int height) {
-        int m = 18;
-        int l = 22;
-        int c = 0xDEE9FAFF;
-        graphics.fill(m, m, m + l, m + 2, c);
-        graphics.fill(m, m, m + 2, m + l, c);
-        graphics.fill(width - m - l, m, width - m, m + 2, c);
-        graphics.fill(width - m - 2, m, width - m, m + l, c);
-        graphics.fill(m, height - m - 2, m + l, height - m, c);
-        graphics.fill(m, height - m - l, m + 2, height - m, c);
-        graphics.fill(width - m - l, height - m - 2, width - m, height - m, c);
-        graphics.fill(width - m - 2, height - m - l, width - m, height - m, c);
+    private static void addPrompt(Minecraft minecraft, WorldTarget target,
+            ProjectionContext context) {
+        if (PROMPTS.stream().anyMatch(existing -> existing.kind == target.kind
+                && existing.pos.equals(target.pos))) return;
+        Vec3 anchor = Vec3.atCenterOf(target.pos);
+        ScreenPoint point = project(anchor, context);
+        if (point == null) return;
+        int margin = Scp079UiTheme.FRAME_MARGIN + 16;
+        if (point.x < margin || point.x > context.width - margin
+                || point.y < margin || point.y > context.height - margin) return;
+        PROMPTS.add(new InteractionPrompt(target.kind,
+                target.pos.immutable(), point));
     }
 
-    private static void renderPower(GuiGraphics graphics, Minecraft minecraft,
-            int width, int height) {
-        int x = width - 168;
-        int y = height - 38;
-        graphics.drawString(minecraft.font, ScpFonts.roboto("AUXILIARY POWER"),
-                x, y - 12, 0xFFF0FAFF, false);
-        graphics.fill(x, y, x + 142, y + 7, 0xB4142732);
-        graphics.fill(x + 1, y + 1,
-                x + 1 + Math.round(140 * Scp079PlayableClient.power() / 100.0F),
-                y + 6, 0xFFBDEEFF);
-        graphics.drawString(minecraft.font,
-                ScpFonts.roboto(Scp079PlayableClient.power() + " / 100"),
-                x + 92, y - 12, 0xFFF0FAFF, false);
-    }
+    private static void renderPrompts(GuiGraphics graphics,
+            Minecraft minecraft) {
+        ScreenPoint pointer = pointer(minecraft);
+        InteractionPrompt active = closestPrompt(pointer, 56.0D);
+        for (InteractionPrompt prompt : PROMPTS) {
+            boolean focused = prompt == active;
+            int size = focused ? 34 : prompt.kind == TargetKind.CAMERA ? 25 : 30;
+            int x = Math.round(prompt.screen.x) - size / 2;
+            int y = Math.round(prompt.screen.y) - size / 2;
+            ResourceLocation icon = switch (prompt.kind) {
+                case TESLA -> TESLA_ICON;
+                case CAMERA -> CAMERA_ICON;
+                default -> DOOR_ICON;
+            };
+            float tint = focused ? 1.0F : 0.78F;
+            Scp079UiTheme.blitIcon64(graphics, icon, x, y, size,
+                    0.72F * tint, 0.94F * tint, 1.0F * tint,
+                    focused ? 1.0F : 0.82F);
 
-    private static TargetKind aimedTarget(Minecraft minecraft) {
-        HitResult hitResult = minecraft.hitResult;
-        if (!(hitResult instanceof BlockHitResult hit)
-                || hit.getType() != HitResult.Type.BLOCK || minecraft.level == null) {
-            return TargetKind.NONE;
-        }
-        BlockPos pos = hit.getBlockPos();
-        for (BlockPos cursor : BlockPos.betweenClosed(pos.offset(-4, -4, -4),
-                pos.offset(4, 4, 4))) {
-            BlockState state = minecraft.level.getBlockState(cursor);
-            if (TeslaGateStructure.isController(state)) return TargetKind.TESLA;
-        }
-        for (BlockPos cursor : BlockPos.betweenClosed(pos.offset(-3, -3, -3),
-                pos.offset(3, 3, 3))) {
-            if (FacilityModule.isFacilityDoor(minecraft.level.getBlockState(cursor))) {
-                return TargetKind.DOOR;
+            if (!focused) continue;
+            String primary = switch (prompt.kind) {
+                case DOOR -> "OPEN / CLOSE  [LMB]  " + cost(5.0D, minecraft);
+                case TESLA -> "SUPPRESS  [LMB]  " + cost(12.0D, minecraft);
+                case CAMERA -> "SWITCH CAMERA  [LMB]";
+                default -> "";
+            };
+            int tx = x + size + 8;
+            int ty = y + 2;
+            Scp079UiTheme.draw(graphics, minecraft.font, primary,
+                    tx, ty, 1.12F, Scp079UiTheme.TEXT);
+            if (prompt.kind == TargetKind.DOOR) {
+                Scp079UiTheme.draw(graphics, minecraft.font,
+                        "LOCK  [RMB]  " + cost(12.0D, minecraft),
+                        tx, ty + 17, 1.08F, Scp079UiTheme.TEXT);
             }
         }
-        return TargetKind.NONE;
     }
 
-    private static ScreenPoint project(Vec3 point, Vec3 cameraPos, Vec3 right,
-            Vec3 up, Vec3 look, Matrix4f projection, int width, int height) {
-        Vec3 delta = point.subtract(cameraPos);
-        float vx = (float) delta.dot(right);
-        float vy = (float) delta.dot(up);
-        float vz = (float) -delta.dot(look);
-        Vector4f clip = projection.transform(new Vector4f(vx, vy, vz, 1.0F));
+    private static InteractionPrompt closestPrompt(ScreenPoint point,
+            double maxDistance) {
+        if (point == null) return null;
+        double maxSqr = maxDistance * maxDistance;
+        return PROMPTS.stream()
+                .filter(prompt -> distanceSqr(prompt.screen, point) <= maxSqr)
+                .min(Comparator.comparingDouble(prompt ->
+                        distanceSqr(prompt.screen, point)))
+                .orElse(null);
+    }
+
+    private static ScreenPoint pointer(Minecraft minecraft) {
+        int guiW = minecraft.getWindow().getGuiScaledWidth();
+        int guiH = minecraft.getWindow().getGuiScaledHeight();
+        if (!minecraft.options.keyShift.isDown()) {
+            return new ScreenPoint(guiW * 0.5F, guiH * 0.5F);
+        }
+        double x = minecraft.mouseHandler.xpos() * guiW
+                / Math.max(1.0D, minecraft.getWindow().getScreenWidth());
+        double y = minecraft.mouseHandler.ypos() * guiH
+                / Math.max(1.0D, minecraft.getWindow().getScreenHeight());
+        return new ScreenPoint((float) x, (float) y);
+    }
+
+    private static double distanceSqr(ScreenPoint a, ScreenPoint b) {
+        double dx = a.x - b.x;
+        double dy = a.y - b.y;
+        return dx * dx + dy * dy;
+    }
+
+    private static WorldTarget resolveAimedTarget(Minecraft minecraft) {
+        HitResult hitResult = minecraft.hitResult;
+        if (!(hitResult instanceof BlockHitResult hit)
+                || hit.getType() != HitResult.Type.BLOCK
+                || minecraft.level == null) return null;
+        BlockPos hitPos = hit.getBlockPos();
+        BlockState direct = minecraft.level.getBlockState(hitPos);
+        if (direct.is(SurveillanceCameraPlaceholderModule.BLOCK.get())) {
+            return new WorldTarget(TargetKind.CAMERA, hitPos.immutable());
+        }
+
+        BlockPos tesla = nearestMatching(minecraft, hitPos, 4,
+                state -> TeslaGateStructure.isController(state));
+        if (tesla != null) return new WorldTarget(TargetKind.TESLA, tesla);
+
+        BlockPos door = nearestMatching(minecraft, hitPos, 3,
+                FacilityModule::isFacilityDoor);
+        if (door != null) return new WorldTarget(TargetKind.DOOR, door);
+        return null;
+    }
+
+    private static BlockPos nearestMatching(Minecraft minecraft,
+            BlockPos origin, int radius,
+            java.util.function.Predicate<BlockState> predicate) {
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (BlockPos cursor : BlockPos.betweenClosed(
+                origin.offset(-radius, -radius, -radius),
+                origin.offset(radius, radius, radius))) {
+            BlockState state = minecraft.level.getBlockState(cursor);
+            if (!predicate.test(state)) continue;
+            double distance = cursor.distSqr(origin);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = cursor.immutable();
+            }
+        }
+        return best;
+    }
+
+    private static void refreshNearbyCameras(Minecraft minecraft,
+            Vec3 cameraPos) {
+        long tick = minecraft.level.getGameTime();
+        if (tick - lastCameraScanTick < 10L
+                && cameraPos.distanceToSqr(lastCameraScanOrigin) < 4.0D) return;
+        lastCameraScanTick = tick;
+        lastCameraScanOrigin = cameraPos;
+
+        BlockPos center = BlockPos.containing(cameraPos);
+        List<BlockPos> found = new ArrayList<>();
+        for (BlockPos cursor : BlockPos.betweenClosed(
+                center.offset(-16, -8, -16), center.offset(16, 8, 16))) {
+            if (minecraft.level.getBlockState(cursor)
+                    .is(SurveillanceCameraPlaceholderModule.BLOCK.get())) {
+                found.add(cursor.immutable());
+            }
+        }
+        nearbyCameras = List.copyOf(found);
+    }
+
+    private static ScreenPoint project(Vec3 point, ProjectionContext context) {
+        Vec3 delta = point.subtract(context.cameraPos);
+        float vx = (float) delta.dot(context.right);
+        float vy = (float) delta.dot(context.up);
+        float vz = (float) -delta.dot(context.look);
+        Vector4f clip = context.projection.transform(new Vector4f(
+                vx, vy, vz, 1.0F));
         float w = clip.w();
         if (!Float.isFinite(w) || w <= 1.0E-5F) return null;
         float nx = clip.x() / w;
         float ny = clip.y() / w;
-        if (!Float.isFinite(nx) || !Float.isFinite(ny)) return null;
-        return new ScreenPoint((nx * 0.5F + 0.5F) * width,
-                (0.5F - ny * 0.5F) * height);
+        if (!Float.isFinite(nx) || !Float.isFinite(ny)
+                || nx < -1.25F || nx > 1.25F
+                || ny < -1.25F || ny > 1.25F) return null;
+        return new ScreenPoint((nx * 0.5F + 0.5F) * context.width,
+                (0.5F - ny * 0.5F) * context.height);
     }
 
     private static boolean visibleFromCamera(Minecraft minecraft, Vec3 camera,
             Vec3 target) {
+        if (minecraft.level == null || minecraft.player == null) return false;
         BlockHitResult hit = minecraft.level.clip(new ClipContext(camera, target,
-                ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, minecraft.player));
+                ClipContext.Block.VISUAL, ClipContext.Fluid.NONE,
+                minecraft.player));
         return hit.getType() != HitResult.Type.BLOCK
-                || camera.distanceToSqr(hit.getLocation()) + 0.30D
+                || camera.distanceToSqr(hit.getLocation()) + 0.35D
                 >= camera.distanceToSqr(target);
     }
 
@@ -368,6 +537,13 @@ public final class Scp079PlayableVisuals {
         if (entity instanceof Scp173Entity) return 173;
         if (entity instanceof Scp939Entity) return 939;
         return -1;
+    }
+
+    private static void drawRight(GuiGraphics graphics, Minecraft minecraft,
+            String value, int right, int y, float scale, int color) {
+        int width = Scp079UiTheme.scaledWidth(minecraft.font, value, scale);
+        Scp079UiTheme.draw(graphics, minecraft.font, value,
+                right - width, y, scale, color);
     }
 
     private static String mapKeyLabel(Minecraft minecraft) {
@@ -393,8 +569,18 @@ public final class Scp079PlayableVisuals {
         return new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path);
     }
 
-    private enum TargetKind { NONE, DOOR, TESLA }
+    private enum TargetKind { NONE, DOOR, TESLA, CAMERA }
+
+    private record ProjectionContext(Vec3 cameraPos, Vec3 right, Vec3 up,
+            Vec3 look, Matrix4f projection, int width, int height) { }
+
     private record ScreenPoint(float x, float y) { }
+
     private record RecognitionBox(int x1, int y1, int x2, int y2,
             String label, int color) { }
+
+    private record WorldTarget(TargetKind kind, BlockPos pos) { }
+
+    private record InteractionPrompt(TargetKind kind, BlockPos pos,
+            ScreenPoint screen) { }
 }

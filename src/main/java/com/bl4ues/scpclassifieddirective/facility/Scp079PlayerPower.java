@@ -17,7 +17,6 @@ public final class Scp079PlayerPower {
                 || !Scp079ProcessingManager.isActive(level)) {
             return false;
         }
-        // Advance lazy regeneration before touching persistent power directly.
         double current = Scp079ProcessingManager.getPower(level);
         double cost = Scp079ProcessingManager.adjustedActionCost(level, baseCost);
         if (current + 0.0001D < cost) return false;
@@ -26,5 +25,15 @@ public final class Scp079PlayerPower {
         data.setPower(current - cost);
         Scp079ScreenState.pulse(level.getServer());
         return true;
+    }
+
+    public static void refund(ServerLevel level, double baseCost) {
+        if (level == null || baseCost <= 0.0D) return;
+        Scp079ProcessingSavedData data = Scp079ProcessingSavedData.get(
+                level.getServer());
+        double adjusted = Scp079ProcessingManager.adjustedActionCost(level,
+                baseCost);
+        data.setPower(Math.min(Scp079ProcessingManager.MAX_POWER,
+                Scp079ProcessingManager.getPower(level) + adjusted));
     }
 }

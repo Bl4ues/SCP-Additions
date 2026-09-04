@@ -99,6 +99,36 @@ public final class Scp079TeslaSuppression {
         return true;
     }
 
+    /** Player-controlled SCP-079 can deliberately suppress the aimed gate. */
+    public static boolean tryPlayerSuppress(ServerLevel level,
+            BlockPos gatePos) {
+        if (level == null || gatePos == null
+                || !Scp079PlayableManager.hasController(level.getServer())
+                || !Scp079ProcessingManager.isActive(level)) return false;
+        GateKey key = key(level, gatePos);
+        long now = level.getGameTime();
+        GateState state = STATES.get(key);
+        if (state != null && state.expired(now)) {
+            STATES.remove(key, state);
+            state = null;
+        }
+        if (state != null && now < state.suppressedUntil()) return true;
+        if (state != null && now < state.reuseAfter()) return false;
+        if (!Scp079PlayerPower.trySpend(level, NORMAL_COST)) return false;
+
+        long suppressedUntil = now + SUPPRESSION_TICKS;
+        STATES.put(key, new GateState(suppressedUntil,
+                suppressedUntil + DEVICE_REUSE_TICKS));
+        emitInterference(level, gatePos);
+        Scp079DecisionLog.record(level,
+                Scp079DecisionLog.DecisionType.TESLA_SUPPRESSION,
+                Scp079DecisionLog.DecisionOutcome.EXECUTED, gatePos,
+                Scp079ProcessingManager.adjustedActionCost(level, NORMAL_COST),
+                "manual SCP-079 camera suppression · "
+                        + SUPPRESSION_TICKS / 20.0D + "s");
+        return true;
+    }
+
     private static boolean isUsefulPursuer(Mob mob) {
         if (!mob.isAlive() || !(mob.getTarget() instanceof ServerPlayer player)) {
             return false;

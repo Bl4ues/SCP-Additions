@@ -147,7 +147,7 @@ public final class Scp079PlayableManager {
         ServerLevel hostLevel = player.server.getLevel(session.hostDimension);
         if (hostLevel == null || !networkAvailable(player, hostLevel)) {
             player.displayClientMessage(Component.literal(
-                    "SCP-079 network access is offline."), true);
+                    "SCP-079 auxiliary power is offline."), true);
             return false;
         }
         FacilityCameraDefinition camera = FacilitySurveillanceRegistry
@@ -324,9 +324,14 @@ public final class Scp079PlayableManager {
                 session.hostPos, power, auxiliary, network, camera);
     }
 
+    /**
+     * Playable SCP-079 skips AI network-discovery progression. Its remote
+     * facility access is gated only by Auxiliary Power; AI SCP-079 keeps using
+     * Scp079FacilityAccessManager.hasFacilityAccess for its own progression.
+     */
     private static boolean networkAvailable(ServerPlayer player,
             ServerLevel hostLevel) {
-        return Scp079FacilityAccessManager.hasFacilityAccess(hostLevel)
+        return player != null && player.getServer() != null && hostLevel != null
                 && Scp079FacilityAccessManager.auxiliaryPowerOnline(
                 player.getServer());
     }

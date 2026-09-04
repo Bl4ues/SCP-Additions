@@ -89,7 +89,7 @@ public final class FacilityMappingManager {
             BlockPos station = FacilityFloorStationIndex.nearest(level,
                     patch.y());
             target = new FacilityRoom(UUID.randomUUID(), dimension,
-                    List.of(patch), "Unnamed Room", station);
+                    List.of(patch), "", station);
         } else {
             target = overlapping.get(0).withAddedPatch(patch);
             for (int index = 1; index < overlapping.size(); index++) {

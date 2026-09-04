@@ -114,6 +114,10 @@ public record FacilityRoom(UUID id, ResourceLocation dimension,
     private static String sanitizeName(String value) {
         String clean = value == null ? "" : value.strip()
                 .replace('\n', ' ').replace('\r', ' ');
+        // Early Facility Mapping builds persisted the visual placeholder as if
+        // it were an authored room name. Treat that exact legacy value as the
+        // unnamed state so old maps gain the intended sparse labeling too.
+        if (clean.equalsIgnoreCase("Unnamed Room")) return "";
         if (clean.length() > MAX_NAME_LENGTH) {
             clean = clean.substring(0, MAX_NAME_LENGTH);
         }

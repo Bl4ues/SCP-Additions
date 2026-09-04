@@ -45,6 +45,10 @@ import java.util.Map;
  * full-bright.</p>
  */
 public final class PickupOutlineRenderer {
+    private static final double BUTTON_MASK_PADDING = 0.003D;
+    private static final double BUTTON_FACE_SIZE = 1.5D / 16.0D;
+    private static final double STATION_BUTTON_DEPTH = 0.75D / 16.0D;
+    private static final double CARRIAGE_BUTTON_DEPTH = 0.5D / 16.0D;
     private static final ResourceLocation POST_CHAIN = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "shaders/post/pickup_outline.json");
     private static final ResourceLocation BUTTON_MASK_TEXTURE =
@@ -201,63 +205,99 @@ public final class PickupOutlineRenderer {
         Vec3 anchor = context.anchor();
         if (anchor == null) return;
 
+        boolean carriageButton = context.entity()
+                instanceof CoreRoomElevatorCarriageEntity;
         Direction facing = Direction.NORTH;
-        if (context.entity() instanceof CoreRoomElevatorCarriageEntity carriage) {
+        Vec3 faceNormal;
+        if (context.entity()
+                instanceof CoreRoomElevatorCarriageEntity carriage) {
             facing = carriage.facing();
+            faceNormal = carriage.position().subtract(anchor)
+                    .multiply(1.0D, 0.0D, 1.0D).normalize();
         } else if (context.blockPos() != null && minecraft.level != null) {
             BlockState state = minecraft.level.getBlockState(context.blockPos());
             if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
                 facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
             }
+            faceNormal = new Vec3(facing.getStepX(), 0.0D,
+                    facing.getStepZ());
+        } else {
+            faceNormal = new Vec3(facing.getStepX(), 0.0D,
+                    facing.getStepZ());
         }
-
-        double faceWidth = 0.17D;
-        double faceHeight = 0.17D;
-        double depth = 0.055D;
-        double sizeX = facing.getAxis() == Direction.Axis.X ? depth : faceWidth;
-        double sizeZ = facing.getAxis() == Direction.Axis.X ? faceWidth : depth;
+        if (faceNormal.lengthSqr() < 1.0E-6D) {
+            faceNormal = new Vec3(facing.getStepX(), 0.0D,
+                    facing.getStepZ());
+        }
+        faceNormal = faceNormal.normalize();
+        double faceSize = BUTTON_FACE_SIZE + BUTTON_MASK_PADDING * 2.0D;
+        double depth = (carriageButton
+                ? CARRIAGE_BUTTON_DEPTH : STATION_BUTTON_DEPTH)
+                + BUTTON_MASK_PADDING * 2.0D;
+        Vec3 maskFront = anchor.add(faceNormal.scale(BUTTON_MASK_PADDING));
         Vec3 cameraPosition = camera.getPosition();
 
         poseStack.pushPose();
         try {
-            poseStack.translate(anchor.x - cameraPosition.x,
-                    anchor.y - cameraPosition.y,
-                    anchor.z - cameraPosition.z);
+            poseStack.translate(maskFront.x - cameraPosition.x,
+                    maskFront.y - cameraPosition.y,
+                    maskFront.z - cameraPosition.z);
             VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
                     RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
-            emitBox(consumer, poseStack.last(),
-                    (float) (-sizeX * 0.5D), (float) (-faceHeight * 0.5D),
-                    (float) (-sizeZ * 0.5D),
-                    (float) (sizeX * 0.5D), (float) (faceHeight * 0.5D),
-                    (float) (sizeZ * 0.5D));
+            emitOrientedBox(consumer, poseStack.last(), faceNormal,
+                    faceSize, faceSize, depth);
         } finally {
             poseStack.popPose();
         }
     }
 
-    private static void emitBox(VertexConsumer consumer, PoseStack.Pose pose,
-            float minX, float minY, float minZ,
-            float maxX, float maxY, float maxZ) {
+    /** The anchor is the center of the button's exposed face. */
+    private static void emitOrientedBox(VertexConsumer consumer,
+            PoseStack.Pose pose, Vec3 faceNormal, double width,
+            double height, double depth) {
         Matrix4f matrix = pose.pose();
         Matrix3f normal = pose.normal();
+        Vec3 outward = faceNormal.normalize();
+        Vec3 right = new Vec3(outward.z, 0.0D, -outward.x)
+                .scale(width * 0.5D);
+        Vec3 up = new Vec3(0.0D, height * 0.5D, 0.0D);
+        Vec3 back = outward.scale(-depth);
+
+        Vec3 frontBottomLeft = right.scale(-1.0D).subtract(up);
+        Vec3 frontBottomRight = right.subtract(up);
+        Vec3 frontTopRight = right.add(up);
+        Vec3 frontTopLeft = right.scale(-1.0D).add(up);
+        Vec3 backBottomLeft = frontBottomLeft.add(back);
+        Vec3 backBottomRight = frontBottomRight.add(back);
+        Vec3 backTopRight = frontTopRight.add(back);
+        Vec3 backTopLeft = frontTopLeft.add(back);
+
+        quad(consumer, matrix, normal, frontBottomLeft, frontBottomRight,
+                frontTopRight, frontTopLeft, outward);
+        quad(consumer, matrix, normal, backBottomRight, backBottomLeft,
+                backTopLeft, backTopRight, outward.scale(-1.0D));
+        Vec3 rightNormal = right.normalize();
+        quad(consumer, matrix, normal, frontBottomRight, backBottomRight,
+                backTopRight, frontTopRight, rightNormal);
+        quad(consumer, matrix, normal, backBottomLeft, frontBottomLeft,
+                frontTopLeft, backTopLeft, rightNormal.scale(-1.0D));
+        quad(consumer, matrix, normal, frontTopLeft, frontTopRight,
+                backTopRight, backTopLeft, new Vec3(0.0D, 1.0D, 0.0D));
+        quad(consumer, matrix, normal, backBottomLeft, backBottomRight,
+                frontBottomRight, frontBottomLeft,
+                new Vec3(0.0D, -1.0D, 0.0D));
+    }
+
+    private static void quad(VertexConsumer consumer, Matrix4f matrix,
+            Matrix3f normal, Vec3 first, Vec3 second, Vec3 third,
+            Vec3 fourth, Vec3 faceNormal) {
         quad(consumer, matrix, normal,
-                minX, minY, minZ, maxX, minY, minZ,
-                maxX, maxY, minZ, minX, maxY, minZ, 0, 0, -1);
-        quad(consumer, matrix, normal,
-                maxX, minY, maxZ, minX, minY, maxZ,
-                minX, maxY, maxZ, maxX, maxY, maxZ, 0, 0, 1);
-        quad(consumer, matrix, normal,
-                minX, minY, maxZ, minX, minY, minZ,
-                minX, maxY, minZ, minX, maxY, maxZ, -1, 0, 0);
-        quad(consumer, matrix, normal,
-                maxX, minY, minZ, maxX, minY, maxZ,
-                maxX, maxY, maxZ, maxX, maxY, minZ, 1, 0, 0);
-        quad(consumer, matrix, normal,
-                minX, maxY, minZ, maxX, maxY, minZ,
-                maxX, maxY, maxZ, minX, maxY, maxZ, 0, 1, 0);
-        quad(consumer, matrix, normal,
-                minX, minY, maxZ, maxX, minY, maxZ,
-                maxX, minY, minZ, minX, minY, minZ, 0, -1, 0);
+                (float) first.x, (float) first.y, (float) first.z,
+                (float) second.x, (float) second.y, (float) second.z,
+                (float) third.x, (float) third.y, (float) third.z,
+                (float) fourth.x, (float) fourth.y, (float) fourth.z,
+                (float) faceNormal.x, (float) faceNormal.y,
+                (float) faceNormal.z);
     }
 
     private static void quad(VertexConsumer consumer, Matrix4f matrix,

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "scp_classified_directive:block/surveillance_camera" },
+    "facing=east": { "model": "scp_classified_directive:block/surveillance_camera", "y": 90 },
+    "facing=south": { "model": "scp_classified_directive:block/surveillance_camera", "y": 180 },
+    "facing=west": { "model": "scp_classified_directive:block/surveillance_camera", "y": 270 }
+  }
+}

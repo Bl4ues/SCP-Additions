@@ -28,6 +28,7 @@ public class CodexPanel {
     private double dragX, dragY, lastX, lastY;
     private boolean showingText, expandedImage, dragMoved;
     private ItemStack dragged = ItemStack.EMPTY;
+    private int expandedX, expandedY, expandedWidth, expandedHeight;
 
     public CodexPanel(int x, int y, int listWidth, int detailX, int detailWidth,
                       int titleY, int listTitleX, int detailTitleX, IScpInventory inventory) {
@@ -50,6 +51,13 @@ public class CodexPanel {
     public int getScrollOffset() { return list.scroll(); }
     public int getTextScrollOffset() { return textScrollOffset; }
     public boolean isShowingText() { return showingText; }
+
+    public void setExpandedBounds(int x, int y, int width, int height) {
+        expandedX = x;
+        expandedY = y;
+        expandedWidth = width;
+        expandedHeight = height;
+    }
 
     public void restoreSessionState(int selection, int scroll, int textScroll, boolean text) {
         selectedIndex = selection; list.scroll(scroll); textScrollOffset = textScroll;
@@ -78,16 +86,20 @@ public class CodexPanel {
         ItemStack stack = documents.get(selectedIndex);
         CodexDocumentDefinition definition =
                 ScpItemClassifier.getCodexDefinitionOrFallback(stack);
-        int sw = MC.getWindow().getGuiScaledWidth();
-        int sh = MC.getWindow().getGuiScaledHeight();
+        int sw = expandedWidth > 0 ? expandedWidth
+                : MC.getWindow().getGuiScaledWidth();
+        int sh = expandedHeight > 0 ? expandedHeight
+                : MC.getWindow().getGuiScaledHeight();
+        int x = expandedWidth > 0 ? expandedX : 0;
+        int y = expandedHeight > 0 ? expandedY : 0;
         int mx = Math.max(18, sw / 16);
         int my = Math.max(12, sh / 24);
 
         g.pose().pushPose();
         g.pose().translate(0.0F, 0.0F, 500.0F);
-        g.fill(0, 0, sw, sh, 0xFF000000);
+        g.fill(x, y, x + sw, y + sh, 0xFF000000);
         CodexDocumentView.renderPage(g, stack, definition,
-                mx, my, sw - mx * 2, sh - my * 2);
+                x + mx, y + my, sw - mx * 2, sh - my * 2);
         g.pose().popPose();
     }
 

@@ -40,13 +40,8 @@ public class ScpInventoryScreen extends Screen {
     private static final int FOOTER_BACKGROUND = 0x242B3133;
     private static final int DRAG_ICON_BOX = 0x99303638;
     private static final int DRAG_ICON_CORNER = 0xCC6A6C6C;
-    private static final int EQUIPMENT_LINE_GRAY = 0x666A6C6C;
-    private static final int EQUIPMENT_ICON_BOX = 0x66303638;
-    private static final int EQUIPMENT_ICON_BORDER = 0xAA6A6C6C;
     private static final long DOUBLE_LEFT_CLICK_WINDOW_MS = 320L;
     private static final double DRAG_THRESHOLD = 4.0D;
-    private static final float DROP_PREVIEW_UI_ALPHA = 0.25F;
-    private static final float DROP_PREVIEW_SOLID_ITEM_ALPHA_THRESHOLD = 0.72F;
 
     private static final ResourceLocation BACKGROUND = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventory_background.png");
     private static final ResourceLocation INVENTORY_ICON = new ResourceLocation(ScpInventoryMod.MODID, "textures/gui/inventoryicon.png");
@@ -71,21 +66,10 @@ public class ScpInventoryScreen extends Screen {
     private static final int KEYS_TAB_WIDTH = 104;
     private static final int HEALTH_ICON_SIZE = 20;
     private static final int DRAG_ICON_FRAME_SIZE = 24;
-    private static final int EQUIPMENT_ROW_HEIGHT = 37;
-    private static final int EQUIPMENT_ICON_BOX_SIZE = 24;
     private static final float HEALTH_TEXT_SCALE = 0.86F;
 
     private enum ScreenMode { INVENTORY, STATUS, CRAFTING, CODEX }
     private enum DragSourceKind { NONE, MAIN, EQUIPMENT }
-
-    private static final ScpEquipmentSlot[] DROP_PREVIEW_EQUIPMENT_SLOTS = {
-            ScpEquipmentSlot.HEAD,
-            ScpEquipmentSlot.CHEST,
-            ScpEquipmentSlot.LEGS,
-            ScpEquipmentSlot.FEET,
-            ScpEquipmentSlot.ACCESSORY,
-            ScpEquipmentSlot.WEAPON
-    };
 
     private ScrollableItemList itemList;
     private EquipmentPanel equipmentPanel;
@@ -130,9 +114,7 @@ public class ScpInventoryScreen extends Screen {
     private double dragStartX = 0.0D;
     private double dragStartY = 0.0D;
     private boolean dragMoved = false;
-    private boolean dropPreviewTransparentRender = false;
     private float dropPreviewFade = 0.0F;
-    private float dropPreviewRenderAlpha = 1.0F;
     private static final long PDA_TRANSITION_NANOS = 520_000_000L;
     private final long pdaOpenStartedNanos = System.nanoTime();
     private long pdaCloseStartedNanos = -1L;
@@ -200,6 +182,7 @@ public class ScpInventoryScreen extends Screen {
                     equipmentPanelX,
                     inv.getDocuments()
             );
+            codexPanel.setExpandedBounds(rootX, rootY, rootWidth, rootHeight);
             if (rememberUiState()) {
                 codexPanel.restoreSessionState(rememberedCodexSelection, rememberedCodexScroll,
                         rememberedCodexTextScroll, rememberedCodexText);
@@ -292,6 +275,9 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         updateDropPreviewFade(isPreviewingWorldDrop(mouseX, mouseY));
+        // The world dim is a viewport-sized pass. Rotating it with the PDA
+        // produces a giant diagonal quad while drawing/stowing the device.
+        renderBackground(g);
         g.pose().pushPose();
         applyPdaPresentationPose(g, mouseX, mouseY);
         renderPdaContents(g, mouseX, mouseY, partialTick);
@@ -301,7 +287,6 @@ public class ScpInventoryScreen extends Screen {
 
     private void renderPdaContents(GuiGraphics g, int mouseX, int mouseY,
             float partialTick) {
-        renderBackground(g);
         renderPanels(g);
         renderHealthStatus(g);
 
@@ -380,9 +365,17 @@ public class ScpInventoryScreen extends Screen {
         graphics.pose().pushPose();
         graphics.pose().translate(rootX + rootWidth * 0.5F,
                 rootY + rootHeight * 0.5F, 620.0F);
-        float modelScale = rootHeight / 7.1F;
-        graphics.pose().scale(modelScale, -modelScale, modelScale);
-        graphics.pose().translate(-0.72F, -1.38F, 0.0F);
+
+        // The authored PDA is upright. Its screen occupies exactly 20x26
+        // Blockbench units and is centered at (0, 43). Rotate the complete
+        // device so that this becomes the 26x20 landscape surface used by the
+        // existing 1406:1080 interface, then derive scale from the actual
+        // on-screen layout instead of an arbitrary model-size estimate.
+        graphics.pose().mulPose(Axis.ZP.rotationDegrees(-90.0F));
+        float modelScale = rootWidth * 16.0F / 26.0F;
+        graphics.pose().scale(modelScale, -modelScale, 16.0F);
+        graphics.pose().translate(-0.5F,
+                -(0.51F + 43.0F / 16.0F), 0.0F);
         InventoryPdaRenderer.INSTANCE.render(graphics.pose());
         graphics.pose().popPose();
     }
@@ -423,45 +416,6 @@ public class ScpInventoryScreen extends Screen {
         float speed = targetVisible ? 0.055F : 0.070F;
         dropPreviewFade += (target - dropPreviewFade) * speed;
         if (Math.abs(dropPreviewFade - target) < 0.008F) dropPreviewFade = target;
-    }
-
-    private float getDropPreviewUiAlpha() {
-        return 1.0F - dropPreviewFade * (1.0F - DROP_PREVIEW_UI_ALPHA);
-    }
-
-    private void renderTransparentDropPreview(GuiGraphics g, int mouseX, int mouseY) {
-        renderPreviewBackgroundDim(g);
-        dropPreviewTransparentRender = true;
-        dropPreviewRenderAlpha = getDropPreviewUiAlpha();
-        g.setColor(1.0F, 1.0F, 1.0F, dropPreviewRenderAlpha);
-
-        renderPanels(g);
-        renderHealthStatus(g);
-        if (mode == ScreenMode.CODEX) {
-            if (codexPanel != null) codexPanel.render(g, mouseX, mouseY);
-        } else if (mode == ScreenMode.STATUS) {
-            if (statusPanel != null) statusPanel.render(g, mouseX, mouseY);
-        } else if (mode == ScreenMode.CRAFTING) {
-            if (craftingPanel != null) craftingPanel.render(g, mouseX, mouseY);
-        } else {
-            renderInventoryHeader(g);
-            renderTabs(g);
-            if (itemList != null) itemList.render(g, mouseX, mouseY, dropPreviewRenderAlpha);
-            renderDropPreviewEquipmentPanel(g);
-        }
-        renderBottomNavigation(g);
-
-        g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-        dropPreviewTransparentRender = false;
-        dropPreviewRenderAlpha = 1.0F;
-        renderDraggedStack(g, mouseX, mouseY);
-    }
-
-    private void renderPreviewBackgroundDim(GuiGraphics g) {
-        float dimAlpha = 0.35F * (1.0F - dropPreviewFade);
-        if (dimAlpha <= 0.01F) return;
-        int alpha = Math.max(1, Math.min(255, Math.round(255.0F * dimAlpha)));
-        g.fill(0, 0, width, height, alpha << 24);
     }
 
     private void renderPanels(GuiGraphics g) {
@@ -515,58 +469,6 @@ public class ScpInventoryScreen extends Screen {
         drawTab(g, startX + tabWidth + gap, tabDrawY, tabWidth, "KEYS", showingKeys);
     }
 
-    private void renderDropPreviewEquipmentPanel(GuiGraphics g) {
-        if (inventory == null) return;
-        drawSectionTitle(g, equipmentPanelX, titleY, "EQUIPMENT");
-        int rowY = equipmentY;
-        for (ScpEquipmentSlot slot : DROP_PREVIEW_EQUIPMENT_SLOTS) {
-            renderDropPreviewEquipmentSlot(g, slot, rowY);
-            rowY += EQUIPMENT_ROW_HEIGHT;
-        }
-    }
-
-    private void renderDropPreviewEquipmentSlot(GuiGraphics g, ScpEquipmentSlot slot, int rowY) {
-        ItemStack stack = inventory.getEquipment(slot);
-        int iconX = equipmentX + 8;
-        int iconY = rowY + 6;
-        int textX = equipmentX + 44;
-        if (stack.isEmpty()) {
-            drawDropPreviewEmptyCorners(g, iconX, iconY);
-        } else {
-            drawDropPreviewFilledFrame(g, iconX, iconY);
-            if (dropPreviewRenderAlpha >= DROP_PREVIEW_SOLID_ITEM_ALPHA_THRESHOLD) g.renderItem(stack, iconX + 4, iconY + 4);
-        }
-        Component itemName = stack.isEmpty() ? Component.literal("None") : stack.getHoverName();
-        g.drawString(minecraft.font, ScpFonts.roboto(slot.getDisplayName()), textX, rowY + 7, uiColor(TEXT_WHITE), false);
-        g.drawString(minecraft.font, ScpFonts.roboto(itemName), textX, rowY + 20, uiColor(stack.isEmpty() ? TEXT_GRAY : TEXT_WHITE), false);
-        int lineY = rowY + EQUIPMENT_ROW_HEIGHT - 1;
-        g.fill(equipmentX, lineY, equipmentX + equipmentWidth, lineY + 1, uiColor(EQUIPMENT_LINE_GRAY));
-    }
-
-    private void drawDropPreviewFilledFrame(GuiGraphics g, int x, int y) {
-        int right = x + EQUIPMENT_ICON_BOX_SIZE;
-        int bottom = y + EQUIPMENT_ICON_BOX_SIZE;
-        g.fill(x, y, right, bottom, uiColor(EQUIPMENT_ICON_BOX));
-        g.fill(x, y, right, y + 1, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(x, bottom - 1, right, bottom, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(x, y, x + 1, bottom, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(right - 1, y, right, bottom, uiColor(EQUIPMENT_ICON_BORDER));
-    }
-
-    private void drawDropPreviewEmptyCorners(GuiGraphics g, int x, int y) {
-        int right = x + EQUIPMENT_ICON_BOX_SIZE;
-        int bottom = y + EQUIPMENT_ICON_BOX_SIZE;
-        int corner = 6;
-        g.fill(x, y, x + corner, y + 1, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(x, y, x + 1, y + corner, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(right - corner, y, right, y + 1, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(right - 1, y, right, y + corner, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(x, bottom - 1, x + corner, bottom, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(x, bottom - corner, x + 1, bottom, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(right - corner, bottom - 1, right, bottom, uiColor(EQUIPMENT_ICON_BORDER));
-        g.fill(right - 1, bottom - corner, right, bottom, uiColor(EQUIPMENT_ICON_BORDER));
-    }
-
     private void renderBottomNavigation(GuiGraphics g) {
         drawNavigationButton(g, getInventoryNavX(), navY, "INVENTORY", mode == ScreenMode.INVENTORY ? INVENTORY_ICON_SELECTED : INVENTORY_ICON, mode == ScreenMode.INVENTORY);
         drawNavigationButton(g, getStatusNavX(), navY, "STATUS", mode == ScreenMode.STATUS ? STATUS_ICON_SELECTED : STATUS_ICON, mode == ScreenMode.STATUS);
@@ -587,10 +489,9 @@ public class ScpInventoryScreen extends Screen {
 
     private void blitSmoothTexture(GuiGraphics g, ResourceLocation texture, int x, int y, int width, int height, int sourceWidth, int sourceHeight) {
         setTextureFiltering(texture, true);
-        float alpha = dropPreviewTransparentRender ? dropPreviewRenderAlpha : 1.0F;
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         g.blit(texture, x, y, width, height, 0.0F, 0.0F, sourceWidth, sourceHeight, sourceWidth, sourceHeight);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         setTextureFiltering(texture, false);
@@ -621,10 +522,7 @@ public class ScpInventoryScreen extends Screen {
     }
 
     private int uiColor(int color) {
-        if (!dropPreviewTransparentRender) return color;
-        int alpha = color >>> 24;
-        int fadedAlpha = Math.max(1, Math.round(alpha * dropPreviewRenderAlpha));
-        return (fadedAlpha << 24) | (color & 0x00FFFFFF);
+        return color;
     }
 
     private void renderDraggedStack(GuiGraphics g, int mouseX, int mouseY) {

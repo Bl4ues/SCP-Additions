@@ -60,10 +60,16 @@ public final class InventoryPdaThirdPersonClient {
 
         event.getPoseStack().pushPose();
         event.getPoseStack().translate(0.0D,
-                player.isCrouching() ? 0.82D : 1.02D, -0.34D);
+                player.isCrouching() ? 0.86D : 1.06D, -0.34D);
         event.getPoseStack().mulPose(Axis.YP.rotationDegrees(180.0F));
-        event.getPoseStack().mulPose(Axis.XP.rotationDegrees(72.0F));
-        event.getPoseStack().scale(0.022F, -0.022F, 0.022F);
+        event.getPoseStack().mulPose(Axis.XP.rotationDegrees(68.0F));
+        event.getPoseStack().mulPose(Axis.ZP.rotationDegrees(-90.0F));
+        event.getPoseStack().scale(0.24F, -0.24F, 0.24F);
+        // GeoObjectRenderer adds (0.5, 0.51, 0.5) before rendering. Offset
+        // the authored screen center so the device, rather than its raw model
+        // origin, sits between the player's hands.
+        event.getPoseStack().translate(-0.5F,
+                -(0.51F + 43.0F / 16.0F), 0.0F);
         InventoryPdaRenderer.INSTANCE.renderThirdPerson(event.getPoseStack());
         event.getPoseStack().popPose();
         if (previous != null) previous.restore(model);

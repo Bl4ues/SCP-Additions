@@ -82,6 +82,7 @@ public class ScpClassifiedDirectiveModTabs {
         return List.of(
                 new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get()),
+                new ItemStack(FacilityMappingItems.getTool()),
                 new ItemStack(DocumentItems.getDocument()));
     }
 
@@ -137,10 +138,7 @@ public class ScpClassifiedDirectiveModTabs {
         return stacks;
     }
 
-    /**
-     * Non-SCP anomalous objects belong here. Keeping this separate from the SCP
-     * list preserves the numeric SCP ordering while sharing one creative tab.
-     */
+    /** Non-SCP anomalous objects belong here. */
     public static List<ItemStack> anomalousItemStacks() {
         return List.of(new ItemStack(ScpClassifiedDirectiveModItems.ITEM_006.get()));
     }
@@ -160,10 +158,7 @@ public class ScpClassifiedDirectiveModTabs {
         return creativeTabDisplayStacks(itemCreativeSections());
     }
 
-    /**
-     * Mirrors the Facility tab layout: one empty nine-slot row is reserved for
-     * each graphical section header, followed by that section's real items.
-     */
+    /** Mirrors the Facility tab layout with one header row per section. */
     public static List<ItemStack> anomalyCreativeTabDisplayStacks() {
         return creativeTabDisplayStacks(anomalyCreativeSections());
     }

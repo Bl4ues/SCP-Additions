@@ -2,11 +2,13 @@ package com.bl4ues.scpclassifieddirective.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.ElevatorArrivalDisplayData;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorStationIndex;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents;
 
 import java.util.function.Supplier;
@@ -47,6 +49,9 @@ public final class ElevatorArrivalSavePacket {
             if (player.level().getBlockEntity(message.pos)
                     instanceof CoreRoomElevatorModule.StationBlockEntity station) {
                 station.setArrivalDisplay(message.data);
+                if (player.level() instanceof ServerLevel level) {
+                    FacilityFloorStationIndex.refresh(level, message.pos);
+                }
             }
         });
         context.setPacketHandled(true);

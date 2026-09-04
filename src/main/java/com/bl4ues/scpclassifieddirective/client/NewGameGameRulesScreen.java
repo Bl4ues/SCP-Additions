@@ -155,8 +155,7 @@ final class NewGameGameRulesScreen extends Screen {
         for (RuleRow row : rows) {
             if (row.category != previous) {
                 int categoryY = row.y - CATEGORY_HEIGHT + 8;
-                Component category = Component.literal(
-                        humanize(row.category.name()));
+                String category = humanize(row.category.name());
                 graphics.drawString(font, ScpFonts.montserrat(category),
                         layout.x + 24, categoryY,
                         fade(ACCENT_BRIGHT, alpha), false);

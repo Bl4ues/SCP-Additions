@@ -75,7 +75,6 @@
     "client.FontMixin",
     "client.DamageIndicatorParticleMixin",
     "client.ChatComponentMixin",
-    "client.ChatScreenMixin",
     "client.CommandSuggestionsMixin",
     "client.AdvancementToastMixin",
     "client.ToastVisibilityMixin",
@@ -85,7 +84,8 @@
     "client.Scp939ModelPolishMixin",
     "client.PlayerSmoothCrouchMixin",
     "client.Scp714ComaPromptMixin",
-    "client.LevelRendererEntityTargetAccessor"
+    "client.LevelRendererEntityTargetAccessor",
+    "client.Scp079PlayableVisualMixin"
   ],
   "injectors": {
     "defaultRequire": 1

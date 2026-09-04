@@ -61,6 +61,16 @@ public abstract class MainMenuPlayPanelsPolishMixin {
         return 1.0F;
     }
 
+    @ModifyConstant(method = "drawRow", constant = @Constant(stringValue = "Create New World"))
+    private static String scpClassifiedDirective$renameCreateWorld(String original) {
+        return "New Game";
+    }
+
+    @ModifyConstant(method = "drawRow", constant = @Constant(stringValue = "Start a new local world"))
+    private static String scpClassifiedDirective$renameCreateWorldSubtitle(String original) {
+        return "Start a new world";
+    }
+
     /*
      * The custom multiplayer flyout performs the same status pings as vanilla,
      * but it owns the pinger lifecycle itself. A failed socket must become an

@@ -1,3 +1,6 @@
 {
-  "parent": "minecraft:item/debug_stick"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "scp_classified_directive:item/safe_zone_tool"
+  }
 }

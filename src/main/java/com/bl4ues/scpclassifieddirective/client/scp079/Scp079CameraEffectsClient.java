@@ -10,10 +10,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Low-light and feed-switch effects layered after the shaderpack/world render. */
+/** Low-light and feed-switch effects placed over the world but below 079's HUD. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079CameraEffectsClient {
@@ -31,14 +32,18 @@ public final class Scp079CameraEffectsClient {
             return;
         }
         Vec3 current = Scp079PlayableClient.viewPosition();
-        if (lastFeedPosition == null || current.distanceToSqr(lastFeedPosition) > 0.25D) {
+        if (lastFeedPosition == null
+                || current.distanceToSqr(lastFeedPosition) > 0.25D) {
             interferenceUntil = System.nanoTime() + INTERFERENCE_NANOS;
             lastFeedPosition = current;
         }
     }
 
-    @SubscribeEvent
-    public static void onRenderGui(RenderGuiEvent.Post event) {
+    // CRT framebuffer distortion runs at normal priority first. This LOWEST
+    // pass then adds camera-signal effects before vanilla/custom overlays render,
+    // keeping labels, recognition boxes and controls sharp like the SL reference.
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onRenderGui(RenderGuiEvent.Pre event) {
         if (!Scp079PlayableClient.cameraMode()) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
@@ -68,7 +73,8 @@ public final class Scp079CameraEffectsClient {
                 int color = i % 3 == 0 ? 0x9AC6F4FF
                         : i % 3 == 1 ? 0x72182C38 : 0x584F96AC;
                 event.getGuiGraphics().fill(Math.max(0, offset), y,
-                        Math.min(width, width + offset), Math.min(height, y + strip), color);
+                        Math.min(width, width + offset), Math.min(height, y + strip),
+                        color);
             }
         }
     }

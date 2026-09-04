@@ -54,7 +54,7 @@ final class NewGameWidgets {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX,
+        public void renderWidget(GuiGraphics graphics, int mouseX,
                 int mouseY, float partialTick) {
             int insetX = 10;
             int insetY = Math.max(0,

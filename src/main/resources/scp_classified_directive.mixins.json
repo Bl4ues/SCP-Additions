@@ -54,6 +54,7 @@
     "client.MainMenuNewGameRedirectMixin",
     "client.CreateWorldScreenInvoker",
     "client.ExperimentsScreenAccessor",
+    "client.NewGameDifficultyBulletMixin",
     "client.MainMenuServerListSafetyMixin",
     "client.MainMenuSettingsPanelCompatMixin",
     "client.PauseMenuSettingsPanelCompatMixin",

@@ -56,6 +56,7 @@ import net.minecraftforge.registries.RegistryObject;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
+import com.bl4ues.scpclassifieddirective.safezone.DiscoveryMusicManager;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -1048,6 +1049,7 @@ public final class CoreRoomElevatorModule {
                 blockEntity.initialized = true;
                 CoreRoomElevatorManager.rebuildColumn(serverLevel, pos, null);
             }
+            DiscoveryMusicManager.checkCoreRoomStation(serverLevel, pos);
             DoorVisualState next = CoreRoomElevatorManager
                     .visualStateForStation(serverLevel, pos);
             blockEntity.setDoorState(next);

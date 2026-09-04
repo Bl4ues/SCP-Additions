@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.safezone.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.safezone.DiscoveryMusicManager;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZone;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 import net.minecraft.core.BlockPos;
@@ -41,6 +42,9 @@ public final class SafeZoneNetwork {
                 UpdateZone::encode, UpdateZone::decode, UpdateZone::handle);
         ScpClassifiedDirectiveMod.addNetworkMessage(DeleteZone.class,
                 DeleteZone::encode, DeleteZone::decode, DeleteZone::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(DiscoveryCue.class,
+                DiscoveryCue::encode, DiscoveryCue::decode,
+                DiscoveryCue::handle);
     }
 
     public static void requestSelectionStart(BlockPos pos) {
@@ -82,6 +86,14 @@ public final class SafeZoneNetwork {
     public static void deleteZone(UUID id) {
         ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
                 new DeleteZone(id));
+    }
+
+    public static void sendDiscoveryCue(ServerPlayer player,
+            DiscoveryMusicManager.Cue cue) {
+        if (player == null || cue == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new DiscoveryCue(cue));
     }
 
     private static void writeZone(FriendlyByteBuf buffer, SafeZone zone) {
@@ -237,6 +249,27 @@ public final class SafeZoneNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> SafeZoneManager.delete(
                     context.getSender(), message.id));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record DiscoveryCue(DiscoveryMusicManager.Cue cue) {
+        private static void encode(DiscoveryCue message,
+                FriendlyByteBuf buffer) {
+            buffer.writeVarInt(message.cue.ordinal());
+        }
+
+        private static DiscoveryCue decode(FriendlyByteBuf buffer) {
+            return new DiscoveryCue(DiscoveryMusicManager.Cue.byNetworkId(
+                    buffer.readVarInt()));
+        }
+
+        private static void handle(DiscoveryCue message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.safezone.client.DiscoveryMusicClient
+                            .play(message.cue)));
             context.setPacketHandled(true);
         }
     }

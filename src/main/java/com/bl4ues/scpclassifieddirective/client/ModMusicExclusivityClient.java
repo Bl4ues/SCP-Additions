@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.config.InventoryModuleRuntimeState;
+import com.bl4ues.scpclassifieddirective.safezone.client.DiscoveryMusicClient;
 import com.bl4ues.scpclassifieddirective.safezone.client.SafeZoneMusicClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -65,6 +66,7 @@ public final class ModMusicExclusivityClient {
                 || Scp173EncounterAudioClient.isPlaying()
                 || Scp939AudioClient.isMusicPlaying()
                 || Scp714MusicClient.isPlaying()
+                || DiscoveryMusicClient.isPlaying()
                 || SafeZoneMusicClient.isPlaying();
     }
 }

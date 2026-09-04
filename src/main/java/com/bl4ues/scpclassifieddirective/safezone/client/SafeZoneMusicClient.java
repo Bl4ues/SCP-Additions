@@ -38,7 +38,8 @@ public final class SafeZoneMusicClient {
         SafeZone zone = SafeZoneClientState.zoneAt(
                 minecraft.level.dimension().location(),
                 minecraft.player.position());
-        String desired = zone != null && zone.musicEnabled()
+        String desired = !DiscoveryMusicClient.isPlaying()
+                && zone != null && zone.musicEnabled()
                 ? zone.effectiveTrack() : "";
         if (!desired.equals(activeTrack)) {
             transitionTo(minecraft, desired);
@@ -88,6 +89,10 @@ public final class SafeZoneMusicClient {
         fading = null;
         activeTrack = "";
         retryTicks = 0;
+    }
+
+    static void suspendForDiscovery(Minecraft minecraft) {
+        stopImmediately(minecraft);
     }
 
     public static boolean isPlaying() {

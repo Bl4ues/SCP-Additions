@@ -29,6 +29,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import com.bl4ues.scpclassifieddirective.advancement.ScpAdvancementAwards;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
+import com.bl4ues.scpclassifieddirective.safezone.DiscoveryMusicManager;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -173,6 +174,9 @@ public abstract class AbstractScp131Entity extends PathfinderMob implements GeoE
             }
             if (player instanceof ServerPlayer serverPlayer) {
                 ScpEntityNetwork.showScp131Notice(serverPlayer, true);
+            }
+            if (level() instanceof ServerLevel serverLevel) {
+                DiscoveryMusicManager.onScp131Followed(serverLevel);
             }
             playVoice(1.0F);
             scheduleAmbientNoise(220 + random.nextInt(320));

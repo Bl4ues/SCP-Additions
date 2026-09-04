@@ -117,6 +117,7 @@
 
 - SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally;
 - SCP-131 instances now dismiss their player's follower group when they begin watching SCP-173, matching the manual dismiss action.
+- The first time a player makes an SCP-131 follow in a world, `scp131found.ogg` now plays once for every player currently connected to that world save.
 
 ## Legacy remakes
 
@@ -245,6 +246,7 @@
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
+- Added the per-player, per-world `coreroomdiscovery.ogg` cue, played once when that player first sees a Core Room Floor Station;
 - Added a construction preview for Core Room elevators: holding a Floor Station or Pulley displays a vertical green/red particle guide for valid range and obstruction checks, while structural beams are generated only after a valid Pulley closes the column and are removed when that connection becomes invalid;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;

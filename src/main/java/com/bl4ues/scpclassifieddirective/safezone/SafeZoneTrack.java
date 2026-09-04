@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.safezone;
 
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
+import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 import net.minecraft.core.BlockPos;
@@ -17,7 +18,11 @@ public enum SafeZoneTrack {
     SCP_079("scp_079", "SCP-079 Soundtrack", true),
     SCP_012("scp_012", "SCP-012 Soundtrack", true),
     SCP_426("scp_426", "SCP-426 Soundtrack", true),
-    SCP_294("scp_294", "SCP-294 Soundtrack", true);
+    SCP_294("scp_294", "SCP-294 Soundtrack", true),
+    CORE_ROOM("core_room", "Core Room", true),
+    OFFICES("offices", "Offices", false),
+    SCP_131_CONTAINMENT("scp_131_containment",
+            "SCP-131 Containment", false);
 
     private final String id;
     private final String displayName;
@@ -116,6 +121,9 @@ public enum SafeZoneTrack {
                 || state.is(ScpClassifiedDirectiveModBlocks.SCP_294_STOCKING.get())
                 || state.is(ScpClassifiedDirectiveModBlocks.SCP_294_OUT_OF_RANGE.get())) {
             return SCP_294;
+        }
+        if (state.is(CoreRoomElevatorModule.STATION.get())) {
+            return CORE_ROOM;
         }
         return null;
     }

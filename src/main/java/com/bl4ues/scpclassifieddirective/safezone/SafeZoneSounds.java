@@ -7,7 +7,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-/** Sound events are registered before their OGG files are supplied. */
+/** Sound events for Safe Zone loops and persistent discovery cues. */
 public final class SafeZoneSounds {
     public static final DeferredRegister<SoundEvent> REGISTRY =
             DeferredRegister.create(ForgeRegistries.SOUND_EVENTS,
@@ -25,6 +25,16 @@ public final class SafeZoneSounds {
             register("scp426soundtrack");
     public static final RegistryObject<SoundEvent> SCP_294 =
             register("scp294soundtrack");
+    public static final RegistryObject<SoundEvent> CORE_ROOM =
+            register("coreroomsoundtrack");
+    public static final RegistryObject<SoundEvent> OFFICES =
+            register("offices");
+    public static final RegistryObject<SoundEvent> SCP_131_CONTAINMENT =
+            register("scp131saferoom");
+    public static final RegistryObject<SoundEvent> CORE_ROOM_DISCOVERY =
+            register("coreroomdiscovery");
+    public static final RegistryObject<SoundEvent> SCP_131_FOUND =
+            register("scp131found");
 
     private SafeZoneSounds() {
     }
@@ -38,6 +48,9 @@ public final class SafeZoneSounds {
             case SCP_012 -> SCP_012.get();
             case SCP_426 -> SCP_426.get();
             case SCP_294 -> SCP_294.get();
+            case CORE_ROOM -> CORE_ROOM.get();
+            case OFFICES -> OFFICES.get();
+            case SCP_131_CONTAINMENT -> SCP_131_CONTAINMENT.get();
         };
     }
 

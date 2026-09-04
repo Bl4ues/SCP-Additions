@@ -1600,5 +1600,50 @@
         "volume": 1.0
       }
     ]
+  },
+  "coreroomsoundtrack": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:coreroomsoundtrack",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "offices": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:offices",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp131saferoom": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp131saferoom",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "coreroomdiscovery": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:coreroomdiscovery",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp131found": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp131found",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
   }
 }

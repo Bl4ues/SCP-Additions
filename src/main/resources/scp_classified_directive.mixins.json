@@ -52,6 +52,7 @@
     "client.CustomMainMenuSettingsMixin",
     "client.CustomMainMenuPlayPanelsMixin",
     "client.MainMenuNewGameRedirectMixin",
+    "client.CreateWorldScreenInvoker",
     "client.MainMenuServerListSafetyMixin",
     "client.MainMenuSettingsPanelCompatMixin",
     "client.PauseMenuSettingsPanelCompatMixin",

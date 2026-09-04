@@ -18,6 +18,7 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -61,9 +62,8 @@ final class NewGameWorldCard {
                 this::openCustomize));
 
         Font font = Minecraft.getInstance().font;
-        seed = register(new EditBox(font, 0, 0, 300, 30,
+        seed = register(new NewGameWidgets.TextField(font, 0, 0, 300, 30,
                 ScpFonts.roboto("Seed")));
-        seed.setBordered(false);
         seed.setMaxLength(128);
         seed.setTextColor(TEXT);
         seed.setTextColorUneditable(MUTED);
@@ -177,6 +177,11 @@ final class NewGameWorldCard {
         if (worldType.visible) worldType.render(graphics, mouseX, mouseY, partialTick);
     }
 
+    void renderPopup(GuiGraphics graphics, int mouseX, int mouseY,
+            float partialTick) {
+        worldType.renderPopup(graphics, mouseX, mouseY, partialTick);
+    }
+
     List<GuiEventListener> widgets() {
         return List.of(worldType, customize, seed, structures, bonusChest);
     }
@@ -215,12 +220,14 @@ final class NewGameWorldCard {
         unique.addAll(ui.getAltPresetList());
         List<NewGameWidgets.Dropdown.Entry<WorldCreationUiState.WorldTypeEntry>> out =
                 new ArrayList<>();
+        out.add(NewGameWidgets.Dropdown.Entry.disabled(null,
+                "ARC-Site 48 (Coming Soon)"));
         for (WorldCreationUiState.WorldTypeEntry entry : unique) {
+            String label = entry.describePreset().getString();
+            if (label.toLowerCase(Locale.ROOT).contains("debug")) continue;
             out.add(new NewGameWidgets.Dropdown.Entry<>(entry,
                     entry.describePreset(), true));
         }
-        out.add(NewGameWidgets.Dropdown.Entry.disabled(null,
-                "ARC-Site 48 (Coming Soon)"));
         return out;
     }
 

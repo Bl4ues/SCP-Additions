@@ -302,9 +302,8 @@ final class NewGameGameRulesScreen extends Screen {
 
         @Override
         AbstractWidget createWidget(Font font) {
-            EditBox box = new EditBox(font, 0, 0, 180, ROW_HEIGHT - 6,
-                    label);
-            box.setBordered(false);
+            EditBox box = new NewGameWidgets.TextField(font, 0, 0, 180,
+                    ROW_HEIGHT - 6, label);
             box.setMaxLength(24);
             box.setTextColor(TEXT);
             box.setTextColorUneditable(MUTED);

@@ -48,7 +48,6 @@ public final class NewGameScreenClient {
     private static final int ACCENT = 0xFFC99B18;
     private static final int ACCENT_BRIGHT = 0xFFE3C865;
     private static final int CARD = 0xB20B0E12;
-    private static final int CARD_STRONG = 0xD00B0E12;
     private static final int BORDER = 0x70444C57;
 
     private static final Map<CreateWorldScreen, State> STATES =
@@ -65,6 +64,7 @@ public final class NewGameScreenClient {
         if (existing != null) {
             existing.captureNewForeignWidgets(event.getListenersList());
             existing.hideVanillaWidgets();
+            existing.refreshAfterReturn();
             return;
         }
         if (!NewGameCreationClient.consumeCustomPresentation(screen)) return;
@@ -73,7 +73,7 @@ public final class NewGameScreenClient {
         State state = new State(screen, parent, event.getListenersList());
         STATES.put(screen, state);
         state.initializeDefaults();
-        state.buildGameControls(event);
+        state.buildControls(event);
         state.hideVanillaWidgets();
     }
 
@@ -96,9 +96,7 @@ public final class NewGameScreenClient {
         State state = STATES.get(screen);
         if (state == null || event.getScrollDelta() == 0.0D) return;
         if (state.scroll(event.getMouseX(), event.getMouseY(),
-                event.getScrollDelta())) {
-            event.setCanceled(true);
-        }
+                event.getScrollDelta())) event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -106,9 +104,7 @@ public final class NewGameScreenClient {
         if (!(event.getScreen() instanceof CreateWorldScreen screen)) return;
         State state = STATES.get(screen);
         if (state == null) return;
-        if (event.getKeyCode() == 256 && state.beginExit()) {
-            event.setCanceled(true);
-        }
+        if (event.getKeyCode() == 256 && state.beginExit()) event.setCanceled(true);
     }
 
     private static final class State {
@@ -127,6 +123,7 @@ public final class NewGameScreenClient {
         private NewGameWidgets.Toggle cheats;
         private NewGameWidgets.ActionButton back;
         private NewGameWidgets.ActionButton start;
+        private NewGameWorldCard worldCard;
 
         private DifficultyChoice normalDifficulty = DifficultyChoice.EUCLID;
         private boolean closing;
@@ -147,7 +144,7 @@ public final class NewGameScreenClient {
             normalDifficulty = DifficultyChoice.EUCLID;
         }
 
-        private void buildGameControls(ScreenEvent.Init.Post event) {
+        private void buildControls(ScreenEvent.Init.Post event) {
             Font font = Minecraft.getInstance().font;
             worldName = own(event, new EditBox(font, 0, 0, 260, 28,
                     ScpFonts.roboto("World Name")));
@@ -161,49 +158,44 @@ public final class NewGameScreenClient {
             gameMode = own(event, new NewGameWidgets.Dropdown<>(
                     0, 0, 260, 30,
                     List.of(
-                            new NewGameWidgets.Dropdown.Entry<>(
-                                    GameModeChoice.SURVIVAL, "Survival"),
-                            new NewGameWidgets.Dropdown.Entry<>(
-                                    GameModeChoice.CREATIVE, "Creative"),
-                            new NewGameWidgets.Dropdown.Entry<>(
-                                    GameModeChoice.APOLLYON, "Apollyon")
-                    ), GameModeChoice.SURVIVAL,
-                    this::setGameMode,
-                    choice -> Component.literal(choice == null
-                            ? "Survival" : choice.label)));
+                            new NewGameWidgets.Dropdown.Entry<>(GameModeChoice.SURVIVAL, "Survival"),
+                            new NewGameWidgets.Dropdown.Entry<>(GameModeChoice.CREATIVE, "Creative"),
+                            new NewGameWidgets.Dropdown.Entry<>(GameModeChoice.APOLLYON, "Apollyon")
+                    ), GameModeChoice.SURVIVAL, this::setGameMode,
+                    choice -> Component.literal(choice == null ? "Survival" : choice.label)));
 
             difficulty = own(event, new NewGameWidgets.Dropdown<>(
                     0, 0, 260, 30,
                     List.of(
-                            new NewGameWidgets.Dropdown.Entry<>(
-                                    DifficultyChoice.THAUMIEL, "Thaumiel"),
-                            new NewGameWidgets.Dropdown.Entry<>(
-                                    DifficultyChoice.SAFE, "Safe"),
-                            new NewGameWidgets.Dropdown.Entry<>(
-                                    DifficultyChoice.EUCLID, "Euclid"),
-                            new NewGameWidgets.Dropdown.Entry<>(
-                                    DifficultyChoice.KETER, "Keter")
-                    ), DifficultyChoice.EUCLID,
-                    this::setDifficulty,
-                    choice -> Component.literal(choice == null
-                            ? "Euclid" : choice.title)));
+                            new NewGameWidgets.Dropdown.Entry<>(DifficultyChoice.THAUMIEL, "Thaumiel"),
+                            new NewGameWidgets.Dropdown.Entry<>(DifficultyChoice.SAFE, "Safe"),
+                            new NewGameWidgets.Dropdown.Entry<>(DifficultyChoice.EUCLID, "Euclid"),
+                            new NewGameWidgets.Dropdown.Entry<>(DifficultyChoice.KETER, "Keter")
+                    ), DifficultyChoice.EUCLID, this::setDifficulty,
+                    choice -> Component.literal(choice == null ? "Euclid" : choice.title)));
 
             cheats = own(event, new NewGameWidgets.Toggle(
-                    0, 0, 260, 30, "Allow Cheats", false,
-                    ui::setAllowCheats));
-
+                    0, 0, 260, 30, "Allow Cheats", false, ui::setAllowCheats));
             back = own(event, new NewGameWidgets.ActionButton(
                     0, 0, 150, 32, ScpFonts.roboto("Back"), this::beginExit));
             start = own(event, new NewGameWidgets.ActionButton(
-                    0, 0, 190, 32, ScpFonts.roboto("Start Game"),
-                    this::startGame));
+                    0, 0, 190, 32, ScpFonts.roboto("Start Game"), this::startGame));
+
+            worldCard = new NewGameWorldCard(screen, ui, listener -> {
+                custom.add(listener);
+                event.addListener(listener);
+            });
         }
 
-        private <T extends GuiEventListener> T own(ScreenEvent.Init.Post event,
-                T listener) {
+        private <T extends GuiEventListener> T own(ScreenEvent.Init.Post event, T listener) {
             custom.add(listener);
             event.addListener(listener);
             return listener;
+        }
+
+        private void refreshAfterReturn() {
+            worldName.setValue(ui.getName());
+            worldCard.refreshEntries();
         }
 
         private void captureNewForeignWidgets(List<? extends GuiEventListener> listeners) {
@@ -218,9 +210,6 @@ public final class NewGameScreenClient {
             for (GuiEventListener listener : vanilla) {
                 if (listener instanceof AbstractWidget widget) widget.visible = false;
             }
-            // Mod-injected widgets are retained as live listeners. Their visual
-            // adoption into the flexible MORE card is handled by the later MORE
-            // layer rather than deleting or replacing them here.
             for (GuiEventListener listener : foreign) {
                 if (listener instanceof AbstractWidget widget) widget.visible = false;
             }
@@ -233,22 +222,20 @@ public final class NewGameScreenClient {
             if (choice == null) return;
             gameMode.setSelected(choice);
             if (choice == GameModeChoice.APOLLYON) {
-                if (!ui.isHardcore()) {
-                    normalDifficulty = DifficultyChoice.from(ui.getDifficulty());
-                }
+                if (!ui.isHardcore()) normalDifficulty = DifficultyChoice.from(ui.getDifficulty());
                 ui.setGameMode(WorldCreationUiState.SelectedGameMode.HARDCORE);
                 ui.setAllowCheats(false);
                 cheats.setValue(false);
                 cheats.active = false;
                 difficulty.lock(ScpFonts.roboto("Apollyon"));
-                return;
+            } else {
+                ui.setGameMode(choice.mode);
+                ui.setDifficulty(normalDifficulty.difficulty);
+                cheats.active = true;
+                difficulty.unlock();
+                difficulty.setSelected(normalDifficulty);
             }
-
-            ui.setGameMode(choice.mode);
-            ui.setDifficulty(normalDifficulty.difficulty);
-            cheats.active = true;
-            difficulty.unlock();
-            difficulty.setSelected(normalDifficulty);
+            worldCard.refreshEntries();
         }
 
         private void setDifficulty(DifficultyChoice choice) {
@@ -267,12 +254,10 @@ public final class NewGameScreenClient {
             if (closing) return;
             ui.setName(worldName.getValue());
             try {
-                ((CreateWorldScreenInvoker) screen)
-                        .scpclassifieddirective$invokeCreate();
+                ((CreateWorldScreenInvoker) screen).scpclassifieddirective$invokeCreate();
             } catch (RuntimeException exception) {
                 ScpClassifiedDirectiveMod.LOGGER.error(
-                        "Could not start world creation from the New Game screen",
-                        exception);
+                        "Could not start world creation from the New Game screen", exception);
             }
         }
 
@@ -289,8 +274,7 @@ public final class NewGameScreenClient {
             closing = false;
             if (parent instanceof CustomMainMenuScreen menu) {
                 menu.resumeFromConfiguration(ConfigCenterVisuals.outerAngle(),
-                        ConfigCenterVisuals.innerAngle(),
-                        ConfigCenterVisuals.capturedBackground());
+                        ConfigCenterVisuals.innerAngle(), ConfigCenterVisuals.capturedBackground());
                 Minecraft.getInstance().setScreen(menu);
             } else if (parent != null) {
                 Minecraft.getInstance().setScreen(parent);
@@ -308,31 +292,33 @@ public final class NewGameScreenClient {
         private boolean scroll(double mouseX, double mouseY, double delta) {
             Layout layout = layout();
             if (mouseX < layout.x || mouseX >= layout.x + layout.width
-                    || mouseY < layout.viewportTop
-                    || mouseY >= layout.viewportBottom) return false;
+                    || mouseY < layout.viewportTop || mouseY >= layout.viewportBottom) return false;
             float max = Math.max(0.0F, layout.contentHeight
                     - (layout.viewportBottom - layout.viewportTop));
             if (max <= 0.0F) return false;
-            scrollOffset = Mth.clamp(scrollOffset
-                    + (delta > 0.0D ? -42.0F : 42.0F), 0.0F, max);
+            scrollOffset = Mth.clamp(scrollOffset + (delta > 0.0D ? -42.0F : 42.0F),
+                    0.0F, max);
             return true;
         }
 
-        private void render(GuiGraphics graphics, int mouseX, int mouseY,
-                float partialTick) {
+        private void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             ConfigCenterVisuals.renderBackdrop(screen, graphics, mouseX, mouseY);
             Layout layout = layout();
             float alpha = ConfigCenterVisuals.contentAlpha();
 
             drawHeader(graphics, layout, alpha);
-            positionGameControls(layout);
+            positionControls(layout);
 
             graphics.enableScissor(layout.x, layout.viewportTop,
                     layout.x + layout.width, layout.viewportBottom);
             drawGameCard(graphics, layout, alpha);
             renderGameControls(graphics, mouseX, mouseY, partialTick);
+            int worldY = layout.worldY - Math.round(scrollOffset);
+            worldCard.renderBackground(graphics, layout.x, worldY, layout.width, alpha);
+            worldCard.renderControls(graphics, mouseX, mouseY, partialTick);
             graphics.disableScissor();
 
+            drawScrollbar(graphics, layout, alpha);
             drawFooter(graphics, layout, mouseX, mouseY, partialTick);
             if (closing) finishExit();
         }
@@ -342,11 +328,9 @@ public final class NewGameScreenClient {
             drawScaled(graphics, font, ScpFonts.montserrat("NEW GAME"),
                     layout.x, layout.headerY, 1.42F, applyAlpha(TEXT, alpha));
             drawScaled(graphics, font, ScpFonts.titillium("Start a new world"),
-                    layout.x, layout.headerY + 25, 1.04F,
-                    applyAlpha(MUTED, alpha));
+                    layout.x, layout.headerY + 25, 1.04F, applyAlpha(MUTED, alpha));
             graphics.fill(layout.x, layout.headerY + 48,
-                    layout.x + layout.width, layout.headerY + 50,
-                    applyAlpha(ACCENT, alpha));
+                    layout.x + layout.width, layout.headerY + 50, applyAlpha(ACCENT, alpha));
         }
 
         private void drawGameCard(GuiGraphics graphics, Layout layout, float alpha) {
@@ -354,12 +338,10 @@ public final class NewGameScreenClient {
             int cardY = layout.gameY - Math.round(scrollOffset);
             int cardW = layout.width;
             int cardH = layout.gameHeight;
-            graphics.fill(cardX, cardY, cardX + cardW, cardY + cardH,
-                    applyAlpha(CARD, alpha));
+            graphics.fill(cardX, cardY, cardX + cardW, cardY + cardH, applyAlpha(CARD, alpha));
             graphics.fill(cardX, cardY, cardX + 4, cardY + cardH,
                     applyAlpha(ACCENT, alpha * 0.9F));
-            graphics.fill(cardX + 18, cardY + 18,
-                    cardX + cardW - 18, cardY + 19,
+            graphics.fill(cardX + 18, cardY + 18, cardX + cardW - 18, cardY + 19,
                     applyAlpha(BORDER, alpha));
 
             int left = cardX + layout.innerPad;
@@ -370,68 +352,59 @@ public final class NewGameScreenClient {
 
             int summaryX = cardX + layout.summaryXOffset;
             int summaryY = cardY + 32;
-            graphics.fill(summaryX - 18, cardY + 26,
-                    summaryX - 17, cardY + cardH - 24,
+            graphics.fill(summaryX - 18, cardY + 26, summaryX - 17, cardY + cardH - 24,
                     applyAlpha(BORDER, alpha));
             drawDifficultySummary(graphics, displayedDifficulty(),
                     summaryX, summaryY, layout.summaryWidth, alpha);
-
-            // Keep the control column visually coherent when very wide.
             graphics.fill(left, cardY + 252, left + controlsW, cardY + 253,
                     applyAlpha(BORDER, alpha * 0.70F));
         }
 
-        private void positionGameControls(Layout layout) {
+        private void positionControls(Layout layout) {
             int cardY = layout.gameY - Math.round(scrollOffset);
             int x = layout.x + layout.innerPad;
             int w = layout.controlsWidth;
-            worldName.setX(x);
-            worldName.setY(cardY + 52);
-            worldName.setWidth(w);
-            worldName.setHeight(30);
+            worldName.setX(x); worldName.setY(cardY + 52); worldName.setWidth(w); worldName.setHeight(30);
+            gameMode.setX(x); gameMode.setY(cardY + 118); gameMode.setWidth(w); gameMode.setHeight(30);
+            difficulty.setX(x); difficulty.setY(cardY + 184); difficulty.setWidth(w); difficulty.setHeight(30);
+            cheats.setX(x); cheats.setY(cardY + 274); cheats.setWidth(w); cheats.setHeight(32);
 
-            gameMode.setX(x);
-            gameMode.setY(cardY + 118);
-            gameMode.setWidth(w);
-            gameMode.setHeight(30);
+            int worldY = layout.worldY - Math.round(scrollOffset);
+            worldCard.position(layout.x, worldY, layout.width);
 
-            difficulty.setX(x);
-            difficulty.setY(cardY + 184);
-            difficulty.setWidth(w);
-            difficulty.setHeight(30);
-
-            cheats.setX(x);
-            cheats.setY(cardY + 274);
-            cheats.setWidth(w);
-            cheats.setHeight(32);
-
-            int footerY = layout.footerY;
-            back.setX(layout.x);
-            back.setY(footerY);
-            back.setWidth(Math.min(160, Math.max(120, layout.width / 4)));
-            back.setHeight(34);
+            back.setX(layout.x); back.setY(layout.footerY);
+            back.setWidth(Math.min(160, Math.max(120, layout.width / 4))); back.setHeight(34);
             start.setWidth(Math.min(210, Math.max(170, layout.width / 3)));
-            start.setX(layout.x + layout.width - start.getWidth());
-            start.setY(footerY);
-            start.setHeight(34);
+            start.setX(layout.x + layout.width - start.getWidth()); start.setY(layout.footerY); start.setHeight(34);
         }
 
-        private void renderGameControls(GuiGraphics graphics, int mouseX,
-                int mouseY, float partialTick) {
+        private void renderGameControls(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
             drawEditSurface(graphics, worldName);
             worldName.render(graphics, mouseX, mouseY, partialTick);
             cheats.render(graphics, mouseX, mouseY, partialTick);
-            // Dropdowns render last so their option flyouts stay above nearby controls.
             gameMode.render(graphics, mouseX, mouseY, partialTick);
             difficulty.render(graphics, mouseX, mouseY, partialTick);
+        }
+
+        private void drawScrollbar(GuiGraphics graphics, Layout layout, float alpha) {
+            int viewport = layout.viewportBottom - layout.viewportTop;
+            int max = Math.max(0, layout.contentHeight - viewport);
+            if (max <= 0) return;
+            int trackX = layout.x + layout.width + 6;
+            graphics.fill(trackX, layout.viewportTop, trackX + 2, layout.viewportBottom,
+                    applyAlpha(0x553A424D, alpha));
+            int thumbH = Math.max(20, Math.round(viewport * viewport / (float) layout.contentHeight));
+            int travel = Math.max(0, viewport - thumbH);
+            int thumbY = layout.viewportTop + Math.round(travel * (scrollOffset / max));
+            graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH,
+                    applyAlpha(ACCENT, alpha));
         }
 
         private void drawFooter(GuiGraphics graphics, Layout layout,
                 int mouseX, int mouseY, float partialTick) {
             float alpha = ConfigCenterVisuals.contentAlpha();
             graphics.fill(layout.x, layout.footerY - 12,
-                    layout.x + layout.width, layout.footerY - 11,
-                    applyAlpha(BORDER, alpha));
+                    layout.x + layout.width, layout.footerY - 11, applyAlpha(BORDER, alpha));
             back.render(graphics, mouseX, mouseY, partialTick);
             start.render(graphics, mouseX, mouseY, partialTick);
         }
@@ -443,21 +416,20 @@ public final class NewGameScreenClient {
             int x = ConfigCenterVisuals.contentLeft(screen.width, width);
             int headerY = Math.max(26, Math.round(screen.height * 0.065F));
             int viewportTop = headerY + 62;
-            int footerY = screen.height - Math.max(48,
-                    Math.round(screen.height * 0.075F));
+            int footerY = screen.height - Math.max(48, Math.round(screen.height * 0.075F));
             int viewportBottom = Math.max(viewportTop + 120, footerY - 18);
             int gameY = viewportTop + 6;
-            int gameHeight = Mth.clamp(Math.round(screen.height * 0.54F),
-                    330, 430);
+            int gameHeight = Mth.clamp(Math.round(screen.height * 0.54F), 330, 430);
+            int worldY = gameY + gameHeight + 12;
+            int worldHeight = worldCard == null ? 224 : worldCard.height(width);
+            int contentHeight = worldY + worldHeight - viewportTop + 8;
             int innerPad = Mth.clamp(Math.round(width * 0.035F), 18, 30);
-            int controlsWidth = Mth.clamp(Math.round(width * 0.40F),
-                    210, 310);
+            int controlsWidth = Mth.clamp(Math.round(width * 0.40F), 210, 310);
             int summaryXOffset = innerPad + controlsWidth
                     + Mth.clamp(Math.round(width * 0.055F), 34, 54);
-            int summaryWidth = Math.max(150,
-                    width - summaryXOffset - innerPad);
+            int summaryWidth = Math.max(150, width - summaryXOffset - innerPad);
             return new Layout(x, width, headerY, viewportTop, viewportBottom,
-                    footerY, gameY, gameHeight, gameHeight + 12,
+                    footerY, gameY, gameHeight, worldY, worldHeight, contentHeight,
                     innerPad, controlsWidth, summaryXOffset, summaryWidth);
         }
     }
@@ -466,42 +438,34 @@ public final class NewGameScreenClient {
         SURVIVAL("Survival", WorldCreationUiState.SelectedGameMode.SURVIVAL),
         CREATIVE("Creative", WorldCreationUiState.SelectedGameMode.CREATIVE),
         APOLLYON("Apollyon", WorldCreationUiState.SelectedGameMode.HARDCORE);
-
         private final String label;
         private final WorldCreationUiState.SelectedGameMode mode;
-
         GameModeChoice(String label, WorldCreationUiState.SelectedGameMode mode) {
-            this.label = label;
-            this.mode = mode;
+            this.label = label; this.mode = mode;
         }
     }
 
     private enum DifficultyChoice {
-        THAUMIEL("Thaumiel", "Peaceful Exploration", Difficulty.PEACEFUL,
-                "thaumiel.png", List.of(
+        THAUMIEL("Thaumiel", "Peaceful Exploration", Difficulty.PEACEFUL, "thaumiel.png", List.of(
                 "Minecraft's Peaceful Difficulty.",
                 "Quicksaves, Decontamination Checkpoints, and Default Saves are available.",
                 "SCP roaming encounters are disabled.")),
-        SAFE("Safe", "Easy Containment", Difficulty.EASY,
-                "safe.png", List.of(
+        SAFE("Safe", "Easy Containment", Difficulty.EASY, "safe.png", List.of(
                 "Minecraft's Easy Difficulty.",
                 "Quicksaves, Decontamination Checkpoints, and Default Saves are available.",
                 "SCP roaming encounters occur less frequently.",
                 "Tesla Gate suppression keeps threats away for longer.")),
-        EUCLID("Euclid", "Standard Conditions", Difficulty.NORMAL,
-                "euclid.png", List.of(
+        EUCLID("Euclid", "Standard Conditions", Difficulty.NORMAL, "euclid.png", List.of(
                 "Minecraft's Normal Difficulty.",
                 "Only Decontamination Checkpoints and Default Saves are available.",
                 "SCP roaming encounters occur in a standard frequency.",
                 "Standard Tesla Gate suppression against threats.")),
-        KETER("Keter", "Critical Containment", Difficulty.HARD,
-                "keter.png", List.of(
+        KETER("Keter", "Critical Containment", Difficulty.HARD, "keter.png", List.of(
                 "Minecraft's Hard Difficulty.",
                 "Only Default Saves are available.",
                 "SCP roaming encounters occur very frequently.",
                 "Standard Tesla Gate suppression against threats.")),
-        APOLLYON("Apollyon", "Hardcore Containment", Difficulty.HARD,
-                "apollyon.png", List.of(
+        APOLLYON("Apollyon", "Hardcore Containment", Difficulty.HARD, "apollyon.png", List.of(
                 "Minecraft's Hard Difficulty.",
                 "Permanent Death.",
                 "Saving is disabled.",
@@ -514,17 +478,12 @@ public final class NewGameScreenClient {
         private final Difficulty difficulty;
         private final ResourceLocation icon;
         private final List<String> bullets;
-
         DifficultyChoice(String title, String subtitle, Difficulty difficulty,
                 String icon, List<String> bullets) {
-            this.title = title;
-            this.subtitle = subtitle;
-            this.difficulty = difficulty;
-            this.icon = new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
-                    "textures/gui/" + icon);
+            this.title = title; this.subtitle = subtitle; this.difficulty = difficulty;
+            this.icon = new ResourceLocation(ScpClassifiedDirectiveMod.MODID, "textures/gui/" + icon);
             this.bullets = bullets;
         }
-
         private static DifficultyChoice from(Difficulty difficulty) {
             if (difficulty == Difficulty.PEACEFUL) return THAUMIEL;
             if (difficulty == Difficulty.EASY) return SAFE;
@@ -547,19 +506,16 @@ public final class NewGameScreenClient {
             drawScaled(graphics, font, ScpFonts.roboto("RECOMMENDED"),
                     titleX, y + 43, 0.82F, applyAlpha(ACCENT, alpha));
         }
-
         int lineY = y + iconSize + 16;
         int textX = x + 14;
         int textWidth = Math.max(80, width - 18);
         for (String bullet : choice.bullets) {
-            List<String> lines = wrap(font, bullet,
-                    Math.max(70, textWidth - 22));
+            List<String> lines = wrap(font, bullet, Math.max(70, textWidth - 22));
             int markerY = lineY + 4;
-            graphics.fill(x + 1, markerY, x + 5, markerY + 7,
-                    applyAlpha(ACCENT, alpha));
+            graphics.fill(x + 1, markerY, x + 5, markerY + 7, applyAlpha(ACCENT, alpha));
             for (String line : lines) {
-                graphics.drawString(font, ScpFonts.roboto(line),
-                        textX, lineY, applyAlpha(TEXT, alpha), false);
+                graphics.drawString(font, ScpFonts.roboto(line), textX, lineY,
+                        applyAlpha(TEXT, alpha), false);
                 lineY += 12;
             }
             lineY += 6;
@@ -571,28 +527,19 @@ public final class NewGameScreenClient {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.getResourceManager().getResource(texture).isEmpty()) return;
         float scale = size / 128.0F;
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F,
-                Mth.clamp(alpha, 0.0F, 1.0F));
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, 0.0F);
+        RenderSystem.enableBlend(); RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, Mth.clamp(alpha, 0.0F, 1.0F));
+        graphics.pose().pushPose(); graphics.pose().translate(x, y, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
-        graphics.blit(texture, 0, 0, 0.0F, 0.0F,
-                128, 128, 128, 128);
+        graphics.blit(texture, 0, 0, 0.0F, 0.0F, 128, 128, 128, 128);
         graphics.pose().popPose();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.disableBlend();
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); RenderSystem.disableBlend();
     }
 
     private static void drawEditSurface(GuiGraphics graphics, EditBox box) {
         float alpha = ConfigCenterVisuals.contentAlpha();
-        int x = box.getX();
-        int y = box.getY();
-        int w = box.getWidth();
-        int h = box.getHeight();
-        graphics.fill(x, y, x + w, y + h,
-                applyAlpha(0xC00B0E12, alpha));
+        int x = box.getX(), y = box.getY(), w = box.getWidth(), h = box.getHeight();
+        graphics.fill(x, y, x + w, y + h, applyAlpha(0xC00B0E12, alpha));
         int border = box.isFocused() ? ACCENT : BORDER;
         graphics.fill(x, y, x + w, y + 1, applyAlpha(border, alpha));
         graphics.fill(x, y + h - 1, x + w, y + h, applyAlpha(border, alpha));
@@ -600,11 +547,9 @@ public final class NewGameScreenClient {
         graphics.fill(x + w - 1, y, x + w, y + h, applyAlpha(border, alpha));
     }
 
-    private static void label(GuiGraphics graphics, String text,
-            int x, int y, float alpha) {
-        drawScaled(graphics, Minecraft.getInstance().font,
-                ScpFonts.montserrat(text), x, y, 0.86F,
-                applyAlpha(MUTED, alpha));
+    private static void label(GuiGraphics graphics, String text, int x, int y, float alpha) {
+        drawScaled(graphics, Minecraft.getInstance().font, ScpFonts.montserrat(text),
+                x, y, 0.86F, applyAlpha(MUTED, alpha));
     }
 
     private static List<String> wrap(Font font, String text, int maxWidth) {
@@ -612,14 +557,10 @@ public final class NewGameScreenClient {
         StringBuilder line = new StringBuilder();
         for (String word : text.split("\\s+")) {
             String candidate = line.isEmpty() ? word : line + " " + word;
-            if (!line.isEmpty()
-                    && font.width(ScpFonts.roboto(candidate)) > maxWidth) {
-                out.add(line.toString());
-                line.setLength(0);
-                line.append(word);
+            if (!line.isEmpty() && font.width(ScpFonts.roboto(candidate)) > maxWidth) {
+                out.add(line.toString()); line.setLength(0); line.append(word);
             } else {
-                if (!line.isEmpty()) line.append(' ');
-                line.append(word);
+                if (!line.isEmpty()) line.append(' '); line.append(word);
             }
         }
         if (!line.isEmpty()) out.add(line.toString());
@@ -628,8 +569,7 @@ public final class NewGameScreenClient {
 
     private static void drawScaled(GuiGraphics graphics, Font font,
             Component text, float x, float y, float scale, int color) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().pushPose(); graphics.pose().translate(x, y, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
         graphics.drawString(font, text, 0, 0, color, false);
         graphics.pose().popPose();
@@ -637,15 +577,14 @@ public final class NewGameScreenClient {
 
     private static int applyAlpha(int color, float alpha) {
         int source = (color >>> 24) & 0xFF;
-        int out = Mth.clamp(Math.round(source * Mth.clamp(alpha, 0.0F, 1.0F)),
-                0, 255);
+        int out = Mth.clamp(Math.round(source * Mth.clamp(alpha, 0.0F, 1.0F)), 0, 255);
         return (out << 24) | (color & 0x00FFFFFF);
     }
 
     private record Layout(int x, int width, int headerY,
             int viewportTop, int viewportBottom, int footerY,
-            int gameY, int gameHeight, int contentHeight,
-            int innerPad, int controlsWidth, int summaryXOffset,
-            int summaryWidth) {
+            int gameY, int gameHeight, int worldY, int worldHeight,
+            int contentHeight, int innerPad, int controlsWidth,
+            int summaryXOffset, int summaryWidth) {
     }
 }

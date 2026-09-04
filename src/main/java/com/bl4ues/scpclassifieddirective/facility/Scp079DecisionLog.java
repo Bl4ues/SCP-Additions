@@ -42,12 +42,14 @@ public final class Scp079DecisionLog {
         }
 
         if (outcome == DecisionOutcome.EXECUTED
-                && type.manipulatesFacilityDevice()
-                && !target.equals(BlockPos.ZERO)) {
-            level.playSound(null, target,
-                    ScpClassifiedDirectiveModSounds.SCP079HACK.get(),
-                    SoundSource.BLOCKS, 0.75F,
-                    0.92F + level.getRandom().nextFloat() * 0.16F);
+                && type.manipulatesFacilityDevice()) {
+            Scp079ScreenState.pulse(server);
+            if (!target.equals(BlockPos.ZERO)) {
+                level.playSound(null, target,
+                        ScpClassifiedDirectiveModSounds.SCP079HACK.get(),
+                        SoundSource.BLOCKS, 0.75F,
+                        0.92F + level.getRandom().nextFloat() * 0.16F);
+            }
         }
 
         synchronized (HISTORIES) {

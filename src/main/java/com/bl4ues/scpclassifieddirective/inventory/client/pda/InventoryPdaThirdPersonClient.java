@@ -36,6 +36,17 @@ public final class InventoryPdaThirdPersonClient {
     }
 
     @SubscribeEvent
+    public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
+        if (!OPEN_PLAYERS.contains(event.getEntity().getUUID())) return;
+        PlayerModel<?> model = event.getRenderer().getModel();
+        ARM_POSES.put(model, new ArmPose(model));
+        poseArm(model.rightArm, -1.16F, -0.24F, 0.12F);
+        poseArm(model.leftArm, -1.16F, 0.24F, -0.12F);
+        model.rightSleeve.copyFrom(model.rightArm);
+        model.leftSleeve.copyFrom(model.leftArm);
+    }
+
+    @SubscribeEvent
     public static void onRenderPlayer(RenderPlayerEvent.Post event) {
         AbstractClientPlayer player = event.getEntity();
         PlayerModel<?> model = event.getRenderer().getModel();
@@ -89,13 +100,3 @@ public final class InventoryPdaThirdPersonClient {
         }
     }
 }
-    @SubscribeEvent
-    public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
-        if (!OPEN_PLAYERS.contains(event.getEntity().getUUID())) return;
-        PlayerModel<?> model = event.getRenderer().getModel();
-        ARM_POSES.put(model, new ArmPose(model));
-        poseArm(model.rightArm, -1.16F, -0.24F, 0.12F);
-        poseArm(model.leftArm, -1.16F, 0.24F, -0.12F);
-        model.rightSleeve.copyFrom(model.rightArm);
-        model.leftSleeve.copyFrom(model.leftArm);
-    }

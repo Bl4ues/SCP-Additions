@@ -54,6 +54,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.Locale;
 import java.util.UUID;
 
 /** Physical-host orbit, surveillance feed camera, CRT HUD and 079 input routing. */
@@ -161,6 +162,21 @@ public final class Scp079PlayableClient {
         updateCamera();
     }
 
+    /** Reuses the player's normal Inventory binding as SCP-079's facility map. */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onClientTickStart(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.START || !active || !networkAvailable) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.screen != null) return;
+        boolean requested = false;
+        while (minecraft.options.keyInventory.consumeClick()) {
+            requested = true;
+        }
+        if (requested) Scp079FacilityMapScreen.open();
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
@@ -175,16 +191,6 @@ public final class Scp079PlayableClient {
         handleShiftCursor(minecraft);
         if (cameraMode() && minecraft.screen == null && !cursorReleased) {
             consumeCameraActions(minecraft);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onKeyInput(InputEvent.Key event) {
-        if (!active || event.getAction() != GLFW.GLFW_PRESS) return;
-        Minecraft minecraft = Minecraft.getInstance();
-        if (event.getKey() == GLFW.GLFW_KEY_TAB && minecraft.screen == null
-                && networkAvailable) {
-            Scp079FacilityMapScreen.open();
         }
     }
 
@@ -473,7 +479,7 @@ public final class Scp079PlayableClient {
         renderPower(graphics, width, height, cyan, white);
         if (networkAvailable) {
             graphics.drawString(minecraft.font,
-                    ScpFonts.roboto("[TAB] FACILITY MAP"),
+                    ScpFonts.roboto("[" + mapKeyLabel(minecraft) + "] FACILITY MAP"),
                     width - 168, height - 57, cyan, false);
         } else if (!auxiliaryOnline) {
             graphics.drawString(minecraft.font,
@@ -524,7 +530,7 @@ public final class Scp079PlayableClient {
                 34, counterY + 24, 0xFFBDEEFF, false);
 
         graphics.drawString(minecraft.font,
-                ScpFonts.roboto("OPEN FACILITY MAP  [TAB]"),
+                ScpFonts.roboto("OPEN FACILITY MAP  [" + mapKeyLabel(minecraft) + "]"),
                 width - 180, 28, 0xFFBDEEFF, false);
         graphics.drawString(minecraft.font,
                 ScpFonts.roboto("HOLD SHIFT  CURSOR"),
@@ -670,6 +676,11 @@ public final class Scp079PlayableClient {
         return hit instanceof BlockHitResult blockHit
                 && hit.getType() == HitResult.Type.BLOCK
                 ? blockHit.getBlockPos() : null;
+    }
+
+    private static String mapKeyLabel(Minecraft minecraft) {
+        return minecraft.options.keyInventory.getTranslatedKeyMessage().getString()
+                .toUpperCase(Locale.ROOT);
     }
 
     private static String cost(double base) {

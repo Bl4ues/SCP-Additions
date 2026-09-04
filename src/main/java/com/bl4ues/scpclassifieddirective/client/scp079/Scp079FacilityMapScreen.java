@@ -15,7 +15,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -224,6 +223,10 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (minecraft != null && minecraft.options.keyInventory.matchesMouse(button)) {
+            onClose();
+            return true;
+        }
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
         if (Scp079PlayableClient.cameraMode()) {
             String label = "RETURN TO LOCAL HOST";
@@ -281,7 +284,8 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_TAB) {
+        if (minecraft != null && minecraft.options.keyInventory.matches(
+                keyCode, scanCode)) {
             onClose();
             return true;
         }

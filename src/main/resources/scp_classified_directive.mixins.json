@@ -86,7 +86,8 @@
     "client.Scp714ComaPromptMixin",
     "client.LevelRendererEntityTargetAccessor",
     "client.Scp079PlayableVisualMixin",
-    "client.Scp079PlayableNetworkAudioMixin"
+    "client.Scp079PlayableNetworkAudioMixin",
+    "client.ScpRoleSelectorPreviewMixin"
   ],
   "injectors": {
     "defaultRequire": 1

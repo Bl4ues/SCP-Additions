@@ -6,7 +6,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -36,11 +35,7 @@ public record InventoryPdaStatePacket(UUID playerId, boolean open) {
         context.enqueueWork(() -> {
             ServerPlayer sender = context.getSender();
             if (sender != null) {
-                InventoryPdaStatePacket update = new InventoryPdaStatePacket(
-                        sender.getUUID(), packet.open);
-                ModNetwork.CHANNEL.send(
-                        PacketDistributor.TRACKING_ENTITY_AND_SELF.with(
-                                () -> sender), update);
+                InventoryPdaServerState.setOpen(sender, packet.open);
                 return;
             }
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT,

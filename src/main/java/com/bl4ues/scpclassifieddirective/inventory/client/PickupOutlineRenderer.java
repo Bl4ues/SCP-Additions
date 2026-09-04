@@ -7,6 +7,7 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -45,10 +46,7 @@ import java.util.Map;
  * full-bright.</p>
  */
 public final class PickupOutlineRenderer {
-    private static final double BUTTON_MASK_PADDING = 0.003D;
-    private static final double BUTTON_FACE_SIZE = 1.5D / 16.0D;
-    private static final double STATION_BUTTON_DEPTH = 0.75D / 16.0D;
-    private static final double CARRIAGE_BUTTON_DEPTH = 0.5D / 16.0D;
+    private static final double MODEL_UNIT = 1.0D / 16.0D;
     private static final ResourceLocation POST_CHAIN = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "shaders/post/pickup_outline.json");
     private static final ResourceLocation BUTTON_MASK_TEXTURE =
@@ -202,102 +200,180 @@ public final class PickupOutlineRenderer {
     private static void renderButtonMask(Minecraft minecraft,
             ContextPromptOutlineTarget.Target context, PoseStack poseStack,
             Camera camera) {
-        Vec3 anchor = context.anchor();
-        if (anchor == null) return;
-
-        boolean carriageButton = context.entity()
-                instanceof CoreRoomElevatorCarriageEntity;
-        Direction facing = Direction.NORTH;
-        Vec3 faceNormal;
-        if (context.entity()
-                instanceof CoreRoomElevatorCarriageEntity carriage) {
-            facing = carriage.facing();
-            faceNormal = carriage.position().subtract(anchor)
-                    .multiply(1.0D, 0.0D, 1.0D).normalize();
+        boolean up = context.interactionKey() != null
+                && context.interactionKey().endsWith("_up");
+        if (context.entity() instanceof CoreRoomElevatorCarriageEntity carriage) {
+            renderCarriageButtonMask(minecraft, carriage, up, poseStack,
+                    camera);
         } else if (context.blockPos() != null && minecraft.level != null) {
-            BlockState state = minecraft.level.getBlockState(context.blockPos());
-            if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-                facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
-            }
-            faceNormal = new Vec3(facing.getStepX(), 0.0D,
-                    facing.getStepZ());
-        } else {
-            faceNormal = new Vec3(facing.getStepX(), 0.0D,
-                    facing.getStepZ());
+            renderStationButtonMask(minecraft, context.blockPos(), up,
+                    poseStack, camera);
         }
-        if (faceNormal.lengthSqr() < 1.0E-6D) {
-            faceNormal = new Vec3(facing.getStepX(), 0.0D,
-                    facing.getStepZ());
-        }
-        faceNormal = faceNormal.normalize();
-        double faceSize = BUTTON_FACE_SIZE + BUTTON_MASK_PADDING * 2.0D;
-        double depth = (carriageButton
-                ? CARRIAGE_BUTTON_DEPTH : STATION_BUTTON_DEPTH)
-                + BUTTON_MASK_PADDING * 2.0D;
-        Vec3 maskFront = anchor.add(faceNormal.scale(BUTTON_MASK_PADDING));
+    }
+
+    /**
+     * Replays the authored station bone hierarchy instead of approximating the
+     * button with a world-aligned box. Values below come directly from
+     * core_room_elevator_floor_station.geo.json.
+     */
+    private static void renderStationButtonMask(Minecraft minecraft,
+            BlockPos pos, boolean up, PoseStack poseStack, Camera camera) {
+        BlockState state = minecraft.level.getBlockState(pos);
+        Direction facing = state.hasProperty(
+                BlockStateProperties.HORIZONTAL_FACING)
+                ? state.getValue(BlockStateProperties.HORIZONTAL_FACING)
+                : Direction.NORTH;
         Vec3 cameraPosition = camera.getPosition();
 
         poseStack.pushPose();
         try {
-            poseStack.translate(maskFront.x - cameraPosition.x,
-                    maskFront.y - cameraPosition.y,
-                    maskFront.z - cameraPosition.z);
+            poseStack.translate(pos.getX() - cameraPosition.x,
+                    pos.getY() - cameraPosition.y,
+                    pos.getZ() - cameraPosition.z);
+            poseStack.translate(0.5D, 0.0D, 0.5D);
+            rotateForFacing(poseStack, facing);
+
+            applyAuthoredBoneTransform(poseStack,
+                    14.48819D, 20.5D, -16.55101D,
+                    0.0D, 45.0D, 0.0D);
+            applyAuthoredBoneTransform(poseStack,
+                    14.64492D, up ? 21.25D : 19.25D, -16.69749D,
+                    up ? 0.0D : 180.0D, 45.0D, 0.0D);
+
             VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
                     RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
-            emitOrientedBox(consumer, poseStack.last(), faceNormal,
-                    faceSize, faceSize, depth);
+            emitAuthoredCube(consumer, poseStack.last(),
+                    13.89492D, up ? 20.5D : 18.5D, -17.44749D,
+                    0.75D, 1.5D, 1.5D);
         } finally {
             poseStack.popPose();
         }
     }
 
-    /** The anchor is the center of the button's exposed face. */
-    private static void emitOrientedBox(VertexConsumer consumer,
-            PoseStack.Pose pose, Vec3 faceNormal, double width,
-            double height, double depth) {
-        Matrix4f matrix = pose.pose();
-        Matrix3f normal = pose.normal();
-        Vec3 outward = faceNormal.normalize();
-        Vec3 right = new Vec3(outward.z, 0.0D, -outward.x)
-                .scale(width * 0.5D);
-        Vec3 up = new Vec3(0.0D, height * 0.5D, 0.0D);
-        Vec3 back = outward.scale(-depth);
+    /**
+     * Replays the same non-living-entity basis and button bone used by the
+     * carriage renderer. Values come directly from
+     * core_room_elevator_carriage.geo.json.
+     */
+    private static void renderCarriageButtonMask(Minecraft minecraft,
+            CoreRoomElevatorCarriageEntity carriage, boolean up,
+            PoseStack poseStack, Camera camera) {
+        float partialTick = minecraft.getFrameTime();
+        Vec3 renderPosition = carriage.getPosition(partialTick);
+        Vec3 cameraPosition = camera.getPosition();
 
-        Vec3 frontBottomLeft = right.scale(-1.0D).subtract(up);
-        Vec3 frontBottomRight = right.subtract(up);
-        Vec3 frontTopRight = right.add(up);
-        Vec3 frontTopLeft = right.scale(-1.0D).add(up);
-        Vec3 backBottomLeft = frontBottomLeft.add(back);
-        Vec3 backBottomRight = frontBottomRight.add(back);
-        Vec3 backTopRight = frontTopRight.add(back);
-        Vec3 backTopLeft = frontTopLeft.add(back);
+        poseStack.pushPose();
+        try {
+            poseStack.translate(renderPosition.x - cameraPosition.x,
+                    renderPosition.y - cameraPosition.y,
+                    renderPosition.z - cameraPosition.z);
+            // GeoEntityRenderer supplies 180 degrees to non-living entities;
+            // CarriageRenderer then applies its authored EAST basis and the
+            // logical station facing.
+            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+            poseStack.mulPose(Axis.YP.rotationDegrees(-90.0F
+                    + rotationDegreesFor(carriage.facing())));
+            poseStack.translate(0.0D, 0.01D, 0.0D);
 
-        quad(consumer, matrix, normal, frontBottomLeft, frontBottomRight,
-                frontTopRight, frontTopLeft, outward);
-        quad(consumer, matrix, normal, backBottomRight, backBottomLeft,
-                backTopLeft, backTopRight, outward.scale(-1.0D));
-        Vec3 rightNormal = right.normalize();
-        quad(consumer, matrix, normal, frontBottomRight, backBottomRight,
-                backTopRight, frontTopRight, rightNormal);
-        quad(consumer, matrix, normal, backBottomLeft, frontBottomLeft,
-                frontTopLeft, backTopLeft, rightNormal.scale(-1.0D));
-        quad(consumer, matrix, normal, frontTopLeft, frontTopRight,
-                backTopRight, backTopLeft, new Vec3(0.0D, 1.0D, 0.0D));
-        quad(consumer, matrix, normal, backBottomLeft, backBottomRight,
-                frontBottomRight, frontBottomLeft,
-                new Vec3(0.0D, -1.0D, 0.0D));
+            applyAuthoredBoneTransform(poseStack,
+                    -10.95508D, up ? 21.25D : 19.25D, 11.00251D,
+                    up ? 0.0D : 180.0D, 45.0D, 0.0D);
+
+            VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
+                    RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
+            emitAuthoredCube(consumer, poseStack.last(),
+                    -11.45508D, up ? 20.5D : 18.5D, 10.25251D,
+                    0.5D, 1.5D, 1.5D);
+        } finally {
+            poseStack.popPose();
+        }
     }
 
-    private static void quad(VertexConsumer consumer, Matrix4f matrix,
-            Matrix3f normal, Vec3 first, Vec3 second, Vec3 third,
-            Vec3 fourth, Vec3 faceNormal) {
+    /** Apply GeckoLib's Bedrock-to-Minecraft pivot and rotation conversion. */
+    private static void applyAuthoredBoneTransform(PoseStack poseStack,
+            double pivotX, double pivotY, double pivotZ,
+            double rotationX, double rotationY, double rotationZ) {
+        double x = -pivotX * MODEL_UNIT;
+        double y = pivotY * MODEL_UNIT;
+        double z = pivotZ * MODEL_UNIT;
+        poseStack.translate(x, y, z);
+        if (rotationZ != 0.0D) {
+            poseStack.mulPose(Axis.ZP.rotationDegrees((float) rotationZ));
+        }
+        if (rotationY != 0.0D) {
+            poseStack.mulPose(Axis.YP.rotationDegrees((float) -rotationY));
+        }
+        if (rotationX != 0.0D) {
+            poseStack.mulPose(Axis.XP.rotationDegrees((float) -rotationX));
+        }
+        poseStack.translate(-x, -y, -z);
+    }
+
+    private static void rotateForFacing(PoseStack poseStack,
+            Direction facing) {
+        float degrees = rotationDegreesFor(facing);
+        if (degrees != 0.0F) {
+            poseStack.mulPose(Axis.YP.rotationDegrees(degrees));
+        }
+    }
+
+    private static float rotationDegreesFor(Direction facing) {
+        return switch (facing) {
+            case EAST -> -90.0F;
+            case SOUTH -> 180.0F;
+            case WEST -> 90.0F;
+            default -> 0.0F;
+        };
+    }
+
+    /** Emit the exact converted bounds of one cube from a GeckoLib geo file. */
+    private static void emitAuthoredCube(VertexConsumer consumer,
+            PoseStack.Pose pose, double originX, double originY,
+            double originZ, double sizeX, double sizeY, double sizeZ) {
+        double minX = -(originX + sizeX) * MODEL_UNIT;
+        double minY = originY * MODEL_UNIT;
+        double minZ = originZ * MODEL_UNIT;
+        double maxX = -originX * MODEL_UNIT;
+        double maxY = (originY + sizeY) * MODEL_UNIT;
+        double maxZ = (originZ + sizeZ) * MODEL_UNIT;
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
         quad(consumer, matrix, normal,
-                (float) first.x, (float) first.y, (float) first.z,
-                (float) second.x, (float) second.y, (float) second.z,
-                (float) third.x, (float) third.y, (float) third.z,
-                (float) fourth.x, (float) fourth.y, (float) fourth.z,
-                (float) faceNormal.x, (float) faceNormal.y,
-                (float) faceNormal.z);
+                (float) minX, (float) minY, (float) minZ,
+                (float) minX, (float) minY, (float) maxZ,
+                (float) minX, (float) maxY, (float) maxZ,
+                (float) minX, (float) maxY, (float) minZ,
+                -1.0F, 0.0F, 0.0F);
+        quad(consumer, matrix, normal,
+                (float) maxX, (float) minY, (float) maxZ,
+                (float) maxX, (float) minY, (float) minZ,
+                (float) maxX, (float) maxY, (float) minZ,
+                (float) maxX, (float) maxY, (float) maxZ,
+                1.0F, 0.0F, 0.0F);
+        quad(consumer, matrix, normal,
+                (float) maxX, (float) minY, (float) minZ,
+                (float) minX, (float) minY, (float) minZ,
+                (float) minX, (float) maxY, (float) minZ,
+                (float) maxX, (float) maxY, (float) minZ,
+                0.0F, 0.0F, -1.0F);
+        quad(consumer, matrix, normal,
+                (float) minX, (float) minY, (float) maxZ,
+                (float) maxX, (float) minY, (float) maxZ,
+                (float) maxX, (float) maxY, (float) maxZ,
+                (float) minX, (float) maxY, (float) maxZ,
+                0.0F, 0.0F, 1.0F);
+        quad(consumer, matrix, normal,
+                (float) minX, (float) maxY, (float) minZ,
+                (float) minX, (float) maxY, (float) maxZ,
+                (float) maxX, (float) maxY, (float) maxZ,
+                (float) maxX, (float) maxY, (float) minZ,
+                0.0F, 1.0F, 0.0F);
+        quad(consumer, matrix, normal,
+                (float) minX, (float) minY, (float) maxZ,
+                (float) minX, (float) minY, (float) minZ,
+                (float) maxX, (float) minY, (float) minZ,
+                (float) maxX, (float) minY, (float) maxZ,
+                0.0F, -1.0F, 0.0F);
     }
 
     private static void quad(VertexConsumer consumer, Matrix4f matrix,

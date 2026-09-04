@@ -85,7 +85,8 @@
     "client.PlayerSmoothCrouchMixin",
     "client.Scp714ComaPromptMixin",
     "client.LevelRendererEntityTargetAccessor",
-    "client.Scp079PlayableVisualMixin"
+    "client.Scp079PlayableVisualMixin",
+    "client.Scp079PlayableNetworkAudioMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -146,6 +146,12 @@
 - SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
 - Added a positional hacking sound at each door, Tesla Gate, SCP-012 box, or other facility device successfully manipulated by SCP-079;
+- Added a playable SCP-079 control mode with a local orbit around its physical computer and server-authoritative transfer to registered surveillance cameras while keeping the autonomous decision layer suspended for the duration of player control;
+- Added an SCP-079 surveillance HUD and facility map built from persistent authored room floors, including floor selection, room/camera switching, AP and network state, lifeform counts, SCP tracking, target labels, low-light enhancement, scanline treatment, and interference during feed changes;
+- Playable SCP-079 can manually open, close, and temporarily deny connected heavy-door controls and suppress Tesla Gates from a camera feed, with all actions consuming the same processing-power resource;
+- Added the Creative-only **Facility Mapping Tool** for defining persistent, irregular room floors and associating them with configured Core Room Floor Stations for surveillance and future CCTV systems;
+- Added the Creative-only **SCP Role Selector** placeholder in **Tools & Utility**; while SCP-079 is the only implemented playable role, right-clicking it assumes or releases SCP-079 through the nearest registered computer in the current dimension;
+- Added a functional **Surveillance Camera** placeholder in the Facility **Functional** section; placed cameras persist in the shared surveillance registry, inherit room membership from the mapped floor beneath them, and reserve the stable `surveillance_camera` registry ID for the future animated GeckoLib replacement;
 - Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## SCP-079 auxiliary isolation and SCiPNET reindexing

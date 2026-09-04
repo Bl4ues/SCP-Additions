@@ -4,8 +4,10 @@ import com.bl4ues.scpclassifieddirective.config.ui.ConfigCenterVisuals;
 import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -37,6 +39,32 @@ final class NewGameWidgets {
         int source = (color >>> 24) & 0xFF;
         int out = Mth.clamp(Math.round(source * alpha), 0, 255);
         return (out << 24) | (color & 0x00FFFFFF);
+    }
+
+    /**
+     * Borderless vanilla EditBox behavior pins text to its top-left corner.
+     * The custom menus draw their own field surface, so keep the full vanilla
+     * hitbox but translate only the text/caret into the visual inset.
+     */
+    static final class TextField extends EditBox {
+        TextField(Font font, int x, int y, int width, int height,
+                Component narration) {
+            super(font, x, y, width, height, narration);
+            setBordered(false);
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics graphics, int mouseX,
+                int mouseY, float partialTick) {
+            int insetX = 10;
+            int insetY = Math.max(0,
+                    (getHeight() - Minecraft.getInstance().font.lineHeight) / 2);
+            graphics.pose().pushPose();
+            graphics.pose().translate(insetX, insetY, 0.0F);
+            super.renderWidget(graphics, mouseX - insetX,
+                    mouseY - insetY, partialTick);
+            graphics.pose().popPose();
+        }
     }
 
     static final class ActionButton extends AbstractWidget {
@@ -196,6 +224,10 @@ final class NewGameWidgets {
             return lockedLabel != null;
         }
 
+        boolean isOpen() {
+            return open && !isLocked() && visible;
+        }
+
         int popupHeight() {
             return open ? entries.size() * height : 0;
         }
@@ -222,8 +254,13 @@ final class NewGameWidgets {
                     getX() + width - 13 - aw,
                     getY() + Math.max(1, (height - 9) / 2),
                     fade(isLocked() ? MUTED : ACCENT_BRIGHT), false);
+        }
 
-            if (!open || isLocked()) return;
+        /** Draw open choices after the rest of the card so labels never bleed through. */
+        void renderPopup(GuiGraphics graphics, int mouseX, int mouseY,
+                float partialTick) {
+            if (!isOpen()) return;
+            var font = Minecraft.getInstance().font;
             int y = getY() + height + 2;
             for (int index = 0; index < entries.size(); index++) {
                 Entry<T> entry = entries.get(index);
@@ -231,8 +268,8 @@ final class NewGameWidgets {
                 boolean optionHovered = entry.enabled()
                         && mouseX >= getX() && mouseX < getX() + width
                         && mouseY >= top && mouseY < top + height;
-                int fill = !entry.enabled() ? 0xEB101317
-                        : optionHovered ? 0xF51A2028 : 0xF20B0E12;
+                int fill = !entry.enabled() ? 0xFC101317
+                        : optionHovered ? 0xFF1A2028 : 0xFE0B0E12;
                 graphics.fill(getX(), top, getX() + width, top + height,
                         fade(fill));
                 graphics.fill(getX(), top, getX() + 4, top + height,

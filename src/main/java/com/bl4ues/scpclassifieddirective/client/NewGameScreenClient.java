@@ -145,9 +145,8 @@ public final class NewGameScreenClient {
 
         private void buildControls(ScreenEvent.Init.Post event) {
             Font font = Minecraft.getInstance().font;
-            worldName = own(event, new EditBox(font, 0, 0, 260, 28,
-                    ScpFonts.roboto("World Name")));
-            worldName.setBordered(false);
+            worldName = own(event, new NewGameWidgets.TextField(font,
+                    0, 0, 260, 28, ScpFonts.roboto("World Name")));
             worldName.setMaxLength(32);
             worldName.setTextColor(TEXT);
             worldName.setTextColorUneditable(MUTED);
@@ -387,6 +386,12 @@ public final class NewGameScreenClient {
             moreCard.renderBackground(graphics, layout.x, moreY,
                     layout.width, alpha);
             moreCard.renderControls(graphics, mouseX, mouseY, partialTick);
+
+            // Open dropdowns are true overlays: render them after every card so
+            // labels and controls underneath can never bleed through the popup.
+            worldCard.renderPopup(graphics, mouseX, mouseY, partialTick);
+            difficulty.renderPopup(graphics, mouseX, mouseY, partialTick);
+            gameMode.renderPopup(graphics, mouseX, mouseY, partialTick);
             graphics.disableScissor();
 
             drawScrollbar(graphics, layout, alpha);
@@ -575,30 +580,30 @@ public final class NewGameScreenClient {
     }
 
     private enum DifficultyChoice {
-        THAUMIEL("Thaumiel", "Peaceful Exploration", Difficulty.PEACEFUL,
+        THAUMIEL("Thaumiel", "Peaceful", Difficulty.PEACEFUL,
                 "thaumiel.png", List.of(
                 "Minecraft's Peaceful Difficulty.",
                 "Quicksaves, Decontamination Checkpoints, and Default Saves are available.",
                 "SCP roaming encounters are disabled.")),
-        SAFE("Safe", "Easy Containment", Difficulty.EASY,
+        SAFE("Safe", "Easy", Difficulty.EASY,
                 "safe.png", List.of(
                 "Minecraft's Easy Difficulty.",
                 "Quicksaves, Decontamination Checkpoints, and Default Saves are available.",
                 "SCP roaming encounters occur less frequently.",
                 "Tesla Gate suppression keeps threats away for longer.")),
-        EUCLID("Euclid", "Standard Conditions", Difficulty.NORMAL,
+        EUCLID("Euclid", "Normal", Difficulty.NORMAL,
                 "euclid.png", List.of(
                 "Minecraft's Normal Difficulty.",
                 "Only Decontamination Checkpoints and Default Saves are available.",
                 "SCP roaming encounters occur in a standard frequency.",
                 "Standard Tesla Gate suppression against threats.")),
-        KETER("Keter", "Critical Containment", Difficulty.HARD,
+        KETER("Keter", "Hard", Difficulty.HARD,
                 "keter.png", List.of(
                 "Minecraft's Hard Difficulty.",
                 "Only Default Saves are available.",
                 "SCP roaming encounters occur very frequently.",
                 "Standard Tesla Gate suppression against threats.")),
-        APOLLYON("Apollyon", "Hardcore Containment", Difficulty.HARD,
+        APOLLYON("Apollyon", "Hardcore", Difficulty.HARD,
                 "apollyon.png", List.of(
                 "Minecraft's Hard Difficulty.",
                 "Permanent Death.",
@@ -650,15 +655,15 @@ public final class NewGameScreenClient {
         for (String bullet : choice.bullets) {
             List<String> lines = wrap(font, bullet,
                     Math.max(70, textWidth - 22));
-            int markerY = lineY + 4;
+            int markerY = lineY + 3;
             graphics.fill(x + 1, markerY,
-                    x + 5, markerY + 7, applyAlpha(ACCENT, alpha));
+                    x + 5, markerY + 4, applyAlpha(ACCENT, alpha));
             for (String line : lines) {
                 graphics.drawString(font, ScpFonts.roboto(line),
                         textX, lineY, applyAlpha(TEXT, alpha), false);
                 lineY += 12;
             }
-            lineY += 6;
+            lineY += 4;
         }
     }
 

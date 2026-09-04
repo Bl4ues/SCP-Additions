@@ -17,6 +17,7 @@ import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesCon
 import com.bl4ues.scpclassifieddirective.entity.Scp106Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp173Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -73,8 +74,7 @@ public final class RoamerManager {
                 return;
             }
             for (RoamerData data : state.data.values()) {
-                data.nextCheckTick = -1;
-                data.scheduledPlayerCount = 0;
+                pauseCountdown(server, data);
                 if (data.activeEntityIds.isEmpty()) {
                     data.lastResult = RoamerResult.PAUSED_NO_VALID_PLAYERS;
                 }
@@ -128,8 +128,7 @@ public final class RoamerManager {
 
             List<ServerPlayer> candidates = validPlayers(server, null);
             if (candidates.isEmpty()) {
-                data.nextCheckTick = -1;
-                data.scheduledPlayerCount = 0;
+                pauseCountdown(server, data);
                 data.lastResult = RoamerResult.PAUSED_NO_VALID_PLAYERS;
                 return null;
             }
@@ -140,6 +139,7 @@ public final class RoamerManager {
             if (recurringDelay < 0) {
                 data.nextCheckTick = -1;
                 data.scheduledPlayerCount = 0;
+                data.pausedRemainingTicks = -1;
                 data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
                 return null;
             }
@@ -147,6 +147,7 @@ public final class RoamerManager {
                     recurringDelay, candidates.size());
             data.nextCheckTick = currentTick + Math.max(1, scaledDelay);
             data.scheduledPlayerCount = candidates.size();
+            data.pausedRemainingTicks = -1;
 
             ServerPlayer randomSource = candidates.get(0);
             return candidates.get(randomSource.getRandom()
@@ -174,6 +175,7 @@ public final class RoamerManager {
             if (!allowsConcurrentInstances(type)) {
                 data.nextCheckTick = -1;
                 data.scheduledPlayerCount = 0;
+                data.pausedRemainingTicks = -1;
                 return;
             }
 
@@ -269,6 +271,7 @@ public final class RoamerManager {
             if (!enabled || !type.spawnImplemented() || !moduleEnabled(type)) {
                 data.nextCheckTick = -1;
                 data.scheduledPlayerCount = 0;
+                data.pausedRemainingTicks = -1;
                 data.lastResult = !type.spawnImplemented()
                         ? RoamerResult.NOT_IMPLEMENTED
                         : !moduleEnabled(type)
@@ -280,6 +283,7 @@ public final class RoamerManager {
                     currentDifficulty(server))) {
                 data.nextCheckTick = -1;
                 data.scheduledPlayerCount = 0;
+                data.pausedRemainingTicks = -1;
                 data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
                 return;
             }
@@ -300,6 +304,7 @@ public final class RoamerManager {
             if (contained) {
                 data.nextCheckTick = -1;
                 data.scheduledPlayerCount = 0;
+                data.pausedRemainingTicks = -1;
             } else if ((data.activeEntityIds.isEmpty()
                     || allowsConcurrentInstances(type))
                     && isSpawnRuleEnabled(server, type)
@@ -361,34 +366,40 @@ public final class RoamerManager {
             data.scheduledDifficulty = difficulty;
             data.nextCheckTick = -1;
             data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = -1;
         }
 
         if (!type.spawnImplemented()) {
             data.nextCheckTick = -1;
             data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = -1;
             data.lastResult = RoamerResult.NOT_IMPLEMENTED;
             return RoamerState.DISABLED;
         }
         if (!moduleEnabled(type)) {
             data.nextCheckTick = -1;
             data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = -1;
             data.lastResult = RoamerResult.MODULE_DISABLED;
             return RoamerState.DISABLED;
         }
         if (!RoamerDifficultyPolicy.schedulesEnabled(difficulty)) {
             data.nextCheckTick = -1;
             data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = -1;
             data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
             return RoamerState.DISABLED;
         }
         if (data.contained) {
             data.nextCheckTick = -1;
             data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = -1;
             return RoamerState.CONTAINED;
         }
         if (!isSpawnRuleEnabled(server, type)) {
             data.nextCheckTick = -1;
             data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = -1;
             data.lastResult = RoamerResult.RULE_DISABLED;
             return RoamerState.DISABLED;
         }
@@ -402,8 +413,7 @@ public final class RoamerManager {
 
         int validPlayerCount = validPlayers(server, null).size();
         if (validPlayerCount <= 0) {
-            data.nextCheckTick = -1;
-            data.scheduledPlayerCount = 0;
+            pauseCountdown(server, data);
             data.lastResult = RoamerResult.PAUSED_NO_VALID_PLAYERS;
             return RoamerState.PAUSED;
         }
@@ -413,7 +423,15 @@ public final class RoamerManager {
             rescaleScheduledDelayForPlayers(server, data, validPlayerCount);
         }
         if (data.nextCheckTick < 0) {
-            scheduleInitial(server, type, data, RoamerResult.TIMER_STARTED);
+            if (data.pausedRemainingTicks >= 0) {
+                data.nextCheckTick = server.getTickCount()
+                        + Math.max(1, data.pausedRemainingTicks);
+                data.scheduledPlayerCount = validPlayerCount;
+                data.pausedRemainingTicks = -1;
+            } else {
+                scheduleInitial(server, type, data,
+                        RoamerResult.TIMER_STARTED);
+            }
         }
         return data.nextCheckTick >= 0
                 ? RoamerState.COUNTDOWN : RoamerState.DISABLED;
@@ -442,9 +460,10 @@ public final class RoamerManager {
 
     private static void schedule(MinecraftServer server, RoamerType type,
             RoamerData data, int delayTicks, RoamerResult result) {
-        if (delayTicks < 0 || !canSchedule(server, type, data)) {
+        if (delayTicks < 0 || !canScheduleWithoutPlayers(server, type, data)) {
             data.nextCheckTick = -1;
             data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = -1;
             if (!RoamerDifficultyPolicy.schedulesEnabled(
                     currentDifficulty(server))) {
                 data.lastResult = RoamerResult.DIFFICULTY_DISABLED;
@@ -452,10 +471,18 @@ public final class RoamerManager {
             return;
         }
         int validPlayerCount = validPlayers(server, null).size();
+        if (validPlayerCount <= 0) {
+            data.nextCheckTick = -1;
+            data.scheduledPlayerCount = 0;
+            data.pausedRemainingTicks = Math.max(1, delayTicks);
+            data.lastResult = result == null ? RoamerResult.NONE : result;
+            return;
+        }
         int scaledDelay = RoamerDifficultyPolicy.scaleDelayForPlayers(
                 delayTicks, validPlayerCount);
         data.nextCheckTick = server.getTickCount() + Math.max(1, scaledDelay);
         data.scheduledPlayerCount = validPlayerCount;
+        data.pausedRemainingTicks = -1;
         data.lastResult = result == null ? RoamerResult.NONE : result;
     }
 
@@ -490,15 +517,32 @@ public final class RoamerManager {
         data.scheduledPlayerCount = players;
     }
 
+    /** Preserves the exact countdown while no player is eligible outside zones. */
+    private static void pauseCountdown(MinecraftServer server,
+            RoamerData data) {
+        if (server == null || data == null) return;
+        if (data.nextCheckTick >= 0) {
+            data.pausedRemainingTicks = Math.max(1,
+                    data.nextCheckTick - server.getTickCount());
+        }
+        data.nextCheckTick = -1;
+        data.scheduledPlayerCount = 0;
+    }
+
     private static boolean canSchedule(MinecraftServer server, RoamerType type,
             RoamerData data) {
+        return canScheduleWithoutPlayers(server, type, data)
+                && !validPlayers(server, null).isEmpty();
+    }
+
+    private static boolean canScheduleWithoutPlayers(MinecraftServer server,
+            RoamerType type, RoamerData data) {
         return type.spawnImplemented() && moduleEnabled(type)
                 && !data.contained && isSpawnRuleEnabled(server, type)
                 && RoamerDifficultyPolicy.schedulesEnabled(
                         currentDifficulty(server))
                 && (data.activeEntityIds.isEmpty()
-                        || allowsConcurrentInstances(type))
-                && !validPlayers(server, null).isEmpty();
+                        || allowsConcurrentInstances(type));
     }
 
     private static List<ServerPlayer> validPlayers(MinecraftServer server,
@@ -508,7 +552,8 @@ public final class RoamerManager {
             if (excludedPlayer != null
                     && excludedPlayer.equals(player.getUUID())) continue;
             if (!player.isAlive() || player.isCreative()
-                    || player.isSpectator()) continue;
+                    || player.isSpectator()
+                    || SafeZoneManager.isInside(player)) continue;
             players.add(player);
         }
         return players;
@@ -564,6 +609,7 @@ public final class RoamerManager {
         private final Set<UUID> activeEntityIds = new HashSet<>();
         private int nextCheckTick = -1;
         private int scheduledPlayerCount;
+        private int pausedRemainingTicks = -1;
         private RoamerResult lastResult = RoamerResult.NONE;
         private Difficulty scheduledDifficulty;
         private boolean contained;

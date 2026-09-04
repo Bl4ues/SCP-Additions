@@ -43,6 +43,7 @@ import com.bl4ues.scpclassifieddirective.roamer.Scp106PhasePortalTracker;
 import com.bl4ues.scpclassifieddirective.roamer.Scp106SpawnSuppression;
 import com.bl4ues.scpclassifieddirective.roamer.Scp106EmergenceLocator.Emergence;
 import com.bl4ues.scpclassifieddirective.roamer.Scp106EmergenceLocator.Placement;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -361,6 +362,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void tickHunt() {
         if (!tickInterest()) return;
 
+        if (hasSafeZoneTargetWithoutReplacement()) {
+            beginVanish(true);
+            return;
+        }
+
         Player player = resolveHuntedPlayer();
         if (player == null) {
             if (managedEncounter) {
@@ -546,6 +552,11 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
     private void tickPhaseTravel() {
         if (!tickInterest()) return;
 
+        if (hasSafeZoneTargetWithoutReplacement()) {
+            beginVanish(true);
+            return;
+        }
+
         Player player = resolveHuntedPlayer();
         if (player == null) {
             beginVanish(true);
@@ -613,6 +624,12 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
         freezeTransitionMovement();
         noPhysics = true;
         setNoGravity(true);
+    }
+
+    /** Uses the normal sinking animation when a protected player ends a hunt. */
+    public void retreatFromSafeZone() {
+        if (level().isClientSide || getEncounterState() == VANISHING) return;
+        beginVanish(true);
     }
 
     private void awardManagedEncounterSurvival() {
@@ -735,7 +752,14 @@ public class Scp106Entity extends PathfinderMob implements GeoEntity {
                 && !player.isRemoved()
                 && !player.isCreative()
                 && !player.isSpectator()
+                && !SafeZoneManager.isInside(player)
                 && player.level() == level();
+    }
+
+    private boolean hasSafeZoneTargetWithoutReplacement() {
+        Player hunted = rawHuntedPlayer();
+        return hunted != null && SafeZoneManager.isInside(hunted)
+                && findNearestPlayer() == null;
     }
 
     /** Remains true through SCP-106's short vanish and relocation states. */

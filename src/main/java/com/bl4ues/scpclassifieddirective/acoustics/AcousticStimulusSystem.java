@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -51,7 +52,8 @@ public final class AcousticStimulusSystem {
             AcousticCategory category, float intensity, Entity source) {
         if (level == null || position == null || category == null) return null;
         if (source instanceof Player player
-                && (player.isCreative() || player.isSpectator())) {
+                && (player.isCreative() || player.isSpectator()
+                        || SafeZoneManager.isInside(player))) {
             // Creative/spectator players are observers and builders, not prey.
             // Filtering here prevents every producer from having to remember it.
             return null;

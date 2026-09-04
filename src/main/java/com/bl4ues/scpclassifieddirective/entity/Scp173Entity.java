@@ -43,6 +43,7 @@ import com.bl4ues.scpclassifieddirective.client.BlinkClient;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.network.Scp173ObservationPacket;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -121,6 +122,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
     private int nextAttackTick;
     private double frozenFallSpeed;
     private UUID routineEncounterPlayerId;
+    private boolean safeZoneRetreat;
 
     public Scp173Entity(EntityType<? extends Scp173Entity> type, Level level) {
         super(type, level);
@@ -139,6 +141,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     public static void reactToBlinkState(ServerPlayer player, boolean closed, boolean manual) {
         if (player == null || player.level().isClientSide || player.isCreative() || player.isSpectator()
+                || SafeZoneManager.isInside(player)
                 || !ScpClassifiedDirectiveModulesConfig.get().scp173.enabled) return;
         AABB area = player.getBoundingBox().inflate(IMMEDIATE_REACTION_RANGE);
         for (Scp173Entity scp173 : player.serverLevel().getEntitiesOfClass(Scp173Entity.class, area,
@@ -224,6 +227,17 @@ public class Scp173Entity extends BlinkWatcherEntity {
             stopAndLock(preTickPose);
             return;
         }
+
+        if (!safeZoneRetreat && getTarget() instanceof Player target
+                && SafeZoneManager.isInside(target)) {
+            LivingEntity replacement = findNearestTargetEntity();
+            if (replacement == null) beginSafeZoneRetreat();
+            else setTarget(replacement);
+        }
+        if (safeZoneRetreat) {
+            tickSafeZoneRetreat(preTickPose);
+            return;
+        }
         if (!isActivated()) {
             // Natural spawns remain inert until a non-creative player actually sees them.
             // No-AI prevents target selection/navigation during super.tick(), while the
@@ -237,6 +251,11 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
             Player observer = findObservingPlayer();
             if (observer != null) {
+                if (SafeZoneManager.isInside(observer)) {
+                    beginSafeZoneRetreat();
+                    tickSafeZoneRetreat(preTickPose);
+                    return;
+                }
                 activateFor(observer);
                 setTarget(observer);
                 lastSeenOrCloseTick = tickCount;
@@ -320,6 +339,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
             tag.putUUID("RoutineEncounterPlayer",
                     routineEncounterPlayerId);
         }
+        tag.putBoolean("SafeZoneRetreat", safeZoneRetreat);
     }
 
     @Override
@@ -335,6 +355,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
         lastSeenOrCloseTick = tag.getInt("LastSeenOrCloseTick");
         routineEncounterPlayerId = tag.hasUUID("RoutineEncounterPlayer")
                 ? tag.getUUID("RoutineEncounterPlayer") : null;
+        safeZoneRetreat = tag.getBoolean("SafeZoneRetreat");
         clearStrategicRoute();
         if (!isActivated()) {
             setNoAi(true);
@@ -358,7 +379,7 @@ public class Scp173Entity extends BlinkWatcherEntity {
     public void updateClientObservation(ServerPlayer player, boolean visible) {
         if (level().isClientSide || player == null) return;
         UUID playerId = player.getUUID();
-        boolean accepted = visible && isValidTargetPlayer(player)
+        boolean accepted = visible && isValidObserver(player)
                 && distanceToSqr(player) <= IMMEDIATE_REACTION_RANGE_SQR
                 && !BlinkServerState.isBlinkClosed(player);
         if (!accepted) {
@@ -369,7 +390,9 @@ public class Scp173Entity extends BlinkWatcherEntity {
         clientObservationUntilTicks.put(playerId, tickCount + CLIENT_OBSERVATION_TIMEOUT_TICKS);
         rememberObservation(player);
         lastSeenOrCloseTick = tickCount;
-        if (!isActivated()) {
+        if (SafeZoneManager.isInside(player)) {
+            if (findNearestTargetEntity() == null) beginSafeZoneRetreat();
+        } else if (!isActivated()) {
             activateFor(player);
             setTarget(player);
         } else if (!isValidTargetEntity(getTarget())) {
@@ -461,7 +484,30 @@ public class Scp173Entity extends BlinkWatcherEntity {
     }
 
     private boolean isValidTargetPlayer(Player player) {
-        return player != null && player.isAlive() && !player.isCreative() && !player.isSpectator();
+        return player != null && player.isAlive() && !player.isCreative()
+                && !player.isSpectator()
+                && !SafeZoneManager.isInside(player);
+    }
+
+    public void beginSafeZoneRetreat() {
+        if (level().isClientSide) return;
+        safeZoneRetreat = true;
+        setTarget(null);
+        clearStrategicRoute();
+        getNavigation().stop();
+        entityData.set(SCRAPING, false);
+    }
+
+    private void tickSafeZoneRetreat(FrozenPose pose) {
+        setTarget(null);
+        clearStrategicRoute();
+        restorePose(pose);
+        stopAndLock(pose);
+        if (findObservingPlayer() != null || hasClientObservationLock()) {
+            return;
+        }
+        completeRoutineEncounter();
+        discard();
     }
 
     private LivingEntity findObservingEntity() {

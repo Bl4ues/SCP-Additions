@@ -28,6 +28,7 @@ import com.bl4ues.scpclassifieddirective.network.Scp939Network;
 import com.bl4ues.scpclassifieddirective.scp939.Scp939AcousticBrain;
 import com.bl4ues.scpclassifieddirective.scp939.Scp939AwarenessState;
 import com.bl4ues.scpclassifieddirective.scp939.Scp939MimicryHooks;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
@@ -155,6 +156,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
     private UUID encounterTriggerId;
     private UUID preferredMimicUuid;
     private Scp939AcousticBrain.Snapshot lastBrainSnapshot;
+    private boolean safeZoneRetreat;
 
     public Scp939Entity(EntityType<? extends Scp939Entity> type, Level level) {
         super(type, level);
@@ -211,6 +213,13 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         tickActionTimer();
 
         if (isDeadOrDying()) return;
+        if (!safeZoneRetreat && abandonProtectedSoundSource(serverLevel)) {
+            beginSafeZoneRetreat();
+        }
+        if (safeZoneRetreat) {
+            tickSafeZoneRetreat(serverLevel);
+            return;
+        }
         if (pinnedPlayerId != null) {
             tickPinned(serverLevel);
             return;
@@ -597,7 +606,8 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
 
     private boolean validPrey(ServerPlayer player) {
         return player != null && player.isAlive()
-                && !player.isCreative() && !player.isSpectator();
+                && !player.isCreative() && !player.isSpectator()
+                && !SafeZoneManager.isInside(player);
     }
 
     private boolean hasPhysicalLine(ServerPlayer player) {
@@ -645,6 +655,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         for (ServerPlayer player : serverLevel.getServer().getPlayerList()
                 .getPlayers()) {
             if (!player.isAlive() || player.isSpectator()) continue;
+            if (SafeZoneManager.isInside(player)) continue;
             if (trigger != null && player.getUUID().equals(trigger.getUUID())) {
                 continue;
             }
@@ -682,6 +693,88 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
                         && triggerGone && !anyoneNear)) {
             discard();
         }
+    }
+
+    public void beginSafeZoneRetreat() {
+        if (level().isClientSide || safeZoneRetreat) return;
+        safeZoneRetreat = true;
+        if (pinnedPlayerId != null) releasePin(false);
+        acousticBrain.reset();
+        clearAction();
+        getNavigation().stop();
+        setDeltaMovement(Vec3.ZERO);
+    }
+
+    public void cancelSafeZoneRetreat() {
+        safeZoneRetreat = false;
+    }
+
+    private boolean abandonProtectedSoundSource(ServerLevel level) {
+        if (lastBrainSnapshot == null
+                || lastBrainSnapshot.lastSourceId() == null) {
+            return false;
+        }
+        ServerPlayer source = level.getServer().getPlayerList().getPlayer(
+                lastBrainSnapshot.lastSourceId());
+        if (source == null || source.level() != level
+                || !SafeZoneManager.isInside(source)) {
+            return false;
+        }
+
+        acousticBrain.reset();
+        lastBrainSnapshot = null;
+        getNavigation().stop();
+        return !hasNearbyPrey(level, 64.0D);
+    }
+
+    private boolean hasNearbyPrey(ServerLevel level, double range) {
+        double rangeSqr = range * range;
+        for (ServerPlayer player : level.players()) {
+            if (validPrey(player) && distanceToSqr(player) <= rangeSqr) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void tickSafeZoneRetreat(ServerLevel level) {
+        ServerPlayer observer = nearestVisiblePlayer(level);
+        if (observer == null) {
+            discard();
+            return;
+        }
+        Vec3 away = position().subtract(observer.position());
+        away = new Vec3(away.x, 0.0D, away.z);
+        if (away.lengthSqr() < 0.0001D) {
+            away = Vec3.directionFromRotation(0.0F,
+                    observer.getYRot() + 180.0F);
+        }
+        away = away.normalize().scale(10.0D);
+        Vec3 destination = position().add(away);
+        if (getNavigation().isDone() || tickCount % 10 == 0) {
+            getNavigation().moveTo(destination.x, destination.y,
+                    destination.z, HUNT_NAV_SPEED);
+        }
+    }
+
+    private ServerPlayer nearestVisiblePlayer(ServerLevel level) {
+        ServerPlayer nearest = null;
+        double distance = 64.0D * 64.0D;
+        for (ServerPlayer player : level.players()) {
+            if (!player.isAlive() || player.isSpectator()) continue;
+            double candidateDistance = distanceToSqr(player);
+            if (candidateDistance > distance || !player.hasLineOfSight(this)) {
+                continue;
+            }
+            Vec3 toEntity = getEyePosition().subtract(player.getEyePosition());
+            if (toEntity.lengthSqr() < 0.0001D) return player;
+            if (player.getLookAngle().dot(toEntity.normalize()) < 0.15D) {
+                continue;
+            }
+            distance = candidateDistance;
+            nearest = player;
+        }
+        return nearest;
     }
 
     private void orientToward(Vec3 position) {
@@ -810,6 +903,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
         if (preferredMimicUuid != null) {
             tag.putUUID("PreferredMimic", preferredMimicUuid);
         }
+        tag.putBoolean("SafeZoneRetreat", safeZoneRetreat);
     }
 
     @Override
@@ -825,6 +919,7 @@ public class Scp939Entity extends PathfinderMob implements GeoEntity {
                 ? tag.getUUID("EncounterTrigger") : null;
         preferredMimicUuid = tag.hasUUID("PreferredMimic")
                 ? tag.getUUID("PreferredMimic") : null;
+        safeZoneRetreat = tag.getBoolean("SafeZoneRetreat");
         acousticBrain.reset();
         clearAction();
         pinnedPlayerId = null;

@@ -187,10 +187,16 @@ public final class SafeZoneManager {
 
     public static boolean intersects(ServerLevel level, AABB box) {
         if (level == null || box == null) return false;
-        for (SafeZone zone : zones(level)) {
-            if (zone.intersects(level.dimension(), box)) return true;
-        }
-        return false;
+        return findIntersecting(level, box) != null;
+    }
+
+    public static SafeZone findIntersecting(ServerLevel level, AABB box) {
+        if (level == null || box == null) return null;
+        return zones(level).stream()
+                .filter(zone -> zone.intersects(level.dimension(), box))
+                .min(Comparator.comparingLong(SafeZone::volume)
+                        .thenComparing(zone -> zone.id().toString()))
+                .orElse(null);
     }
 
     public static SafeZone findAt(ServerLevel level, BlockPos pos) {

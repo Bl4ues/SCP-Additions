@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.mixin.client.LevelRendererEntityTargetAccessor;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -16,21 +17,26 @@ import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 
 import java.io.IOException;
 import java.util.Map;
 
 /**
  * Produces the thin SCP Unity / Secret Lab-style outline shared by physical
- * prompts. Pickup items take priority; otherwise the active contextual block
- * or interactable player corpse is captured with its real renderer geometry.
+ * prompts. Pickup items take priority; otherwise the active contextual block,
+ * elevator control, or interactable player corpse is captured.
  *
  * <p>The selected geometry is rendered into an off-screen outline mask while
  * world-space rendering is still valid. A one-pixel post pass extracts only
@@ -41,6 +47,8 @@ import java.util.Map;
 public final class PickupOutlineRenderer {
     private static final ResourceLocation POST_CHAIN = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "shaders/post/pickup_outline.json");
+    private static final ResourceLocation BUTTON_MASK_TEXTURE =
+            new ResourceLocation("minecraft", "textures/block/white_concrete.png");
     private static final String MASK_TARGET = "pickup_mask";
     private static final String EDGE_TARGET = "pickup_edge";
 
@@ -89,8 +97,10 @@ public final class PickupOutlineRenderer {
             OUTLINE_BUFFER.setColor(255, 255, 255, 255);
             if (pickup != null && pickup.isAlive()) {
                 renderEntityMask(minecraft, pickup, poseStack, camera);
+            } else if (context != null && context.isElevatorButton()) {
+                renderButtonMask(minecraft, context, poseStack, camera);
             } else if (context != null && context.isCorpse()) {
-                renderEntityMask(minecraft, context.corpse(), poseStack, camera);
+                renderEntityMask(minecraft, context.entity(), poseStack, camera);
             } else if (context != null && context.isBlock()) {
                 renderBlockMask(minecraft, context.blockPos(), poseStack, camera);
             }
@@ -144,6 +154,11 @@ public final class PickupOutlineRenderer {
                 LightTexture.FULL_BRIGHT);
     }
 
+    /**
+     * GeckoLib/ENTITYBLOCK_ANIMATED blocks must not also feed their baked
+     * placeholder model into the mask. Doing so produced the large detached
+     * polygons visible around SCP-902, the OCU, terminals, and other prompts.
+     */
     private static void renderBlockMask(Minecraft minecraft, BlockPos pos,
             PoseStack poseStack, Camera camera) {
         if (minecraft.level == null || pos == null) return;
@@ -158,12 +173,14 @@ public final class PickupOutlineRenderer {
                     pos.getY() - cameraPosition.y,
                     pos.getZ() - cameraPosition.z);
 
-            int packedLight = LevelRenderer.getLightColor(
-                    minecraft.level, state, pos);
-            minecraft.getBlockRenderer().renderSingleBlock(state, poseStack,
-                    OUTLINE_BUFFER, packedLight, OverlayTexture.NO_OVERLAY);
-
             BlockEntity blockEntity = minecraft.level.getBlockEntity(pos);
+            if (state.getRenderShape() != RenderShape.ENTITYBLOCK_ANIMATED) {
+                int packedLight = LevelRenderer.getLightColor(
+                        minecraft.level, state, pos);
+                minecraft.getBlockRenderer().renderSingleBlock(state, poseStack,
+                        OUTLINE_BUFFER, packedLight, OverlayTexture.NO_OVERLAY);
+            }
+
             if (blockEntity != null) {
                 minecraft.getBlockEntityRenderDispatcher().render(
                         blockEntity, partialTick, poseStack, OUTLINE_BUFFER);
@@ -171,6 +188,100 @@ public final class PickupOutlineRenderer {
         } finally {
             poseStack.popPose();
         }
+    }
+
+    /**
+     * Floor-station and moving-carriage prompts intentionally highlight only
+     * the physical button currently selected by the prompt rather than the
+     * complete elevator model.
+     */
+    private static void renderButtonMask(Minecraft minecraft,
+            ContextPromptOutlineTarget.Target context, PoseStack poseStack,
+            Camera camera) {
+        Vec3 anchor = context.anchor();
+        if (anchor == null) return;
+
+        Direction facing = Direction.NORTH;
+        if (context.entity() instanceof CoreRoomElevatorCarriageEntity carriage) {
+            facing = carriage.facing();
+        } else if (context.blockPos() != null && minecraft.level != null) {
+            BlockState state = minecraft.level.getBlockState(context.blockPos());
+            if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+                facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+            }
+        }
+
+        double faceWidth = 0.17D;
+        double faceHeight = 0.17D;
+        double depth = 0.055D;
+        double sizeX = facing.getAxis() == Direction.Axis.X ? depth : faceWidth;
+        double sizeZ = facing.getAxis() == Direction.Axis.X ? faceWidth : depth;
+        Vec3 cameraPosition = camera.getPosition();
+
+        poseStack.pushPose();
+        try {
+            poseStack.translate(anchor.x - cameraPosition.x,
+                    anchor.y - cameraPosition.y,
+                    anchor.z - cameraPosition.z);
+            VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
+                    RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
+            emitBox(consumer, poseStack.last(),
+                    (float) (-sizeX * 0.5D), (float) (-faceHeight * 0.5D),
+                    (float) (-sizeZ * 0.5D),
+                    (float) (sizeX * 0.5D), (float) (faceHeight * 0.5D),
+                    (float) (sizeZ * 0.5D));
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    private static void emitBox(VertexConsumer consumer, PoseStack.Pose pose,
+            float minX, float minY, float minZ,
+            float maxX, float maxY, float maxZ) {
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
+        quad(consumer, matrix, normal,
+                minX, minY, minZ, maxX, minY, minZ,
+                maxX, maxY, minZ, minX, maxY, minZ, 0, 0, -1);
+        quad(consumer, matrix, normal,
+                maxX, minY, maxZ, minX, minY, maxZ,
+                minX, maxY, maxZ, maxX, maxY, maxZ, 0, 0, 1);
+        quad(consumer, matrix, normal,
+                minX, minY, maxZ, minX, minY, minZ,
+                minX, maxY, minZ, minX, maxY, maxZ, -1, 0, 0);
+        quad(consumer, matrix, normal,
+                maxX, minY, minZ, maxX, minY, maxZ,
+                maxX, maxY, maxZ, maxX, maxY, minZ, 1, 0, 0);
+        quad(consumer, matrix, normal,
+                minX, maxY, minZ, maxX, maxY, minZ,
+                maxX, maxY, maxZ, minX, maxY, maxZ, 0, 1, 0);
+        quad(consumer, matrix, normal,
+                minX, minY, maxZ, maxX, minY, maxZ,
+                maxX, minY, minZ, minX, minY, minZ, 0, -1, 0);
+    }
+
+    private static void quad(VertexConsumer consumer, Matrix4f matrix,
+            Matrix3f normal, float x0, float y0, float z0,
+            float x1, float y1, float z1,
+            float x2, float y2, float z2,
+            float x3, float y3, float z3,
+            float nx, float ny, float nz) {
+        vertex(consumer, matrix, normal, x0, y0, z0, 0.0F, 0.0F, nx, ny, nz);
+        vertex(consumer, matrix, normal, x1, y1, z1, 1.0F, 0.0F, nx, ny, nz);
+        vertex(consumer, matrix, normal, x2, y2, z2, 1.0F, 1.0F, nx, ny, nz);
+        vertex(consumer, matrix, normal, x3, y3, z3, 0.0F, 1.0F, nx, ny, nz);
+    }
+
+    private static void vertex(VertexConsumer consumer, Matrix4f matrix,
+            Matrix3f normal, float x, float y, float z, float u, float v,
+            float nx, float ny, float nz) {
+        consumer.vertex(matrix, x, y, z)
+                .color(255, 255, 255, 255)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(LightTexture.FULL_BRIGHT)
+                .normal(normal, nx, ny, nz)
+                .endVertex();
     }
 
     private static boolean ensurePostChain(Minecraft minecraft) {

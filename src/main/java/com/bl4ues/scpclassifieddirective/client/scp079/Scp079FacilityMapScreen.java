@@ -46,7 +46,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     public static void open() {
-        if (!Scp079PlayableClient.active()) return;
+        if (!Scp079PlayableClient.networkAvailable()) return;
         Minecraft.getInstance().setScreen(new Scp079FacilityMapScreen());
     }
 
@@ -65,7 +65,7 @@ public final class Scp079FacilityMapScreen extends Screen {
                 26, 38, 0xFF6F9DAE, false);
 
         if (!Scp079PlayableClient.networkAvailable()) {
-            graphics.drawString(font, ScpFonts.roboto("NETWORK OFFLINE"),
+            graphics.drawString(font, ScpFonts.roboto("AUXILIARY POWER OFFLINE"),
                     26, 52, 0xFFD47C72, false);
         }
 
@@ -73,7 +73,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             graphics.drawCenteredString(font,
                     ScpFonts.roboto(Scp079PlayableClient.networkAvailable()
                             ? "NO MAPPED FACILITY ROOMS"
-                            : "FACILITY NETWORK UNAVAILABLE"),
+                            : "AUXILIARY POWER UNAVAILABLE"),
                     width / 2, height / 2, 0xFF6F9DAE);
         } else {
             FloorGroup floor = floors.get(Mth.clamp(floorIndex, 0,

@@ -79,6 +79,26 @@ public enum SafeZoneTrack {
                 .toList();
     }
 
+    /** Standard tracks plus the otherwise-hidden track detected in this zone. */
+    public static List<SafeZoneTrack> availableTracks(String revealedTrackId) {
+        List<SafeZoneTrack> tracks = new ArrayList<>();
+        SafeZoneTrack revealed = byId(revealedTrackId);
+        if (revealed != null && revealed.automatic) tracks.add(revealed);
+        tracks.addAll(manualTracks());
+        return List.copyOf(tracks);
+    }
+
+    public static boolean isAvailableId(String id, String revealedTrackId) {
+        SafeZoneTrack track = byId(id);
+        return track != null && (!track.automatic
+                || track.id.equals(revealedTrackId));
+    }
+
+    public static String defaultAvailableId(String revealedTrackId) {
+        List<SafeZoneTrack> tracks = availableTracks(revealedTrackId);
+        return tracks.isEmpty() ? "" : tracks.get(0).id;
+    }
+
     public static Detection detect(ServerLevel level, BlockPos min,
             BlockPos max) {
         if (level == null || min == null || max == null) {

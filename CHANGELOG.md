@@ -290,7 +290,7 @@
 - Added the Creative-only **Safe Zone Tool** to the Items tab's **Tools & Utility** section, with Debug Stick styling and an in-game usage tooltip;
 - Left-clicking selects the first corner, right-clicking an opposite corner creates a persistent dimension-bound Safe Zone, and sneaking while right-clicking the air cancels the active selection;
 - Added a white selection outline, green outlines for supported automatic soundtrack sources, and post-creation outlines for up to 32 completed Safe Zones within 96 blocks while the tool is held in either hand;
-- Sneaking while right-clicking inside a Safe Zone opens its editor, which supports deletion, Area Music state, automatic soundtrack display, and the standard **Offices** and **SCP-131 Containment** tracks;
+- Sneaking while right-clicking inside a Safe Zone opens its editor, which supports deletion, Area Music state, and a soundtrack dropdown containing the standard **Offices** and **SCP-131 Containment** tracks; detected special tracks are revealed and selected by default but can be freely replaced;
 - Safe Zones prevent hostile spawn placement, final spawn positions, direct entity insertion, hostile targeting, and physical entry, while redirecting threats to another eligible nearby player where possible;
 - Roamer scheduling now excludes protected players and preserves the exact remaining countdown while every eligible player is inside a Safe Zone;
 - SCP-106 ends an abandoned Safe Zone pursuit with its normal sinking sequence, while SCP-173 waits until it is out of view and SCP-939 retreats from observers before disappearing when no nearby unprotected target remains;

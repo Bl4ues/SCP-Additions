@@ -67,6 +67,9 @@ public final class SafeZoneToolItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, Level level,
             List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.literal(
+                "Defines areas where roamers cannot spawn.")
+                .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("Left-click: select the first corner")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("Right-click: create the Safe Zone")

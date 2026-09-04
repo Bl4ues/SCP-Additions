@@ -25,10 +25,11 @@ public record SafeZone(UUID id, ResourceLocation dimension, BlockPos min,
         max = new BlockPos(Math.max(first.getX(), second.getX()),
                 Math.max(first.getY(), second.getY()),
                 Math.max(first.getZ(), second.getZ()));
-        musicTrack = SafeZoneTrack.validManualId(musicTrack)
-                ? musicTrack : "";
         automaticTrack = SafeZoneTrack.isAutomaticId(automaticTrack)
                 ? automaticTrack : "";
+        musicTrack = SafeZoneTrack.isAvailableId(musicTrack, automaticTrack)
+                ? musicTrack
+                : SafeZoneTrack.defaultAvailableId(automaticTrack);
     }
 
     public boolean isIn(ResourceKey<Level> level) {
@@ -64,7 +65,7 @@ public record SafeZone(UUID id, ResourceLocation dimension, BlockPos min,
     }
 
     public String effectiveTrack() {
-        return automaticTrack.isEmpty() ? musicTrack : automaticTrack;
+        return musicTrack;
     }
 
     public boolean hasAutomaticTrack() {
@@ -73,16 +74,27 @@ public record SafeZone(UUID id, ResourceLocation dimension, BlockPos min,
 
     public SafeZone withMusic(boolean enabled, String track) {
         return new SafeZone(id, dimension, min, max, enabled,
-                SafeZoneTrack.validManualId(track) ? track : "",
+                SafeZoneTrack.isAvailableId(track, automaticTrack)
+                        ? track : musicTrack,
                 automaticTrack);
     }
 
     public SafeZone withAutomaticTrack(String track, boolean enableNewTrack) {
         String sanitized = SafeZoneTrack.isAutomaticId(track) ? track : "";
+        String selected = musicTrack;
+        boolean changed = !sanitized.equals(automaticTrack);
+        if (changed && !sanitized.isEmpty()
+                && (automaticTrack.isEmpty()
+                || selected.equals(automaticTrack))) {
+            selected = sanitized;
+        }
+        if (!SafeZoneTrack.isAvailableId(selected, sanitized)) {
+            selected = SafeZoneTrack.defaultAvailableId(sanitized);
+        }
         boolean enabled = musicEnabled
                 || enableNewTrack && !sanitized.isEmpty();
         return new SafeZone(id, dimension, min, max, enabled,
-                musicTrack, sanitized);
+                selected, sanitized);
     }
 
     public CompoundTag save() {

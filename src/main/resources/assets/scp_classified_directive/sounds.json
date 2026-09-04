@@ -1546,5 +1546,59 @@
         "volume": 1.0
       }
     ]
+  },
+  "scp914soundtrack": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp914soundtrack",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp1176soundtrack": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp1176soundtrack",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp079soundtrack": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp079soundtrack",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp012soundtrack": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp012soundtrack",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp426soundtrack": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp426soundtrack",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "scp294soundtrack": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:scp294soundtrack",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
   }
 }

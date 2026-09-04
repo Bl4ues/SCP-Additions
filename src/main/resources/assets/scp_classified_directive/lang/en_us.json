@@ -3,6 +3,7 @@
   "subtitles.scp_classified_directive.inventory_eat": "Eating",
   "subtitles.scp_classified_directive.inventory_drink": "Drinking",
   "item.scp_classified_directive.empty_cup": "Paper Cup",
+  "item.scp_classified_directive.safe_zone_tool": "Safe Zone Tool",
   "death.attack.scp914veryfine": "%s turned into [REDACTED] and died later after being \"refined\" by SCP-914 on the \"Very Fine\" setting.",
   "subtitles.scp079_1": "SCP-079 noise",
   "block.scp_classified_directive.lv_6_left_reader_accept": "Level 6 Keycard Reader (Left) Accepted",

@@ -81,6 +81,7 @@ public class ScpClassifiedDirectiveModTabs {
     public static List<ItemStack> toolsUtilityStacks() {
         return List.of(
                 new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get()),
                 new ItemStack(DocumentItems.getDocument()));
     }
 

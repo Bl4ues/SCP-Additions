@@ -40,6 +40,8 @@ import com.bl4ues.scpclassifieddirective.network.StealthNetwork;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
 import com.bl4ues.scpclassifieddirective.scp1576.Scp1576Module;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneSounds;
+import com.bl4ues.scpclassifieddirective.safezone.network.SafeZoneNetwork;
 import com.bl4ues.scpclassifieddirective.sound.GameplaySounds;
 import com.bl4ues.scpclassifieddirective.sound.AchievementSounds;
 import com.bl4ues.scpclassifieddirective.vitals.StaminaItemEffectConfig;
@@ -85,6 +87,7 @@ public class ScpClassifiedDirectiveMod {
         Scp106Sounds.REGISTRY.register(bus);
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
+        SafeZoneSounds.REGISTRY.register(bus);
         GameplaySounds.REGISTRY.register(bus);
         AchievementSounds.REGISTRY.register(bus);
         ScpClassifiedDirectiveModBlocks.REGISTRY.register(bus);
@@ -113,6 +116,7 @@ public class ScpClassifiedDirectiveMod {
         ScpClassifiedDirectiveModMobEffects.REGISTRY.register(bus);
         ScpClassifiedDirectiveModMenus.REGISTRY.register(bus);
         ScpEntityNetwork.register();
+        SafeZoneNetwork.register();
         StealthNetwork.register();
         com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork.register();
     }
@@ -132,7 +136,7 @@ public class ScpClassifiedDirectiveMod {
         Scp914SkinManager.initialize();
     }
 
-    private static final String PROTOCOL_VERSION = "25";
+    private static final String PROTOCOL_VERSION = "26";
     public static final SimpleChannel PACKET_HANDLER =
             NetworkRegistry.newSimpleChannel(
                     new ResourceLocation(MODID, MODID),

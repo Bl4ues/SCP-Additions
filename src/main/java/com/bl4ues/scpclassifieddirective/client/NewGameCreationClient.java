@@ -19,6 +19,9 @@ public final class NewGameCreationClient {
     private static final Field CONFIGURATION_TRANSITION_FIELD;
     private static final Method BEGIN_SCREEN_TRANSITION_METHOD;
 
+    private static Screen pendingParent;
+    private static boolean pendingCustomPresentation;
+
     static {
         Field field = null;
         Method method = null;
@@ -61,7 +64,21 @@ public final class NewGameCreationClient {
         }
     }
 
+    static boolean consumeCustomPresentation(CreateWorldScreen screen) {
+        if (!pendingCustomPresentation || screen == null) return false;
+        pendingCustomPresentation = false;
+        return true;
+    }
+
+    static Screen consumePendingParent() {
+        Screen parent = pendingParent;
+        pendingParent = null;
+        return parent;
+    }
+
     private static void prepareAndOpen(Minecraft minecraft, Screen parent) {
+        pendingParent = parent;
+        pendingCustomPresentation = parent instanceof CustomMainMenuScreen;
         if (parent instanceof CustomMainMenuScreen menu) {
             ConfigCenterVisuals.prepare(menu);
         }

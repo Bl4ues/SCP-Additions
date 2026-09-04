@@ -42,6 +42,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -162,12 +163,10 @@ public final class Scp079PlayableClient {
         updateCamera();
     }
 
-    /** Reuses the player's normal Inventory binding as SCP-079's facility map. */
+    /** Reuses the player's normal Inventory binding as SCP-079's control map. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onClientTickStart(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.START || !active || !networkAvailable) {
-            return;
-        }
+        if (event.phase != TickEvent.Phase.START || !active) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.screen != null) return;
         boolean requested = false;
@@ -175,6 +174,16 @@ public final class Scp079PlayableClient {
             requested = true;
         }
         if (requested) Scp079FacilityMapScreen.open();
+    }
+
+    /** Spectator is an implementation detail, not a movement mode for SCP-079. */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onMovementInput(MovementInputUpdateEvent event) {
+        if (!active) return;
+        event.getInput().leftImpulse = 0.0F;
+        event.getInput().forwardImpulse = 0.0F;
+        event.getInput().jumping = false;
+        event.getInput().shiftKeyDown = false;
     }
 
     @SubscribeEvent
@@ -188,6 +197,7 @@ public final class Scp079PlayableClient {
             stopCamera(minecraft);
             return;
         }
+        minecraft.player.setDeltaMovement(Vec3.ZERO);
         handleShiftCursor(minecraft);
         if (cameraMode() && minecraft.screen == null && !cursorReleased) {
             consumeCameraActions(minecraft);
@@ -384,21 +394,34 @@ public final class Scp079PlayableClient {
         Direction facing = state.hasProperty(HorizontalDirectionalBlock.FACING)
                 ? state.getValue(HorizontalDirectionalBlock.FACING)
                 : Direction.NORTH;
-        Vec3 focus = Vec3.atCenterOf(hostPos).add(0.0D, 0.12D, 0.0D);
+        Vec3 focus = Vec3.atCenterOf(hostPos).add(0.0D, 0.10D, 0.0D);
         float yaw = minecraft.player.getYRot();
         float pitch = Mth.clamp(minecraft.player.getXRot(), -62.0F, 62.0F);
         Vec3 view = Vec3.directionFromRotation(pitch * 0.62F, yaw);
         Vec3 outward = view.scale(-1.0D).normalize();
         Vec3 flatOutward = new Vec3(outward.x, 0.0D, outward.z);
-        if (flatOutward.lengthSqr() > 1.0E-6D) flatOutward = flatOutward.normalize();
+        if (flatOutward.lengthSqr() < 1.0E-6D) {
+            flatOutward = new Vec3(0.0D, 0.0D, 1.0D);
+        } else {
+            flatOutward = flatOutward.normalize();
+        }
         Vec3 front = new Vec3(facing.getStepX(), 0.0D, facing.getStepZ());
         double frontness = Math.max(0.0D, flatOutward.dot(front));
         frontness *= frontness;
         double desiredDistance = Mth.lerp(frontness,
                 FAR_DISTANCE, FRONT_DISTANCE);
-        Vec3 desired = focus.add(outward.scale(desiredDistance))
-                .add(0.0D, 0.18D, 0.0D);
+        double desiredY = focus.y + 0.28D + outward.y * desiredDistance * 0.58D;
+        desiredY = Mth.clamp(desiredY,
+                hostPos.getY() + 0.42D, hostPos.getY() + 2.10D);
+        Vec3 desired = new Vec3(
+                focus.x + flatOutward.x * desiredDistance,
+                desiredY,
+                focus.z + flatOutward.z * desiredDistance);
         Vec3 actual = avoidWalls(minecraft, focus, desired);
+        double minimumY = hostPos.getY() + 0.38D;
+        if (actual.y < minimumY) {
+            actual = new Vec3(actual.x, minimumY, actual.z);
+        }
         cameraRig.setPos(actual.x, actual.y, actual.z);
         Vec3 look = focus.subtract(actual);
         double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
@@ -477,14 +500,13 @@ public final class Scp079PlayableClient {
             }
         }
         renderPower(graphics, width, height, cyan, white);
-        if (networkAvailable) {
-            graphics.drawString(minecraft.font,
-                    ScpFonts.roboto("[" + mapKeyLabel(minecraft) + "] FACILITY MAP"),
-                    width - 168, height - 57, cyan, false);
-        } else if (!auxiliaryOnline) {
+        graphics.drawString(minecraft.font,
+                ScpFonts.roboto("[" + mapKeyLabel(minecraft) + "] FACILITY MAP"),
+                width - 168, height - 57, cyan, false);
+        if (!networkAvailable) {
             graphics.drawString(minecraft.font,
                     ScpFonts.roboto("NETWORK OFFLINE"),
-                    width - 168, height - 57, 0xFFB86A6A, false);
+                    width - 168, height - 70, 0xFFB86A6A, false);
         }
     }
 
@@ -506,10 +528,12 @@ public final class Scp079PlayableClient {
                     ? "UNASSIGNED" : room.floorShortLabel();
             graphics.drawString(minecraft.font, ScpFonts.roboto(floor),
                     34, titleY, 0xFF8FB8C8, false);
-            titleY += 13;
-            graphics.drawString(minecraft.font,
-                    ScpFonts.titillium(room.name().toUpperCase()),
-                    34, titleY, 0xFFF0FAFF, false);
+            if (!room.name().isBlank()) {
+                titleY += 13;
+                graphics.drawString(minecraft.font,
+                        ScpFonts.titillium(room.name().toUpperCase()),
+                        34, titleY, 0xFFF0FAFF, false);
+            }
         } else {
             graphics.drawString(minecraft.font,
                     ScpFonts.titillium(cameraName.toUpperCase()),

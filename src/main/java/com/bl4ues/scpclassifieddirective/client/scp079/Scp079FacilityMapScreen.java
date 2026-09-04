@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
+import com.bl4ues.scpclassifieddirective.network.ScpRoleSelectorNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -15,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,6 +36,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     private final List<FloorGroup> floors;
     private int floorIndex;
     private boolean floorMenuOpen;
+    private boolean leaveConfirmation;
     private FacilityRoomSnapshot hoveredRoom;
 
     private Scp079FacilityMapScreen() {
@@ -43,7 +46,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     public static void open() {
-        if (!Scp079PlayableClient.networkAvailable()) return;
+        if (!Scp079PlayableClient.active()) return;
         Minecraft.getInstance().setScreen(new Scp079FacilityMapScreen());
     }
 
@@ -61,30 +64,58 @@ public final class Scp079FacilityMapScreen extends Screen {
         graphics.drawString(font, ScpFonts.roboto("SCP-079 / FACILITY NETWORK"),
                 26, 38, 0xFF6F9DAE, false);
 
+        if (!Scp079PlayableClient.networkAvailable()) {
+            graphics.drawString(font, ScpFonts.roboto("NETWORK OFFLINE"),
+                    26, 52, 0xFFD47C72, false);
+        }
+
         if (floors.isEmpty()) {
             graphics.drawCenteredString(font,
-                    ScpFonts.roboto("NO MAPPED FACILITY ROOMS"),
+                    ScpFonts.roboto(Scp079PlayableClient.networkAvailable()
+                            ? "NO MAPPED FACILITY ROOMS"
+                            : "FACILITY NETWORK UNAVAILABLE"),
                     width / 2, height / 2, 0xFF6F9DAE);
-            renderPower(graphics);
-            return;
+        } else {
+            FloorGroup floor = floors.get(Mth.clamp(floorIndex, 0,
+                    floors.size() - 1));
+            renderFloorSelector(graphics, mouseX, mouseY, floor);
+            renderMap(graphics, mouseX, mouseY, floor);
         }
 
-        FloorGroup floor = floors.get(Mth.clamp(floorIndex, 0,
-                floors.size() - 1));
-        renderFloorSelector(graphics, mouseX, mouseY, floor);
-        renderMap(graphics, mouseX, mouseY, floor);
         renderPower(graphics);
-
-        if (Scp079PlayableClient.cameraMode()) {
-            String label = "RETURN TO LOCAL HOST";
-            int tw = font.width(label);
-            int x = width - tw - 32;
-            int y = 26;
-            boolean hover = mouseX >= x - 7 && mouseX <= width - 20
-                    && mouseY >= y - 5 && mouseY <= y + 13;
-            graphics.drawString(font, ScpFonts.roboto(label), x, y,
-                    hover ? 0xFFFFFFFF : 0xFFBDEEFF, false);
+        renderTopActions(graphics, mouseX, mouseY);
+        if (leaveConfirmation) {
+            renderLeaveConfirmation(graphics, mouseX, mouseY);
         }
+    }
+
+    private void renderTopActions(GuiGraphics graphics, int mouseX, int mouseY) {
+        int y = 22;
+        int leaveW = 112;
+        int leaveX = width - leaveW - 24;
+        boolean leaveHover = !leaveConfirmation && inside(mouseX, mouseY,
+                leaveX, y, leaveW, 22);
+        graphics.fill(leaveX, y, leaveX + leaveW, y + 22,
+                leaveHover ? 0xD5472429 : 0xB8231A20);
+        border(graphics, leaveX, y, leaveW, 22,
+                leaveHover ? 0xFFE09A91 : 0xFF72535B);
+        graphics.drawCenteredString(font, ScpFonts.roboto("LEAVE SCP ROLE"),
+                leaveX + leaveW / 2, y + 7,
+                leaveHover ? 0xFFFFFFFF : 0xFFCBA7AA);
+
+        if (!Scp079PlayableClient.cameraMode()) return;
+        String label = "RETURN TO LOCAL HOST";
+        int w = Math.max(126, font.width(ScpFonts.roboto(label)) + 20);
+        int x = leaveX - w - 10;
+        boolean hover = !leaveConfirmation && inside(mouseX, mouseY,
+                x, y, w, 22);
+        graphics.fill(x, y, x + w, y + 22,
+                hover ? 0xD51A3545 : 0xB8122835);
+        border(graphics, x, y, w, 22,
+                hover ? 0xFFBDEEFF : 0xFF52798C);
+        graphics.drawCenteredString(font, ScpFonts.roboto(label),
+                x + w / 2, y + 7,
+                hover ? 0xFFFFFFFF : 0xFFBDEEFF);
     }
 
     private void renderFloorSelector(GuiGraphics graphics, int mouseX,
@@ -93,7 +124,8 @@ public final class Scp079FacilityMapScreen extends Screen {
         int w = Math.max(160, font.width(label) + 36);
         int x = (width - w) / 2;
         int y = 21;
-        boolean hovered = mouseX >= x && mouseX < x + w
+        boolean hovered = !leaveConfirmation
+                && mouseX >= x && mouseX < x + w
                 && mouseY >= y && mouseY < y + 22;
         graphics.fill(x, y, x + w, y + 22,
                 hovered || floorMenuOpen ? 0xD51A3545 : 0xB8122835);
@@ -111,7 +143,8 @@ public final class Scp079FacilityMapScreen extends Screen {
                 floors.size() - maxRows));
         for (int i = start; i < start + maxRows; i++) {
             FloorGroup option = floors.get(i);
-            boolean rowHover = mouseX >= x && mouseX < x + w
+            boolean rowHover = !leaveConfirmation
+                    && mouseX >= x && mouseX < x + w
                     && mouseY >= rowY && mouseY < rowY + 19;
             graphics.fill(x, rowY, x + w, rowY + 19,
                     i == floorIndex ? 0xE1265064
@@ -146,7 +179,8 @@ public final class Scp079FacilityMapScreen extends Screen {
                         Scp079PlayableClient.viewPosition()));
 
         for (FacilityRoomSnapshot room : floor.rooms) {
-            boolean hovered = roomContainsScreen(room, mouseX, mouseY,
+            boolean hovered = !leaveConfirmation
+                    && roomContainsScreen(room, mouseX, mouseY,
                     originX, originY, scale);
             if (hovered) hoveredRoom = room;
             boolean current = currentRoom != null
@@ -166,17 +200,19 @@ public final class Scp079FacilityMapScreen extends Screen {
                 border(graphics, x1, y1, Math.max(1, x2 - x1),
                         Math.max(1, y2 - y1), line);
             }
-            RoomBounds rb = RoomBounds.of(room);
-            if (rb != null) {
-                int centerX = (int) Math.round(originX
-                        + (rb.minX + rb.maxX + 1) * 0.5D * scale);
-                int centerY = (int) Math.round(originY
-                        + (rb.minZ + rb.maxZ + 1) * 0.5D * scale);
-                String name = room.name().isBlank() ? "UNNAMED ROOM"
-                        : room.name().toUpperCase();
-                if (font.width(name) < (rb.maxX - rb.minX + 1) * scale + 28) {
-                    graphics.drawCenteredString(font, ScpFonts.roboto(name),
-                            centerX, centerY - 4, 0xFFE8F8FF);
+            if (!room.name().isBlank()) {
+                RoomBounds rb = RoomBounds.of(room);
+                if (rb != null) {
+                    int centerX = (int) Math.round(originX
+                            + (rb.minX + rb.maxX + 1) * 0.5D * scale);
+                    int centerY = (int) Math.round(originY
+                            + (rb.minZ + rb.maxZ + 1) * 0.5D * scale);
+                    String name = room.name().toUpperCase();
+                    if (font.width(name)
+                            < (rb.maxX - rb.minX + 1) * scale + 28) {
+                        graphics.drawCenteredString(font, ScpFonts.roboto(name),
+                                centerX, centerY - 4, 0xFFE8F8FF);
+                    }
                 }
             }
         }
@@ -221,24 +257,76 @@ public final class Scp079FacilityMapScreen extends Screen {
                 x + 154, y - 1, 0xFFE8F8FF, false);
     }
 
+    private void renderLeaveConfirmation(GuiGraphics graphics,
+            int mouseX, int mouseY) {
+        graphics.fill(0, 0, width, height, 0xB8000000);
+        int w = Math.min(330, width - 36);
+        int h = 126;
+        int x = (width - w) / 2;
+        int y = (height - h) / 2;
+        graphics.fill(x, y, x + w, y + h, 0xF20A1820);
+        border(graphics, x, y, w, h, 0xFF5C8493);
+        graphics.drawCenteredString(font, ScpFonts.montserrat("LEAVE SCP ROLE?"),
+                x + w / 2, y + 22, 0xFFFFFFFF);
+        graphics.drawCenteredString(font,
+                ScpFonts.roboto("Your original player state will be restored."),
+                x + w / 2, y + 45, 0xFF8EAFBA);
+
+        int gap = 10;
+        int buttonW = (w - 38 - gap) / 2;
+        int buttonY = y + h - 38;
+        int cancelX = x + 19;
+        int leaveX = cancelX + buttonW + gap;
+        drawModalButton(graphics, cancelX, buttonY, buttonW, 25,
+                "CANCEL", inside(mouseX, mouseY,
+                        cancelX, buttonY, buttonW, 25), false);
+        drawModalButton(graphics, leaveX, buttonY, buttonW, 25,
+                "LEAVE ROLE", inside(mouseX, mouseY,
+                        leaveX, buttonY, buttonW, 25), true);
+    }
+
+    private void drawModalButton(GuiGraphics graphics, int x, int y,
+            int w, int h, String label, boolean hovered, boolean danger) {
+        int fill = danger
+                ? hovered ? 0xE0642828 : 0xD53D2022
+                : hovered ? 0xE52A5868 : 0xD518303A;
+        int line = danger ? 0xFFE28A7F : 0xFF75B7CC;
+        graphics.fill(x, y, x + w, y + h, fill);
+        border(graphics, x, y, w, h, line);
+        graphics.drawCenteredString(font, ScpFonts.roboto(label),
+                x + w / 2, y + 8, 0xFFFFFFFF);
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (minecraft != null && minecraft.options.keyInventory.matchesMouse(button)) {
-            onClose();
+        if (minecraft != null
+                && minecraft.options.keyInventory.matchesMouse(button)) {
+            if (leaveConfirmation) leaveConfirmation = false;
+            else onClose();
             return true;
         }
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
+        if (leaveConfirmation) return handleLeaveConfirmationClick(mouseX, mouseY);
+
+        int topY = 22;
+        int leaveW = 112;
+        int leaveX = width - leaveW - 24;
+        if (inside(mouseX, mouseY, leaveX, topY, leaveW, 22)) {
+            leaveConfirmation = true;
+            return true;
+        }
+
         if (Scp079PlayableClient.cameraMode()) {
             String label = "RETURN TO LOCAL HOST";
-            int tw = font.width(label);
-            int x = width - tw - 32;
-            if (mouseX >= x - 7 && mouseX <= width - 20
-                    && mouseY >= 21 && mouseY <= 39) {
+            int w = Math.max(126, font.width(ScpFonts.roboto(label)) + 20);
+            int x = leaveX - w - 10;
+            if (inside(mouseX, mouseY, x, topY, w, 22)) {
                 Scp079PlayableNetwork.requestLocal();
                 onClose();
                 return true;
             }
         }
+
         if (!floors.isEmpty()) {
             FloorGroup floor = floors.get(floorIndex);
             int w = Math.max(160, font.width(floor.longLabel) + 36);
@@ -266,15 +354,39 @@ public final class Scp079FacilityMapScreen extends Screen {
                 floorMenuOpen = false;
             }
         }
-        if (hoveredRoom != null) {
+        if (hoveredRoom != null && Scp079PlayableClient.networkAvailable()) {
             Scp079PlayableNetwork.requestRoom(hoveredRoom.id());
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    private boolean handleLeaveConfirmationClick(double mouseX,
+            double mouseY) {
+        int w = Math.min(330, width - 36);
+        int h = 126;
+        int x = (width - w) / 2;
+        int y = (height - h) / 2;
+        int gap = 10;
+        int buttonW = (w - 38 - gap) / 2;
+        int buttonY = y + h - 38;
+        int cancelX = x + 19;
+        int leaveX = cancelX + buttonW + gap;
+        if (inside(mouseX, mouseY, cancelX, buttonY, buttonW, 25)) {
+            leaveConfirmation = false;
+            return true;
+        }
+        if (inside(mouseX, mouseY, leaveX, buttonY, buttonW, 25)) {
+            ScpRoleSelectorNetwork.requestRole(ScpRoleSelectorNetwork.Role.HUMAN);
+            Minecraft.getInstance().setScreen(null);
+            return true;
+        }
+        return true;
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (leaveConfirmation) return true;
         if (floors.size() <= 1 || delta == 0.0D) return true;
         floorIndex = Math.floorMod(floorIndex + (delta > 0 ? -1 : 1),
                 floors.size());
@@ -284,6 +396,22 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (leaveConfirmation) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE
+                    || minecraft != null && minecraft.options.keyInventory.matches(
+                    keyCode, scanCode)) {
+                leaveConfirmation = false;
+                return true;
+            }
+            if (keyCode == GLFW.GLFW_KEY_ENTER
+                    || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                ScpRoleSelectorNetwork.requestRole(
+                        ScpRoleSelectorNetwork.Role.HUMAN);
+                Minecraft.getInstance().setScreen(null);
+                return true;
+            }
+            return true;
+        }
         if (minecraft != null && minecraft.options.keyInventory.matches(
                 keyCode, scanCode)) {
             onClose();
@@ -346,6 +474,12 @@ public final class Scp079FacilityMapScreen extends Screen {
                     && mouseY >= y1 && mouseY < y2) return true;
         }
         return false;
+    }
+
+    private static boolean inside(double mouseX, double mouseY,
+            int x, int y, int w, int h) {
+        return mouseX >= x && mouseX < x + w
+                && mouseY >= y && mouseY < y + h;
     }
 
     private static void renderScanlines(GuiGraphics graphics, int width,

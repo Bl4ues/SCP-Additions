@@ -2,12 +2,14 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.block.Scp079onBlock;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -19,6 +21,7 @@ import java.util.WeakHashMap;
 /** Controls the physical CRT face independently from SCP-079's AI logic. */
 public final class Scp079ScreenState {
     private static final int ACTION_PULSE_TICKS = 8;
+    private static final float CRT_STATE_SOUND_VOLUME = 0.42F;
     private static final Map<MinecraftServer, Set<Scp079FacilityAccessSavedData.TrackedPosition>>
             LOCAL_ACTIVE = new WeakHashMap<>();
 
@@ -101,6 +104,10 @@ public final class Scp079ScreenState {
                     state.getValue(Scp079onBlock.WATERLOGGED));
         }
         level.setBlock(pos, next, 3);
+        level.playSound(null, pos,
+                powered ? ScpClassifiedDirectiveModSounds.SCP079_1.get()
+                        : ScpClassifiedDirectiveModSounds.SCP079_2.get(),
+                SoundSource.BLOCKS, CRT_STATE_SOUND_VOLUME, 1.0F);
     }
 
     private static ServerLevel level(MinecraftServer server,

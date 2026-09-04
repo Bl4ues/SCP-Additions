@@ -25,6 +25,7 @@
     "RoombaNoEntityPushMixin",
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",
+    "Scp079PlayerControlAiGateMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",
     "compat.MineZeroRuntimeRestoreMixin",

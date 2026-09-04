@@ -37,7 +37,7 @@ public final class NewGameExperimentsClient {
     private static final int PANEL = 0xC20B0E12;
     private static final int ROW = 0xA80B0E12;
     private static final int BORDER = 0x70444C57;
-    private static final int ROW_HEIGHT = 58;
+    private static final int ROW_HEIGHT = 64;
     private static final int GAP = 7;
 
     private static final Map<ExperimentsScreen, State> STATES = new WeakHashMap<>();
@@ -108,8 +108,7 @@ public final class NewGameExperimentsClient {
             for (Pack pack : ordered) {
                 NewGameWidgets.Toggle toggle = add(event,
                         new NewGameWidgets.Toggle(0, 0, 240, 34,
-                                pack.getTitle().getString(),
-                                packs.getBoolean(pack),
+                                "Enabled", packs.getBoolean(pack),
                                 enabled -> packs.put(pack, enabled)));
                 rows.add(new Row(pack, toggle));
             }
@@ -181,10 +180,20 @@ public final class NewGameExperimentsClient {
                         fade(hovered ? 0xD5161B22 : ROW, alpha));
                 graphics.fill(layout.x + 18, row.y,
                         layout.x + 21, row.y + ROW_HEIGHT, fade(ACCENT, alpha));
+
+                int textX = layout.x + 32;
+                int available = Math.max(80, row.toggle.getX() - textX - 18);
+                String title = fitMontserrat(row.pack.getTitle().getString(),
+                        Math.max(60, Math.round(available / 1.08F)));
+                drawScaled(graphics, ScpFonts.montserrat(title),
+                        textX, row.y + 12, 1.08F,
+                        fade(hovered ? ACCENT_BRIGHT : TEXT, alpha));
+
+                String description = fitTitillium(
+                        row.pack.getDescription().getString(), available);
                 graphics.drawString(Minecraft.getInstance().font,
-                        ScpFonts.titillium(fit(row.pack.getDescription().getString(),
-                                layout.width - 330)),
-                        layout.x + 32, row.y + 34,
+                        ScpFonts.titillium(description),
+                        textX, row.y + 39,
                         fade(MUTED, alpha), false);
                 row.toggle.render(graphics, mouseX, mouseY, partialTick);
             }
@@ -202,11 +211,11 @@ public final class NewGameExperimentsClient {
 
         private void position(Layout layout) {
             int y = layout.listTop - scroll;
-            int toggleW = Mth.clamp(Math.round(layout.width * 0.34F), 190, 270);
+            int toggleW = Mth.clamp(Math.round(layout.width * 0.30F), 170, 230);
             for (Row row : rows) {
                 row.y = y;
                 row.toggle.setX(layout.x + layout.width - toggleW - 24);
-                row.toggle.setY(y + 8);
+                row.toggle.setY(y + (ROW_HEIGHT - 34) / 2);
                 row.toggle.setWidth(toggleW);
                 row.toggle.setHeight(34);
                 row.toggle.visible = y + ROW_HEIGHT > layout.listTop
@@ -245,18 +254,32 @@ public final class NewGameExperimentsClient {
                     top + 72, bottom - 16);
         }
 
-        private static String fit(String value, int pixels) {
+        private static String fitMontserrat(String value, int pixels) {
+            return fit(value, pixels, true);
+        }
+
+        private static String fitTitillium(String value, int pixels) {
+            return fit(value, pixels, false);
+        }
+
+        private static String fit(String value, int pixels, boolean title) {
             var font = Minecraft.getInstance().font;
             if (pixels <= 40) return "";
-            if (font.width(ScpFonts.titillium(value)) <= pixels) return value;
+            if (width(font, value, title) <= pixels) return value;
             String suffix = "...";
             StringBuilder out = new StringBuilder();
             for (int i = 0; i < value.length(); i++) {
                 String next = out.toString() + value.charAt(i);
-                if (font.width(ScpFonts.titillium(next + suffix)) > pixels) break;
+                if (width(font, next + suffix, title) > pixels) break;
                 out.append(value.charAt(i));
             }
             return out + suffix;
+        }
+
+        private static int width(net.minecraft.client.gui.Font font,
+                String value, boolean title) {
+            return font.width(title ? ScpFonts.montserrat(value)
+                    : ScpFonts.titillium(value));
         }
     }
 

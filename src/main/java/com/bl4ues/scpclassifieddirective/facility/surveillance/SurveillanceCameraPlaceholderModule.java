@@ -122,11 +122,6 @@ public final class SurveillanceCameraPlaceholderModule {
         }
 
         @Override
-        public Component getName() {
-            return Component.literal("Surveillance Camera [Placeholder]");
-        }
-
-        @Override
         public void onPlace(BlockState state, Level level, BlockPos pos,
                 BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);

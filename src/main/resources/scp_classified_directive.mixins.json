@@ -51,6 +51,7 @@
     "client.CustomMainMenuWhatsNewMixin",
     "client.CustomMainMenuSettingsMixin",
     "client.CustomMainMenuPlayPanelsMixin",
+    "client.MainMenuNewGameRedirectMixin",
     "client.MainMenuServerListSafetyMixin",
     "client.MainMenuSettingsPanelCompatMixin",
     "client.PauseMenuSettingsPanelCompatMixin",

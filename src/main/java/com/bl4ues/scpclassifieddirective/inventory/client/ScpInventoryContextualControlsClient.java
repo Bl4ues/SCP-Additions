@@ -67,6 +67,10 @@ public final class ScpInventoryContextualControlsClient {
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || !minecraft.player.isCreative()) return;
+        if (!screen.isPdaInteractive()) {
+            event.setCanceled(true);
+            return;
+        }
 
         for (CreativeDestination destination : CreativeDestination.values()) {
             int x = creativeButtonX(screen);

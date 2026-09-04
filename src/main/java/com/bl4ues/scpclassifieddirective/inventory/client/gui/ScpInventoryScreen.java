@@ -16,7 +16,9 @@ import com.bl4ues.scpclassifieddirective.inventory.client.gui.components.StatusP
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpEquipmentSlot;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpItemClassifier;
 import com.bl4ues.scpclassifieddirective.inventory.network.InventoryActionPacket;
+import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -129,6 +131,13 @@ public class ScpInventoryScreen extends Screen {
     private boolean dropPreviewTransparentRender = false;
     private float dropPreviewFade = 0.0F;
     private float dropPreviewRenderAlpha = 1.0F;
+    private static final long PDA_TRANSITION_NANOS = 520_000_000L;
+    private final long pdaOpenStartedNanos = System.nanoTime();
+    private long pdaCloseStartedNanos = -1L;
+    private Screen pdaNextScreen;
+    private boolean completingPdaClose;
+    private long pdaLastRenderNanos = System.nanoTime();
+    private float pdaDocumentProgress;
 
     public ScpInventoryScreen() {
         super(Component.literal("SCP Inventory"));
@@ -270,18 +279,25 @@ public class ScpInventoryScreen extends Screen {
     public void tick() {
         super.tick();
         if (!InventoryModuleRuntimeState.isEnabledForClient()) onClose();
+        if (pdaCloseStartedNanos > 0L
+                && System.nanoTime() - pdaCloseStartedNanos >= PDA_TRANSITION_NANOS) {
+            completingPdaClose = true;
+            minecraft.setScreen(pdaNextScreen);
+        }
     }
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        boolean worldDropPreview = isPreviewingWorldDrop(mouseX, mouseY);
-        updateDropPreviewFade(worldDropPreview);
+        updateDropPreviewFade(isPreviewingWorldDrop(mouseX, mouseY));
+        g.pose().pushPose();
+        applyPdaPresentationPose(g, mouseX, mouseY);
+        renderPdaContents(g, mouseX, mouseY, partialTick);
+        renderPdaShell(g);
+        g.pose().popPose();
+    }
 
-        if (dropPreviewFade > 0.01F) {
-            renderTransparentDropPreview(g, mouseX, mouseY);
-            return;
-        }
-
+    private void renderPdaContents(GuiGraphics g, int mouseX, int mouseY,
+            float partialTick) {
         renderBackground(g);
         renderPanels(g);
         renderHealthStatus(g);
@@ -307,6 +323,96 @@ public class ScpInventoryScreen extends Screen {
             renderDraggedStack(g, mouseX, mouseY);
             super.render(g, mouseX, mouseY, partialTick);
         }
+    }
+
+    private void applyPdaPresentationPose(GuiGraphics graphics,
+            int mouseX, int mouseY) {
+        long now = System.nanoTime();
+        float frameSeconds = Math.min(0.1F,
+                (now - pdaLastRenderNanos) / 1_000_000_000.0F);
+        pdaLastRenderNanos = now;
+        float documentTarget = mode == ScreenMode.CODEX && codexPanel != null
+                && codexPanel.isExpandedImage() ? 1.0F : 0.0F;
+        float documentBlend = 1.0F
+                - (float) Math.exp(-10.0F * frameSeconds);
+        pdaDocumentProgress += (documentTarget - pdaDocumentProgress)
+                * documentBlend;
+        float progress = presentationProgress();
+        float eased = 1.0F - (float) Math.pow(1.0F - progress, 3.0D);
+        float hidden = 1.0F - eased;
+        float centerX = width * 0.5F;
+        float centerY = height * 0.5F;
+        graphics.pose().translate(centerX, centerY, 0.0F);
+        graphics.pose().mulPose(Axis.ZP.rotationDegrees(78.0F * hidden));
+        graphics.pose().mulPose(Axis.XP.rotationDegrees(-13.0F * hidden));
+        float scale = 0.68F + 0.32F * eased;
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.pose().translate(-centerX + width * 0.24F * hidden,
+                -centerY + height * 0.72F * hidden, 0.0F);
+
+        if (dropPreviewFade > 0.001F) {
+            float dx = (mouseX - centerX) / Math.max(1.0F, centerX);
+            float dy = (mouseY - centerY) / Math.max(1.0F, centerY);
+            graphics.pose().translate(-dx * 72.0F * dropPreviewFade,
+                    -dy * 52.0F * dropPreviewFade, 0.0F);
+            graphics.pose().translate(centerX, centerY, 0.0F);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(
+                    -dx * 4.5F * dropPreviewFade));
+            graphics.pose().translate(-centerX, -centerY, 0.0F);
+        }
+
+        if (pdaDocumentProgress > 0.001F) {
+            float documentEase = pdaDocumentProgress * pdaDocumentProgress
+                    * (3.0F - 2.0F * pdaDocumentProgress);
+            graphics.pose().translate(centerX, centerY, 0.0F);
+            graphics.pose().mulPose(Axis.ZP.rotationDegrees(
+                    -90.0F * documentEase));
+            float documentScale = 1.0F + 0.12F * documentEase;
+            graphics.pose().scale(documentScale, documentScale, 1.0F);
+            graphics.pose().translate(-centerX, -centerY, 0.0F);
+        }
+    }
+
+    private void renderPdaShell(GuiGraphics graphics) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(rootX + rootWidth * 0.5F,
+                rootY + rootHeight * 0.5F, 620.0F);
+        float modelScale = rootHeight / 7.1F;
+        graphics.pose().scale(modelScale, -modelScale, modelScale);
+        graphics.pose().translate(-0.72F, -1.38F, 0.0F);
+        InventoryPdaRenderer.INSTANCE.render(graphics.pose());
+        graphics.pose().popPose();
+    }
+
+    private float presentationProgress() {
+        long now = System.nanoTime();
+        if (pdaCloseStartedNanos > 0L) {
+            return 1.0F - Math.min(1.0F,
+                    (now - pdaCloseStartedNanos) / (float) PDA_TRANSITION_NANOS);
+        }
+        return Math.min(1.0F,
+                (now - pdaOpenStartedNanos) / (float) PDA_TRANSITION_NANOS);
+    }
+
+    public boolean beginPdaClose(Screen nextScreen) {
+        if (completingPdaClose) return false;
+        if (pdaCloseStartedNanos < 0L) {
+            captureSessionState();
+            pdaNextScreen = nextScreen;
+            pdaCloseStartedNanos = System.nanoTime();
+            clearDragSource();
+            if (contextMenu != null) contextMenu.close();
+        }
+        return true;
+    }
+
+    @Override
+    public void onClose() {
+        beginPdaClose(null);
+    }
+
+    public boolean isPdaInteractive() {
+        return pdaCloseStartedNanos < 0L && presentationProgress() >= 0.98F;
     }
 
     private void updateDropPreviewFade(boolean targetVisible) {
@@ -543,6 +649,7 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (!isPdaInteractive()) return true;
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.isMouseOver(mouseX, mouseY)) return itemList.mouseScrolled(delta);
@@ -551,6 +658,7 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!isPdaInteractive()) return true;
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.isExpandedImage()) return codexPanel.mouseClicked(mouseX, mouseY, button);
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
@@ -594,6 +702,7 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (!isPdaInteractive()) return true;
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseDraggedScrollbar(mouseY)) return true;
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseDraggedScrollbar(mouseY)) return true;
@@ -606,6 +715,7 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (!isPdaInteractive()) return true;
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.mouseReleased(button)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseReleasedScrollbar(button)) return true;
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseReleasedScrollbar(button)) return true;

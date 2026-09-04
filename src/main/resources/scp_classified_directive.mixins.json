@@ -37,6 +37,7 @@
     "client.ScreenInvoker",
     "client.DeathScreenInvoker",
     "client.DeathScreenDimensionTransferMixin",
+    "client.InventoryPdaScreenTransitionMixin",
     "client.ScpDeathScreenLiveFeedMixin",
     "client.ResponsiveScreenForgeHooksMixin",
     "client.ResponsiveScreenRenderEventMixin",

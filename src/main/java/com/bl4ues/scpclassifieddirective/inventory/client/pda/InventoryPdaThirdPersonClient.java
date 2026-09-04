@@ -92,7 +92,7 @@ public final class InventoryPdaThirdPersonClient {
         event.getPoseStack().mulPose(Axis.XP.rotationDegrees(
                 lerp(12.0F, 68.0F, progress)));
         event.getPoseStack().mulPose(Axis.ZP.rotationDegrees(
-                lerp(-5.0F, -90.0F, progress)));
+                lerp(5.0F, 90.0F, progress)));
         event.getPoseStack().scale(0.24F, -0.24F, 0.24F);
         // GeoObjectRenderer adds (0.5, 0.51, 0.5) before rendering. Offset
         // the authored screen center so the device, rather than its raw model

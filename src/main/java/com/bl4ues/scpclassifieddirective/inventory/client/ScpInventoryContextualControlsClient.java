@@ -82,7 +82,7 @@ public final class ScpInventoryContextualControlsClient {
                 continue;
             }
 
-            openCreativeInventory(destination.tab());
+            openCreativeInventory(destination.tab(), screen);
             event.setCanceled(true);
             return;
         }
@@ -119,7 +119,8 @@ public final class ScpInventoryContextualControlsClient {
         }
     }
 
-    private static void openCreativeInventory(CreativeModeTab targetTab) {
+    private static void openCreativeInventory(CreativeModeTab targetTab,
+            ScpInventoryScreen sourceScreen) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.player.connection == null
                 || !minecraft.player.isCreative()) {
@@ -128,10 +129,14 @@ public final class ScpInventoryContextualControlsClient {
         if (targetTab != null) {
             CreativeModeInventoryScreen.selectedTab = targetTab;
         }
-        minecraft.setScreen(new CreativeModeInventoryScreen(
+        CreativeModeInventoryScreen creativeScreen =
+                new CreativeModeInventoryScreen(
                 minecraft.player,
                 minecraft.player.connection.enabledFeatures(),
-                minecraft.options.operatorItemsTab().get()));
+                minecraft.options.operatorItemsTab().get());
+        if (sourceScreen != null
+                && sourceScreen.beginPdaClose(creativeScreen)) return;
+        minecraft.setScreen(creativeScreen);
     }
 
     private enum CreativeDestination {
@@ -177,7 +182,10 @@ public final class ScpInventoryContextualControlsClient {
 
         @Override
         public void onPress() {
-            openCreativeInventory(targetTab);
+            Screen current = Minecraft.getInstance().screen;
+            openCreativeInventory(targetTab,
+                    current instanceof ScpInventoryScreen inventory
+                            ? inventory : null);
         }
 
         @Override

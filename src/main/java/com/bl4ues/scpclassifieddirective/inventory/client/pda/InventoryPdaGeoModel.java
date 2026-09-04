@@ -37,7 +37,10 @@ public final class InventoryPdaGeoModel extends GeoModel<InventoryPdaAnimatable>
         super.setCustomAnimations(animatable, instanceId, state);
         // The GUI is drawn as a full-bright dynamic surface over this opening.
         setHidden("screen_surface", true);
-        setHidden("screen_back", !thirdPerson);
+        // Keep the authored unpowered display below the live surface. Besides
+        // being the correct third-person appearance, it prevents a missing or
+        // not-yet-captured GUI frame from turning into a hole in the model.
+        setHidden("screen_back", false);
     }
 
     void setThirdPerson(boolean thirdPerson) {

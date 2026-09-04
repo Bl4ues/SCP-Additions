@@ -129,7 +129,7 @@ public class ScpInventoryScreen extends Screen {
     private InventoryPdaPresentationRenderer.Pose pdaPose =
             new InventoryPdaPresentationRenderer.Pose(
                     0.70F, -1.40F, -4.70F,
-                    -28.0F, 238.0F, -4.0F, 0.82F);
+                    -28.0F, 238.0F, 4.0F, 0.82F);
 
     public ScpInventoryScreen() {
         super(Component.literal("SCP Inventory"));
@@ -302,6 +302,10 @@ public class ScpInventoryScreen extends Screen {
                 renderPdaContents(g, uiMouseX, uiMouseY, partialTick));
         pdaPresentation.render(pdaPose, pdaPackedLight(), width, height,
                 rootX, rootY, rootWidth, rootHeight);
+        // Forge-added builder/admin controls intentionally live outside the
+        // physical display. Draw Screen widgets on the main target only after
+        // the PDA pass so they stay visible and retain raw window coordinates.
+        super.render(g, mouseX, mouseY, partialTick);
     }
 
     private void renderPdaContents(GuiGraphics g, int mouseX, int mouseY,
@@ -328,7 +332,6 @@ public class ScpInventoryScreen extends Screen {
             renderBottomNavigation(g);
             if (contextMenu != null) contextMenu.render(g, mouseX, mouseY);
             renderDraggedStack(g, mouseX, mouseY);
-            super.render(g, mouseX, mouseY, partialTick);
         }
     }
 
@@ -356,7 +359,7 @@ public class ScpInventoryScreen extends Screen {
         float pitch = lerp(-28.0F, 2.0F, turn);
         // 180 degrees faces the authored negative-Z screen toward the camera.
         float yaw = lerp(238.0F, 176.5F, turn);
-        float roll = lerp(-4.0F, -90.0F, turn);
+        float roll = lerp(4.0F, 90.0F, turn);
 
         float idleWeight = smootherStep(clamp01(
                 (progress - 0.86F) / 0.14F));

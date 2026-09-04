@@ -48,9 +48,12 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         RenderTarget mainTarget = minecraft.getMainRenderTarget();
         graphics.flush();
         RenderSystem.disableScissor();
-        interfaceTarget.bindWrite(true);
         interfaceTarget.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+        // RenderTarget.clear binds and then unbinds its framebuffer. Binding
+        // before clear therefore sent the inventory pass back to the default
+        // target, leaving the PDA texture transparent.
         interfaceTarget.clear(Minecraft.ON_OSX);
+        interfaceTarget.bindWrite(true);
 
         try {
             renderContents.run();
@@ -136,11 +139,11 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         float localX = near.x() + (far.x() - near.x()) * distance;
         float localY = near.y() + (far.y() - near.y()) * distance;
 
-        // With the authored portrait model rotated into landscape, raw Y is
-        // horizontal and raw X is vertical on the visible display.
-        double u = (localY - SCREEN_MIN_Y)
+        // The device settles at +90 degrees: authored Y runs right-to-left
+        // and authored X runs bottom-to-top on the visible display.
+        double u = (SCREEN_MAX_Y - localY)
                 / (SCREEN_MAX_Y - SCREEN_MIN_Y);
-        double v = (localX - SCREEN_MIN_X)
+        double v = (SCREEN_MAX_X - localX)
                 / (SCREEN_MAX_X - SCREEN_MIN_X);
         double mappedX = rootX + u * rootWidth;
         double mappedY = rootY + v * rootHeight;
@@ -170,13 +173,13 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         builder.begin(VertexFormat.Mode.QUADS,
                 DefaultVertexFormat.POSITION_TEX);
-        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u0, vTop).endVertex();
-        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u1, vTop).endVertex();
         builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u1, vBottom).endVertex();
+                .uv(u0, vTop).endVertex();
         builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
+                .uv(u1, vTop).endVertex();
+        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
+                .uv(u1, vBottom).endVertex();
+        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
                 .uv(u0, vBottom).endVertex();
         BufferUploader.drawWithShader(builder.end());
     }

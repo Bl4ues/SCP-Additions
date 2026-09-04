@@ -1,5 +1,8 @@
 package com.bl4ues.scpclassifieddirective.client;
 
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
+import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
 import com.mojang.blaze3d.audio.Channel;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
@@ -14,8 +17,6 @@ import net.minecraftforge.client.event.sound.PlayStreamingSourceEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.openal.ALC10;
 import org.lwjgl.openal.EXTEfx;
@@ -30,13 +31,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
-/** Client-side listener perception effects for sealed equipment, SCP-714 and death. */
+/** Client-side listener perception effects for equipment, SCP states and remote feeds. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, value = Dist.CLIENT)
 public final class AudioMufflingClient {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final float HAZMAT_STRENGTH = 0.60F;
     private static final float SCP_714_INITIAL_STRENGTH = 0.08F;
+    /** Camera microphones keep the world intelligible while trimming high frequencies. */
+    private static final float SCP_079_CAMERA_STRENGTH = 0.30F;
     private static final float TRANSITION_SPEED = 0.16F;
     private static final float UPDATE_EPSILON = 0.0015F;
 
@@ -55,9 +58,11 @@ public final class AudioMufflingClient {
     private static float currentHazmatStrength;
     private static float currentScp714Strength;
     private static float currentDeathStrength;
+    private static float currentScp079CameraStrength;
     private static float lastQueuedHazmatStrength = -1.0F;
     private static float lastQueuedScp714Strength = -1.0F;
     private static float lastQueuedDeathStrength = -1.0F;
+    private static float lastQueuedScp079CameraStrength = -1.0F;
     private static float masterVolume = 1.0F;
 
     private AudioMufflingClient() {
@@ -81,6 +86,8 @@ public final class AudioMufflingClient {
         float targetHazmat = 0.0F;
         float targetScp714 = 0.0F;
         float targetDeath = 0.0F;
+        float targetScp079Camera = Scp079PlayableClient.cameraMode()
+                ? SCP_079_CAMERA_STRENGTH : 0.0F;
         masterVolume = minecraft.options.getSoundSourceVolume(SoundSource.MASTER);
 
         if (minecraft.player != null && minecraft.level != null) {
@@ -104,6 +111,8 @@ public final class AudioMufflingClient {
 
         currentHazmatStrength = approach(currentHazmatStrength, targetHazmat);
         currentScp714Strength = approach(currentScp714Strength, targetScp714);
+        currentScp079CameraStrength = approach(currentScp079CameraStrength,
+                targetScp079Camera, 0.24F);
         // The death screen owns its deliberate two-second delay and ramp. Apply a
         // slightly faster secondary ease here so spectate/full-death changes blend
         // without adding another visibly long lag on top of that authored curve.
@@ -114,7 +123,9 @@ public final class AudioMufflingClient {
                 || Math.abs(currentScp714Strength - lastQueuedScp714Strength)
                 >= UPDATE_EPSILON
                 || Math.abs(currentDeathStrength - lastQueuedDeathStrength)
-                >= UPDATE_EPSILON) {
+                >= UPDATE_EPSILON
+                || Math.abs(currentScp079CameraStrength
+                        - lastQueuedScp079CameraStrength) >= UPDATE_EPSILON) {
             queueUpdate();
         }
     }
@@ -152,15 +163,17 @@ public final class AudioMufflingClient {
         float hazmat = Mth.clamp(currentHazmatStrength, 0.0F, 1.0F);
         float scp714 = Mth.clamp(currentScp714Strength, 0.0F, 1.0F);
         float death = Mth.clamp(currentDeathStrength, 0.0F, 1.0F);
+        float scp079Camera = Mth.clamp(currentScp079CameraStrength, 0.0F, 1.0F);
         float requestedMasterVolume = Mth.clamp(masterVolume, 0.0F, 1.0F);
         lastQueuedHazmatStrength = hazmat;
         lastQueuedScp714Strength = scp714;
         lastQueuedDeathStrength = death;
+        lastQueuedScp079CameraStrength = scp079Camera;
 
         engine.channelAccess.executeOnChannels(channels -> {
             try {
                 applyToChannels(engine, channels, hazmat, scp714, death,
-                        requestedMasterVolume);
+                        scp079Camera, requestedMasterVolume);
             } finally {
                 UPDATE_QUEUED.set(false);
                 if (UPDATE_DIRTY.get()) queueUpdate();
@@ -171,7 +184,7 @@ public final class AudioMufflingClient {
     private static void applyToChannels(SoundEngine engine,
                                         Stream<Channel> channelStream,
                                         float hazmat, float scp714,
-                                        float death,
+                                        float death, float scp079Camera,
                                         float requestedMasterVolume) {
         List<Channel> channels = channelStream.toList();
         Set<Channel> activeChannels = Collections.newSetFromMap(
@@ -180,7 +193,8 @@ public final class AudioMufflingClient {
         SOUNDS_BY_CHANNEL.keySet().removeIf(channel ->
                 !activeChannels.contains(channel));
 
-        float worldStrength = combine(combine(hazmat, scp714), death);
+        float worldStrength = combine(
+                combine(combine(hazmat, scp714), death), scp079Camera);
         if (worldStrength <= UPDATE_EPSILON && scp714 <= UPDATE_EPSILON) {
             if (worldFilter != 0 || internalFilter != 0) detachFilters(channels);
             engine.listener.setGain(requestedMasterVolume);
@@ -215,6 +229,9 @@ public final class AudioMufflingClient {
                 filter = worldStrength > UPDATE_EPSILON
                         ? worldFilter : AL10.AL_NONE;
             } else {
+                // SCP-079's listener-relative select/static/transition sounds use
+                // MASTER specifically so the camera microphone filter never muddies
+                // its own internal interface feedback.
                 filter = AL10.AL_NONE;
             }
             AL10.alSourcei(channel.source, EXTEfx.AL_DIRECT_FILTER, filter);

@@ -20,10 +20,18 @@ public abstract class ServerPlayerSaveTrackingMixin {
     private void scpClassifiedDirective$rejectUnsafeMineZeroSave(
             ResourceKey<Level> dimension, BlockPos position, float angle,
             boolean forced, boolean sendMessage, CallbackInfo callback) {
-        if (position == null || !MineZeroCompatibility.enabled()
-                || MineZeroCompatibility.restoring()) return;
+        if (position == null) return;
 
         ServerPlayer player = (ServerPlayer) (Object) this;
+        if (player.server.getWorldData().isHardcore()) {
+            SaveGameSoundEvents.showSaveBlocked(player);
+            callback.cancel();
+            return;
+        }
+
+        if (!MineZeroCompatibility.enabled()
+                || MineZeroCompatibility.restoring()) return;
+
         if (player.connection == null
                 || MineZeroSaveSafety.canSave(player.server)) return;
 

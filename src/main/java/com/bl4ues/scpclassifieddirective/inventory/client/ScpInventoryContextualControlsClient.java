@@ -1,6 +1,8 @@
 package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModTabs;
 import com.bl4ues.scpclassifieddirective.inventory.client.gui.ContextAnchorEditorScreen;
 import com.bl4ues.scpclassifieddirective.inventory.client.gui.ScpInventoryScreen;
 import net.minecraft.client.Minecraft;
@@ -10,6 +12,8 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -22,6 +26,8 @@ import net.minecraftforge.fml.common.Mod;
 public final class ScpInventoryContextualControlsClient {
     private static final int BUTTON_WIDTH = 118;
     private static final int BUTTON_HEIGHT = 22;
+    private static final int BUTTON_GAP = 4;
+    private static final int BUTTON_TOP = 8;
     private static final int BACKGROUND = 0xF0081022;
     private static final int BACKGROUND_HOVER = 0xF0131E36;
     private static final int BORDER = 0xFF46536C;
@@ -39,8 +45,7 @@ public final class ScpInventoryContextualControlsClient {
         if (event.getScreen() instanceof ScpInventoryScreen
                 && minecraft.player != null
                 && minecraft.player.isCreative()) {
-            event.addListener(new CreativeInventoryButton(
-                    creativeButtonX(event.getScreen()), 8));
+            addCreativeButtons(event);
         }
 
         if (event.getScreen() instanceof ContextAnchorEditorScreen) {
@@ -63,16 +68,20 @@ public final class ScpInventoryContextualControlsClient {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || !minecraft.player.isCreative()) return;
 
-        int x = creativeButtonX(screen);
-        int y = 8;
-        if (event.getMouseX() < x || event.getMouseX() > x + BUTTON_WIDTH
-                || event.getMouseY() < y
-                || event.getMouseY() > y + BUTTON_HEIGHT) {
+        for (CreativeDestination destination : CreativeDestination.values()) {
+            int x = creativeButtonX(screen);
+            int y = destination.y();
+            if (event.getMouseX() < x
+                    || event.getMouseX() > x + BUTTON_WIDTH
+                    || event.getMouseY() < y
+                    || event.getMouseY() > y + BUTTON_HEIGHT) {
+                continue;
+            }
+
+            openCreativeInventory(destination.tab());
+            event.setCanceled(true);
             return;
         }
-
-        openCreativeInventory();
-        event.setCanceled(true);
     }
 
     /** The editor rebuilds its own widgets without another Init event. */
@@ -98,11 +107,22 @@ public final class ScpInventoryContextualControlsClient {
         }
     }
 
-    private static void openCreativeInventory() {
+    private static void addCreativeButtons(ScreenEvent.Init.Post event) {
+        int x = creativeButtonX(event.getScreen());
+        for (CreativeDestination destination : CreativeDestination.values()) {
+            event.addListener(new CreativeInventoryButton(x, destination.y(),
+                    destination.label(), destination.tab()));
+        }
+    }
+
+    private static void openCreativeInventory(CreativeModeTab targetTab) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.player.connection == null
                 || !minecraft.player.isCreative()) {
             return;
+        }
+        if (targetTab != null) {
+            CreativeModeInventoryScreen.selectedTab = targetTab;
         }
         minecraft.setScreen(new CreativeModeInventoryScreen(
                 minecraft.player,
@@ -110,15 +130,50 @@ public final class ScpInventoryContextualControlsClient {
                 minecraft.options.operatorItemsTab().get()));
     }
 
+    private enum CreativeDestination {
+        CREATIVE("Creative Inventory", 0, null),
+        FACILITY("Facility", 1, FacilityModule.SCP_FACILITY_BLOCKS.get()),
+        ANOMALIES("Anomalies", 2,
+                ScpClassifiedDirectiveModTabs.SC_PADDITIONS_SC_PS.get()),
+        ITEMS("Items", 3,
+                ScpClassifiedDirectiveModTabs.SCP_CLASSIFIED_DIRECTIVE.get());
+
+        private final Component label;
+        private final int row;
+        private final CreativeModeTab tab;
+
+        CreativeDestination(String label, int row, CreativeModeTab tab) {
+            this.label = Component.literal(label);
+            this.row = row;
+            this.tab = tab;
+        }
+
+        private Component label() {
+            return label;
+        }
+
+        private int y() {
+            return BUTTON_TOP + row * (BUTTON_HEIGHT + BUTTON_GAP);
+        }
+
+        private CreativeModeTab tab() {
+            return tab;
+        }
+    }
+
     private static final class CreativeInventoryButton extends AbstractButton {
-        private CreativeInventoryButton(int x, int y) {
+        private final CreativeModeTab targetTab;
+
+        private CreativeInventoryButton(int x, int y, Component label,
+                CreativeModeTab targetTab) {
             super(x, y, BUTTON_WIDTH, BUTTON_HEIGHT,
-                    ScpFonts.roboto("Creative Inventory"));
+                    ScpFonts.roboto(label));
+            this.targetTab = targetTab;
         }
 
         @Override
         public void onPress() {
-            openCreativeInventory();
+            openCreativeInventory(targetTab);
         }
 
         @Override

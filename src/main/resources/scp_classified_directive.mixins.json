@@ -8,7 +8,6 @@
   "mixins": [
     "CraftingGridDropMixin",
     "FacilityDiagnosticsActionbarMixin",
-    "FacilityMappingCameraBorderMixin",
     "DecontaminationCheckpointSaveMixin",
     "ServerPlayerSaveTrackingMixin",
     "MineZeroScpBlockJournalMixin",

@@ -12,6 +12,8 @@ public final class ScpFonts {
             new ResourceLocation("scp_classified_directive", "liberation_sans_bold");
     public static final ResourceLocation ANONYMOUS_PRO =
             new ResourceLocation("scp_classified_directive", "anonymous_pro");
+    public static final ResourceLocation PF_VIDEOTEXT =
+            new ResourceLocation("scp_classified_directive", "pf_videotext");
     public static final ResourceLocation JURA =
             new ResourceLocation("scp_classified_directive", "jura");
     public static final ResourceLocation NOTO_SANS_BOLD =
@@ -46,6 +48,10 @@ public final class ScpFonts {
 
     public static MutableComponent anonymousPro(String text) {
         return custom(text, ANONYMOUS_PRO);
+    }
+
+    public static MutableComponent pfVideotext(String text) {
+        return custom(text, PF_VIDEOTEXT);
     }
 
     public static MutableComponent doorSignNumbers(String text) {

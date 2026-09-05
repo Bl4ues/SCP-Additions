@@ -18,6 +18,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -89,8 +90,9 @@ public final class SurveillanceCameraBlockEntityMigration {
             LevelChunk chunk) {
         int loadedX = chunk.getPos().x;
         int loadedZ = chunk.getPos().z;
-        for (FacilityCameraDefinition definition :
-                FacilitySurveillanceSavedData.get(server).all()) {
+        FacilitySurveillanceSavedData data = FacilitySurveillanceSavedData.get(server);
+
+        for (FacilityCameraDefinition definition : data.all()) {
             if (!definition.dimension().equals(level.dimension().location())) {
                 continue;
             }
@@ -100,11 +102,32 @@ public final class SurveillanceCameraBlockEntityMigration {
             }
 
             BlockState state = chunk.getBlockState(pos);
-            if (!state.is(SurveillanceCameraPlaceholderModule.BLOCK.get())
-                    || chunk.getBlockEntity(pos) != null) {
+            if (!state.is(SurveillanceCameraPlaceholderModule.BLOCK.get())) {
                 continue;
             }
 
+            // Early placeholder builds assigned random persistent camera IDs.
+            // The animated BlockEntity intentionally uses a deterministic ID
+            // derived from dimension + BlockPos so it can know whether this is
+            // the exact feed currently controlled by SCP-079. Re-key legacy
+            // definitions here, during the already-deferred server-tick pass.
+            UUID stableId = SurveillanceCameraPlaceholderModule.cameraId(level, pos);
+            FacilityCameraDefinition normalized = FacilitySurveillanceRegistry.camera(
+                    level, definition.id());
+            if (normalized == null) normalized = definition;
+            if (!stableId.equals(normalized.id())) {
+                if (data.get(stableId) == null) {
+                    data.put(new FacilityCameraDefinition(stableId,
+                            normalized.dimension(), normalized.anchorPos(),
+                            normalized.eyePosition(), normalized.name(),
+                            normalized.baseYaw(), normalized.basePitch(),
+                            normalized.yawLimit(), normalized.minPitch(),
+                            normalized.maxPitch(), normalized.maxZoom()));
+                }
+                data.remove(normalized.id());
+            }
+
+            if (chunk.getBlockEntity(pos) != null) continue;
             BlockEntity blockEntity =
                     new SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity(
                             pos, state);

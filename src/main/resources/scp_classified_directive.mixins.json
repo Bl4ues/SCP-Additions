@@ -101,8 +101,7 @@
     "client.Scp079LeaveRoleWarpInputMixin",
     "client.ContextPromptStandardControlsMixin",
     "client.Scp079RecognitionAnchorMixin",
-    "client.Scp079HumanRecognitionLabelMixin",
-    "client.ScpRoleSelectorPreviewMixin"
+    "client.Scp079HumanRecognitionLabelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

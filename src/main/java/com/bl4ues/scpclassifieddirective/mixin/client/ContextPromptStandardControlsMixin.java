@@ -1,7 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
-import com.bl4ues.scpclassifieddirective.inventory.ScpFonts;
 import com.bl4ues.scpclassifieddirective.inventory.client.ContextPromptClient;
+import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

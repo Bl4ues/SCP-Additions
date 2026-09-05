@@ -13,7 +13,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class Scp079HumanRecognitionLabelMixin {
     @Redirect(method = "renderRecognition",
             at = @At(value = "INVOKE",
-                    target = "Lcom/bl4ues/scpclassifieddirective/client/scp079/Scp079UiTheme;drawCentered(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;Ljava/lang/String;FFFI)V"))
+                    target = "Lcom/bl4ues/scpclassifieddirective/client/scp079/Scp079UiTheme;drawCentered(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/gui/Font;Ljava/lang/String;FFFI)V"),
+            remap = false)
     private static void scpclassifieddirective$hideHumanLabel(
             GuiGraphics graphics, Font font, String value, float centerX,
             float y, float scale, int color) {

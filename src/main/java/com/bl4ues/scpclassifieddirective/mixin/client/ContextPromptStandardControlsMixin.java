@@ -1,44 +1,52 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
+import com.bl4ues.scpclassifieddirective.inventory.ScpFonts;
 import com.bl4ues.scpclassifieddirective.inventory.client.ContextPromptClient;
-import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.util.List;
-
-/**
- * Standard keycard readers and legacy door buttons remain normal world controls;
- * they do not advertise the generic contextual-interaction hand/"Use" prompt.
- */
+/** Keeps ordinary facility buttons/readers as hand-only contextual prompts. */
 @Mixin(ContextPromptClient.class)
 public abstract class ContextPromptStandardControlsMixin {
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    @Redirect(method = "findBlockTarget",
+    @Redirect(method = "render",
             at = @At(value = "INVOKE",
-                    target = "Lcom/bl4ues/scpclassifieddirective/inventory/context/ContextInteractionRegistry;getBlockRules(Lnet/minecraft/world/level/block/Block;)Ljava/util/List;"),
+                    target = "Lcom/bl4ues/scpclassifieddirective/inventory/client/ContextPromptClient;drawScaledString(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/Minecraft;Ljava/lang/String;IIFI)V"),
             remap = false)
-    private static List scpclassifieddirective$hideStandardControlPrompt(
-            Block block) {
-        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(block);
-        if (id != null && "scp_classified_directive".equals(id.getNamespace())) {
-            String path = id.getPath();
-            boolean keycardReader = path.equals("right_reader")
-                    || path.equals("left_reader")
-                    || path.endsWith("_right_reader")
-                    || path.endsWith("_left_reader")
-                    || path.endsWith("_reader_wrong")
-                    || path.endsWith("_reader_accept");
-            boolean standardButton = path.equals("button_roff")
-                    || path.equals("button_ron")
-                    || path.equals("button_loff")
-                    || path.equals("button_lon");
-            if (keycardReader || standardButton) return List.of();
+    private static void scpclassifieddirective$hideStandardControlText(
+            GuiGraphics graphics, Minecraft minecraft, String text,
+            int x, int y, float scale, int color) {
+        if (isStandardControlUnderCrosshair(minecraft)) return;
+
+        PoseStack pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(x, y, 0.0F);
+        pose.scale(scale, scale, 1.0F);
+        graphics.drawString(minecraft.font, ScpFonts.roboto(text),
+                0, 0, color, true);
+        pose.popPose();
+    }
+
+    private static boolean isStandardControlUnderCrosshair(Minecraft minecraft) {
+        if (minecraft == null || minecraft.level == null
+                || !(minecraft.hitResult instanceof BlockHitResult hit)
+                || hit.getType() != HitResult.Type.BLOCK) {
+            return false;
         }
-        return ContextInteractionRegistry.getBlockRules(block);
+        Block block = minecraft.level.getBlockState(hit.getBlockPos()).getBlock();
+        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(block);
+        if (id == null || !"scp_classified_directive".equals(id.getNamespace())) {
+            return false;
+        }
+        String path = id.getPath();
+        return path.startsWith("button_") || path.contains("reader");
     }
 }

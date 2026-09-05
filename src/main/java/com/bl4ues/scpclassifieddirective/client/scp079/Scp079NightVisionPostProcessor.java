@@ -36,6 +36,8 @@ import org.lwjgl.opengl.GL30;
 public final class Scp079NightVisionPostProcessor {
     private static final float TRANSITION_PER_SECOND = 2.85F;
     private static final int LOW_LIGHT_THRESHOLD = 5;
+    private static final long NIGHT_START = 13_000L;
+    private static final long NIGHT_END = 23_000L;
 
     private static ShaderInstance shader;
     private static TextureTarget copyTarget;
@@ -85,19 +87,17 @@ public final class Scp079NightVisionPostProcessor {
     }
 
     private static boolean shouldEnhance(ClientLevel level, BlockPos pos) {
+        int localBrightness = level.getMaxLocalRawBrightness(pos);
         int blockLight = level.getBrightness(LightLayer.BLOCK, pos);
-        int skyLight = level.getBrightness(LightLayer.SKY, pos);
+        long timeOfDay = Math.floorMod(level.getDayTime(), 24_000L);
+        boolean night = timeOfDay >= NIGHT_START && timeOfDay < NIGHT_END;
 
-        // SKY stores the raw propagated skylight and therefore remains high in
-        // open air at midnight. Subtract the world's current sky darkening to
-        // obtain the light the surveillance sensor is effectively receiving.
-        int effectiveSkyLight = Math.max(0, skyLight - level.getSkyDarken());
-        int effectiveLight = Math.max(blockLight, effectiveSkyLight);
-
-        // A block-light source stronger than five therefore keeps the camera in
-        // normal colour even at night; enclosed darkness and dark open sky both
-        // transition into the same monochrome night-vision pass.
-        return effectiveLight <= LOW_LIGHT_THRESHOLD;
+        // Enclosed darkness is detected from the local Minecraft light value.
+        // Outdoors and around doors, raw skylight can remain deceptively high
+        // through the night, so night-time surveillance instead stays in colour
+        // only when a real block-light source stronger than level five exists.
+        return localBrightness <= LOW_LIGHT_THRESHOLD
+                || (night && blockLight <= LOW_LIGHT_THRESHOLD);
     }
 
     private static float approach(float current, float target, float amount) {

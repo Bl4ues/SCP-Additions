@@ -22,12 +22,21 @@ public final class Scp079MapUiAudioClient {
 
         double x = event.getMouseX();
         double y = event.getMouseY();
-        // All permanent map buttons and the floor selector live in the top band.
-        // The expanded floor list remains centred under it.
-        boolean topControls = y >= 20.0D && y <= 66.0D;
-        boolean floorList = Math.abs(x - screen.width * 0.5D) <= 150.0D
-                && y > 66.0D && y < 260.0D;
-        if (topControls || floorList) {
+        int width = screen.width;
+
+        // Keep this in sync with the deliberately coarse top controls in the
+        // map screen. Room tiles are excluded: requestRoom owns select_2.
+        boolean floorSelector = x >= width * 0.5D - 165.0D
+                && x <= width * 0.5D + 165.0D
+                && y >= 29.0D && y <= 56.0D;
+        boolean leaveRole = x >= width - 178.0D && x <= width - 36.0D
+                && y >= 29.0D && y <= 56.0D;
+        boolean returnHost = Scp079PlayableClient.cameraMode()
+                && x >= width - 354.0D && x <= width - 190.0D
+                && y >= 29.0D && y <= 56.0D;
+        boolean floorMenu = Math.abs(x - width * 0.5D) <= 165.0D
+                && y > 56.0D && y < 265.0D;
+        if (floorSelector || leaveRole || returnHost || floorMenu) {
             Scp079PlayableAudioClient.playButton();
         }
     }

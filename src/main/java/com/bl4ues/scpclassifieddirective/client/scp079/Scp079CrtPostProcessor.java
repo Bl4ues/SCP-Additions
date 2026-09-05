@@ -12,6 +12,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -22,18 +23,13 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
-/**
- * Final framebuffer pass for the complete playable SCP-079 display.
- *
- * The already-composited framebuffer is sampled only after 079's HUD or screen
- * has been drawn. That makes the world, text, scanlines, brackets and prompts
- * live on the same curved CRT glass instead of warping the world underneath a
- * perfectly flat modern GUI. The shaderpack framebuffer itself is never
- * replaced or injected into.
- */
+/** Final framebuffer pass for the complete playable SCP-079 display. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079CrtPostProcessor {
+    public static final float WARP_QUADRATIC = 0.055F;
+    public static final float WARP_QUARTIC = 0.012F;
+
     private static ShaderInstance shader;
     private static TextureTarget copyTarget;
 
@@ -43,7 +39,6 @@ public final class Scp079CrtPostProcessor {
         shader = value;
     }
 
-    /** Curves the local-host and surveillance-camera presentation after HUD. */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderGui(RenderGuiEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -51,7 +46,6 @@ public final class Scp079CrtPostProcessor {
         apply(minecraft, event.getGuiGraphics());
     }
 
-    /** Curves SCP-079's actual screens, including the facility map and exit UI. */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
         if (!Scp079PlayableClient.active()
@@ -62,6 +56,30 @@ public final class Scp079CrtPostProcessor {
         apply(Minecraft.getInstance(), event.getGuiGraphics());
     }
 
+    /** Maps a visible, curved-screen pointer back into the logical pre-warp UI. */
+    public static double logicalX(double screenX, double screenY,
+            int width, int height) {
+        return logical(screenX, screenY, width, height)[0];
+    }
+
+    /** Maps a visible, curved-screen pointer back into the logical pre-warp UI. */
+    public static double logicalY(double screenX, double screenY,
+            int width, int height) {
+        return logical(screenX, screenY, width, height)[1];
+    }
+
+    private static double[] logical(double x, double y, int width, int height) {
+        if (width <= 0 || height <= 0) return new double[] {x, y};
+        double px = x / width * 2.0D - 1.0D;
+        double py = y / height * 2.0D - 1.0D;
+        double r2 = px * px + py * py;
+        double factor = 1.0D + WARP_QUADRATIC * r2
+                + WARP_QUARTIC * r2 * r2;
+        double logicalX = (px * factor * 0.5D + 0.5D) * width;
+        double logicalY = (py * factor * 0.5D + 0.5D) * height;
+        return new double[] {logicalX, logicalY};
+    }
+
     private static void apply(Minecraft minecraft, GuiGraphics graphics) {
         if (shader == null) return;
         RenderTarget main = minecraft.getMainRenderTarget();
@@ -69,8 +87,6 @@ public final class Scp079CrtPostProcessor {
         ensureTarget(main.width, main.height);
         if (copyTarget == null) return;
 
-        // GUI draws are batched. Flush them before copying so the post pass sees
-        // the same complete frame that the player would otherwise see.
         graphics.flush();
         RenderSystem.disableScissor();
 
@@ -87,17 +103,20 @@ public final class Scp079CrtPostProcessor {
         RenderSystem.setShader(() -> shader);
         RenderSystem.setShaderTexture(0, copyTarget.getColorTextureId());
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        if (shader.getUniform("Time") != null) {
+            shader.getUniform("Time").set((System.nanoTime() % 60_000_000_000L)
+                    / 1_000_000_000.0F);
+        }
 
-        int guiW = minecraft.getWindow().getGuiScaledWidth();
-        int guiH = minecraft.getWindow().getGuiScaledHeight();
-        Matrix4f matrix = graphics.pose().last().pose();
+        Matrix4f identity = new Matrix4f();
         BufferBuilder buffer = Tesselator.getInstance().getBuilder();
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        // Framebuffer colour textures use a bottom-left origin.
-        buffer.vertex(matrix, 0.0F, guiH, 0.0F).uv(0.0F, 0.0F).endVertex();
-        buffer.vertex(matrix, guiW, guiH, 0.0F).uv(1.0F, 0.0F).endVertex();
-        buffer.vertex(matrix, guiW, 0.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
-        buffer.vertex(matrix, 0.0F, 0.0F, 0.0F).uv(0.0F, 1.0F).endVertex();
+        // Direct clip-space quad. It is intentionally independent from whatever
+        // pose/projection a Screen left behind, preventing raw strips from leaking.
+        buffer.vertex(identity, -1.0F, 1.0F, 0.0F).uv(0.0F, 0.0F).endVertex();
+        buffer.vertex(identity, 1.0F, 1.0F, 0.0F).uv(1.0F, 0.0F).endVertex();
+        buffer.vertex(identity, 1.0F, -1.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
+        buffer.vertex(identity, -1.0F, -1.0F, 0.0F).uv(0.0F, 1.0F).endVertex();
         BufferUploader.drawWithShader(buffer.end());
 
         RenderSystem.enableBlend();

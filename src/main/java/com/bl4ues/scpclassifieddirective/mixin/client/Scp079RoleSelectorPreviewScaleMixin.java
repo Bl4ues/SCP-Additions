@@ -11,6 +11,6 @@ public abstract class Scp079RoleSelectorPreviewScaleMixin {
     @ModifyConstant(method = "<clinit>",
             constant = @Constant(floatValue = 2.28F), require = 1)
     private static float scpClassifiedDirective$rebalancePreview(float original) {
-        return 2.10F;
+        return 2.00F;
     }
 }

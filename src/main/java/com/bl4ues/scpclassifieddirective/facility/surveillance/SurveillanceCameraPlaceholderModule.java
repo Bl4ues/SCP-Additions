@@ -21,6 +21,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -176,7 +177,7 @@ public final class SurveillanceCameraPlaceholderModule {
         }
 
         @Override
-        public boolean canSurvive(BlockState state, BlockGetter level,
+        public boolean canSurvive(BlockState state, LevelReader level,
                 BlockPos pos) {
             Direction facing = state.getValue(FACING);
             BlockPos supportPos = pos.relative(facing.getOpposite());

@@ -21,8 +21,14 @@ public final class Scp079InteractionClient {
         if (!Scp079PlayableClient.cameraMode() || minecraft.screen != null
                 || !event.isAttack() && !event.isUseItem()) return;
 
-        Scp079PlayableVisualsV2.handleInteraction(
-                event.isAttack(), event.isUseItem());
+        boolean attack = event.isAttack();
+        boolean use = event.isUseItem();
+        if (!Scp079ActionCooldownClient.blocked(attack, use)) {
+            boolean handled = Scp079PlayableVisualsV2.handleInteraction(
+                    attack, use);
+            if (handled) Scp079ActionCooldownClient.mark(attack, use);
+        }
+
         // Spectator is only an implementation detail. Never let a 079 command
         // continue into vanilla mining/use handling or animate a fake punch.
         event.setSwingHand(false);

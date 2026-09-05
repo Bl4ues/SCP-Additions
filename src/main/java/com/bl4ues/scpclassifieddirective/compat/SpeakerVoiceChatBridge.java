@@ -31,6 +31,7 @@ public final class SpeakerVoiceChatBridge {
     // Temporary QA monitor. Flip this single switch off once the Speaker filter
     // has been validated; ordinary receivers are unaffected either way.
     private static final boolean OPERATOR_SELF_MONITOR = true;
+    private static final double VOICE_OUTPUT_GAIN = 0.50D;
 
     private SpeakerVoiceChatBridge() {
     }
@@ -237,7 +238,8 @@ public final class SpeakerVoiceChatBridge {
                 sampleClock++;
 
                 output[index] = (short) Mth.clamp(
-                        (int) Math.round(heldSample * 1.08D),
+                        (int) Math.round(heldSample * 1.08D
+                                * VOICE_OUTPUT_GAIN),
                         Short.MIN_VALUE, Short.MAX_VALUE);
             }
             return output;

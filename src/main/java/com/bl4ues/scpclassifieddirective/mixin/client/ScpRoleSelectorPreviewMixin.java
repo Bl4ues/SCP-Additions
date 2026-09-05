@@ -5,45 +5,47 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * Standard playable-SCP card preview policy: use each role's authored crop/zoom,
- * render it prominently and permit controlled overflow beyond the preview pane.
+ * Keeps playable-SCP artwork inside the authored preview pane. SCP-079's source
+ * image is already framed for the selector, so it should not receive the older
+ * aggressive 2.18x crop/zoom or spill across the card border.
  */
 @Mixin(ScpRoleSelectorScreen.class)
 public abstract class ScpRoleSelectorPreviewMixin {
-    private static final float DESTINATION_SCALE = 1.05F;
+    @ModifyConstant(method = "<clinit>",
+            constant = @Constant(floatValue = 2.18F), remap = false)
+    private static float scpclassifieddirective$fitScp079Preview(float original) {
+        return 1.0F;
+    }
 
     @Redirect(method = "renderCard",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/gui/GuiGraphics;enableScissor(IIII)V"))
-    private void scpclassifieddirective$allowPreviewOverflow(GuiGraphics graphics,
+    private void scpclassifieddirective$clipPreviewToPane(GuiGraphics graphics,
             int x1, int y1, int x2, int y2) {
-        // Intentionally un-clipped. SCP artwork may extend beyond the nominal
-        // preview rectangle while the card border/text remain the visual frame.
+        graphics.enableScissor(x1, y1, x2, y2);
     }
 
     @Redirect(method = "renderCard",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/gui/GuiGraphics;disableScissor()V"))
-    private void scpclassifieddirective$leavePreviewOverflowEnabled(
+    private void scpclassifieddirective$restorePreviewScissor(
             GuiGraphics graphics) {
-        // Paired with the no-op enableScissor redirect above.
+        graphics.disableScissor();
     }
 
     @Redirect(method = "drawCenteredPreview",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lnet/minecraft/resources/ResourceLocation;IIIIFFIIII)V"))
-    private void scpclassifieddirective$prominentPreview(GuiGraphics graphics,
+    private void scpclassifieddirective$drawExactPreview(GuiGraphics graphics,
             ResourceLocation texture, int x, int y, int width, int height,
             float sourceX, float sourceY, int sourceWidth, int sourceHeight,
             int textureWidth, int textureHeight) {
-        int drawWidth = Math.max(1, Math.round(width * DESTINATION_SCALE));
-        int drawHeight = Math.max(1, Math.round(height * DESTINATION_SCALE));
-        int drawX = x - (drawWidth - width) / 2;
-        int drawY = y - (drawHeight - height) / 2;
-        graphics.blit(texture, drawX, drawY, drawWidth, drawHeight,
+        graphics.blit(texture, x, y, width, height,
                 sourceX, sourceY, sourceWidth, sourceHeight,
                 textureWidth, textureHeight);
     }

@@ -27,7 +27,7 @@ public final class Scp079MapUiAudioClient {
         if (!(event.getScreen() instanceof Scp079FacilityMapScreen screen)) return;
 
         Scp079FacilityMapScreenAccessor accessor =
-                (Scp079FacilityMapScreenAccessor) screen;
+                (Scp079FacilityMapScreenAccessor) (Object) screen;
         if (accessor.scpclassifieddirective$isLeaveConfirmationOpen()) {
             if (mapConfirmationButton(screen, x, y)) {
                 Scp079PlayableAudioClient.playButton();

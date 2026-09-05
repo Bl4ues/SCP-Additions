@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class SpeakerBroadcastManager {
     private static final Map<UUID, Broadcast> ACTIVE = new ConcurrentHashMap<>();
+    private static final float SWITCH_CUE_VOLUME = 1.75F;
 
     private SpeakerBroadcastManager() {
     }
@@ -139,7 +140,7 @@ public final class SpeakerBroadcastManager {
                 SpeakerModule.ACTIVE, active), Block.UPDATE_CLIENTS);
         level.playSound(null, endpoint.pos(),
                 active ? SpeakerModule.ON.get() : SpeakerModule.OFF.get(),
-                SoundSource.BLOCKS, 1.0F, 1.0F);
+                SoundSource.BLOCKS, SWITCH_CUE_VOLUME, 1.0F);
     }
 
     @SubscribeEvent

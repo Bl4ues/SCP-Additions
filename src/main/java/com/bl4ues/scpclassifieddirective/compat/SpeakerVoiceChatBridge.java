@@ -32,6 +32,7 @@ public final class SpeakerVoiceChatBridge {
     // has been validated; ordinary receivers are unaffected either way.
     private static final boolean OPERATOR_SELF_MONITOR = true;
     private static final double VOICE_OUTPUT_GAIN = 0.50D;
+    private static final double VOICE_SAMPLE_RATE = 48_000.0D;
 
     private SpeakerVoiceChatBridge() {
     }
@@ -93,13 +94,15 @@ public final class SpeakerVoiceChatBridge {
     private static byte[] encode(VoicechatServerApi api, UUID operator,
             SpeakerBroadcastManager.VoiceSource source, short[] decoded) {
         ChannelKey key = new ChannelKey(operator,
-                source.dimension().location().toString(), source.pos().asLong());
+                source.dimension().location().toString(), source.pos().asLong(),
+                source.sourceType());
         synchronized (CODEC_LOCK) {
             try {
                 FilterChannel channel = CHANNELS.computeIfAbsent(key,
                         ignored -> new FilterChannel(api.createEncoder()));
                 if (channel.encoder == null) return null;
-                return channel.encoder.encode(channel.filter(decoded));
+                return channel.encoder.encode(channel.filter(decoded,
+                        source.sourceType()));
             } catch (RuntimeException | LinkageError exception) {
                 ScpClassifiedDirectiveMod.LOGGER.debug(
                         "Could not encode a filtered facility Speaker voice frame",
@@ -143,7 +146,7 @@ public final class SpeakerVoiceChatBridge {
         for (SpeakerBroadcastManager.VoiceSource source : sources) {
             active.add(new ChannelKey(operator,
                     source.dimension().location().toString(),
-                    source.pos().asLong()));
+                    source.pos().asLong(), source.sourceType()));
         }
         synchronized (CODEC_LOCK) {
             CHANNELS.entrySet().removeIf(entry -> {
@@ -179,8 +182,8 @@ public final class SpeakerVoiceChatBridge {
     private static UUID channelId(UUID operator,
             SpeakerBroadcastManager.VoiceSource source) {
         String key = ScpClassifiedDirectiveMod.MODID + ":speaker:"
-                + operator + ":" + source.dimension().location() + ":"
-                + source.pos().asLong();
+                + source.sourceType().name() + ":" + operator + ":"
+                + source.dimension().location() + ":" + source.pos().asLong();
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -192,57 +195,88 @@ public final class SpeakerVoiceChatBridge {
         }
     }
 
-    private record ChannelKey(UUID operator, String dimension, long position) {
+    private record ChannelKey(UUID operator, String dimension, long position,
+            SpeakerBroadcastManager.SourceType sourceType) {
     }
 
     /**
-     * Intentionally obvious low-quality PA/radio coloration. The authored
-     * Speaker loop already provides static, so this stage only narrows the
-     * spectrum, reduces temporal/detail resolution and compresses the voice.
+     * Every Speaker receives the same low-quality PA/radio treatment. SCP-079
+     * alone gets a second deterministic robotic chain; future Intercom operators
+     * therefore keep a human-sounding filtered voice without special casing the
+     * speaker block itself.
      */
     private static final class FilterChannel {
+        private static final int ROBOT_DELAY_SAMPLES = 168;
+        private static final double ROBOT_RING_HZ = 86.0D;
+
         private final OpusEncoder encoder;
+        private final double[] robotDelay = new double[ROBOT_DELAY_SAMPLES];
         private double lowCut;
         private double bandOne;
         private double bandTwo;
         private double heldSample;
+        private double robotResonance;
+        private double robotHeldSample;
+        private double robotPhase;
         private long sampleClock;
+        private long robotClock;
+        private int robotDelayIndex;
 
         private FilterChannel(OpusEncoder encoder) {
             this.encoder = encoder;
         }
 
-        private short[] filter(short[] input) {
+        private short[] filter(short[] input,
+                SpeakerBroadcastManager.SourceType sourceType) {
             short[] output = new short[input.length];
+            boolean robotic = sourceType == SpeakerBroadcastManager.SourceType.SCP_079;
             for (int index = 0; index < input.length; index++) {
                 double sample = input[index];
 
-                // Remove bass first, then pass the remainder through two
-                // low-pass stages. At the 48 kHz SVC sample rate this leaves a
-                // deliberately narrow telephone/PA speech band.
+                // Shared Speaker coloration: remove bass, narrow the speech band
+                // and compress it hard enough to sound like a cheap wall PA.
                 lowCut += 0.045D * (sample - lowCut);
                 double highPassed = sample - lowCut;
                 bandOne += 0.34D * (highPassed - bandOne);
                 bandTwo += 0.34D * (bandOne - bandTwo);
-
-                // Hard compression/saturation gives the small wall speaker its
-                // unmistakable cheap-amplifier character without adding hiss.
                 double saturated = Math.tanh(bandTwo / 3000.0D) * 13200.0D;
                 double clipped = Mth.clamp(saturated, -10800.0D, 10800.0D);
                 double quantized = Math.rint(clipped / 240.0D) * 240.0D;
-
-                // Hold every third sample. This keeps speech intelligible while
-                // removing the pristine high-resolution quality of normal voice
-                // chat and remains deterministic/noise-free.
                 if (sampleClock % 3L == 0L) heldSample = quantized;
                 sampleClock++;
 
+                double processed = heldSample * 1.08D;
+                if (robotic) processed = robotize(processed);
                 output[index] = (short) Mth.clamp(
-                        (int) Math.round(heldSample * 1.08D
-                                * VOICE_OUTPUT_GAIN),
+                        (int) Math.round(processed * VOICE_OUTPUT_GAIN),
                         Short.MIN_VALUE, Short.MAX_VALUE);
             }
             return output;
+        }
+
+        /**
+         * 079-specific robot chain: short metallic comb delay, resonant smoothing,
+         * low-depth ring modulation, coarse amplitude stepping and a final sample
+         * hold. It is intentionally deterministic and adds no hiss/noise layer.
+         */
+        private double robotize(double sample) {
+            double delayed = robotDelay[robotDelayIndex];
+            robotDelay[robotDelayIndex] = sample;
+            robotDelayIndex = (robotDelayIndex + 1) % robotDelay.length;
+
+            double comb = sample * 0.74D + delayed * 0.34D;
+            robotResonance += 0.22D * (comb - robotResonance);
+            double metallic = comb * 0.72D + robotResonance * 0.42D;
+
+            robotPhase += (Math.PI * 2.0D * ROBOT_RING_HZ)
+                    / VOICE_SAMPLE_RATE;
+            if (robotPhase >= Math.PI * 2.0D) robotPhase -= Math.PI * 2.0D;
+            double ring = metallic * (0.76D + 0.24D * Math.sin(robotPhase));
+            double stepped = Math.rint(ring / 420.0D) * 420.0D;
+
+            if (robotClock % 2L == 0L) robotHeldSample = stepped;
+            robotClock++;
+            return Mth.clamp(robotHeldSample, -11800.0D, 11800.0D);
         }
 
         private void close() {

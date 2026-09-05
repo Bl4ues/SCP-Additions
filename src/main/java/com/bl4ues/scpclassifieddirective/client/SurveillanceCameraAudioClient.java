@@ -36,8 +36,8 @@ public final class SurveillanceCameraAudioClient {
             ScpClassifiedDirectiveMod.MODID, "camera_movement");
 
     private static final int POSITIONAL_ATTENUATION_DISTANCE = 6;
-    private static final float POSITIONAL_MAX_VOLUME = 0.18F;
-    private static final float OPERATOR_MAX_VOLUME = 0.27F;
+    private static final float POSITIONAL_MAX_VOLUME = 0.45F;
+    private static final float OPERATOR_MAX_VOLUME = 0.62F;
     private static final float SERVO_PITCH = 0.94F;
     private static final float FADE_IN_PER_TICK = 0.12F;
     private static final float FADE_OUT_PER_TICK = 0.055F;

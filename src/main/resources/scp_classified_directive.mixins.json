@@ -101,6 +101,7 @@
     "client.Scp079ActionCooldownVisualMixin",
     "client.Scp079PlayableNetworkAudioMixin",
     "client.Scp079FacilityMapScreenAccessor",
+    "client.Scp079FacilityMapNetworkMixin",
     "client.Scp079FacilityMapWarpInputMixin",
     "client.Scp079LeaveRoleWarpInputMixin",
     "client.Scp079LocalHostAudioMixin",

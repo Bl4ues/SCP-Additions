@@ -35,14 +35,12 @@ public final class SurveillanceCameraAudioClient {
     private static final ResourceLocation MOVEMENT = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "camera_movement");
 
-    private static final int POSITIONAL_ATTENUATION_DISTANCE = 10;
-    private static final float POSITIONAL_MAX_VOLUME = 1.0F;
+    private static final int POSITIONAL_ATTENUATION_DISTANCE = 5;
+    private static final float POSITIONAL_MAX_VOLUME = 0.18F;
     private static final float OPERATOR_MAX_VOLUME = 1.0F;
-    private static final float INITIAL_GAIN = 0.08F;
+    private static final float INITIAL_GAIN = 0.55F;
     private static final float SERVO_PITCH = 0.94F;
-    private static final float FADE_IN_PER_TICK = 0.12F;
-    private static final float FADE_OUT_PER_TICK = 0.055F;
-    private static final int SILENT_HOLD_TICKS = 34;
+    private static final float FADE_IN_PER_TICK = 0.45F;
     private static final float OPERATOR_MOTION_EPSILON = 0.025F;
 
     private static final Map<CameraKey, MovementLoop> LOOPS = new HashMap<>();
@@ -103,13 +101,18 @@ public final class SurveillanceCameraAudioClient {
                 loop = null;
             }
 
+            // Mechanical motion should stop mechanically. Do not drag a volume
+            // envelope behind a camera that has already stopped moving.
+            if (!moving) {
+                if (loop != null) stop(minecraft, key);
+                continue;
+            }
+
             if (loop == null) {
-                if (!moving) continue;
                 loop = new MovementLoop(key, operator);
                 LOOPS.put(key, loop);
                 minecraft.getSoundManager().play(loop);
             }
-            loop.setMoving(moving);
 
             if (!minecraft.getSoundManager().isActive(loop)
                     && loop.isFinished()) {
@@ -169,9 +172,7 @@ public final class SurveillanceCameraAudioClient {
         private final float maxVolume;
         private final Sound directSound;
         private final WeighedSoundEvents directEvent;
-        private boolean moving = true;
         private boolean finished;
-        private int silentTicks;
         private float gain = INITIAL_GAIN;
 
         private MovementLoop(CameraKey key, boolean operator) {
@@ -195,8 +196,7 @@ public final class SurveillanceCameraAudioClient {
             this.attenuation = operator
                     ? SoundInstance.Attenuation.NONE
                     : SoundInstance.Attenuation.LINEAR;
-            // Minecraft may refuse to start a sound whose initial gain is zero.
-            // Start audibly above zero, then keep the existing smooth ramp.
+            // Never start at zero: Minecraft may discard a silent source.
             this.volume = maxVolume * INITIAL_GAIN;
             this.pitch = SERVO_PITCH;
             if (operator) {
@@ -217,11 +217,6 @@ public final class SurveillanceCameraAudioClient {
         }
 
         @Override
-        public boolean canStartSilent() {
-            return true;
-        }
-
-        @Override
         public void tick() {
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft.level == null
@@ -237,25 +232,8 @@ public final class SurveillanceCameraAudioClient {
                 return;
             }
 
-            if (moving) {
-                silentTicks = 0;
-                gain = Math.min(1.0F, gain + FADE_IN_PER_TICK);
-            } else {
-                silentTicks++;
-                gain = Math.max(0.0F, gain - FADE_OUT_PER_TICK);
-                // Keep a silent source alive through the camera's short idle
-                // pause. The next sweep therefore resumes the same waveform
-                // instead of restarting the ogg and producing an audible seam.
-                if (gain <= 0.0001F && silentTicks > SILENT_HOLD_TICKS) {
-                    finish();
-                    return;
-                }
-            }
+            gain = Math.min(1.0F, gain + FADE_IN_PER_TICK);
             this.volume = maxVolume * gain;
-        }
-
-        private void setMoving(boolean value) {
-            moving = value;
         }
 
         private boolean operatorMode() {

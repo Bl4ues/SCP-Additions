@@ -1,11 +1,8 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -99,18 +96,12 @@ public final class Scp079CameraEffectsClient {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
 
-        if (Scp079PlayableClient.cameraMode()) {
-            BlockPos pos = BlockPos.containing(Scp079PlayableClient.viewPosition());
-            if (minecraft.level.getMaxLocalRawBrightness(pos) < 5) {
-                RenderSystem.enableBlend();
-                RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
-                        GlStateManager.DestFactor.ONE);
-                event.getGuiGraphics().fill(0, 0, width, height, 0x182B7187);
-                RenderSystem.defaultBlendFunc();
-                Scp079UiTheme.draw(event.getGuiGraphics(), minecraft.font,
-                        "LOW-LIGHT ENHANCEMENT", 24, height - 50,
-                        1.08F, 0xFF79DDF3);
-            }
+        float lowLight = Scp079NightVisionPostProcessor.strength();
+        if (Scp079PlayableClient.cameraMode() && lowLight > 0.04F) {
+            int alpha = Mth.clamp(Math.round(lowLight * 255.0F), 0, 255);
+            Scp079UiTheme.draw(event.getGuiGraphics(), minecraft.font,
+                    "LOW-LIGHT ENHANCEMENT", 24, height - 50,
+                    1.08F, (alpha << 24) | 0x0079DDF3);
         }
         renderInterference(event.getGuiGraphics(), width, height);
     }

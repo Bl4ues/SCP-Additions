@@ -117,7 +117,12 @@ public final class Scp079ModulesScreenExtension {
                     "Shows recent SCP-079 decisions, costs, context, and manipulated devices.", false),
             new Row("debug", "show_scp_spawn_timers_hud",
                     "SCP Spawn Timers HUD",
-                    "Shows each roamer's state, countdown, and latest scheduler result.", false)
+                    "Shows each roamer's state, countdown, and latest scheduler result.", false),
+            new Row("debug", "show_stealth_hud", "Player Stealth HUD",
+                    "Shows the local player's current stealth value.", false),
+            new Row("debug", "show_scp_426_exposure_hud",
+                    "SCP-426 Exposure HUD",
+                    "Shows the local player's SCP-426 exposure, percentage, and tier.", false)
     );
 
     private static final List<Row> ACCESSIBILITY_ROWS = List.of(
@@ -248,6 +253,18 @@ public final class Scp079ModulesScreenExtension {
                     exception);
         }
         return new JsonObject();
+    }
+
+    /**
+     * Return a fresh modules screen after a nested editor closes. Forge screen
+     * extensions attach controls during Init events; reusing an initialized
+     * instance leaves those external controls associated with the old widget
+     * tree. The Advanced Stealth editor already follows this path, and other
+     * nested editors must do the same.
+     */
+    static Screen cleanReturnScreen(Screen screen) {
+        return screen instanceof ExtendedToggleScreen extended
+                ? extended.cleanReturnScreen() : screen;
     }
 
     private static void submitModules(JsonObject working) {

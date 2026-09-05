@@ -77,14 +77,8 @@ public final class StealthDebugConfigCenterExtension {
         GuiGraphics graphics = event.getGuiGraphics();
         Font font = Minecraft.getInstance().font;
 
-        // The native screen supplies descriptions for the original three rows.
-        // Draw descriptions only for local rows added beyond that base list.
-        for (int index = 3; index < PREFERENCES.size(); index++) {
-            DebugPreference preference = PREFERENCES.get(index);
-            graphics.drawString(font, ScpFonts.roboto(preference.description),
-                    layout.x() + 2,
-                    layout.rowY() + index * ROW_HEIGHT + 24, MUTED, false);
-        }
+        // The native five-row layout owns every description. This extension
+        // replaces only the controls and their scope/state presentation.
         graphics.drawString(font,
                 ScpFonts.roboto("Client-side changes are saved immediately."),
                 layout.x() + 106, layout.bottomY() + 6, MUTED, false);
@@ -135,7 +129,7 @@ public final class StealthDebugConfigCenterExtension {
                     && button.getWidth() == layout.width()
                     && button.getHeight() == 22
                     && relativeY >= 0
-                    && relativeY < 3 * ROW_HEIGHT
+                    && relativeY < PREFERENCES.size() * ROW_HEIGHT
                     && relativeY % ROW_HEIGHT == 0;
             boolean oldDefaults = button.getX() == layout.x()
                     && button.getY() == layout.bottomY()
@@ -157,7 +151,10 @@ public final class StealthDebugConfigCenterExtension {
 
     private static Layout layout(Screen screen) {
         int panelWidth = Math.min(620, screen.width - 20);
-        int panelHeight = Math.min(274, screen.height - 16);
+        // ExtendedToggleScreen uses its 380-pixel layout for five or more rows.
+        // Keeping the exact same height is essential: this extension hides the
+        // native controls and replaces them at their authored positions.
+        int panelHeight = Math.min(380, screen.height - 16);
         int panelX = ConfigCenterVisuals.contentLeft(screen.width, panelWidth);
         int panelY = Math.max(8, (screen.height - panelHeight) / 2);
         return new Layout(panelX + 16, panelY + 44, panelWidth - 32,

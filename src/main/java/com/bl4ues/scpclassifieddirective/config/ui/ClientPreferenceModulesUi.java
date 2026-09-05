@@ -38,6 +38,7 @@ public final class ClientPreferenceModulesUi {
             "com.bl4ues.scpclassifieddirective.config.ui.Scp079ModulesScreenExtension$ExtendedToggleScreen";
     private static final String CROSSHAIR_SCREEN =
             "com.bl4ues.scpclassifieddirective.config.ui.Scp079ModulesScreenExtension$CrosshairScreen";
+    private static final String DEBUG_TITLE = "Debug Tools";
 
     private static final int CLIENT_SCOPE = 0xFF79D58B;
     private static final int SERVER_SCOPE = 0xFFFFC56D;
@@ -58,7 +59,8 @@ public final class ClientPreferenceModulesUi {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onInitPre(ScreenEvent.Init.Pre event) {
         Screen screen = event.getScreen();
-        if (!isExtended(screen) && !isCrosshair(screen)) return;
+        if ((!isExtended(screen) || isDebugTools(screen))
+                && !isCrosshair(screen)) return;
         try {
             JsonObject working = working(screen);
             BASELINES.putIfAbsent(screen, working.deepCopy());
@@ -78,7 +80,7 @@ public final class ClientPreferenceModulesUi {
     public static void onRenderPost(ScreenEvent.Render.Post event) {
         Screen screen = event.getScreen();
         refresh(screen);
-        if (isExtended(screen)) {
+        if (isExtended(screen) && !isDebugTools(screen)) {
             renderScopeBadges(event.getGuiGraphics(), screen);
         }
     }
@@ -86,7 +88,7 @@ public final class ClientPreferenceModulesUi {
     private static void refresh(Screen screen) {
         if (isHome(screen)) {
             applyHomePermissions(screen);
-        } else if (isExtended(screen)) {
+        } else if (isExtended(screen) && !isDebugTools(screen)) {
             enforceRowPermissions(screen);
             wireExtendedSave(screen);
         } else if (isCrosshair(screen)) {
@@ -106,6 +108,11 @@ public final class ClientPreferenceModulesUi {
     private static boolean isCrosshair(Screen screen) {
         return screen != null
                 && CROSSHAIR_SCREEN.equals(screen.getClass().getName());
+    }
+
+    private static boolean isDebugTools(Screen screen) {
+        return isExtended(screen)
+                && DEBUG_TITLE.equals(screen.getTitle().getString());
     }
 
     private static void applyHomePermissions(Screen screen) {

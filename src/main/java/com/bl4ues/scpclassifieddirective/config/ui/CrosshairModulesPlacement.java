@@ -301,7 +301,9 @@ public final class CrosshairModulesPlacement {
     private static void openCrosshairEditor(Screen parent) {
         try {
             Minecraft.getInstance().setScreen(
-                    new CrosshairEditorScreen(parent, working(parent)));
+                    new CrosshairEditorScreen(
+                            Scp079ModulesScreenExtension.cleanReturnScreen(parent),
+                            working(parent)));
         } catch (ReflectiveOperationException exception) {
             ScpClassifiedDirectiveMod.LOGGER.warn(
                     "Could not open Custom Crosshair configuration",

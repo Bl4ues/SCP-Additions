@@ -1,47 +1,43 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.client.ContextPromptClient;
-import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
-/** Keeps ordinary facility buttons/readers as hand-only contextual prompts. */
+/**
+ * Standard facility buttons/readers keep their hand prompt but no text, while
+ * right-click remains owned by the blocks' native interaction path.
+ */
 @Mixin(ContextPromptClient.class)
 public abstract class ContextPromptStandardControlsMixin {
-    @Redirect(method = "render",
+    @ModifyArgs(method = "findBlockTarget",
             at = @At(value = "INVOKE",
-                    target = "Lcom/bl4ues/scpclassifieddirective/inventory/client/ContextPromptClient;drawScaledString(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/Minecraft;Ljava/lang/String;IIFI)V"),
+                    target = "Lcom/bl4ues/scpclassifieddirective/inventory/client/ContextPromptClient$ContextTarget;<init>(Lnet/minecraft/core/BlockPos;IZLnet/minecraft/world/phys/Vec3;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZZLnet/minecraft/resources/ResourceLocation;FZD)V"),
             remap = false)
-    private static void scpclassifieddirective$hideStandardControlText(
-            GuiGraphics graphics, Minecraft minecraft, String text,
-            int x, int y, float scale, int color) {
-        if (isStandardControlUnderCrosshair(minecraft)) return;
+    private static void scpclassifieddirective$makeStandardControlPromptIconOnly(
+            Args args) {
+        BlockPos pos = args.get(0);
+        if (!isStandardControl(pos)) return;
 
-        PoseStack pose = graphics.pose();
-        pose.pushPose();
-        pose.translate(x, y, 0.0F);
-        pose.scale(scale, scale, 1.0F);
-        graphics.drawString(minecraft.font, ScpFonts.roboto(text),
-                0, 0, color, true);
-        pose.popPose();
+        // showAction, showName, allowRightClick. The target stays alive so the
+        // hand icon is still rendered, but ContextPromptClient neither labels
+        // nor consumes the native block use action.
+        args.set(7, false);
+        args.set(8, false);
+        args.set(9, false);
     }
 
-    private static boolean isStandardControlUnderCrosshair(Minecraft minecraft) {
-        if (minecraft == null || minecraft.level == null
-                || !(minecraft.hitResult instanceof BlockHitResult hit)
-                || hit.getType() != HitResult.Type.BLOCK) {
-            return false;
-        }
-        Block block = minecraft.level.getBlockState(hit.getBlockPos()).getBlock();
+    private static boolean isStandardControl(BlockPos pos) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (pos == null || minecraft.level == null) return false;
+        Block block = minecraft.level.getBlockState(pos).getBlock();
         ResourceLocation id = ForgeRegistries.BLOCKS.getKey(block);
         if (id == null || !"scp_classified_directive".equals(id.getNamespace())) {
             return false;

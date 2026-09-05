@@ -1,7 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
-import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisuals;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
@@ -20,7 +20,7 @@ public abstract class Scp079PlayableVisualMixin {
             cancellable = true, remap = false)
     private static void scpclassifieddirective$inventoryRouting(
             TickEvent.ClientTickEvent event, CallbackInfo ci) {
-        Scp079PlayableVisuals.handleInventoryKey(event);
+        Scp079PlayableVisualsV2.handleInventoryKey(event);
         ci.cancel();
     }
 
@@ -28,7 +28,7 @@ public abstract class Scp079PlayableVisualMixin {
             cancellable = true, remap = false)
     private static void scpclassifieddirective$screenRecognition(
             RenderLevelStageEvent event, CallbackInfo ci) {
-        Scp079PlayableVisuals.captureRecognition(event);
+        Scp079PlayableVisualsV2.captureRecognition(event);
         ci.cancel();
     }
 
@@ -36,7 +36,7 @@ public abstract class Scp079PlayableVisualMixin {
             cancellable = true, remap = false)
     private static void scpclassifieddirective$cameraHud(
             GuiGraphics graphics, CallbackInfo ci) {
-        Scp079PlayableVisuals.renderCameraHud(graphics);
+        Scp079PlayableVisualsV2.renderCameraHud(graphics);
         ci.cancel();
     }
 
@@ -44,11 +44,10 @@ public abstract class Scp079PlayableVisualMixin {
             cancellable = true, remap = false)
     private static void scpclassifieddirective$localHud(
             GuiGraphics graphics, CallbackInfo ci) {
-        Scp079PlayableVisuals.renderLocalHud(graphics);
+        Scp079PlayableVisualsV2.renderLocalHud(graphics);
         ci.cancel();
     }
 
-    /** InputEvent now routes facility clicks through projected world prompts. */
     @Inject(method = "consumeCameraActions", at = @At("HEAD"),
             cancellable = true, remap = false)
     private static void scpclassifieddirective$disableLegacyAimClicks(
@@ -56,15 +55,6 @@ public abstract class Scp079PlayableVisualMixin {
         ci.cancel();
     }
 
-    /**
-     * Keep the established orbit angles, but restore the intended distance rule:
-     * the front of SCP-079 gets the wide shot and its back gets the close shot.
-     *
-     * Redirect is deliberately used instead of ModifyArgs here. Forge loads this
-     * EventBusSubscriber class during automatic subscriber discovery, and Mixin's
-     * generated Args$N helper classes are not reliably visible to that early
-     * class-loading path in the 1.20.1 userdev environment.
-     */
     @Redirect(method = "updateLocalCamera",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/util/Mth;lerp(DDD)D"),

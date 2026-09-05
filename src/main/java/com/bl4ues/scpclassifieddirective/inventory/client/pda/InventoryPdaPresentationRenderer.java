@@ -227,7 +227,8 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     }
 
     private void renderHands(PoseStack pdaSpace, int packedLight) {
-        if (!(minecraft.player instanceof AbstractClientPlayer player)) return;
+        AbstractClientPlayer player = minecraft.player;
+        if (player == null) return;
         EntityRenderer<?> resolved =
                 minecraft.getEntityRenderDispatcher().getRenderer(player);
         if (!(resolved instanceof PlayerRenderer renderer)) return;

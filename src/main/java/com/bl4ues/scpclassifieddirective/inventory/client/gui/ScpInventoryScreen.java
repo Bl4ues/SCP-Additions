@@ -652,7 +652,8 @@ public class ScpInventoryScreen extends Screen {
         // Builder/admin widgets belong to the ordinary Screen and deliberately
         // sit outside the PDA. Give them raw window coordinates before routing
         // display input through the projected surface.
-        if (!mapped.over() && super.mouseClicked(mouseX, mouseY, button)) {
+        if (!mapped.overSurface()
+                && super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
         mouseX = mapped.x();
@@ -726,7 +727,7 @@ public class ScpInventoryScreen extends Screen {
                 mapPdaMouse(pdaInteractionPose, mouseX, mouseY);
         InventoryPdaPresentationRenderer.MappedMouse mapped =
                 mapPdaMouse(mouseX, mouseY);
-        if (!hasDragSource() && !mapped.over()
+        if (!hasDragSource() && !mapped.overSurface()
                 && super.mouseReleased(mouseX, mouseY, button)) {
             return true;
         }

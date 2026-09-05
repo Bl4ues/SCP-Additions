@@ -21,11 +21,11 @@ public final class Scp079InteractionClient {
         if (!Scp079PlayableClient.cameraMode() || minecraft.screen != null
                 || !event.isAttack() && !event.isUseItem()) return;
 
-        Scp079PlayableVisuals.handleInteraction(
+        Scp079PlayableVisualsV2.handleInteraction(
                 event.isAttack(), event.isUseItem());
-        // Spectator/player interaction is an implementation detail while 079 is
-        // controlling a feed. Never let the same click leak into vanilla after
-        // it has been interpreted as a facility action.
+        // Spectator is only an implementation detail. Never let a 079 command
+        // continue into vanilla mining/use handling or animate a fake punch.
+        event.setSwingHand(false);
         event.setCanceled(true);
     }
 }

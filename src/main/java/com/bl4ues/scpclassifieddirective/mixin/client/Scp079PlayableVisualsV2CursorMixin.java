@@ -1,5 +1,8 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient.Move;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient.NavigationTarget;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079FacilityMapScreen;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079Keybinds;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079LeaveRoleScreen;
@@ -17,19 +20,11 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Locale;
+import java.util.Map;
 
-/**
- * SCP-079 uses direct mouse-look whenever no Screen is open. A visible cursor is
- * reserved for the surveillance map and the explicit leave-role confirmation.
- */
+/** Screen-only cursor routing and compact SCP-079 command keycaps. */
 @Mixin(Scp079PlayableVisualsV2.class)
 public abstract class Scp079PlayableVisualsV2CursorMixin {
-    /**
-     * Inventory opens the room map when the network is available. Holding Shift
-     * while pressing Inventory always opens the leave-role confirmation, so the
-     * exit path remains explicit even while SCP-079 has full network access.
-     * With Auxiliary Power offline, Inventory alone still opens the exit screen.
-     */
     @Inject(method = "handleInventoryKey", at = @At("HEAD"),
             cancellable = true, remap = false)
     private static void scpclassifieddirective$screenOnlyCursorRouting(
@@ -62,43 +57,123 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         return false;
     }
 
-    /**
-     * Shift no longer releases a free feed cursor, but it remains available as
-     * the modifier for the leave-role shortcut. Suppress only the obsolete
-     * cursor hint and keep the exit hint visible in both local and camera modes.
-     */
+    /** Removes the old inline/bracket command text before the keycap pass. */
     @Redirect(method = {"renderLocalHud", "renderCameraHud"},
             at = @At(value = "INVOKE",
                     target = "Lcom/bl4ues/scpclassifieddirective/client/scp079/Scp079PlayableVisualsV2;drawRight(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/Minecraft;Ljava/lang/String;IIFI)V"),
             remap = false)
-    private static void scpclassifieddirective$removeOnlyCursorHint(
+    private static void scpclassifieddirective$replaceLegacyCommandRows(
             GuiGraphics graphics, Minecraft minecraft, String value,
             int right, int y, float scale, int color) {
-        if (value == null || value.equals("HOLD SHIFT  CURSOR")) return;
+        if (value == null) return;
+        if (value.contains("FACILITY MAP")
+                || value.contains("LEAVE SCP ROLE")
+                || value.equals("HOLD SHIFT  CURSOR")) {
+            return;
+        }
         int width = Scp079UiTheme.scaledWidth(minecraft.font, value, scale);
         Scp079UiTheme.draw(graphics, minecraft.font, value,
                 right - width, y, scale, color);
     }
 
-    /** Keeps the room-wide Speaker shortcut in the same top-right control list. */
-    @Inject(method = "renderCameraHud", at = @At("TAIL"), remap = false)
-    private static void scpclassifieddirective$renderSpeakerShortcut(
+    @Inject(method = "renderLocalHud", at = @At("TAIL"), remap = false)
+    private static void scpclassifieddirective$renderLocalCommandRows(
             GuiGraphics graphics, CallbackInfo ci) {
-        boolean available = Scp079PlayableClientSpeakerAccessor
-                .scpclassifieddirective$speakerAvailable();
-        boolean active = Scp079PlayableClientSpeakerAccessor
-                .scpclassifieddirective$speakerActive();
-        if (!available && !active) return;
-
         Minecraft minecraft = Minecraft.getInstance();
-        String key = Scp079Keybinds.USE_SPEAKER.getTranslatedKeyMessage()
-                .getString().toUpperCase(Locale.ROOT);
-        String value = (active ? "STOP USING SPEAKER" : "USE SPEAKER")
-                + "  [" + key + "]";
-        float scale = 1.10F;
-        int width = Scp079UiTheme.scaledWidth(minecraft.font, value, scale);
-        Scp079UiTheme.draw(graphics, minecraft.font, value,
-                minecraft.getWindow().getGuiScaledWidth() - 24 - width,
-                61, scale, active ? 0xFFFFC68A : Scp079UiTheme.TEXT);
+        int right = minecraft.getWindow().getGuiScaledWidth() - 24;
+        String inventory = keyLabel(minecraft.options.keyInventory);
+        int y = 23;
+        if (Scp079PlayableClient.networkAvailable()) {
+            drawCommand(graphics, minecraft, "OPEN FACILITY MAP", inventory,
+                    right, y, 1.08F, Scp079UiTheme.ACCENT, true);
+            y += 20;
+        } else {
+            y = 43;
+        }
+        drawCommand(graphics, minecraft, "LEAVE SCP ROLE",
+                "SHIFT + " + inventory, right, y, 1.05F,
+                Scp079UiTheme.MUTED, true);
+    }
+
+    @Inject(method = "renderCameraHud", at = @At("TAIL"), remap = false)
+    private static void scpclassifieddirective$renderCameraCommandRows(
+            GuiGraphics graphics, CallbackInfo ci) {
+        Minecraft minecraft = Minecraft.getInstance();
+        int right = minecraft.getWindow().getGuiScaledWidth() - 24;
+        int y = 22;
+        Map<Move, NavigationTarget> targets =
+                Scp079CameraNavigationClient.targets();
+
+        y = drawMove(graphics, minecraft, targets.get(Move.FORWARD),
+                minecraft.options.keyUp, right, y);
+        y = drawMove(graphics, minecraft, targets.get(Move.LEFT),
+                minecraft.options.keyLeft, right, y);
+        y = drawMove(graphics, minecraft, targets.get(Move.BACK),
+                minecraft.options.keyDown, right, y);
+        y = drawMove(graphics, minecraft, targets.get(Move.RIGHT),
+                minecraft.options.keyRight, right, y);
+
+        String inventory = keyLabel(minecraft.options.keyInventory);
+        drawCommand(graphics, minecraft, "OPEN FACILITY MAP", inventory,
+                right, y, 1.05F, Scp079UiTheme.TEXT, true);
+        y += 19;
+
+        boolean speakerAvailable = Scp079PlayableClientSpeakerAccessor
+                .scpclassifieddirective$speakerAvailable();
+        boolean speakerActive = Scp079PlayableClientSpeakerAccessor
+                .scpclassifieddirective$speakerActive();
+        if (speakerAvailable || speakerActive) {
+            String speakerKey = keyLabel(Scp079Keybinds.USE_SPEAKER);
+            drawCommand(graphics, minecraft,
+                    speakerActive ? "STOP USING SPEAKER" : "USE SPEAKER",
+                    speakerKey, right, y, 1.04F,
+                    speakerActive ? 0xFFFFC68A : Scp079UiTheme.TEXT, true);
+            y += 19;
+        }
+
+        drawCommand(graphics, minecraft, "LEAVE SCP ROLE",
+                "SHIFT + " + inventory, right, y, 1.02F,
+                Scp079UiTheme.MUTED, true);
+    }
+
+    private static int drawMove(GuiGraphics graphics, Minecraft minecraft,
+            NavigationTarget target, KeyMapping key, int right, int y) {
+        boolean enabled = target != null;
+        String destination = enabled ? target.roomName() : "NO CAMERA";
+        int color = enabled ? Scp079UiTheme.TEXT : 0xFF526873;
+        drawCommand(graphics, minecraft, "GO TO: " + destination,
+                keyLabel(key), right, y, 1.03F, color, enabled);
+        return y + 18;
+    }
+
+    private static void drawCommand(GuiGraphics graphics, Minecraft minecraft,
+            String label, String key, int right, int y, float scale,
+            int color, boolean enabled) {
+        String normalizedKey = key == null || key.isBlank() ? "?" : key;
+        float keyScale = Math.max(0.86F, scale - 0.10F);
+        int keyTextW = Scp079UiTheme.scaledWidth(minecraft.font,
+                normalizedKey, keyScale);
+        int capW = keyTextW + 10;
+        int capH = Math.max(13, Math.round(minecraft.font.lineHeight * keyScale) + 5);
+        int capX = right - capW;
+        int capY = y - 2;
+        int fill = enabled ? opaque(color) : 0xFF526873;
+        graphics.fill(capX, capY, right, capY + capH, fill);
+
+        int labelW = Scp079UiTheme.scaledWidth(minecraft.font, label, scale);
+        int labelRight = capX - 7;
+        Scp079UiTheme.draw(graphics, minecraft.font, label,
+                labelRight - labelW, y, scale, color);
+        Scp079UiTheme.drawCentered(graphics, minecraft.font, normalizedKey,
+                capX + capW * 0.5F, capY + 3, keyScale, 0xFF071116);
+    }
+
+    private static int opaque(int color) {
+        return 0xFF000000 | color & 0x00FFFFFF;
+    }
+
+    private static String keyLabel(KeyMapping key) {
+        return key.getTranslatedKeyMessage().getString()
+                .toUpperCase(Locale.ROOT);
     }
 }

@@ -11,8 +11,8 @@ import net.minecraft.util.Mth;
 
 /** Shared visual language for every playable SCP-079 screen. */
 public final class Scp079UiTheme {
-    public static final int FRAME_MARGIN = 20;
-    public static final int FRAME_CORNER = 29;
+    public static final int FRAME_MARGIN = 11;
+    public static final int FRAME_CORNER = 25;
     public static final int FRAME_COLOR = 0xE6D9F7FF;
     public static final int TEXT = 0xFFE8F8FF;
     public static final int MUTED = 0xFF8BAAB6;
@@ -23,7 +23,7 @@ public final class Scp079UiTheme {
     }
 
     public static Component text(String value) {
-        return ScpFonts.anonymousPro(value);
+        return ScpFonts.pfVideotext(value);
     }
 
     public static void renderFrame(GuiGraphics graphics, int width, int height) {
@@ -72,34 +72,39 @@ public final class Scp079UiTheme {
             int power) {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
-        int barW = Math.min(214, Math.max(154, width / 7));
-        int barH = 12;
-        int x = width - FRAME_MARGIN - barW - 8;
-        int y = height - FRAME_MARGIN - 24;
+        int barW = Math.min(260, Math.max(220, width / 4));
+        int barH = 14;
+        int x = width - FRAME_MARGIN - barW - 5;
+        int y = height - FRAME_MARGIN - barH - 8;
+        float headerScale = 1.08F;
 
         draw(graphics, minecraft.font, "AUXILIARY POWER",
-                x, y - 16, 1.13F, TEXT);
+                x, y - 18, headerScale, TEXT);
         String amount = Mth.clamp(power, 0, 100) + " / 100";
-        int amountW = scaledWidth(minecraft.font, amount, 1.13F);
+        int amountW = scaledWidth(minecraft.font, amount, headerScale);
         draw(graphics, minecraft.font, amount,
-                x + barW - amountW, y - 16, 1.13F, TEXT);
+                x + barW - amountW, y - 18, headerScale, TEXT);
 
-        graphics.fill(x, y, x + barW, y + barH, 0xE20A151A);
-        graphics.fill(x, y, x + barW, y + 1, DIM_ACCENT);
-        graphics.fill(x, y + barH - 1, x + barW, y + barH, DIM_ACCENT);
-        graphics.fill(x, y, x + 1, y + barH, DIM_ACCENT);
-        graphics.fill(x + barW - 1, y, x + barW, y + barH, DIM_ACCENT);
+        graphics.fill(x, y, x + barW, y + barH, 0xEC071116);
+        graphics.fill(x, y, x + barW, y + 1, FRAME_COLOR);
+        graphics.fill(x, y + barH - 1, x + barW, y + barH, FRAME_COLOR);
+        graphics.fill(x, y, x + 1, y + barH, FRAME_COLOR);
+        graphics.fill(x + barW - 1, y, x + barW, y + barH, FRAME_COLOR);
 
-        int innerW = barW - 4;
-        int fill = Math.round(innerW * Mth.clamp(power, 0, 100) / 100.0F);
-        if (fill > 0) {
-            graphics.fill(x + 2, y + 2, x + 2 + fill,
-                    y + barH - 2, ACCENT);
-        }
-        for (int i = 1; i < 10; i++) {
-            int tick = x + 2 + Math.round(innerW * i / 10.0F);
-            graphics.fill(tick, y + 2, tick + 1, y + barH - 2,
-                    0x88061318);
+        int clamped = Mth.clamp(power, 0, 100);
+        int innerX = x + 3;
+        int innerY = y + 3;
+        int innerW = barW - 6;
+        int innerH = barH - 6;
+        int gap = 2;
+        int segmentW = Math.max(2, (innerW - gap * 9) / 10);
+        for (int i = 0; i < 10; i++) {
+            int sx = innerX + i * (segmentW + gap);
+            int ex = i == 9 ? x + barW - 3 : sx + segmentW;
+            int threshold = (i + 1) * 10;
+            int color = clamped >= threshold ? ACCENT
+                    : clamped > i * 10 ? 0xFF79ADBC : 0xFF102730;
+            graphics.fill(sx, innerY, ex, innerY + innerH, color);
         }
     }
 

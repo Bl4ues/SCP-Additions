@@ -88,6 +88,7 @@
     "client.LevelRendererEntityTargetAccessor",
     "client.Scp079PlayableVisualMixin",
     "client.Scp079PlayableNetworkAudioMixin",
+    "client.Scp079FacilityMapScreenAccessor",
     "client.ScpRoleSelectorPreviewMixin"
   ],
   "injectors": {

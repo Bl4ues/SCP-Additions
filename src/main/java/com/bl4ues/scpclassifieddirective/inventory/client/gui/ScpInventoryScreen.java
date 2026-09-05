@@ -428,7 +428,10 @@ public class ScpInventoryScreen extends Screen {
         float pitch = lerp(-28.0F, 2.0F, turn);
         // 180 degrees faces the authored negative-Z screen toward the camera.
         float yaw = lerp(238.0F, 176.5F, turn);
-        float roll = lerp(4.0F, 90.0F, turn);
+        // Rotate the authored portrait counter-clockwise. The previous +90
+        // endpoint only appeared plausible because the renderer also reflected
+        // Y; together they mirrored the PDA and moved its antenna underneath.
+        float roll = lerp(-4.0F, -90.0F, turn);
 
         float idleWeight = smootherStep(clamp01(
                 (progress - 0.86F) / 0.14F));

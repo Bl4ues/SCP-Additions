@@ -187,12 +187,12 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         float localX = near.x() + (far.x() - near.x()) * distance;
         float localY = near.y() + (far.y() - near.y()) * distance;
 
-        // The authored portrait settles at +90 degrees so its upper-right
-        // antenna becomes upper-left in the reading pose. Raw Y therefore
-        // runs right-to-left and raw X bottom-to-top on the live display.
+        // The authored portrait settles at -90 degrees without reflection, so
+        // its upper-right antenna becomes upper-left in the reading pose. Raw
+        // Y runs right-to-left and raw X top-to-bottom on the live display.
         double u = (SCREEN_MAX_Y - localY)
                 / (SCREEN_MAX_Y - SCREEN_MIN_Y);
-        double v = (SCREEN_MAX_X - localX)
+        double v = (localX - SCREEN_MIN_X)
                 / (SCREEN_MAX_X - SCREEN_MIN_X);
         double mappedX = rootX + u * rootWidth;
         double mappedY = rootY + v * rootHeight;
@@ -225,13 +225,13 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         builder.begin(VertexFormat.Mode.QUADS,
                 DefaultVertexFormat.POSITION_TEX);
-        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u0, vTop).endVertex();
-        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u1, vTop).endVertex();
-        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u1, vBottom).endVertex();
         builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
+                .uv(u0, vTop).endVertex();
+        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
+                .uv(u1, vTop).endVertex();
+        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
+                .uv(u1, vBottom).endVertex();
+        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
                 .uv(u0, vBottom).endVertex();
         BufferUploader.drawWithShader(builder.end());
     }
@@ -246,9 +246,9 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
         renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
-                true, GEO_CENTER_Y - RIGHT_HAND_ANCHOR_Y);
+                true, RIGHT_HAND_ANCHOR_Y - GEO_CENTER_Y);
         renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
-                false, GEO_CENTER_Y - LEFT_HAND_ANCHOR_Y);
+                false, LEFT_HAND_ANCHOR_Y - GEO_CENTER_Y);
         buffers.endBatch();
     }
 
@@ -265,12 +265,12 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         // skin RenderType consequently discarded both arms. Convert the
         // authored locator coordinates explicitly and orient each vanilla arm
         // so its distal end lands on the side grip.
-        pdaSpace.translate(-ARM_LENGTH * GRIP_ARM_SCALE,
+        pdaSpace.translate(ARM_LENGTH * GRIP_ARM_SCALE,
                 anchorY + (right
-                        ? -ARM_CENTER_X * GRIP_ARM_SCALE
-                        : ARM_CENTER_X * GRIP_ARM_SCALE),
+                        ? ARM_CENTER_X * GRIP_ARM_SCALE
+                        : -ARM_CENTER_X * GRIP_ARM_SCALE),
                 HAND_CONTACT_Z);
-        pdaSpace.mulPose(Axis.ZP.rotationDegrees(-90.0F));
+        pdaSpace.mulPose(Axis.ZP.rotationDegrees(90.0F));
         pdaSpace.scale(GRIP_ARM_SCALE, GRIP_ARM_SCALE, GRIP_ARM_SCALE);
         if (right) renderer.renderRightHand(
                 pdaSpace, buffers, packedLight, player);
@@ -285,7 +285,11 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         stack.mulPose(Axis.YP.rotationDegrees(pose.yaw()));
         stack.mulPose(Axis.XP.rotationDegrees(pose.pitch()));
         stack.mulPose(Axis.ZP.rotationDegrees(pose.roll()));
-        stack.scale(pose.scale(), -pose.scale(), pose.scale());
+        // GeoObjectRenderer does not require a reflected authored axis here.
+        // Keeping all three scale components positive preserves the Blockbench
+        // handedness; the former negative Y mirrored top and bottom before the
+        // presentation rotation and put the antenna below the display.
+        stack.scale(pose.scale(), pose.scale(), pose.scale());
         stack.translate(-0.5F, -(0.51F + GEO_CENTER_Y), 0.0F);
         return stack;
     }

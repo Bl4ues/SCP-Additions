@@ -22,6 +22,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -32,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079RoomAbilityManager {
     public static final double BLACKOUT_BASE_COST = 40.0D;
+    public static final double SURFACE_BLACKOUT_BASE_COST = 80.0D;
     public static final int BLACKOUT_DURATION_TICKS = 200;
     public static final double LOCKDOWN_COST = 100.0D;
     public static final int LOCKDOWN_DURATION_TICKS = 140;
@@ -67,6 +69,15 @@ public final class Scp079RoomAbilityManager {
         };
     }
 
+    /** SL doubles a single-room Blackout's authored AP cost on Surface. */
+    public static double blackoutBaseCost(FacilityRoomSnapshot room) {
+        if (room == null) return BLACKOUT_BASE_COST;
+        String floor = (room.floorLongLabel() + " " + room.floorShortLabel())
+                .toLowerCase(Locale.ROOT);
+        return floor.contains("surface")
+                ? SURFACE_BLACKOUT_BASE_COST : BLACKOUT_BASE_COST;
+    }
+
     public static boolean isLightSuppressed(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || level.getServer() == null) return false;
         Set<LightKey> suppressed = SUPPRESSED_LIGHTS.get(level.getServer());
@@ -99,7 +110,8 @@ public final class Scp079RoomAbilityManager {
 
         List<LightTarget> lights = poweredLights(level, room);
         if (lights.isEmpty()) return false;
-        if (!Scp079PlayerPower.trySpend(level, BLACKOUT_BASE_COST)) return false;
+        double baseCost = blackoutBaseCost(room);
+        if (!Scp079PlayerPower.trySpend(level, baseCost)) return false;
 
         int endsAt = server.getTickCount() + BLACKOUT_DURATION_TICKS;
         ActiveBlackout active = new ActiveBlackout(level.dimension(), room.id(),

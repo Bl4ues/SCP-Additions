@@ -26,8 +26,9 @@ public final class Scp079MapUiAudioClient {
         }
         if (!(event.getScreen() instanceof Scp079FacilityMapScreen screen)) return;
 
-        if (((Scp079FacilityMapScreenAccessor) screen)
-                .scpclassifieddirective$isLeaveConfirmationOpen()) {
+        Scp079FacilityMapScreenAccessor accessor =
+                (Scp079FacilityMapScreenAccessor) screen;
+        if (accessor.scpclassifieddirective$isLeaveConfirmationOpen()) {
             if (mapConfirmationButton(screen, x, y)) {
                 Scp079PlayableAudioClient.playButton();
             }
@@ -44,7 +45,8 @@ public final class Scp079MapUiAudioClient {
         boolean returnHost = Scp079PlayableClient.cameraMode()
                 && x >= width - 354.0D && x <= width - 190.0D
                 && y >= 29.0D && y <= 56.0D;
-        boolean floorMenu = Math.abs(x - width * 0.5D) <= 165.0D
+        boolean floorMenu = accessor.scpclassifieddirective$isFloorMenuOpen()
+                && Math.abs(x - width * 0.5D) <= 165.0D
                 && y > 56.0D && y < 265.0D;
         if (floorSelector || leaveRole || returnHost || floorMenu) {
             Scp079PlayableAudioClient.playButton();

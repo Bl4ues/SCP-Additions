@@ -28,7 +28,7 @@ public final class ScpRoleSelectorScreen extends Screen {
     private static final RoleCard SCP_079 = new RoleCard(
             "SCP-079", "Old AI", "EUCLID",
             "FACILITY CONTROL / NETWORK INTELLIGENCE",
-            SCP_079_PREVIEW, 2.18F, EUCLID_ICON,
+            SCP_079_PREVIEW, 2.45F, EUCLID_ICON,
             List.of(
                     new Ability("FACILITY SURVEILLANCE",
                             "Enter mapped surveillance cameras and switch between room feeds."),

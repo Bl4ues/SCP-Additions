@@ -83,6 +83,8 @@ public final class Scp173ClientModEvents {
         event.register(Scp173Keybinds.BLINK);
         event.register(Scp131Keybinds.DISMISS);
         event.register(Scp079Keybinds.USE_SPEAKER);
+        event.register(Scp079Keybinds.BLACKOUT);
+        event.register(Scp079Keybinds.LOCKDOWN);
     }
 
     @SubscribeEvent

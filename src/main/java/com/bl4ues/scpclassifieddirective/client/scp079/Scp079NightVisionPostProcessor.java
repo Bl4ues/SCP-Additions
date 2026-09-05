@@ -24,17 +24,13 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
-/**
- * Monochrome low-light camera pass for playable SCP-079.
- *
- * <p>The world framebuffer is processed before the SCP-079 HUD is drawn. This
- * keeps the camera image black-and-white while the interface remains readable,
- * and lets one transition value drive both desaturation and sensor gain.</p>
- */
+/** Monochrome low-light camera pass for playable SCP-079. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079NightVisionPostProcessor {
-    private static final float TRANSITION_PER_SECOND = 2.85F;
+    // Complete the colour/gain hand-off underneath the 300 ms interference
+    // burst, rather than visibly cross-fading for a third of a second.
+    private static final float TRANSITION_PER_SECOND = 6.5F;
     private static final int LOW_LIGHT_THRESHOLD = 5;
     private static final long NIGHT_START = 13_000L;
     private static final long NIGHT_END = 23_000L;
@@ -43,6 +39,8 @@ public final class Scp079NightVisionPostProcessor {
     private static TextureTarget copyTarget;
     private static float strength;
     private static long lastFrameNanos;
+    private static boolean targetKnown;
+    private static boolean lastEnhanceTarget;
 
     private Scp079NightVisionPostProcessor() { }
 
@@ -67,16 +65,22 @@ public final class Scp079NightVisionPostProcessor {
                 || !Scp079PlayableClient.cameraMode()
                 || minecraft.level == null) {
             strength = 0.0F;
+            targetKnown = false;
             return;
         }
 
-        // Sample the camera Minecraft is actually rendering from, not the
-        // surveillance registration anchor. Wall-mounted cameras can have an
-        // eye point offset from their block, and that difference matters when
-        // the block sits on the boundary between a lit and an enclosed room.
         BlockPos cameraPos = BlockPos.containing(
                 minecraft.gameRenderer.getMainCamera().getPosition());
-        float target = shouldEnhance(minecraft.level, cameraPos) ? 1.0F : 0.0F;
+        boolean enhance = shouldEnhance(minecraft.level, cameraPos);
+        if (!targetKnown) {
+            targetKnown = true;
+            lastEnhanceTarget = enhance;
+        } else if (enhance != lastEnhanceTarget) {
+            lastEnhanceTarget = enhance;
+            Scp079CameraEffectsClient.triggerSensorTransition();
+        }
+
+        float target = enhance ? 1.0F : 0.0F;
         strength = approach(strength, target, dt * TRANSITION_PER_SECOND);
         if (strength <= 0.001F) {
             strength = 0.0F;
@@ -92,10 +96,9 @@ public final class Scp079NightVisionPostProcessor {
         long timeOfDay = Math.floorMod(level.getDayTime(), 24_000L);
         boolean night = timeOfDay >= NIGHT_START && timeOfDay < NIGHT_END;
 
-        // Enclosed darkness is detected from the local Minecraft light value.
-        // Outdoors and around doors, raw skylight can remain deceptively high
-        // through the night, so night-time surveillance instead stays in colour
-        // only when a real block-light source stronger than level five exists.
+        // Closed/enclosed darkness follows Minecraft's effective local light.
+        // Outdoors at night raw skylight can remain misleadingly large, so a
+        // night feed remains in colour only around a real light source > 5.
         return localBrightness <= LOW_LIGHT_THRESHOLD
                 || (night && blockLight <= LOW_LIGHT_THRESHOLD);
     }

@@ -77,6 +77,15 @@ public final class Scp079CameraEffectsClient {
         return Mth.clamp(fadeIn * fadeOut, 0.0F, 1.0F);
     }
 
+    /**
+     * Night-vision sensor changes deliberately use the same interference and
+     * transition loop as a camera feed hand-off, instead of silently fading
+     * between colour and monochrome like a phone accessibility setting.
+     */
+    static void triggerSensorTransition() {
+        if (Scp079PlayableClient.cameraMode()) startTransition();
+    }
+
     private static void startTransition() {
         long now = System.nanoTime();
         interferenceStartedAt = now;

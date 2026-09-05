@@ -94,7 +94,7 @@ public final class Scp079LeaveRoleScreen extends Screen {
         graphics.fill(x, y, x + w, y + h, fill);
         border(graphics, x, y, w, h, line);
         Scp079UiTheme.drawCentered(graphics, font, text,
-                x + w * 0.5F, y + 9, 1.08F, 0xFFFFFFFF);
+                x + w * 0.5F, y + 11, 1.08F, 0xFFFFFFFF);
     }
 
     private static boolean inside(double mouseX, double mouseY,

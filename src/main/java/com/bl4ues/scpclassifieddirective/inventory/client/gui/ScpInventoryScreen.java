@@ -25,6 +25,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -185,7 +186,7 @@ public class ScpInventoryScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         if (!pdaOpenStateSent) {
-            InventoryPdaAudioClient.playPickup();
+            InventoryPdaAudioClient.playDrawPickup();
             InventoryPdaThirdPersonClient.setOpen(mc.player.getUUID(), true);
             ModNetwork.CHANNEL.sendToServer(
                     InventoryPdaStatePacket.request(true));
@@ -326,10 +327,16 @@ public class ScpInventoryScreen extends Screen {
         // around the physical device, just as it does in the reference.
         pdaPresentation.captureInterface(g, () ->
                 renderPdaContents(g, uiMouseX, uiMouseY, partialTick));
-        // First-person shell and hands are rendered by RenderHandEvent. In a
-        // third-person camera the player layer owns the device; drawing a
-        // second camera-space copy here hid the actual hand-held presentation.
-        if (pdaPowered && minecraft.options.getCameraType().isFirstPerson()) {
+        boolean firstPerson = minecraft.options.getCameraType().isFirstPerson();
+        // RenderHandEvent owns the shader-aware first-person shell. A
+        // third-person camera still needs the same camera-space PDA around the
+        // usable interface; the separate player layer remains visible in the
+        // world to observers and never renders detached first-person arms.
+        if (!firstPerson) {
+            pdaPresentation.renderPhysical(pdaPose, LightTexture.FULL_BRIGHT,
+                    width, height, false);
+        }
+        if (pdaPowered) {
             pdaPresentation.renderDisplay(pdaPose, width, height,
                     documentExpanded ? documentRootX : rootX,
                     documentExpanded ? documentRootY : rootY,
@@ -596,7 +603,7 @@ public class ScpInventoryScreen extends Screen {
             clearDragSource();
             if (contextMenu != null) contextMenu.close();
             InventoryPdaAudioClient.beginClose();
-            InventoryPdaAudioClient.playPickup();
+            InventoryPdaAudioClient.playStowPickup();
             if (minecraft.player != null) {
                 InventoryPdaThirdPersonClient.setOpen(
                         minecraft.player.getUUID(), false);
@@ -787,17 +794,20 @@ public class ScpInventoryScreen extends Screen {
         mouseX = mapped.x();
         mouseY = mapped.y();
         if (isDocumentExpanded()) {
-            InventoryPdaAudioClient.playSelect();
             if (button == 1) {
                 pdaDocumentZoomHeld = true;
             } else {
                 pdaDocumentZoomHeld = false;
                 codexPanel.closeExpandedImage();
+                InventoryPdaAudioClient.playPowerBeep();
             }
             return true;
         }
-        if (mapped.overSurface() && (button == 0 || button == 1)
-                && pdaUiRegionAt(mouseX, mouseY) != 0) {
+        int soundRegion = mapped.overSurface() && (button == 0 || button == 1)
+                ? pdaUiRegionAt(mouseX, mouseY) : 0;
+        boolean openingExpandedDocument = mode == ScreenMode.CODEX
+                && button == 0 && soundRegion == 4022;
+        if (soundRegion != 0 && !openingExpandedDocument) {
             InventoryPdaAudioClient.playSelect();
         }
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
@@ -809,7 +819,16 @@ public class ScpInventoryScreen extends Screen {
                     && craftingPanel.mouseClicked(mouseX, mouseY, button)
                     || super.mouseClicked(mouseX, mouseY, button);
         }
-        if (mode == ScreenMode.CODEX) return codexPanel != null && codexPanel.mouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
+        if (mode == ScreenMode.CODEX) {
+            boolean wasExpanded = codexPanel != null
+                    && codexPanel.isExpandedImage();
+            boolean handled = codexPanel != null
+                    && codexPanel.mouseClicked(mouseX, mouseY, button);
+            if (handled && !wasExpanded && codexPanel.isExpandedImage()) {
+                InventoryPdaAudioClient.playDocumentExpand();
+            }
+            return handled || super.mouseClicked(mouseX, mouseY, button);
+        }
         if (button == 0 && clickedTabs(mouseX, mouseY)) return true;
 
         if (button == 0 && contextMenu != null && contextMenu.isOpen()) {

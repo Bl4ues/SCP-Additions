@@ -42,6 +42,11 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     private static final float GEO_CENTER_Y = 43.0F / 16.0F;
     private static final float RIGHT_HAND_ANCHOR_Y = 17.5F / 16.0F;
     private static final float LEFT_HAND_ANCHOR_Y = 58.5F / 16.0F;
+    // The authored left locator is only 2.5 px outside the live display. The
+    // enlarged skin arm therefore crossed the screen even though its palm was
+    // technically on the bezel. Move that grip to the casing edge so the UI
+    // never appears painted over the hand.
+    private static final float LEFT_HAND_OUTSET = 5.0F / 16.0F;
     // The exported hand locators sit behind the casing. Vanilla player arms
     // need their grip point on the camera-facing lip so the fingers remain
     // visible instead of being completely depth-occluded by the PDA.
@@ -225,10 +230,14 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         RenderSystem.setShaderTexture(0,
                 interfaceTarget.getColorTextureId());
         RenderSystem.disableCull();
-        // The opaque shell was already composed by the world hand pass. The
-        // authored quad is exactly inside the bezel, so this late unlit pass
-        // needs no unrelated world depth and cannot cover the casing.
-        RenderSystem.disableDepthTest();
+        // The opaque shell was already composed with this fixed camera-space
+        // projection. The authored quad is exactly inside the bezel, so this
+        // late unlit pass can reuse that depth without touching world color.
+        // The shell and hands have already populated this exact camera-space
+        // depth buffer. Keeping the test active lets a hand on the bezel stay
+        // in front of the display instead of having GUI pixels painted over
+        // its skin, while the slightly raised quad remains above screen_back.
+        RenderSystem.enableDepthTest();
         RenderSystem.depthMask(false);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -270,7 +279,8 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
                 true, RIGHT_HAND_ANCHOR_Y - GEO_CENTER_Y);
         renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
-                false, LEFT_HAND_ANCHOR_Y - GEO_CENTER_Y);
+                false, LEFT_HAND_ANCHOR_Y - GEO_CENTER_Y
+                        + LEFT_HAND_OUTSET);
         buffers.endBatch();
     }
 

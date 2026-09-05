@@ -29,6 +29,8 @@ import net.minecraftforge.fml.common.Mod;
 public final class InventoryPdaAudioClient {
     private static final long POWER_BEEP_NANOS = 300_000_000L;
     private static final float LOOP_VOLUME = 0.28F;
+    private static final float DRAW_PICKUP_VOLUME = 0.36F;
+    private static final float STOW_PICKUP_VOLUME = 0.18F;
     private static final int LOOP_FADE_IN_TICKS = 6;
     private static final int LOOP_FADE_OUT_TICKS = 12;
     private static long loopReadyNanos = -1L;
@@ -43,8 +45,20 @@ public final class InventoryPdaAudioClient {
             minecraft.getSoundManager().stop(activeLoop);
             activeLoop = null;
         }
-        minecraft.getSoundManager().play(new DirectSound("pda_on", 0.72F));
+        playPowerBeep();
         loopReadyNanos = System.nanoTime() + POWER_BEEP_NANOS;
+    }
+
+    /** Plays the display wake cue without restarting the continuous PDA loop. */
+    public static void playPowerBeep() {
+        Minecraft.getInstance().getSoundManager().play(
+                new DirectSound("pda_on", 0.72F));
+    }
+
+    /** Matches the room-selection cue used by the expanded SCP-079 map. */
+    public static void playDocumentExpand() {
+        Minecraft.getInstance().getSoundManager().play(
+                new DirectSound("079select_2", 1.0F));
     }
 
     public static void beginClose() {
@@ -52,11 +66,19 @@ public final class InventoryPdaAudioClient {
         if (activeLoop != null) activeLoop.beginFadeOut();
     }
 
-    public static void playPickup() {
+    public static void playDrawPickup() {
+        playPickup(DRAW_PICKUP_VOLUME);
+    }
+
+    public static void playStowPickup() {
+        playPickup(STOW_PICKUP_VOLUME);
+    }
+
+    private static void playPickup(float volume) {
         if (!GameplaySounds.ITEM_PICKUP.isPresent()) return;
         Minecraft.getInstance().getSoundManager().play(
                 SimpleSoundInstance.forUI(
-                        GameplaySounds.ITEM_PICKUP.get(), 1.0F, 0.72F));
+                        GameplaySounds.ITEM_PICKUP.get(), 1.0F, volume));
     }
 
     public static void playSelect() {

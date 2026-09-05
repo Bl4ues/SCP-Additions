@@ -245,8 +245,7 @@ public final class SpeakerModule {
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
-            tooltip.add(Component.literal(
-                    "Broadcasts voice chat throughout a mapped room.")
+            tooltip.add(Component.literal("Broadcasts voice")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }

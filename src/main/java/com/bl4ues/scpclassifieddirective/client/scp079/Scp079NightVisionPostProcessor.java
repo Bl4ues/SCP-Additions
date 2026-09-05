@@ -36,7 +36,6 @@ import org.lwjgl.opengl.GL30;
 public final class Scp079NightVisionPostProcessor {
     private static final float TRANSITION_PER_SECOND = 2.85F;
     private static final int LOW_LIGHT_THRESHOLD = 5;
-    private static final int NIGHT_SKY_DARKEN_THRESHOLD = 7;
 
     private static ShaderInstance shader;
     private static TextureTarget copyTarget;
@@ -69,8 +68,12 @@ public final class Scp079NightVisionPostProcessor {
             return;
         }
 
+        // Sample the camera Minecraft is actually rendering from, not the
+        // surveillance registration anchor. Wall-mounted cameras can have an
+        // eye point offset from their block, and that difference matters when
+        // the block sits on the boundary between a lit and an enclosed room.
         BlockPos cameraPos = BlockPos.containing(
-                Scp079PlayableClient.viewPosition());
+                minecraft.gameRenderer.getMainCamera().getPosition());
         float target = shouldEnhance(minecraft.level, cameraPos) ? 1.0F : 0.0F;
         strength = approach(strength, target, dt * TRANSITION_PER_SECOND);
         if (strength <= 0.001F) {
@@ -82,18 +85,19 @@ public final class Scp079NightVisionPostProcessor {
     }
 
     private static boolean shouldEnhance(ClientLevel level, BlockPos pos) {
-        if (level.getMaxLocalRawBrightness(pos) < LOW_LIGHT_THRESHOLD) {
-            return true;
-        }
-
-        // Raw skylight can remain high outdoors even when the day/night cycle
-        // makes the actual scene dark. At night, require a nearby block-light
-        // source stronger than level 5 to keep the low-light camera disabled.
         int blockLight = level.getBrightness(LightLayer.BLOCK, pos);
         int skyLight = level.getBrightness(LightLayer.SKY, pos);
-        return skyLight > LOW_LIGHT_THRESHOLD
-                && level.getSkyDarken() >= NIGHT_SKY_DARKEN_THRESHOLD
-                && blockLight <= LOW_LIGHT_THRESHOLD;
+
+        // SKY stores the raw propagated skylight and therefore remains high in
+        // open air at midnight. Subtract the world's current sky darkening to
+        // obtain the light the surveillance sensor is effectively receiving.
+        int effectiveSkyLight = Math.max(0, skyLight - level.getSkyDarken());
+        int effectiveLight = Math.max(blockLight, effectiveSkyLight);
+
+        // A block-light source stronger than five therefore keeps the camera in
+        // normal colour even at night; enclosed darkness and dark open sky both
+        // transition into the same monochrome night-vision pass.
+        return effectiveLight <= LOW_LIGHT_THRESHOLD;
     }
 
     private static float approach(float current, float target, float amount) {

@@ -1,3 +1,18 @@
 {
-  "parent": "scp_classified_directive:block/surveillance_camera"
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [32, 32],
+  "display": {
+    "thirdperson_righthand": {"translation": [0, -7.5, -2.75]},
+    "thirdperson_lefthand": {"translation": [0, -7.5, -2.75]},
+    "firstperson_righthand": {"rotation": [0, 95, 4], "translation": [0, -5.75, 0]},
+    "firstperson_lefthand": {"rotation": [0, 95, 4], "translation": [0, -5.75, 0]},
+    "ground": {"translation": [0, -9.5, -4.25]},
+    "gui": {"rotation": [20, -144, 0], "translation": [4.5, -22.25, 0], "scale": [2.61, 2.61, 2.61]},
+    "head": {"translation": [0, 0, -6]},
+    "fixed": {"translation": [0, -8.75, -5.75]}
+  },
+  "textures": {
+    "particle": "scp_classified_directive:block/surveillance_camera"
+  }
 }

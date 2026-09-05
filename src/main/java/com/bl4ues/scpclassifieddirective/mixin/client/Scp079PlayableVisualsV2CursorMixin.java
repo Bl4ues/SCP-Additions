@@ -22,9 +22,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Scp079PlayableVisualsV2.class)
 public abstract class Scp079PlayableVisualsV2CursorMixin {
     /**
-     * Inventory opens the room map when the network is available. If Auxiliary
-     * Power is offline there is no map to operate, so the same key opens the
-     * leave-role confirmation instead. Shift has no SCP-079 control function.
+     * Inventory opens the room map when the network is available. Holding Shift
+     * while pressing Inventory always opens the leave-role confirmation, so the
+     * exit path remains explicit even while SCP-079 has full network access.
+     * With Auxiliary Power offline, Inventory alone still opens the exit screen.
      */
     @Inject(method = "handleInventoryKey", at = @At("HEAD"),
             cancellable = true, remap = false)
@@ -40,10 +41,11 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         while (minecraft.options.keyInventory.consumeClick()) requested = true;
         if (!requested) return;
 
-        if (Scp079PlayableClient.networkAvailable()) {
-            Scp079FacilityMapScreen.open();
-        } else {
+        if (minecraft.options.keyShift.isDown()
+                || !Scp079PlayableClient.networkAvailable()) {
             Scp079LeaveRoleScreen.open();
+        } else {
+            Scp079FacilityMapScreen.open();
         }
     }
 
@@ -58,23 +60,18 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
     }
 
     /**
-     * Remove the obsolete Shift cursor/exit hints. Offline local-host mode keeps
-     * a discoverable Inventory-key exit hint because no facility map can open.
+     * Shift no longer releases a free feed cursor, but it remains available as
+     * the modifier for the leave-role shortcut. Suppress only the obsolete
+     * cursor hint and keep the exit hint visible in both local and camera modes.
      */
     @Redirect(method = {"renderLocalHud", "renderCameraHud"},
             at = @At(value = "INVOKE",
                     target = "Lcom/bl4ues/scpclassifieddirective/client/scp079/Scp079PlayableVisualsV2;drawRight(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/Minecraft;Ljava/lang/String;IIFI)V"),
             remap = false)
-    private static void scpclassifieddirective$removeShiftHints(
+    private static void scpclassifieddirective$removeOnlyCursorHint(
             GuiGraphics graphics, Minecraft minecraft, String value,
             int right, int y, float scale, int color) {
         if (value == null || value.equals("HOLD SHIFT  CURSOR")) return;
-        if (value.startsWith("SHIFT + ") && value.endsWith("  LEAVE SCP ROLE")) {
-            if (Scp079PlayableClient.networkAvailable()) return;
-            String key = value.substring("SHIFT + ".length(),
-                    value.length() - "  LEAVE SCP ROLE".length());
-            value = "[" + key + "]  LEAVE SCP ROLE";
-        }
         int width = Scp079UiTheme.scaledWidth(minecraft.font, value, scale);
         Scp079UiTheme.draw(graphics, minecraft.font, value,
                 right - width, y, scale, color);

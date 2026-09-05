@@ -2,11 +2,14 @@ package com.bl4ues.scpclassifieddirective.safezone.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.ModMusicExclusivityClient;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZone;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneSounds;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneTrack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -35,9 +38,14 @@ public final class SafeZoneMusicClient {
             return;
         }
 
-        SafeZone zone = SafeZoneClientState.zoneAt(
-                minecraft.level.dimension().location(),
-                minecraft.player.position());
+        ResourceLocation musicDimension = minecraft.level.dimension().location();
+        Vec3 musicPosition = minecraft.player.position();
+        if (Scp079PlayableClient.active()
+                && musicDimension.equals(Scp079PlayableClient.hostDimension())) {
+            musicDimension = Scp079PlayableClient.hostDimension();
+            musicPosition = Vec3.atCenterOf(Scp079PlayableClient.hostPos());
+        }
+        SafeZone zone = SafeZoneClientState.zoneAt(musicDimension, musicPosition);
         String desired = !DiscoveryMusicClient.isPlaying()
                 && zone != null && zone.musicEnabled()
                 ? zone.effectiveTrack() : "";

@@ -1,9 +1,0 @@
-{
-  "type": "scp_classified_directive:structure_feature",
-  "config": {
-    "structure": "scp_classified_directive:scp330house",
-    "random_rotation": true,
-    "random_mirror": true,
-    "ignored_blocks": "minecraft:structure_block"
-  }
-}

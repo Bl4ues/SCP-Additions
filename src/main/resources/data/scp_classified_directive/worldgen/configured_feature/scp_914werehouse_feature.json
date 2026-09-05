@@ -1,7 +1,0 @@
-{
-  "type": "scp_classified_directive:structure_feature",
-  "config": {
-    "structure": "scp_classified_directive:scp914werehouse",
-    "ignored_blocks": "minecraft:structure_block"
-  }
-}

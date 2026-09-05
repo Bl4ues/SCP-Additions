@@ -46,7 +46,6 @@ import com.bl4ues.scpclassifieddirective.safezone.network.SafeZoneNetwork;
 import com.bl4ues.scpclassifieddirective.sound.GameplaySounds;
 import com.bl4ues.scpclassifieddirective.sound.AchievementSounds;
 import com.bl4ues.scpclassifieddirective.vitals.StaminaItemEffectConfig;
-import com.bl4ues.scpclassifieddirective.world.features.StructureFeature;
 import com.bl4ues.scpclassifieddirective.init.MainMenuSounds;
 import com.bl4ues.scpclassifieddirective.init.Scp131Items;
 import com.bl4ues.scpclassifieddirective.init.Scp714Items;
@@ -113,7 +112,6 @@ public class ScpClassifiedDirectiveMod {
         MirroredDoorButtons.register(bus);
         LeftDoorButtons.register(bus);
         HeavyDoorPowerRelay.register(bus);
-        StructureFeature.REGISTRY.register(bus);
         ScpClassifiedDirectiveModMobEffects.REGISTRY.register(bus);
         ScpClassifiedDirectiveModMenus.REGISTRY.register(bus);
         ScpEntityNetwork.register();

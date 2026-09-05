@@ -10,9 +10,12 @@ import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079UiTheme;
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoomAbilityManager;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraftforge.event.TickEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -119,8 +122,11 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
                 right, y, 1.05F, Scp079UiTheme.TEXT, true);
         y += 19;
 
+        FacilityRoomSnapshot activeRoom = FacilityMappingClientState.roomAt(
+                Scp079PlayableClient.hostDimension(),
+                BlockPos.containing(Scp079PlayableClient.viewPosition()));
         double blackoutCost = adjustedCost(minecraft,
-                Scp079RoomAbilityManager.BLACKOUT_BASE_COST);
+                Scp079RoomAbilityManager.blackoutBaseCost(activeRoom));
         boolean blackoutAffordable = Scp079PlayableClient.power() + 0.001D
                 >= blackoutCost;
         drawCommand(graphics, minecraft,

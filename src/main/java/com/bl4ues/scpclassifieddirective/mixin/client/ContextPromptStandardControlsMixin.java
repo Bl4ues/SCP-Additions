@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.client.ContextPromptClient;
+import com.bl4ues.scpclassifieddirective.inventory.context.NativeContextVariants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -12,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 /**
- * Standard facility buttons/readers keep their hand prompt but no text, while
- * right-click remains owned by the blocks' native interaction path.
+ * Standard facility buttons/readers keep their hand prompt but no generic text,
+ * while right-click remains owned by the blocks' native interaction path.
  */
 @Mixin(ContextPromptClient.class)
 public abstract class ContextPromptStandardControlsMixin {
@@ -24,7 +25,12 @@ public abstract class ContextPromptStandardControlsMixin {
     private static void scpclassifieddirective$makeStandardControlPromptIconOnly(
             Args args) {
         BlockPos pos = args.get(0);
-        if (!isStandardControl(pos)) return;
+        String interactionKey = args.get(4);
+        if (!isStandardControl(pos)
+                || NativeContextVariants.SCREWDRIVER_INTERACTION.equals(
+                        interactionKey)) {
+            return;
+        }
 
         // showAction, showName, allowRightClick. The target stays alive so the
         // hand icon is still rendered, but ContextPromptClient neither labels

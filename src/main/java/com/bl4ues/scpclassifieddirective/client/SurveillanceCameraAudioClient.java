@@ -36,8 +36,9 @@ public final class SurveillanceCameraAudioClient {
             ScpClassifiedDirectiveMod.MODID, "camera_movement");
 
     private static final int POSITIONAL_ATTENUATION_DISTANCE = 10;
-    private static final float POSITIONAL_MAX_VOLUME = 0.85F;
+    private static final float POSITIONAL_MAX_VOLUME = 1.0F;
     private static final float OPERATOR_MAX_VOLUME = 1.0F;
+    private static final float INITIAL_GAIN = 0.08F;
     private static final float SERVO_PITCH = 0.94F;
     private static final float FADE_IN_PER_TICK = 0.12F;
     private static final float FADE_OUT_PER_TICK = 0.055F;
@@ -171,7 +172,7 @@ public final class SurveillanceCameraAudioClient {
         private boolean moving = true;
         private boolean finished;
         private int silentTicks;
-        private float gain;
+        private float gain = INITIAL_GAIN;
 
         private MovementLoop(CameraKey key, boolean operator) {
             super(SoundEvent.createVariableRangeEvent(MOVEMENT),
@@ -194,7 +195,9 @@ public final class SurveillanceCameraAudioClient {
             this.attenuation = operator
                     ? SoundInstance.Attenuation.NONE
                     : SoundInstance.Attenuation.LINEAR;
-            this.volume = 0.0F;
+            // Minecraft may refuse to start a sound whose initial gain is zero.
+            // Start audibly above zero, then keep the existing smooth ramp.
+            this.volume = maxVolume * INITIAL_GAIN;
             this.pitch = SERVO_PITCH;
             if (operator) {
                 this.x = 0.0D;
@@ -211,6 +214,11 @@ public final class SurveillanceCameraAudioClient {
         public WeighedSoundEvents resolve(SoundManager manager) {
             this.sound = directSound;
             return directEvent;
+        }
+
+        @Override
+        public boolean canStartSilent() {
+            return true;
         }
 
         @Override

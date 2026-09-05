@@ -100,6 +100,7 @@
     "client.Scp079FacilityMapWarpInputMixin",
     "client.Scp079LeaveRoleWarpInputMixin",
     "client.ContextPromptStandardControlsMixin",
+    "client.Scp079HumanRecognitionLabelMixin",
     "client.ScpRoleSelectorPreviewMixin"
   ],
   "injectors": {

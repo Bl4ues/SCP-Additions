@@ -47,6 +47,7 @@ public class CodexPanel {
     }
 
     public boolean isExpandedImage() { return expandedImage; }
+    public void closeExpandedImage() { expandedImage = false; }
     public int getSelectedIndex() { return selectedIndex; }
     public int getScrollOffset() { return list.scroll(); }
     public int getTextScrollOffset() { return textScrollOffset; }

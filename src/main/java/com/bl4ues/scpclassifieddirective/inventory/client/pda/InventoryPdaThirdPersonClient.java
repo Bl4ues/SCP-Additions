@@ -22,7 +22,8 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class InventoryPdaThirdPersonClient {
-    private static final long TRANSITION_NANOS = 700_000_000L;
+    private static final long OPEN_TRANSITION_NANOS = 820_000_000L;
+    private static final long CLOSE_TRANSITION_NANOS = 1_050_000_000L;
     private static final Map<UUID, PresentationState> PRESENTATIONS =
             new HashMap<>();
     private static final Map<PlayerModel<?>, ArmPose> ARM_POSES =
@@ -53,13 +54,13 @@ public final class InventoryPdaThirdPersonClient {
         ArmPose original = new ArmPose(model);
         ARM_POSES.put(model, original);
         poseArm(model.rightArm,
-                lerp(original.rightX, -1.05F, progress),
-                lerp(original.rightY, -0.34F, progress),
-                lerp(original.rightZ, 0.12F, progress));
+                lerp(original.rightX, -1.38F, progress),
+                lerp(original.rightY, -0.18F, progress),
+                lerp(original.rightZ, 0.08F, progress));
         poseArm(model.leftArm,
-                lerp(original.leftX, -1.05F, progress),
-                lerp(original.leftY, 0.34F, progress),
-                lerp(original.leftZ, -0.12F, progress));
+                lerp(original.leftX, -1.30F, progress),
+                lerp(original.leftY, 0.22F, progress),
+                lerp(original.leftZ, -0.08F, progress));
         model.rightSleeve.copyFrom(model.rightArm);
         model.leftSleeve.copyFrom(model.leftArm);
     }
@@ -85,16 +86,16 @@ public final class InventoryPdaThirdPersonClient {
         // Y points down after the player renderer's own transform. Keep this
         // smartphone-sized PDA in front of the upper chest and draw it upward
         // from the player's lower-right side.
-        float hiddenY = player.isCrouching() ? 0.92F : 1.12F;
-        float heldY = player.isCrouching() ? 0.36F : 0.50F;
+        float hiddenY = player.isCrouching() ? 1.25F : 1.48F;
+        float heldY = player.isCrouching() ? 0.21F : 0.31F;
         event.getPoseStack().translate(
                 lerp(0.16F, 0.0F, progress),
                 lerp(hiddenY, heldY, progress),
-                lerp(0.03F, -0.34F, progress));
+                lerp(0.03F, -0.58F, progress));
         event.getPoseStack().mulPose(Axis.YP.rotationDegrees(
                 lerp(224.0F, 180.0F, progress)));
         event.getPoseStack().mulPose(Axis.XP.rotationDegrees(
-                lerp(8.0F, 22.0F, progress)));
+                lerp(8.0F, 15.0F, progress)));
         event.getPoseStack().mulPose(Axis.ZP.rotationDegrees(
                 lerp(-4.0F, -90.0F, progress)));
         event.getPoseStack().scale(0.068F, 0.068F, 0.068F);
@@ -167,8 +168,10 @@ public final class InventoryPdaThirdPersonClient {
     private record PresentationState(boolean opening, long changedNanos,
             float fromProgress) {
         private float progress(long now) {
+            long duration = opening
+                    ? OPEN_TRANSITION_NANOS : CLOSE_TRANSITION_NANOS;
             float elapsed = Math.min(1.0F,
-                    (now - changedNanos) / (float) TRANSITION_NANOS);
+                    (now - changedNanos) / (float) duration);
             return lerp(fromProgress, opening ? 1.0F : 0.0F,
                     smooth(elapsed));
         }

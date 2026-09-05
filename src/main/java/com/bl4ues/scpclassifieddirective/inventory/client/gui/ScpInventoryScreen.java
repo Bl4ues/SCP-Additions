@@ -20,11 +20,10 @@ import com.bl4ues.scpclassifieddirective.inventory.network.InventoryPdaStatePack
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaPresentationRenderer;
 import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaAudioClient;
+import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaThirdPersonClient;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.CameraType;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -118,8 +117,12 @@ public class ScpInventoryScreen extends Screen {
     private boolean dragMoved = false;
     private float dropPreviewFade = 0.0F;
     private static final long PDA_TRANSITION_NANOS = 820_000_000L;
+    private static final long PDA_CLOSE_TRANSITION_NANOS = 1_050_000_000L;
     private static final float PDA_POWER_ON_PROGRESS = 0.70F;
     private static final float PDA_DROP_LOWERING = 0.62F;
+    private static final float PDA_DOCUMENT_ASPECT = 20.0F / 26.0F;
+    private static final float PDA_DOCUMENT_VERTICAL_TRAVEL = 0.13F;
+    private static final float PDA_DOCUMENT_ZOOM_DEPTH = 0.18F;
     private final InventoryPdaPresentationRenderer pdaPresentation =
             new InventoryPdaPresentationRenderer();
     private final long pdaOpenStartedNanos = System.nanoTime();
@@ -128,16 +131,21 @@ public class ScpInventoryScreen extends Screen {
     private boolean completingPdaClose;
     private boolean pdaOpenStateSent;
     private boolean pdaPowered;
-    private int pdaHoveredRegion;
     private boolean pdaCloseHiddenFrameRendered;
     private long pdaLastRenderNanos = System.nanoTime();
     private float pdaDocumentProgress;
+    private float pdaDocumentVerticalOffset;
+    private float pdaDocumentZoomProgress;
+    private boolean pdaDocumentZoomHeld;
     private float pdaPoseProgress;
+    private int documentRootX, documentRootY, documentRootWidth,
+            documentRootHeight;
     private InventoryPdaPresentationRenderer.Pose pdaPose =
             new InventoryPdaPresentationRenderer.Pose(
                     0.95F, -4.10F, -4.70F,
                     -28.0F, 238.0F, 4.0F, 0.82F);
     private InventoryPdaPresentationRenderer.Pose pdaInteractionPose = pdaPose;
+    private InventoryPdaPresentationRenderer.Pose pdaCloseOriginPose = pdaPose;
 
     public ScpInventoryScreen() {
         super(Component.literal("SCP Inventory"));
@@ -177,6 +185,8 @@ public class ScpInventoryScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         if (!pdaOpenStateSent) {
+            InventoryPdaAudioClient.playPickup();
+            InventoryPdaThirdPersonClient.setOpen(mc.player.getUUID(), true);
             ModNetwork.CHANNEL.sendToServer(
                     InventoryPdaStatePacket.request(true));
             pdaOpenStateSent = true;
@@ -202,7 +212,8 @@ public class ScpInventoryScreen extends Screen {
                     equipmentPanelX,
                     inv.getDocuments()
             );
-            codexPanel.setExpandedBounds(rootX, rootY, rootWidth, rootHeight);
+            codexPanel.setExpandedBounds(documentRootX, documentRootY,
+                    documentRootWidth, documentRootHeight);
             if (rememberUiState()) {
                 codexPanel.restoreSessionState(rememberedCodexSelection, rememberedCodexScroll,
                         rememberedCodexTextScroll, rememberedCodexText);
@@ -271,6 +282,12 @@ public class ScpInventoryScreen extends Screen {
         equipmentX = equipmentPanelX + 28;
         equipmentY = equipmentPanelY + 56;
         equipmentWidth = equipmentPanelWidth - 56;
+
+        documentRootHeight = rootHeight;
+        documentRootWidth = Math.round(documentRootHeight
+                * PDA_DOCUMENT_ASPECT);
+        documentRootX = (width - documentRootWidth) / 2;
+        documentRootY = rootY;
     }
 
     private void rebuildItemList() {
@@ -303,22 +320,22 @@ public class ScpInventoryScreen extends Screen {
                 mapPdaMouse(mouseX, mouseY);
         int uiMouseX = (int) Math.round(mappedMouse.x());
         int uiMouseY = (int) Math.round(mappedMouse.y());
-        updatePdaHoverSound(mappedMouse);
+        boolean documentExpanded = isDocumentExpanded();
 
         // Deliberately do not call renderBackground: the world remains clear
         // around the physical device, just as it does in the reference.
         pdaPresentation.captureInterface(g, () ->
                 renderPdaContents(g, uiMouseX, uiMouseY, partialTick));
-        // RenderHandEvent is first-person-only. In a third-person camera the
-        // local player still needs the complete physical shell around the live
-        // interface, but detached first-person skin arms would be incorrect.
-        if (minecraft.options.getCameraType() != CameraType.FIRST_PERSON) {
-            pdaPresentation.renderPhysical(pdaPose, LightTexture.FULL_BRIGHT,
-                    width, height, false);
-        }
-        if (pdaPowered) {
+        // First-person shell and hands are rendered by RenderHandEvent. In a
+        // third-person camera the player layer owns the device; drawing a
+        // second camera-space copy here hid the actual hand-held presentation.
+        if (pdaPowered && minecraft.options.getCameraType().isFirstPerson()) {
             pdaPresentation.renderDisplay(pdaPose, width, height,
-                    rootX, rootY, rootWidth, rootHeight);
+                    documentExpanded ? documentRootX : rootX,
+                    documentExpanded ? documentRootY : rootY,
+                    documentExpanded ? documentRootWidth : rootWidth,
+                    documentExpanded ? documentRootHeight : rootHeight,
+                    documentExpanded);
         }
         // Forge-added builder/admin controls intentionally live outside the
         // physical display. Draw Screen widgets on the main target only after
@@ -330,14 +347,14 @@ public class ScpInventoryScreen extends Screen {
         if (isPreviewingWorldDrop(dropMouse.x(), dropMouse.y())) {
             renderDraggedStack(g, mouseX, mouseY);
         }
-        if (pdaCloseStartedNanos > 0L && pdaPoseProgress <= 0.0F) {
+        if (pdaCloseStartedNanos > 0L && pdaCloseProgress() >= 1.0F) {
             pdaCloseHiddenFrameRendered = true;
         }
         // The hand pass happens before Screen.render. Advance the shared pose
         // only after composing this frame so shell, hands and display share a
         // transform. Drop hit-testing keeps the stable, non-lowered pose.
         pdaPoseProgress = presentationProgress();
-        pdaInteractionPose = updatePdaPose(pdaPoseProgress);
+        pdaInteractionPose = updatePdaPose(pdaPoseProgress, mouseY);
         pdaPose = applyDropPose(pdaInteractionPose, mouseX);
     }
 
@@ -364,18 +381,7 @@ public class ScpInventoryScreen extends Screen {
         } else if (pdaCloseStartedNanos >= 0L && pdaPowered
                 && progress < PDA_POWER_ON_PROGRESS) {
             pdaPowered = false;
-            pdaHoveredRegion = 0;
         }
-    }
-
-    private void updatePdaHoverSound(
-            InventoryPdaPresentationRenderer.MappedMouse mouse) {
-        int region = pdaPowered && isPdaInteractive()
-                && mouse.overSurface()
-                ? pdaUiRegionAt(mouse.x(), mouse.y()) : 0;
-        if (region == pdaHoveredRegion) return;
-        pdaHoveredRegion = region;
-        if (region != 0) InventoryPdaAudioClient.playHover();
     }
 
     private void renderPdaContents(GuiGraphics g, int mouseX, int mouseY,
@@ -406,17 +412,35 @@ public class ScpInventoryScreen extends Screen {
     }
 
     private InventoryPdaPresentationRenderer.Pose updatePdaPose(
-            float progress) {
+            float progress, int mouseY) {
         long now = System.nanoTime();
         float frameSeconds = Math.min(0.1F,
                 (now - pdaLastRenderNanos) / 1_000_000_000.0F);
         pdaLastRenderNanos = now;
-        float documentTarget = mode == ScreenMode.CODEX && codexPanel != null
-                && codexPanel.isExpandedImage() ? 1.0F : 0.0F;
+        boolean readingDocument = pdaCloseStartedNanos < 0L
+                && isDocumentExpanded();
+        float documentTarget = readingDocument ? 1.0F : 0.0F;
         float documentBlend = 1.0F
                 - (float) Math.exp(-10.0F * frameSeconds);
         pdaDocumentProgress += (documentTarget - pdaDocumentProgress)
                 * documentBlend;
+        float verticalTarget = readingDocument
+                ? clamp01((height - mouseY) / (float) Math.max(1, height))
+                        * 2.0F - 1.0F
+                : 0.0F;
+        verticalTarget *= PDA_DOCUMENT_VERTICAL_TRAVEL;
+        float controlBlend = 1.0F
+                - (float) Math.exp(-12.0F * frameSeconds);
+        pdaDocumentVerticalOffset += (verticalTarget
+                - pdaDocumentVerticalOffset) * controlBlend;
+        float zoomTarget = readingDocument && pdaDocumentZoomHeld
+                ? 1.0F : 0.0F;
+        pdaDocumentZoomProgress += (zoomTarget - pdaDocumentZoomProgress)
+                * controlBlend;
+
+        if (pdaCloseStartedNanos >= 0L) {
+            return updatePdaClosePose(pdaCloseProgress());
+        }
 
         float travel = easeOutCubic(progress);
         float settle = easeOutBack(progress);
@@ -445,8 +469,11 @@ public class ScpInventoryScreen extends Screen {
             float documentEase = pdaDocumentProgress * pdaDocumentProgress
                     * (3.0F - 2.0F * pdaDocumentProgress);
             x = lerp(x, 0.0F, documentEase);
-            y = lerp(y, -0.01F, documentEase);
-            depth = lerp(depth, -1.68F, documentEase);
+            y = lerp(y, -0.01F + pdaDocumentVerticalOffset,
+                    documentEase);
+            depth = lerp(depth, -1.68F
+                    + PDA_DOCUMENT_ZOOM_DEPTH * pdaDocumentZoomProgress,
+                    documentEase);
             pitch = lerp(pitch, 4.0F, documentEase);
             yaw = lerp(yaw, 180.0F, documentEase);
             roll = lerp(roll, 0.0F, documentEase);
@@ -454,6 +481,24 @@ public class ScpInventoryScreen extends Screen {
 
         return new InventoryPdaPresentationRenderer.Pose(x, y, depth,
                 pitch, yaw, roll, 0.82F);
+    }
+
+    private InventoryPdaPresentationRenderer.Pose updatePdaClosePose(
+            float closeProgress) {
+        float turn = smootherStep(clamp01(closeProgress / 0.72F));
+        float descend = smootherStep(clamp01(
+                (closeProgress - 0.06F) / 0.94F));
+        float retreat = smootherStep(clamp01(
+                (closeProgress - 0.72F) / 0.28F));
+        InventoryPdaPresentationRenderer.Pose from = pdaCloseOriginPose;
+        return new InventoryPdaPresentationRenderer.Pose(
+                lerp(from.x(), 0.88F, descend),
+                lerp(from.y(), -4.85F, descend),
+                lerp(from.depth(), -2.28F, retreat),
+                lerp(from.pitch(), -24.0F, turn),
+                lerp(from.yaw(), 226.0F, turn),
+                lerp(from.roll(), -6.0F, turn),
+                from.scale());
     }
 
     private InventoryPdaPresentationRenderer.Pose applyDropPose(
@@ -481,8 +526,14 @@ public class ScpInventoryScreen extends Screen {
     private InventoryPdaPresentationRenderer.MappedMouse mapPdaMouse(
             InventoryPdaPresentationRenderer.Pose pose,
             double mouseX, double mouseY) {
+        boolean documentExpanded = isDocumentExpanded();
         return pdaPresentation.mapMouse(pose, mouseX, mouseY,
-                width, height, rootX, rootY, rootWidth, rootHeight);
+                width, height,
+                documentExpanded ? documentRootX : rootX,
+                documentExpanded ? documentRootY : rootY,
+                documentExpanded ? documentRootWidth : rootWidth,
+                documentExpanded ? documentRootHeight : rootHeight,
+                documentExpanded);
     }
 
     private static float clamp01(float value) {
@@ -514,10 +565,22 @@ public class ScpInventoryScreen extends Screen {
         long now = System.nanoTime();
         if (pdaCloseStartedNanos > 0L) {
             return 1.0F - Math.min(1.0F,
-                    (now - pdaCloseStartedNanos) / (float) PDA_TRANSITION_NANOS);
+                    (now - pdaCloseStartedNanos)
+                            / (float) PDA_CLOSE_TRANSITION_NANOS);
         }
         return Math.min(1.0F,
                 (now - pdaOpenStartedNanos) / (float) PDA_TRANSITION_NANOS);
+    }
+
+    private float pdaCloseProgress() {
+        if (pdaCloseStartedNanos < 0L) return 0.0F;
+        return Math.min(1.0F, (System.nanoTime() - pdaCloseStartedNanos)
+                / (float) PDA_CLOSE_TRANSITION_NANOS);
+    }
+
+    private boolean isDocumentExpanded() {
+        return mode == ScreenMode.CODEX && codexPanel != null
+                && codexPanel.isExpandedImage();
     }
 
     public boolean beginPdaClose(Screen nextScreen) {
@@ -525,12 +588,19 @@ public class ScpInventoryScreen extends Screen {
         if (pdaCloseStartedNanos < 0L) {
             captureSessionState();
             pdaNextScreen = nextScreen;
+            pdaCloseOriginPose = pdaPose;
             pdaCloseStartedNanos = System.nanoTime();
             pdaCloseHiddenFrameRendered = false;
+            pdaPowered = false;
+            pdaDocumentZoomHeld = false;
             clearDragSource();
             if (contextMenu != null) contextMenu.close();
-            pdaHoveredRegion = 0;
             InventoryPdaAudioClient.beginClose();
+            InventoryPdaAudioClient.playPickup();
+            if (minecraft.player != null) {
+                InventoryPdaThirdPersonClient.setOpen(
+                        minecraft.player.getUUID(), false);
+            }
             if (pdaOpenStateSent) {
                 ModNetwork.CHANNEL.sendToServer(
                         InventoryPdaStatePacket.request(false));
@@ -689,6 +759,7 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (!isPdaInteractive()) return true;
+        if (isDocumentExpanded()) return true;
         InventoryPdaPresentationRenderer.MappedMouse mapped =
                 mapPdaMouse(mouseX, mouseY);
         mouseX = mapped.x();
@@ -715,11 +786,20 @@ public class ScpInventoryScreen extends Screen {
         }
         mouseX = mapped.x();
         mouseY = mapped.y();
+        if (isDocumentExpanded()) {
+            InventoryPdaAudioClient.playSelect();
+            if (button == 1) {
+                pdaDocumentZoomHeld = true;
+            } else {
+                pdaDocumentZoomHeld = false;
+                codexPanel.closeExpandedImage();
+            }
+            return true;
+        }
         if (mapped.overSurface() && (button == 0 || button == 1)
                 && pdaUiRegionAt(mouseX, mouseY) != 0) {
             InventoryPdaAudioClient.playSelect();
         }
-        if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.isExpandedImage()) return codexPanel.mouseClicked(mouseX, mouseY, button);
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
         if (button == 0 && clickedBottomNavigation(mouseX, mouseY)) return true;
@@ -768,6 +848,7 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (!isPdaInteractive()) return true;
+        if (isDocumentExpanded()) return true;
         InventoryPdaPresentationRenderer.MappedMouse mapped =
                 mapPdaMouse(mouseX, mouseY);
         InventoryPdaPresentationRenderer.MappedMouse previous =
@@ -792,6 +873,10 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (!isPdaInteractive()) return true;
+        if (button == 1 && pdaDocumentZoomHeld) {
+            pdaDocumentZoomHeld = false;
+            return true;
+        }
         InventoryPdaPresentationRenderer.MappedMouse dropMapped =
                 mapPdaMouse(pdaInteractionPose, mouseX, mouseY);
         InventoryPdaPresentationRenderer.MappedMouse mapped =

@@ -1,9 +1,9 @@
 package com.bl4ues.scpclassifieddirective.inventory.client.pda;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.init.MainMenuSounds;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
 import com.bl4ues.scpclassifieddirective.inventory.client.gui.ScpInventoryScreen;
+import com.bl4ues.scpclassifieddirective.sound.GameplaySounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractSoundInstance;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
@@ -52,10 +52,11 @@ public final class InventoryPdaAudioClient {
         if (activeLoop != null) activeLoop.beginFadeOut();
     }
 
-    public static void playHover() {
-        if (!MainMenuSounds.HOVER.isPresent()) return;
+    public static void playPickup() {
+        if (!GameplaySounds.ITEM_PICKUP.isPresent()) return;
         Minecraft.getInstance().getSoundManager().play(
-                SimpleSoundInstance.forUI(MainMenuSounds.HOVER.get(), 1.0F));
+                SimpleSoundInstance.forUI(
+                        GameplaySounds.ITEM_PICKUP.get(), 1.0F, 0.72F));
     }
 
     public static void playSelect() {

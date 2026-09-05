@@ -126,7 +126,8 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
 
     /** Draw only the current GUI texture as a full-bright physical display. */
     public void renderDisplay(Pose pose, int guiWidth, int guiHeight,
-            int rootX, int rootY, int rootWidth, int rootHeight) {
+            int contentX, int contentY, int contentWidth, int contentHeight,
+            boolean portrait) {
         if (interfaceTarget == null || guiWidth <= 0 || guiHeight <= 0) return;
 
         Matrix4f projection = projection(guiWidth, guiHeight);
@@ -140,7 +141,8 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
 
         try {
             renderDisplayQuad(screenPose(pose).last().pose(), guiWidth,
-                    guiHeight, rootX, rootY, rootWidth, rootHeight);
+                    guiHeight, contentX, contentY, contentWidth,
+                    contentHeight, portrait);
         } finally {
             RenderSystem.depthMask(true);
             RenderSystem.disableDepthTest();
@@ -157,10 +159,10 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
      * system by ray-casting against the authored screen plane.
      */
     public MappedMouse mapMouse(Pose pose, double mouseX, double mouseY,
-            int guiWidth, int guiHeight, int rootX, int rootY,
-            int rootWidth, int rootHeight) {
-        if (guiWidth <= 0 || guiHeight <= 0 || rootWidth <= 0
-                || rootHeight <= 0) {
+            int guiWidth, int guiHeight, int contentX, int contentY,
+            int contentWidth, int contentHeight, boolean portrait) {
+        if (guiWidth <= 0 || guiHeight <= 0 || contentWidth <= 0
+                || contentHeight <= 0) {
             return new MappedMouse(mouseX, mouseY, false);
         }
 
@@ -187,15 +189,22 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         float localX = near.x() + (far.x() - near.x()) * distance;
         float localY = near.y() + (far.y() - near.y()) * distance;
 
-        // The authored portrait settles at -90 degrees without reflection, so
-        // its upper-right antenna becomes upper-left in the reading pose. Raw
-        // Y runs right-to-left and raw X top-to-bottom on the live display.
-        double u = (SCREEN_MAX_Y - localY)
-                / (SCREEN_MAX_Y - SCREEN_MIN_Y);
-        double v = (localX - SCREEN_MIN_X)
-                / (SCREEN_MAX_X - SCREEN_MIN_X);
-        double mappedX = rootX + u * rootWidth;
-        double mappedY = rootY + v * rootHeight;
+        // Landscape UI follows the model after its -90 degree presentation
+        // roll. The expanded document uses the authored portrait axes. Yaw
+        // 180 faces the screen toward the camera and reverses visible X, so
+        // portrait U must run from model max-X to min-X to remain readable.
+        double u = portrait
+                ? (SCREEN_MAX_X - localX)
+                        / (SCREEN_MAX_X - SCREEN_MIN_X)
+                : (SCREEN_MAX_Y - localY)
+                        / (SCREEN_MAX_Y - SCREEN_MIN_Y);
+        double v = portrait
+                ? (SCREEN_MAX_Y - localY)
+                        / (SCREEN_MAX_Y - SCREEN_MIN_Y)
+                : (localX - SCREEN_MIN_X)
+                        / (SCREEN_MAX_X - SCREEN_MIN_X);
+        double mappedX = contentX + u * contentWidth;
+        double mappedY = contentY + v * contentHeight;
         boolean over = distance >= 0.0F && distance <= 1.0F
                 && u >= 0.0D && u <= 1.0D
                 && v >= 0.0D && v <= 1.0D;
@@ -203,12 +212,14 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     }
 
     private void renderDisplayQuad(Matrix4f matrix, int guiWidth, int guiHeight,
-            int rootX, int rootY, int rootWidth, int rootHeight) {
-        float u0 = rootX / (float) guiWidth;
-        float u1 = (rootX + rootWidth) / (float) guiWidth;
+            int contentX, int contentY, int contentWidth, int contentHeight,
+            boolean portrait) {
+        float u0 = contentX / (float) guiWidth;
+        float u1 = (contentX + contentWidth) / (float) guiWidth;
         // Framebuffer color textures use an OpenGL bottom-left origin.
-        float vTop = 1.0F - rootY / (float) guiHeight;
-        float vBottom = 1.0F - (rootY + rootHeight) / (float) guiHeight;
+        float vTop = 1.0F - contentY / (float) guiHeight;
+        float vBottom = 1.0F
+                - (contentY + contentHeight) / (float) guiHeight;
 
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0,
@@ -225,14 +236,25 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         builder.begin(VertexFormat.Mode.QUADS,
                 DefaultVertexFormat.POSITION_TEX);
-        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u0, vTop).endVertex();
-        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u1, vTop).endVertex();
-        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u1, vBottom).endVertex();
-        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u0, vBottom).endVertex();
+        if (portrait) {
+            builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
+                    .uv(u0, vTop).endVertex();
+            builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
+                    .uv(u0, vBottom).endVertex();
+            builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
+                    .uv(u1, vBottom).endVertex();
+            builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
+                    .uv(u1, vTop).endVertex();
+        } else {
+            builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
+                    .uv(u0, vTop).endVertex();
+            builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
+                    .uv(u1, vTop).endVertex();
+            builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
+                    .uv(u1, vBottom).endVertex();
+            builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
+                    .uv(u0, vBottom).endVertex();
+        }
         BufferUploader.drawWithShader(builder.end());
     }
 

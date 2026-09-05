@@ -19,7 +19,7 @@ public final class Scp079UiTheme {
     public static final int ACCENT = 0xFFBDEEFF;
     public static final int DIM_ACCENT = 0xFF618999;
     public static final int OFFLINE = 0xFFD57D78;
-    private static final float CONTROL_TEXT_OPTICAL_OFFSET = 3.0F;
+    private static final float CONTROL_TEXT_OPTICAL_OFFSET = 4.0F;
 
     private Scp079UiTheme() {
     }
@@ -89,8 +89,10 @@ public final class Scp079UiTheme {
         int x = width - FRAME_MARGIN - barW - 5;
         int y = height - FRAME_MARGIN - barH - 8;
         float headerScale = 1.08F;
-        int headerColor = Scp079PlayableClient.active()
-                && !Scp079PlayableClient.networkAvailable() ? OFFLINE : TEXT;
+        boolean offline = Scp079PlayableClient.active()
+                && !Scp079PlayableClient.networkAvailable();
+        int headerColor = offline ? OFFLINE : TEXT;
+        int frameColor = offline ? OFFLINE : FRAME_COLOR;
 
         draw(graphics, minecraft.font, "AUXILIARY POWER",
                 x, y - 18, headerScale, headerColor);
@@ -100,10 +102,10 @@ public final class Scp079UiTheme {
                 x + barW - amountW, y - 18, headerScale, headerColor);
 
         graphics.fill(x, y, x + barW, y + barH, 0xEC071116);
-        graphics.fill(x, y, x + barW, y + 1, FRAME_COLOR);
-        graphics.fill(x, y + barH - 1, x + barW, y + barH, FRAME_COLOR);
-        graphics.fill(x, y, x + 1, y + barH, FRAME_COLOR);
-        graphics.fill(x + barW - 1, y, x + barW, y + barH, FRAME_COLOR);
+        graphics.fill(x, y, x + barW, y + 1, frameColor);
+        graphics.fill(x, y + barH - 1, x + barW, y + barH, frameColor);
+        graphics.fill(x, y, x + 1, y + barH, frameColor);
+        graphics.fill(x + barW - 1, y, x + barW, y + barH, frameColor);
 
         int clamped = Mth.clamp(power, 0, 100);
         int innerX = x + 3;
@@ -116,8 +118,10 @@ public final class Scp079UiTheme {
             int sx = innerX + i * (segmentW + gap);
             int ex = i == 9 ? x + barW - 3 : sx + segmentW;
             int threshold = (i + 1) * 10;
-            int color = clamped >= threshold ? ACCENT
-                    : clamped > i * 10 ? 0xFF79ADBC : 0xFF102730;
+            int fullColor = offline ? OFFLINE : ACCENT;
+            int partialColor = offline ? 0xFF9E5C59 : 0xFF79ADBC;
+            int color = clamped >= threshold ? fullColor
+                    : clamped > i * 10 ? partialColor : 0xFF102730;
             graphics.fill(sx, innerY, ex, innerY + innerH, color);
         }
     }

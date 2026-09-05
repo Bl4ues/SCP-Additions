@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.facility.elevator.ElevatorArrivalDispla
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -113,6 +114,17 @@ public final class FacilityFloorStationIndex {
         }
     }
 
+    /**
+     * Rescans only the chunk supplied by ChunkEvent.Load.
+     *
+     * <p>Do not route positions found here through {@link #refresh(ServerLevel,
+     * BlockPos)}. ChunkEvent.Load fires while a chunk is still being promoted to
+     * a full chunk, and Level#getBlockState can synchronously request that chunk
+     * again through ServerChunkCache. That re-entrant chunk request deadlocks the
+     * integrated server during spawn preparation. Reading the section state and
+     * block entity directly from the already supplied LevelChunk keeps the scan
+     * entirely local to the chunk being loaded.</p>
+     */
     private static void rescanChunk(ServerLevel level, LevelChunk chunk) {
         FacilityMappingSavedData data = FacilityMappingSavedData.get(
                 level.getServer());
@@ -132,10 +144,14 @@ public final class FacilityFloorStationIndex {
                         BlockState state = section.getBlockState(localX,
                                 localY, localZ);
                         if (!state.is(CoreRoomElevatorModule.STATION.get())) continue;
-                        refresh(level, new BlockPos(
+                        BlockPos pos = new BlockPos(
                                 chunk.getPos().getMinBlockX() + localX,
                                 baseY + localY,
-                                chunk.getPos().getMinBlockZ() + localZ));
+                                chunk.getPos().getMinBlockZ() + localZ);
+                        FacilityFloorStationOption option = read(chunk, pos);
+                        data.putStation(tracked(level, pos,
+                                option == null ? "" : option.longLabel(),
+                                option == null ? "" : option.shortLabel()));
                     }
                 }
             }
@@ -148,6 +164,21 @@ public final class FacilityFloorStationIndex {
                 instanceof CoreRoomElevatorModule.StationBlockEntity station)) {
             return null;
         }
+        return read(pos, station);
+    }
+
+    private static FacilityFloorStationOption read(LevelChunk chunk,
+            BlockPos pos) {
+        BlockEntity blockEntity = chunk.getBlockEntity(pos);
+        if (!(blockEntity
+                instanceof CoreRoomElevatorModule.StationBlockEntity station)) {
+            return null;
+        }
+        return read(pos, station);
+    }
+
+    private static FacilityFloorStationOption read(BlockPos pos,
+            CoreRoomElevatorModule.StationBlockEntity station) {
         ElevatorArrivalDisplayData display = station.arrivalDisplay();
         if (display == null || !display.enabled()) return null;
         String zone = display.zone() == ElevatorArrivalDisplayData.Zone.CUSTOM

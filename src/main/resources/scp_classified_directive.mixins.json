@@ -28,6 +28,7 @@
     "Scp079PlayerControlAiGateMixin",
     "Scp079ActionAudioNetworkRegistrationMixin",
     "Scp079PlayableActionAudioMixin",
+    "Scp079TeslaActionAudioMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",
     "compat.MineZeroRuntimeRestoreMixin",

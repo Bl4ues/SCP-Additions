@@ -18,6 +18,7 @@
     "Scp173NavigationAuthorityMixin",
     "Scp173PushabilityMixin",
     "Scp173StealthPerceptionMixin",
+    "Scp173DarknessObservationMixin",
     "Scp939PinnedViewFreedomMixin",
     "Scp939AnimationControllerMixin",
     "Scp939CollisionAuthorityMixin",
@@ -34,6 +35,8 @@
     "Scp079TeslaActionAudioMixin",
     "Scp079PlayableActionCooldownMixin",
     "Scp079CameraNavigationRegistrationMixin",
+    "Scp079BlackoutRedstoneMixin",
+    "Scp079LockdownPowerRegenMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",
     "compat.MineZeroRuntimeRestoreMixin",
@@ -108,7 +111,8 @@
     "client.ContextPromptStandardControlsMixin",
     "client.Scp079RecognitionAnchorMixin",
     "client.Scp079HumanRecognitionLabelMixin",
-    "client.Scp079RoleSelectorPreviewScaleMixin"
+    "client.Scp079RoleSelectorPreviewScaleMixin",
+    "client.Scp173DarknessObservationClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

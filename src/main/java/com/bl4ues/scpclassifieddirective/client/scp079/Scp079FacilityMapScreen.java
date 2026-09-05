@@ -103,8 +103,8 @@ public final class Scp079FacilityMapScreen extends Screen {
                 leaveHover ? 0xD5472429 : 0xB8231A20);
         border(graphics, leaveX, TOP_Y, LEAVE_BUTTON_W, TOP_BUTTON_H,
                 leaveHover ? 0xFFE09A91 : 0xFF72535B);
-        Scp079UiTheme.drawCentered(graphics, font, "LEAVE SCP ROLE",
-                leaveX + LEAVE_BUTTON_W * 0.5F, TOP_Y + 8,
+        Scp079UiTheme.drawCenteredInControl(graphics, font, "LEAVE SCP ROLE",
+                leaveX + LEAVE_BUTTON_W * 0.5F, TOP_Y, TOP_BUTTON_H,
                 1.06F, leaveHover ? 0xFFFFFFFF : 0xFFCBA7AA);
 
         if (!Scp079PlayableClient.cameraMode()) return;
@@ -117,9 +117,10 @@ public final class Scp079FacilityMapScreen extends Screen {
                 hover ? 0xD51A3545 : 0xB8122835);
         border(graphics, returnX, TOP_Y, returnW, TOP_BUTTON_H,
                 hover ? Scp079UiTheme.ACCENT : 0xFF52798C);
-        Scp079UiTheme.drawCentered(graphics, font, "RETURN TO LOCAL HOST",
-                returnX + returnW * 0.5F, TOP_Y + 8,
-                1.03F, hover ? 0xFFFFFFFF : Scp079UiTheme.ACCENT);
+        Scp079UiTheme.drawCenteredInControl(graphics, font,
+                "RETURN TO LOCAL HOST", returnX + returnW * 0.5F,
+                TOP_Y, TOP_BUTTON_H, 1.03F,
+                hover ? 0xFFFFFFFF : Scp079UiTheme.ACCENT);
     }
 
     private void renderFloorSelector(GuiGraphics graphics, int mouseX,
@@ -134,10 +135,11 @@ public final class Scp079FacilityMapScreen extends Screen {
                 hovered || floorMenuOpen ? 0xD51A3545 : 0xB8122835);
         border(graphics, x, TOP_Y, w, TOP_BUTTON_H,
                 floorMenuOpen ? Scp079UiTheme.ACCENT : 0xFF52798C);
-        Scp079UiTheme.drawCentered(graphics, font, label,
-                x + w * 0.5F - 7, TOP_Y + 8, 1.08F, Scp079UiTheme.TEXT);
+        Scp079UiTheme.drawCenteredInControl(graphics, font, label,
+                x + w * 0.5F - 7, TOP_Y, TOP_BUTTON_H,
+                1.08F, Scp079UiTheme.TEXT);
         Scp079UiTheme.draw(graphics, font, floorMenuOpen ? "^" : "v",
-                x + w - 20, TOP_Y + 8, 1.05F, Scp079UiTheme.ACCENT);
+                x + w - 20, TOP_Y + 10, 1.05F, Scp079UiTheme.ACCENT);
 
         if (!floorMenuOpen) return;
         int rowY = TOP_Y + TOP_BUTTON_H + 4;
@@ -152,9 +154,10 @@ public final class Scp079FacilityMapScreen extends Screen {
             graphics.fill(x, rowY, x + w, rowY + rowH,
                     i == floorIndex ? 0xE1265064
                             : rowHover ? 0xE11A3A4B : 0xE10B202B);
-            Scp079UiTheme.drawCentered(graphics, font, option.longLabel,
-                    x + w * 0.5F, rowY + 7, 1.02F,
-                    i == floorIndex ? 0xFFFFFFFF : Scp079UiTheme.ACCENT);
+            Scp079UiTheme.drawCenteredInControl(graphics, font,
+                    option.longLabel, x + w * 0.5F, rowY, rowH,
+                    1.02F, i == floorIndex
+                            ? 0xFFFFFFFF : Scp079UiTheme.ACCENT);
             rowY += rowH;
         }
     }
@@ -295,8 +298,8 @@ public final class Scp079FacilityMapScreen extends Screen {
         int line = danger ? 0xFFE28A7F : 0xFF75B7CC;
         graphics.fill(x, y, x + w, y + h, fill);
         border(graphics, x, y, w, h, line);
-        Scp079UiTheme.drawCentered(graphics, font, label,
-                x + w * 0.5F, y + 8, 1.04F, 0xFFFFFFFF);
+        Scp079UiTheme.drawCenteredInControl(graphics, font, label,
+                x + w * 0.5F, y, h, 1.04F, 0xFFFFFFFF);
     }
 
     @Override

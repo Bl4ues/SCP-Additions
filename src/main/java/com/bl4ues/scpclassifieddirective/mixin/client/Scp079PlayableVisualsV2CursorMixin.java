@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079FacilityMapScreen;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079Keybinds;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079LeaveRoleScreen;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
@@ -14,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.Locale;
 
 /**
  * SCP-079 uses direct mouse-look whenever no Screen is open. A visible cursor is
@@ -75,5 +78,27 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         int width = Scp079UiTheme.scaledWidth(minecraft.font, value, scale);
         Scp079UiTheme.draw(graphics, minecraft.font, value,
                 right - width, y, scale, color);
+    }
+
+    /** Keeps the room-wide Speaker shortcut in the same top-right control list. */
+    @Inject(method = "renderCameraHud", at = @At("TAIL"), remap = false)
+    private static void scpclassifieddirective$renderSpeakerShortcut(
+            GuiGraphics graphics, CallbackInfo ci) {
+        boolean available = Scp079PlayableClientSpeakerAccessor
+                .scpclassifieddirective$speakerAvailable();
+        boolean active = Scp079PlayableClientSpeakerAccessor
+                .scpclassifieddirective$speakerActive();
+        if (!available && !active) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        String key = Scp079Keybinds.USE_SPEAKER.getTranslatedKeyMessage()
+                .getString().toUpperCase(Locale.ROOT);
+        String value = (active ? "STOP USING SPEAKER" : "USE SPEAKER")
+                + "  [" + key + "]";
+        float scale = 1.10F;
+        int width = Scp079UiTheme.scaledWidth(minecraft.font, value, scale);
+        Scp079UiTheme.draw(graphics, minecraft.font, value,
+                minecraft.getWindow().getGuiScaledWidth() - 24 - width,
+                61, scale, active ? 0xFFFFC68A : Scp079UiTheme.TEXT);
     }
 }

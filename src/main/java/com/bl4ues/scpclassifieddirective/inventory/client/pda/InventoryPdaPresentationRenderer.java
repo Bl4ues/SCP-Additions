@@ -48,6 +48,12 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     private static final float HAND_CONTACT_Z = -0.07F;
     private static final float ARM_CENTER_X = 6.0F / 16.0F;
     private static final float ARM_LENGTH = 12.0F / 16.0F;
+    // The authored PDA is cellphone-sized in player space. Vanilla first-person
+    // arms are authored for held items much farther from this fixed camera, so
+    // rendering them at unit scale makes the grip read as miniature hands.
+    // Scale around the distal contact, not around the camera, so both palms stay
+    // locked to their exported locators throughout the presentation motion.
+    private static final float GRIP_ARM_SCALE = 2.0F;
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private TextureTarget interfaceTarget;
@@ -259,10 +265,13 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         // skin RenderType consequently discarded both arms. Convert the
         // authored locator coordinates explicitly and orient each vanilla arm
         // so its distal end lands on the side grip.
-        pdaSpace.translate(-ARM_LENGTH,
-                anchorY + (right ? -ARM_CENTER_X : ARM_CENTER_X),
+        pdaSpace.translate(-ARM_LENGTH * GRIP_ARM_SCALE,
+                anchorY + (right
+                        ? -ARM_CENTER_X * GRIP_ARM_SCALE
+                        : ARM_CENTER_X * GRIP_ARM_SCALE),
                 HAND_CONTACT_Z);
         pdaSpace.mulPose(Axis.ZP.rotationDegrees(-90.0F));
+        pdaSpace.scale(GRIP_ARM_SCALE, GRIP_ARM_SCALE, GRIP_ARM_SCALE);
         if (right) renderer.renderRightHand(
                 pdaSpace, buffers, packedLight, player);
         else renderer.renderLeftHand(

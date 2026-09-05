@@ -12,18 +12,22 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 
 /**
  * Owns the two genuinely different passes used by the physical inventory PDA.
- * The existing inventory is first drawn into an off-screen color target. The
- * authored GeckoLib model and that target are then rendered in camera space
- * under a perspective projection, so depth, normals and shader-provided PBR
- * remain real instead of being imitated with a transformed 2D GUI.
+ * The authored shell and the player's skin arms are rendered during the world
+ * hand pass, where shader packs can still provide their entity PBR material.
+ * The inventory is captured into an off-screen target and composited later as
+ * an unlit display surface under the exact same camera-space projection.
  */
 public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     private static final float FOV_DEGREES = 36.0F;
@@ -36,6 +40,11 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     private static final float SCREEN_MAX_Y = 56.0F / 16.0F;
     private static final float SCREEN_Z = -8.055F / 16.0F;
     private static final float GEO_CENTER_Y = 43.0F / 16.0F;
+    private static final float RIGHT_HAND_ANCHOR_Y = 17.5F / 16.0F;
+    private static final float LEFT_HAND_ANCHOR_Y = 58.5F / 16.0F;
+    private static final float HAND_ANCHOR_Z = 1.0F / 16.0F;
+    private static final float ARM_CENTER_X = 6.0F / 16.0F;
+    private static final float ARM_LENGTH = 12.0F / 16.0F;
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private TextureTarget interfaceTarget;
@@ -64,14 +73,17 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         }
     }
 
-    /** Draw the body and its live emissive display through a perspective lens. */
-    public void render(Pose pose, int packedLight, int guiWidth, int guiHeight,
-            int rootX, int rootY, int rootWidth, int rootHeight) {
-        if (interfaceTarget == null || guiWidth <= 0 || guiHeight <= 0) return;
+    /**
+     * Draw the physical shell and both skin arms inside the world hand pass.
+     * Keeping this method out of Screen.render is what lets Oculus/Iris bind
+     * inventory_pda_n and inventory_pda_s as an actual LabPBR material.
+     */
+    public void renderPhysical(Pose pose, int packedLight, int guiWidth,
+            int guiHeight) {
+        if (guiWidth <= 0 || guiHeight <= 0) return;
 
         Matrix4f projection = projection(guiWidth, guiHeight);
         PoseStack modelPose = modelPose(pose);
-        PoseStack screenPose = screenPose(pose);
         PoseStack modelView = RenderSystem.getModelViewStack();
 
         RenderSystem.backupProjectionMatrix();
@@ -82,17 +94,44 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
                 VertexSorting.DISTANCE_TO_ORIGIN);
 
         try {
-            // The world has already been fully drawn. Its depth values belong
-            // to a different projection, so reset depth while preserving color.
+            // The world and this fixed camera-space projection do not share a
+            // meaningful depth range. Start the hand layer clean while keeping
+            // the already-rendered world color intact.
             RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
             RenderSystem.enableDepthTest();
             RenderSystem.depthMask(true);
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
 
+            renderHands(screenPose(pose), packedLight);
             InventoryPdaRenderer.INSTANCE.render(modelPose, packedLight);
-            renderDisplay(screenPose.last().pose(), guiWidth, guiHeight,
-                    rootX, rootY, rootWidth, rootHeight);
+        } finally {
+            RenderSystem.depthMask(true);
+            RenderSystem.enableCull();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.restoreProjectionMatrix();
+            modelView.popPose();
+            RenderSystem.applyModelViewMatrix();
+        }
+    }
+
+    /** Draw only the current GUI texture as a full-bright physical display. */
+    public void renderDisplay(Pose pose, int guiWidth, int guiHeight,
+            int rootX, int rootY, int rootWidth, int rootHeight) {
+        if (interfaceTarget == null || guiWidth <= 0 || guiHeight <= 0) return;
+
+        Matrix4f projection = projection(guiWidth, guiHeight);
+        PoseStack modelView = RenderSystem.getModelViewStack();
+        RenderSystem.backupProjectionMatrix();
+        modelView.pushPose();
+        modelView.setIdentity();
+        RenderSystem.applyModelViewMatrix();
+        RenderSystem.setProjectionMatrix(projection,
+                VertexSorting.DISTANCE_TO_ORIGIN);
+
+        try {
+            renderDisplayQuad(screenPose(pose).last().pose(), guiWidth,
+                    guiHeight, rootX, rootY, rootWidth, rootHeight);
         } finally {
             RenderSystem.depthMask(true);
             RenderSystem.disableDepthTest();
@@ -139,11 +178,11 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         float localX = near.x() + (far.x() - near.x()) * distance;
         float localY = near.y() + (far.y() - near.y()) * distance;
 
-        // The device settles at +90 degrees: authored Y runs right-to-left
-        // and authored X runs bottom-to-top on the visible display.
-        double u = (SCREEN_MAX_Y - localY)
+        // The authored portrait settles at -90 degrees. Raw Y then runs from
+        // left to right and raw X from top to bottom on the physical display.
+        double u = (localY - SCREEN_MIN_Y)
                 / (SCREEN_MAX_Y - SCREEN_MIN_Y);
-        double v = (SCREEN_MAX_X - localX)
+        double v = (localX - SCREEN_MIN_X)
                 / (SCREEN_MAX_X - SCREEN_MIN_X);
         double mappedX = rootX + u * rootWidth;
         double mappedY = rootY + v * rootHeight;
@@ -153,7 +192,7 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         return new MappedMouse(mappedX, mappedY, over);
     }
 
-    private void renderDisplay(Matrix4f matrix, int guiWidth, int guiHeight,
+    private void renderDisplayQuad(Matrix4f matrix, int guiWidth, int guiHeight,
             int rootX, int rootY, int rootWidth, int rootHeight) {
         float u0 = rootX / (float) guiWidth;
         float u1 = (rootX + rootWidth) / (float) guiWidth;
@@ -165,23 +204,58 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         RenderSystem.setShaderTexture(0,
                 interfaceTarget.getColorTextureId());
         RenderSystem.disableCull();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(true);
+        // The opaque shell was already composed by the world hand pass. The
+        // authored quad is exactly inside the bezel, so this late unlit pass
+        // needs no unrelated world depth and cannot cover the casing.
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         builder.begin(VertexFormat.Mode.QUADS,
                 DefaultVertexFormat.POSITION_TEX);
-        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u0, vTop).endVertex();
-        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u1, vTop).endVertex();
         builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u1, vBottom).endVertex();
+                .uv(u0, vTop).endVertex();
         builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
+                .uv(u1, vTop).endVertex();
+        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
+                .uv(u1, vBottom).endVertex();
+        builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
                 .uv(u0, vBottom).endVertex();
         BufferUploader.drawWithShader(builder.end());
+    }
+
+    private void renderHands(PoseStack pdaSpace, int packedLight) {
+        if (!(minecraft.player instanceof AbstractClientPlayer player)) return;
+        EntityRenderer<?> resolved =
+                minecraft.getEntityRenderDispatcher().getRenderer(player);
+        if (!(resolved instanceof PlayerRenderer renderer)) return;
+
+        MultiBufferSource.BufferSource buffers =
+                minecraft.renderBuffers().bufferSource();
+        renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
+                true, RIGHT_HAND_ANCHOR_Y + ARM_CENTER_X);
+        renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
+                false, LEFT_HAND_ANCHOR_Y - ARM_CENTER_X);
+        buffers.endBatch();
+    }
+
+    private static void renderGripArm(PoseStack pdaSpace,
+            PlayerRenderer renderer, AbstractClientPlayer player,
+            MultiBufferSource buffers, int packedLight, boolean right,
+            float anchorY) {
+        pdaSpace.pushPose();
+        // The exported locators mark the hand contacts. The distal end of the
+        // vanilla skin arm lands on that contact while its forearm continues
+        // toward the bottom edge of the view in the landscape reading pose.
+        pdaSpace.translate(ARM_LENGTH, anchorY, HAND_ANCHOR_Z);
+        pdaSpace.mulPose(Axis.ZP.rotationDegrees(90.0F));
+        if (right) renderer.renderRightHand(
+                pdaSpace, buffers, packedLight, player);
+        else renderer.renderLeftHand(
+                pdaSpace, buffers, packedLight, player);
+        pdaSpace.popPose();
     }
 
     private PoseStack modelPose(Pose pose) {

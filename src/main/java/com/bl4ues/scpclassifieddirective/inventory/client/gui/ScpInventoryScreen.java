@@ -22,8 +22,6 @@ import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaPresen
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -117,6 +115,7 @@ public class ScpInventoryScreen extends Screen {
     private boolean dragMoved = false;
     private float dropPreviewFade = 0.0F;
     private static final long PDA_TRANSITION_NANOS = 820_000_000L;
+    private static final float PDA_DROP_LOWERING = 0.62F;
     private final InventoryPdaPresentationRenderer pdaPresentation =
             new InventoryPdaPresentationRenderer();
     private final long pdaOpenStartedNanos = System.nanoTime();
@@ -124,12 +123,15 @@ public class ScpInventoryScreen extends Screen {
     private Screen pdaNextScreen;
     private boolean completingPdaClose;
     private boolean pdaOpenStateSent;
+    private boolean pdaCloseHiddenFrameRendered;
     private long pdaLastRenderNanos = System.nanoTime();
     private float pdaDocumentProgress;
+    private float pdaPoseProgress;
     private InventoryPdaPresentationRenderer.Pose pdaPose =
             new InventoryPdaPresentationRenderer.Pose(
-                    0.70F, -1.40F, -4.70F,
-                    -28.0F, 238.0F, 4.0F, 0.82F);
+                    0.95F, -4.10F, -4.70F,
+                    -28.0F, 238.0F, -4.0F, 0.82F);
+    private InventoryPdaPresentationRenderer.Pose pdaInteractionPose = pdaPose;
 
     public ScpInventoryScreen() {
         super(Component.literal("SCP Inventory"));
@@ -277,8 +279,7 @@ public class ScpInventoryScreen extends Screen {
     public void tick() {
         super.tick();
         if (!InventoryModuleRuntimeState.isEnabledForClient()) onClose();
-        if (pdaCloseStartedNanos > 0L
-                && System.nanoTime() - pdaCloseStartedNanos >= PDA_TRANSITION_NANOS) {
+        if (pdaCloseStartedNanos > 0L && pdaCloseHiddenFrameRendered) {
             completingPdaClose = true;
             minecraft.setScreen(pdaNextScreen);
         }
@@ -286,11 +287,10 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        InventoryPdaPresentationRenderer.MappedMouse previousMouse =
-                mapPdaMouse(mouseX, mouseY);
+        InventoryPdaPresentationRenderer.MappedMouse dropMouse =
+                mapPdaMouse(pdaInteractionPose, mouseX, mouseY);
         updateDropPreviewFade(isPreviewingWorldDrop(
-                previousMouse.x(), previousMouse.y()));
-        pdaPose = updatePdaPose(mouseX, mouseY);
+                dropMouse.x(), dropMouse.y()));
         InventoryPdaPresentationRenderer.MappedMouse mappedMouse =
                 mapPdaMouse(mouseX, mouseY);
         int uiMouseX = (int) Math.round(mappedMouse.x());
@@ -300,12 +300,32 @@ public class ScpInventoryScreen extends Screen {
         // around the physical device, just as it does in the reference.
         pdaPresentation.captureInterface(g, () ->
                 renderPdaContents(g, uiMouseX, uiMouseY, partialTick));
-        pdaPresentation.render(pdaPose, pdaPackedLight(), width, height,
+        pdaPresentation.renderDisplay(pdaPose, width, height,
                 rootX, rootY, rootWidth, rootHeight);
         // Forge-added builder/admin controls intentionally live outside the
         // physical display. Draw Screen widgets on the main target only after
         // the PDA pass so they stay visible and retain raw window coordinates.
         super.render(g, mouseX, mouseY, partialTick);
+        // When the cursor leaves the display, keep the dragged stack in raw
+        // window space. Drawing it last guarantees visible drop feedback even
+        // over builder/admin controls outside the physical PDA.
+        if (isPreviewingWorldDrop(dropMouse.x(), dropMouse.y())) {
+            renderDraggedStack(g, mouseX, mouseY);
+        }
+        if (pdaCloseStartedNanos > 0L && pdaPoseProgress <= 0.0F) {
+            pdaCloseHiddenFrameRendered = true;
+        }
+        // The hand pass happens before Screen.render. Advance the shared pose
+        // only after composing this frame so shell, hands and display share a
+        // transform. Drop hit-testing keeps the stable, non-lowered pose.
+        pdaPoseProgress = presentationProgress();
+        pdaInteractionPose = updatePdaPose(pdaPoseProgress);
+        pdaPose = applyDropPose(pdaInteractionPose, mouseX);
+    }
+
+    /** Called from RenderHandEvent while the shader pack's PBR pass is active. */
+    public void renderPhysicalPda(int packedLight) {
+        pdaPresentation.renderPhysical(pdaPose, packedLight, width, height);
     }
 
     private void renderPdaContents(GuiGraphics g, int mouseX, int mouseY,
@@ -336,7 +356,7 @@ public class ScpInventoryScreen extends Screen {
     }
 
     private InventoryPdaPresentationRenderer.Pose updatePdaPose(
-            int mouseX, int mouseY) {
+            float progress) {
         long now = System.nanoTime();
         float frameSeconds = Math.min(0.1F,
                 (now - pdaLastRenderNanos) / 1_000_000_000.0F);
@@ -348,18 +368,17 @@ public class ScpInventoryScreen extends Screen {
         pdaDocumentProgress += (documentTarget - pdaDocumentProgress)
                 * documentBlend;
 
-        float progress = presentationProgress();
         float travel = easeOutCubic(progress);
         float settle = easeOutBack(progress);
         float turn = smootherStep(clamp01((progress - 0.14F) / 0.72F));
 
-        float x = lerp(0.70F, -0.03F, travel);
-        float y = lerp(-1.40F, -0.02F, settle);
+        float x = lerp(0.95F, -0.03F, travel);
+        float y = lerp(-4.10F, -0.02F, settle);
         float depth = lerp(-4.70F, -1.88F, settle);
         float pitch = lerp(-28.0F, 2.0F, turn);
         // 180 degrees faces the authored negative-Z screen toward the camera.
         float yaw = lerp(238.0F, 176.5F, turn);
-        float roll = lerp(4.0F, 90.0F, turn);
+        float roll = lerp(-4.0F, -90.0F, turn);
 
         float idleWeight = smootherStep(clamp01(
                 (progress - 0.86F) / 0.14F));
@@ -368,17 +387,6 @@ public class ScpInventoryScreen extends Screen {
         y += (float) Math.sin(idleTime * 1.08F) * 0.006F * idleWeight;
         pitch += (float) Math.sin(idleTime * 0.83F) * 0.35F * idleWeight;
         yaw += (float) Math.cos(idleTime * 0.61F) * 0.32F * idleWeight;
-
-        if (dropPreviewFade > 0.001F) {
-            float dx = (mouseX - width * 0.5F)
-                    / Math.max(1.0F, width * 0.5F);
-            float dy = (mouseY - height * 0.5F)
-                    / Math.max(1.0F, height * 0.5F);
-            x -= dx * 0.13F * dropPreviewFade;
-            y += dy * 0.10F * dropPreviewFade;
-            yaw += dx * 5.0F * dropPreviewFade;
-            pitch += dy * 3.5F * dropPreviewFade;
-        }
 
         if (pdaDocumentProgress > 0.001F) {
             float documentEase = pdaDocumentProgress * pdaDocumentProgress
@@ -395,16 +403,32 @@ public class ScpInventoryScreen extends Screen {
                 pitch, yaw, roll, 0.82F);
     }
 
-    private int pdaPackedLight() {
-        if (minecraft == null || minecraft.level == null
-                || minecraft.player == null) return LightTexture.FULL_BRIGHT;
-        return LevelRenderer.getLightColor(minecraft.level,
-                minecraft.player.blockPosition());
+    private InventoryPdaPresentationRenderer.Pose applyDropPose(
+            InventoryPdaPresentationRenderer.Pose base, int mouseX) {
+        if (dropPreviewFade <= 0.001F) return base;
+        float dx = (mouseX - width * 0.5F)
+                / Math.max(1.0F, width * 0.5F);
+        // The drop boundary deliberately stays tied to the stable base pose;
+        // moving the visual boundary with the PDA would make it chase the
+        // cursor. The same visual pose drives both the shell and skin arms.
+        return new InventoryPdaPresentationRenderer.Pose(
+                base.x() - dx * 0.10F * dropPreviewFade,
+                base.y() - PDA_DROP_LOWERING * dropPreviewFade,
+                base.depth(),
+                base.pitch() + 2.5F * dropPreviewFade,
+                base.yaw() + dx * 3.5F * dropPreviewFade,
+                base.roll(), base.scale());
     }
 
     private InventoryPdaPresentationRenderer.MappedMouse mapPdaMouse(
             double mouseX, double mouseY) {
-        return pdaPresentation.mapMouse(pdaPose, mouseX, mouseY,
+        return mapPdaMouse(pdaPose, mouseX, mouseY);
+    }
+
+    private InventoryPdaPresentationRenderer.MappedMouse mapPdaMouse(
+            InventoryPdaPresentationRenderer.Pose pose,
+            double mouseX, double mouseY) {
+        return pdaPresentation.mapMouse(pose, mouseX, mouseY,
                 width, height, rootX, rootY, rootWidth, rootHeight);
     }
 
@@ -449,6 +473,7 @@ public class ScpInventoryScreen extends Screen {
             captureSessionState();
             pdaNextScreen = nextScreen;
             pdaCloseStartedNanos = System.nanoTime();
+            pdaCloseHiddenFrameRendered = false;
             clearDragSource();
             if (contextMenu != null) contextMenu.close();
             if (pdaOpenStateSent) {
@@ -624,6 +649,12 @@ public class ScpInventoryScreen extends Screen {
         if (!isPdaInteractive()) return true;
         InventoryPdaPresentationRenderer.MappedMouse mapped =
                 mapPdaMouse(mouseX, mouseY);
+        // Builder/admin widgets belong to the ordinary Screen and deliberately
+        // sit outside the PDA. Give them raw window coordinates before routing
+        // display input through the projected surface.
+        if (!mapped.over() && super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
         mouseX = mapped.x();
         mouseY = mapped.y();
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.isExpandedImage()) return codexPanel.mouseClicked(mouseX, mouseY, button);
@@ -691,15 +722,21 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (!isPdaInteractive()) return true;
+        InventoryPdaPresentationRenderer.MappedMouse dropMapped =
+                mapPdaMouse(pdaInteractionPose, mouseX, mouseY);
         InventoryPdaPresentationRenderer.MappedMouse mapped =
                 mapPdaMouse(mouseX, mouseY);
+        if (!hasDragSource() && !mapped.over()
+                && super.mouseReleased(mouseX, mouseY, button)) {
+            return true;
+        }
         mouseX = mapped.x();
         mouseY = mapped.y();
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.mouseReleased(button)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseReleasedScrollbar(button)) return true;
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseReleasedScrollbar(button)) return true;
         if (button == 0 && hasDragSource()) {
-            if (dragMoved) finishDrag(mouseX, mouseY);
+            if (dragMoved) finishDrag(dropMapped.x(), dropMapped.y());
             clearDragSource();
             return true;
         }

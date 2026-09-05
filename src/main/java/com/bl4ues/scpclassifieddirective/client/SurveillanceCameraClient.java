@@ -4,7 +4,6 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,9 +36,11 @@ public final class SurveillanceCameraClient {
     @SubscribeEvent
     public static void registerRenderers(
             EntityRenderersEvent.RegisterRenderers event) {
+        // Keep the renderer registration on this top-level MOD-bus subscriber,
+        // matching the known-good SCP-330/914 pattern used throughout the mod.
         event.registerBlockEntityRenderer(
                 SurveillanceCameraPlaceholderModule.BLOCK_ENTITY.get(),
-                BlockRenderer::new);
+                context -> new BlockRenderer());
     }
 
     private static final class BlockModel extends GeoModel<
@@ -108,7 +109,7 @@ public final class SurveillanceCameraClient {
 
     private static final class BlockRenderer extends GeoBlockRenderer<
             SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity> {
-        private BlockRenderer(BlockEntityRendererProvider.Context context) {
+        private BlockRenderer() {
             super(new BlockModel());
         }
 
@@ -124,7 +125,9 @@ public final class SurveillanceCameraClient {
         @Override
         public boolean shouldRenderOffScreen(
                 SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity blockEntity) {
-            return false;
+            // The wall mount and moving head can extend beyond the block's
+            // ordinary frustum cell. Never let that cull the GeckoLib renderer.
+            return true;
         }
     }
 

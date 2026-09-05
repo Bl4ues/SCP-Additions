@@ -94,6 +94,7 @@
     "client.Scp714ComaPromptMixin",
     "client.LevelRendererEntityTargetAccessor",
     "client.Scp079PlayableVisualMixin",
+    "client.Scp079PlayableClientSpeakerAccessor",
     "client.Scp079PlayableVisualsV2CursorMixin",
     "client.Scp079ActionCooldownVisualMixin",
     "client.Scp079PlayableNetworkAudioMixin",

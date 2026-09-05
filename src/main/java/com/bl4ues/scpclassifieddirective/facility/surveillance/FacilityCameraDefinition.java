@@ -61,9 +61,9 @@ public record FacilityCameraDefinition(UUID id, ResourceLocation dimension,
                 anchor, new Vec3(tag.getDouble("EyeX"), tag.getDouble("EyeY"),
                 tag.getDouble("EyeZ")), tag.getString("Name"),
                 tag.getFloat("BaseYaw"), tag.getFloat("BasePitch"),
-                tag.contains("YawLimit") ? tag.getFloat("YawLimit") : 75.0F,
-                tag.contains("MinPitch") ? tag.getFloat("MinPitch") : -55.0F,
-                tag.contains("MaxPitch") ? tag.getFloat("MaxPitch") : 55.0F,
+                tag.contains("YawLimit") ? tag.getFloat("YawLimit") : 90.0F,
+                tag.contains("MinPitch") ? tag.getFloat("MinPitch") : -45.0F,
+                tag.contains("MaxPitch") ? tag.getFloat("MaxPitch") : 45.0F,
                 tag.contains("MaxZoom") ? tag.getFloat("MaxZoom") : 2.25F);
     }
 

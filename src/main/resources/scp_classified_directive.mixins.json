@@ -32,6 +32,7 @@
     "Scp079ActionAudioNetworkRegistrationMixin",
     "Scp079PlayableActionAudioMixin",
     "Scp079TeslaActionAudioMixin",
+    "Scp079PlayableActionCooldownMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",
     "compat.MineZeroRuntimeRestoreMixin",
@@ -92,10 +93,12 @@
     "client.LevelRendererEntityTargetAccessor",
     "client.Scp079PlayableVisualMixin",
     "client.Scp079PlayableVisualsV2CursorMixin",
+    "client.Scp079ActionCooldownVisualMixin",
     "client.Scp079PlayableNetworkAudioMixin",
     "client.Scp079FacilityMapScreenAccessor",
     "client.Scp079FacilityMapWarpInputMixin",
     "client.Scp079LeaveRoleWarpInputMixin",
+    "client.ContextPromptStandardControlsMixin",
     "client.ScpRoleSelectorPreviewMixin"
   ],
   "injectors": {

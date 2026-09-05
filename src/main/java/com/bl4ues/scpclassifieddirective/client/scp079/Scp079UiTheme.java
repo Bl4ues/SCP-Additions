@@ -1,6 +1,6 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
-import com.bl4ues.scpclassifieddirective.inventory.client.ScpFonts;
+import com.bl4ues.scpclassifieddirective.client.ScpFonts;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

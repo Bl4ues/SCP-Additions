@@ -4,14 +4,14 @@ import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisuals;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.Mth;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 /** Replaces first-pass SCP-079 presentation/input while preserving gameplay state. */
 @Mixin(Scp079PlayableClient.class)
@@ -59,15 +59,18 @@ public abstract class Scp079PlayableVisualMixin {
     /**
      * Keep the established orbit angles, but restore the intended distance rule:
      * the front of SCP-079 gets the wide shot and its back gets the close shot.
+     *
+     * Redirect is deliberately used instead of ModifyArgs here. Forge loads this
+     * EventBusSubscriber class during automatic subscriber discovery, and Mixin's
+     * generated Args$N helper classes are not reliably visible to that early
+     * class-loading path in the 1.20.1 userdev environment.
      */
-    @ModifyArgs(method = "updateLocalCamera",
+    @Redirect(method = "updateLocalCamera",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/util/Mth;lerp(DDD)D"),
             remap = false)
-    private static void scpclassifieddirective$swapOrbitDistances(Args args) {
-        double start = args.get(1);
-        double end = args.get(2);
-        args.set(1, end);
-        args.set(2, start);
+    private static double scpclassifieddirective$swapOrbitDistances(
+            double delta, double start, double end) {
+        return Mth.lerp(delta, end, start);
     }
 }

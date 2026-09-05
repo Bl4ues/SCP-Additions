@@ -13,6 +13,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -20,15 +21,21 @@ import java.util.WeakHashMap;
 
 /** Controls the physical CRT face independently from SCP-079's AI logic. */
 public final class Scp079ScreenState {
-    private static final int ACTION_PULSE_TICKS = 8;
+    private static final int ACTION_PULSE_TICKS = 60;
     private static final float CRT_STATE_SOUND_VOLUME = 0.42F;
     private static final Map<MinecraftServer, Set<Scp079FacilityAccessSavedData.TrackedPosition>>
             LOCAL_ACTIVE = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Map<Scp079FacilityAccessSavedData.TrackedPosition, Long>>
+            ACTION_ACTIVE_UNTIL = new WeakHashMap<>();
 
     private Scp079ScreenState() {
     }
 
-    /** Briefly lights every physical SCP-079 host after a real facility action. */
+    /**
+     * Lights every physical SCP-079 host for three seconds after a real
+     * facility action. Repeating an action restarts the timer rather than
+     * allowing an older scheduled tick to switch the CRT off early.
+     */
     public static void pulse(MinecraftServer server) {
         if (server == null) return;
         for (Scp079FacilityAccessSavedData.TrackedPosition host
@@ -36,6 +43,11 @@ public final class Scp079ScreenState {
             ServerLevel level = level(server, host.dimension());
             if (level == null) continue;
             BlockPos pos = BlockPos.of(host.packedPos());
+            long until = level.getGameTime() + ACTION_PULSE_TICKS;
+            synchronized (ACTION_ACTIVE_UNTIL) {
+                ACTION_ACTIVE_UNTIL.computeIfAbsent(server,
+                        ignored -> new HashMap<>()).put(host, until);
+            }
             setPoweredFace(level, pos, true);
             level.scheduleTick(pos,
                     ScpClassifiedDirectiveModBlocks.SCP_079ON.get(),
@@ -49,8 +61,7 @@ public final class Scp079ScreenState {
         if (level == null || pos == null) return;
         MinecraftServer server = level.getServer();
         Scp079FacilityAccessSavedData.TrackedPosition tracked =
-                new Scp079FacilityAccessSavedData.TrackedPosition(
-                        level.dimension().location().toString(), pos.asLong());
+                tracked(level, pos);
         synchronized (LOCAL_ACTIVE) {
             Set<Scp079FacilityAccessSavedData.TrackedPosition> activeHosts =
                     LOCAL_ACTIVE.computeIfAbsent(server,
@@ -59,29 +70,67 @@ public final class Scp079ScreenState {
             else activeHosts.remove(tracked);
             if (activeHosts.isEmpty()) LOCAL_ACTIVE.remove(server);
         }
-        setPoweredFace(level, pos, active);
+        if (active) setPoweredFace(level, pos, true);
+        else settle(level, pos);
     }
 
     public static void refreshLocal(ServerLevel level, BlockPos pos) {
-        if (isLocalActive(level, pos)) setPoweredFace(level, pos, true);
+        if (isLocalActive(level, pos) || isActionActive(level, pos)) {
+            setPoweredFace(level, pos, true);
+        }
     }
 
     /** Called by the ON block's scheduled tick. */
     public static void settle(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || isLocalActive(level, pos)) return;
+        Scp079FacilityAccessSavedData.TrackedPosition tracked = tracked(level, pos);
+        long now = level.getGameTime();
+        Long until;
+        synchronized (ACTION_ACTIVE_UNTIL) {
+            Map<Scp079FacilityAccessSavedData.TrackedPosition, Long> active =
+                    ACTION_ACTIVE_UNTIL.get(level.getServer());
+            until = active == null ? null : active.get(tracked);
+            if (until != null && now >= until) {
+                active.remove(tracked);
+                if (active.isEmpty()) ACTION_ACTIVE_UNTIL.remove(level.getServer());
+                until = null;
+            }
+        }
+        if (until != null) {
+            int remaining = (int) Math.max(1L, until - now);
+            level.scheduleTick(pos,
+                    ScpClassifiedDirectiveModBlocks.SCP_079ON.get(), remaining);
+            setPoweredFace(level, pos, true);
+            return;
+        }
         setPoweredFace(level, pos, false);
     }
 
     public static boolean isLocalActive(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null) return false;
-        Scp079FacilityAccessSavedData.TrackedPosition tracked =
-                new Scp079FacilityAccessSavedData.TrackedPosition(
-                        level.dimension().location().toString(), pos.asLong());
+        Scp079FacilityAccessSavedData.TrackedPosition tracked = tracked(level, pos);
         synchronized (LOCAL_ACTIVE) {
             Set<Scp079FacilityAccessSavedData.TrackedPosition> activeHosts =
                     LOCAL_ACTIVE.get(level.getServer());
             return activeHosts != null && activeHosts.contains(tracked);
         }
+    }
+
+    private static boolean isActionActive(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null) return false;
+        Scp079FacilityAccessSavedData.TrackedPosition tracked = tracked(level, pos);
+        synchronized (ACTION_ACTIVE_UNTIL) {
+            Map<Scp079FacilityAccessSavedData.TrackedPosition, Long> active =
+                    ACTION_ACTIVE_UNTIL.get(level.getServer());
+            Long until = active == null ? null : active.get(tracked);
+            return until != null && level.getGameTime() < until;
+        }
+    }
+
+    private static Scp079FacilityAccessSavedData.TrackedPosition tracked(
+            ServerLevel level, BlockPos pos) {
+        return new Scp079FacilityAccessSavedData.TrackedPosition(
+                level.dimension().location().toString(), pos.asLong());
     }
 
     private static void setPoweredFace(ServerLevel level, BlockPos pos,

@@ -15,10 +15,12 @@ public final class Scp079MapUiAudioClient {
     @SubscribeEvent
     public static void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
         if (event.getButton() != 0 || !Scp079PlayableClient.active()) return;
-        double x = event.getMouseX();
-        double y = event.getMouseY();
 
         if (event.getScreen() instanceof Scp079LeaveRoleScreen screen) {
+            double x = Scp079CrtPostProcessor.logicalX(event.getMouseX(),
+                    event.getMouseY(), screen.width, screen.height);
+            double y = Scp079CrtPostProcessor.logicalY(event.getMouseX(),
+                    event.getMouseY(), screen.width, screen.height);
             if (leaveScreenButton(screen, x, y)) {
                 Scp079PlayableAudioClient.playButton();
             }
@@ -26,6 +28,10 @@ public final class Scp079MapUiAudioClient {
         }
         if (!(event.getScreen() instanceof Scp079FacilityMapScreen screen)) return;
 
+        double x = Scp079CrtPostProcessor.logicalX(event.getMouseX(),
+                event.getMouseY(), screen.width, screen.height);
+        double y = Scp079CrtPostProcessor.logicalY(event.getMouseX(),
+                event.getMouseY(), screen.width, screen.height);
         Scp079FacilityMapScreenAccessor accessor =
                 (Scp079FacilityMapScreenAccessor) (Object) screen;
         if (accessor.scpclassifieddirective$isLeaveConfirmationOpen()) {
@@ -36,7 +42,6 @@ public final class Scp079MapUiAudioClient {
         }
 
         int width = screen.width;
-        // Room tiles are deliberately excluded: requestRoom owns select_2.
         boolean floorSelector = x >= width * 0.5D - 165.0D
                 && x <= width * 0.5D + 165.0D
                 && y >= 29.0D && y <= 56.0D;
@@ -51,6 +56,7 @@ public final class Scp079MapUiAudioClient {
         if (floorSelector || leaveRole || returnHost || floorMenu) {
             Scp079PlayableAudioClient.playButton();
         }
+        if (returnHost) Scp079PlayableAudioClient.playDisplaySwitch();
     }
 
     private static boolean leaveScreenButton(Scp079LeaveRoleScreen screen,

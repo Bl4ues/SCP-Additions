@@ -9,4 +9,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface Scp079FacilityMapScreenAccessor {
     @Accessor("leaveConfirmation")
     boolean scpclassifieddirective$isLeaveConfirmationOpen();
+
+    @Accessor("floorMenuOpen")
+    boolean scpclassifieddirective$isFloorMenuOpen();
 }

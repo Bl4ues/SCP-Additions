@@ -1,7 +1,9 @@
 package com.bl4ues.scpclassifieddirective.procedures;
 
+import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -64,19 +66,31 @@ public final class TeslaGateVolume {
     }
 
     public static boolean intersects(Entity entity, AABB volume) {
-        return entity != null && entity.isAlive()
+        return isPhysicalTeslaTarget(entity)
                 && entity.getBoundingBox().intersects(volume);
     }
 
     public static boolean intersectsOrCrossed(Entity entity, AABB volume) {
-        if (!entity.isAlive()) return false;
+        if (!isPhysicalTeslaTarget(entity)) return false;
         if (entity.getBoundingBox().intersects(volume)) return true;
         double halfWidth = Math.max(0.01D, entity.getBbWidth() * 0.5D);
         double halfHeight = Math.max(0.01D, entity.getBbHeight() * 0.5D);
         AABB target = volume.inflate(halfWidth, halfHeight, halfWidth);
         Vec3 previous = new Vec3(entity.xo, entity.yo + halfHeight, entity.zo);
-        Vec3 current = new Vec3(entity.getX(), entity.getY() + halfHeight, entity.getZ());
+        Vec3 current = new Vec3(entity.getX(), entity.getY() + halfHeight,
+                entity.getZ());
         return target.contains(previous) || target.contains(current)
                 || target.clip(previous, current).isPresent();
+    }
+
+    /**
+     * Playable SCP-079 uses a spectator player only as an internal network/camera
+     * anchor. It is not a physical body and must never arm, cross, or be damaged
+     * by a Tesla Gate while that role is active.
+     */
+    private static boolean isPhysicalTeslaTarget(Entity entity) {
+        if (entity == null || !entity.isAlive()) return false;
+        return !(entity instanceof ServerPlayer player
+                && Scp079PlayableManager.isController(player));
     }
 }

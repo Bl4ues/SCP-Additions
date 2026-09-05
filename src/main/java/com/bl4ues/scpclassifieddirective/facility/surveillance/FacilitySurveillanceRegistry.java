@@ -4,7 +4,9 @@ import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Comparator;
@@ -75,29 +77,42 @@ public final class FacilitySurveillanceRegistry {
     }
 
     /**
-     * Existing test worlds may have placeholder cameras persisted with the old
-     * movement envelope. Upgrade those definitions lazily without touching
-     * cameras supplied by future integrations or map-makers.
+     * Existing test worlds can contain the old placeholder camera definition.
+     * Upgrade those records lazily so they inherit both the final movement
+     * envelope and the authored lens position without forcing map-makers to
+     * replace every already-placed camera block.
      */
     private static FacilityCameraDefinition normalizePlaceholder(
             ServerLevel level, FacilityCameraDefinition camera) {
-        if (camera == null || !level.getBlockState(camera.anchorPos()).is(
-                SurveillanceCameraPlaceholderModule.BLOCK.get())) {
+        if (camera == null) return null;
+        BlockState state = level.getBlockState(camera.anchorPos());
+        if (!state.is(SurveillanceCameraPlaceholderModule.BLOCK.get())) {
             return camera;
         }
-        float yaw = SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT;
+
+        float yawLimit = SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT;
         float minPitch = SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH;
         float maxPitch = SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH;
-        if (Float.compare(camera.yawLimit(), yaw) == 0
+        Direction facing = state.hasProperty(
+                SurveillanceCameraPlaceholderModule.FACING)
+                ? state.getValue(SurveillanceCameraPlaceholderModule.FACING)
+                : Direction.NORTH;
+        float baseYaw = facing.toYRot();
+        Vec3 eye = SurveillanceCameraPlaceholderModule.eyePosition(
+                camera.anchorPos(), state);
+
+        boolean current = Float.compare(camera.yawLimit(), yawLimit) == 0
                 && Float.compare(camera.minPitch(), minPitch) == 0
-                && Float.compare(camera.maxPitch(), maxPitch) == 0) {
-            return camera;
-        }
+                && Float.compare(camera.maxPitch(), maxPitch) == 0
+                && Math.abs(net.minecraft.util.Mth.wrapDegrees(
+                        camera.baseYaw() - baseYaw)) < 0.001F
+                && camera.eyePosition().distanceToSqr(eye) < 0.000001D;
+        if (current) return camera;
+
         FacilityCameraDefinition upgraded = new FacilityCameraDefinition(
-                camera.id(), camera.dimension(), camera.anchorPos(),
-                camera.eyePosition(), camera.name(), camera.baseYaw(),
-                camera.basePitch(), yaw, minPitch, maxPitch,
-                camera.maxZoom());
+                camera.id(), camera.dimension(), camera.anchorPos(), eye,
+                camera.name(), baseYaw, camera.basePitch(), yawLimit,
+                minPitch, maxPitch, camera.maxZoom());
         FacilitySurveillanceSavedData.get(level.getServer()).put(upgraded);
         return upgraded;
     }

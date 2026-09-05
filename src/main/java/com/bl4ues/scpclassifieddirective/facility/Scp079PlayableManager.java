@@ -1,6 +1,9 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilityCameraDefinition;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveillanceRegistry;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
@@ -42,9 +45,11 @@ import java.util.WeakHashMap;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079PlayableManager {
     private static final double MAX_DEVICE_RANGE_SQR = 24.0D * 24.0D;
+    private static final double CAMERA_SWITCH_COST = 3.0D;
     private static final double DOOR_ACTION_COST = 5.0D;
     private static final double DOOR_LOCK_COST = 12.0D;
     private static final int DOOR_LOCK_TICKS = 100;
+    private static final int ADJACENT_ROOM_GAP = 2;
     private static final Map<MinecraftServer, Session> SESSIONS =
             new WeakHashMap<>();
     private static int followTick;
@@ -162,12 +167,92 @@ public final class Scp079PlayableManager {
             sync(player, session);
             return false;
         }
+        if (camera.id().equals(session.cameraId)) {
+            sync(player, session);
+            return true;
+        }
+        if (!Scp079PlayerPower.trySpend(hostLevel, CAMERA_SWITCH_COST)) {
+            sync(player, session);
+            return false;
+        }
+        applyCameraSwitch(player, session, hostLevel, camera);
+        return true;
+    }
+
+    /**
+     * Switches to one exact camera for physical WASD navigation. The target must
+     * be inside the current room or a genuinely adjacent mapped room.
+     */
+    public static boolean switchToCamera(ServerPlayer player, UUID cameraId) {
+        Session session = session(player);
+        if (session == null || session.cameraId == null || cameraId == null) {
+            return false;
+        }
+        ServerLevel hostLevel = player.server.getLevel(session.hostDimension);
+        if (hostLevel == null || !networkAvailable(player, hostLevel)) return false;
+
+        FacilityCameraDefinition current = currentCamera(player, session);
+        FacilityCameraDefinition target = FacilitySurveillanceRegistry.camera(
+                hostLevel, cameraId);
+        if (current == null || target == null) return false;
+        if (target.id().equals(current.id())) return true;
+
+        FacilityRoomSnapshot currentRoom = roomForCamera(hostLevel, current);
+        FacilityRoomSnapshot targetRoom = roomForCamera(hostLevel, target);
+        if (currentRoom == null || targetRoom == null
+                || !(currentRoom.id().equals(targetRoom.id())
+                || adjacent(currentRoom, targetRoom))) {
+            return false;
+        }
+        if (!Scp079PlayerPower.trySpend(hostLevel, CAMERA_SWITCH_COST)) {
+            sync(player, session);
+            return false;
+        }
+        applyCameraSwitch(player, session, hostLevel, target);
+        return true;
+    }
+
+    private static void applyCameraSwitch(ServerPlayer player, Session session,
+            ServerLevel hostLevel, FacilityCameraDefinition camera) {
         SpeakerBroadcastManager.stop(player);
         session.cameraId = camera.id();
         Scp079ScreenState.setLocalActive(hostLevel, session.hostPos, false);
         anchorToCamera(player, camera, true);
         sync(player, session);
-        return true;
+    }
+
+    private static FacilityRoomSnapshot roomForCamera(ServerLevel level,
+            FacilityCameraDefinition camera) {
+        if (level == null || camera == null) return null;
+        BlockPos eye = BlockPos.containing(camera.eyePosition());
+        for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
+            if (room.containsColumn(eye)) return room;
+        }
+        for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
+            if (Scp079RoomInteractionPolicy.withinExpandedFloor(room,
+                    camera.anchorPos(), 1)) return room;
+        }
+        return null;
+    }
+
+    private static boolean adjacent(FacilityRoomSnapshot a,
+            FacilityRoomSnapshot b) {
+        if (!a.floorLongLabel().equalsIgnoreCase(b.floorLongLabel())) return false;
+        for (FacilityFloorPatch pa : a.patches()) {
+            for (FacilityFloorPatch pb : b.patches()) {
+                if (Math.abs(pa.y() - pb.y()) > 3) continue;
+                int gapX = intervalGap(pa.minX(), pa.maxX(), pb.minX(), pb.maxX());
+                int gapZ = intervalGap(pa.minZ(), pa.maxZ(), pb.minZ(), pb.maxZ());
+                if (Math.max(gapX, gapZ) <= ADJACENT_ROOM_GAP) return true;
+            }
+        }
+        return false;
+    }
+
+    private static int intervalGap(int amin, int amax, int bmin, int bmax) {
+        if (amax < bmin) return bmin - amax - 1;
+        if (bmax < amin) return amin - bmax - 1;
+        return 0;
     }
 
     /** Toggles the room-wide voice endpoint without requiring an aimed block. */

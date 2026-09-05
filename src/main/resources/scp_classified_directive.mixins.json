@@ -90,6 +90,7 @@
     "client.Scp939PinnedPlayerRotationMixin",
     "client.Scp939ModelPolishMixin",
     "client.PlayerSmoothCrouchMixin",
+    "client.InventoryPdaPlayerModelMixin",
     "client.Scp714ComaPromptMixin",
     "client.LevelRendererEntityTargetAccessor",
     "client.Scp079PlayableVisualMixin",

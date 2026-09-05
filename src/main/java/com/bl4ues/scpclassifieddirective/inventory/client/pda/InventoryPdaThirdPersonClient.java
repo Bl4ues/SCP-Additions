@@ -1,19 +1,16 @@
 package com.bl4ues.scpclassifieddirective.inventory.client.pda;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -26,8 +23,6 @@ public final class InventoryPdaThirdPersonClient {
     private static final long CLOSE_TRANSITION_NANOS = 1_050_000_000L;
     private static final Map<UUID, PresentationState> PRESENTATIONS =
             new HashMap<>();
-    private static final Map<PlayerModel<?>, ArmPose> ARM_POSES =
-            new IdentityHashMap<>();
 
     private InventoryPdaThirdPersonClient() {
     }
@@ -46,68 +41,24 @@ public final class InventoryPdaThirdPersonClient {
                 new PresentationState(open, now, current));
     }
 
-    @SubscribeEvent
-    public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
-        float progress = progress(event.getEntity().getUUID());
+    /** Applied after PlayerModel.setupAnim so vanilla cannot overwrite it. */
+    public static void applyArmPose(PlayerModel<?> model, Player player) {
+        float progress = progress(player.getUUID());
         if (progress <= 0.0F) return;
-        PlayerModel<?> model = event.getRenderer().getModel();
-        ArmPose original = new ArmPose(model);
-        ARM_POSES.put(model, original);
         poseArm(model.rightArm,
-                lerp(original.rightX, -1.38F, progress),
-                lerp(original.rightY, -0.18F, progress),
-                lerp(original.rightZ, 0.08F, progress));
+                lerp(model.rightArm.xRot, -1.38F, progress),
+                lerp(model.rightArm.yRot, -0.18F, progress),
+                lerp(model.rightArm.zRot, 0.08F, progress));
         poseArm(model.leftArm,
-                lerp(original.leftX, -1.30F, progress),
-                lerp(original.leftY, 0.22F, progress),
-                lerp(original.leftZ, -0.08F, progress));
+                lerp(model.leftArm.xRot, -1.30F, progress),
+                lerp(model.leftArm.yRot, 0.22F, progress),
+                lerp(model.leftArm.zRot, -0.08F, progress));
         model.rightSleeve.copyFrom(model.rightArm);
         model.leftSleeve.copyFrom(model.leftArm);
     }
 
-    @SubscribeEvent
-    public static void onRenderPlayer(RenderPlayerEvent.Post event) {
-        Player player = event.getEntity();
-        PlayerModel<?> model = event.getRenderer().getModel();
-        ArmPose previous = ARM_POSES.remove(model);
-        float progress = progress(player.getUUID());
-        if (progress <= 0.0F) {
-            if (previous != null) previous.restore(model);
-            return;
-        }
-        if (player == Minecraft.getInstance().player
-                && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
-            if (previous != null) previous.restore(model);
-            return;
-        }
-
-        event.getPoseStack().pushPose();
-        // RenderPlayerEvent uses a body-local coordinate system whose positive
-        // Y points down after the player renderer's own transform. Keep this
-        // smartphone-sized PDA in front of the upper chest and draw it upward
-        // from the player's lower-right side.
-        float hiddenY = player.isCrouching() ? 1.25F : 1.48F;
-        float heldY = player.isCrouching() ? 0.21F : 0.31F;
-        event.getPoseStack().translate(
-                lerp(0.16F, 0.0F, progress),
-                lerp(hiddenY, heldY, progress),
-                lerp(0.03F, -0.58F, progress));
-        event.getPoseStack().mulPose(Axis.YP.rotationDegrees(
-                lerp(224.0F, 180.0F, progress)));
-        event.getPoseStack().mulPose(Axis.XP.rotationDegrees(
-                lerp(8.0F, 15.0F, progress)));
-        event.getPoseStack().mulPose(Axis.ZP.rotationDegrees(
-                lerp(-4.0F, -90.0F, progress)));
-        event.getPoseStack().scale(0.068F, 0.068F, 0.068F);
-        // GeoObjectRenderer adds (0.5, 0.51, 0.5) before rendering. Offset
-        // the authored screen center so the device, rather than its raw model
-        // origin, sits between the player's hands.
-        event.getPoseStack().translate(-0.5F,
-                -(0.51F + 43.0F / 16.0F), 0.0F);
-        InventoryPdaRenderer.INSTANCE.renderThirdPerson(event.getPoseStack(),
-                event.getPackedLight());
-        event.getPoseStack().popPose();
-        if (previous != null) previous.restore(model);
+    static float progress(Player player) {
+        return player == null ? 0.0F : progress(player.getUUID());
     }
 
     @SubscribeEvent
@@ -115,7 +66,6 @@ public final class InventoryPdaThirdPersonClient {
         if (event.phase != TickEvent.Phase.END) return;
         if (Minecraft.getInstance().level == null) {
             PRESENTATIONS.clear();
-            ARM_POSES.clear();
             return;
         }
         long now = System.nanoTime();
@@ -147,22 +97,6 @@ public final class InventoryPdaThirdPersonClient {
         arm.xRot = x;
         arm.yRot = y;
         arm.zRot = z;
-    }
-
-    private record ArmPose(float rightX, float rightY, float rightZ,
-            float leftX, float leftY, float leftZ) {
-        private ArmPose(PlayerModel<?> model) {
-            this(model.rightArm.xRot, model.rightArm.yRot,
-                    model.rightArm.zRot, model.leftArm.xRot,
-                    model.leftArm.yRot, model.leftArm.zRot);
-        }
-
-        private void restore(PlayerModel<?> model) {
-            poseArm(model.rightArm, rightX, rightY, rightZ);
-            poseArm(model.leftArm, leftX, leftY, leftZ);
-            model.rightSleeve.copyFrom(model.rightArm);
-            model.leftSleeve.copyFrom(model.leftArm);
-        }
     }
 
     private record PresentationState(boolean opening, long changedNanos,

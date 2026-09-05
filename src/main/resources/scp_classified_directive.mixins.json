@@ -46,6 +46,7 @@
     "client.DeathScreenInvoker",
     "client.DeathScreenDimensionTransferMixin",
     "client.InventoryPdaScreenTransitionMixin",
+    "client.InventoryPdaDocumentCloseAudioMixin",
     "client.ScpDeathScreenLiveFeedMixin",
     "client.ResponsiveScreenForgeHooksMixin",
     "client.ResponsiveScreenRenderEventMixin",

@@ -26,6 +26,8 @@
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",
     "Scp079PlayerControlAiGateMixin",
+    "Scp079PlayableProcessingMixin",
+    "Scp079PlayableRoomRangeMixin",
     "Scp079ActionAudioNetworkRegistrationMixin",
     "Scp079PlayableActionAudioMixin",
     "Scp079TeslaActionAudioMixin",
@@ -90,6 +92,8 @@
     "client.Scp079PlayableVisualMixin",
     "client.Scp079PlayableNetworkAudioMixin",
     "client.Scp079FacilityMapScreenAccessor",
+    "client.Scp079FacilityMapWarpInputMixin",
+    "client.Scp079LeaveRoleWarpInputMixin",
     "client.ScpRoleSelectorPreviewMixin"
   ],
   "injectors": {

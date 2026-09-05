@@ -10,6 +10,7 @@ import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveilla
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveillanceSavedData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
@@ -57,11 +58,13 @@ public final class Scp079CameraNavigationNetwork {
 
     private static void sendTopology(ServerPlayer player) {
         if (player == null || !Scp079PlayableManager.isController(player)) return;
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
         ServerLevel level = player.serverLevel();
         List<FacilityRoomSnapshot> rooms = FacilityMappingManager.roomSnapshots(level);
         List<CameraNode> nodes = new ArrayList<>();
         for (FacilityCameraDefinition raw : FacilitySurveillanceSavedData
-                .get(player.server).all()) {
+                .get(server).all()) {
             if (!raw.dimension().equals(level.dimension().location())) continue;
             FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
                     level, raw.id());
@@ -73,9 +76,9 @@ public final class Scp079CameraNavigationNetwork {
                     camera.eyePosition().y, camera.eyePosition().z,
                     camera.baseYaw()));
         }
-        nodes.sort(Comparator.comparing((CameraNode node) -> node.roomName,
+        nodes.sort(Comparator.comparing(CameraNode::roomName,
                         String.CASE_INSENSITIVE_ORDER)
-                .thenComparing(node -> node.cameraId.toString()));
+                .thenComparing(node -> node.cameraId().toString()));
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new TopologyState(List.copyOf(nodes)));

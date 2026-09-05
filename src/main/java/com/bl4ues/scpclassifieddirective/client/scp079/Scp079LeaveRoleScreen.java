@@ -93,8 +93,8 @@ public final class Scp079LeaveRoleScreen extends Screen {
         int line = danger ? 0xFFE28A7F : 0xFF75B7CC;
         graphics.fill(x, y, x + w, y + h, fill);
         border(graphics, x, y, w, h, line);
-        Scp079UiTheme.drawCentered(graphics, font, text,
-                x + w * 0.5F, y + 11, 1.08F, 0xFFFFFFFF);
+        Scp079UiTheme.drawCenteredInControl(graphics, font, text,
+                x + w * 0.5F, y, h, 1.08F, 0xFFFFFFFF);
     }
 
     private static boolean inside(double mouseX, double mouseY,

@@ -22,6 +22,9 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 /** Client renderer for the authored wall-mounted surveillance camera. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -49,6 +52,11 @@ public final class SurveillanceCameraClient {
 
     private static final class BlockModel extends GeoModel<
             SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity> {
+        private static final float RELEASE_YAW_SPEED = 58.0F;
+        private static final float RELEASE_PITCH_SPEED = 45.0F;
+        private final Map<SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity,
+                ReleasePose> releasePoses = new WeakHashMap<>();
+
         @Override
         public ResourceLocation getModelResource(
                 SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity animatable) {
@@ -81,6 +89,7 @@ public final class SurveillanceCameraClient {
             float pitchDegrees = animatable.visualPitch(animationState.getPartialTick());
 
             Minecraft minecraft = Minecraft.getInstance();
+            long now = System.nanoTime();
             if (isLocallyControlled(animatable, minecraft)) {
                 BlockState state = animatable.getBlockState();
                 Direction facing = state.hasProperty(
@@ -94,6 +103,32 @@ public final class SurveillanceCameraClient {
                 pitchDegrees = Mth.clamp(minecraft.player.getXRot(),
                         SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH,
                         SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH);
+                ReleasePose pose = releasePoses.computeIfAbsent(animatable,
+                        ignored -> new ReleasePose());
+                pose.yaw = yawDegrees;
+                pose.pitch = pitchDegrees;
+                pose.lastNanos = now;
+            } else {
+                ReleasePose pose = releasePoses.get(animatable);
+                if (pose != null) {
+                    float dt = Mth.clamp((now - pose.lastNanos)
+                            / 1_000_000_000.0F, 0.0F, 0.05F);
+                    pose.lastNanos = now;
+                    pose.yaw = Mth.approachDegrees(pose.yaw, yawDegrees,
+                            RELEASE_YAW_SPEED * dt);
+                    pose.pitch = Mth.approach(pose.pitch, pitchDegrees,
+                            RELEASE_PITCH_SPEED * dt);
+                    yawDegrees = pose.yaw;
+                    pitchDegrees = pose.pitch;
+                    if (Math.abs(Mth.wrapDegrees(pose.yaw
+                            - animatable.visualYaw(animationState.getPartialTick())))
+                            <= 0.08F
+                            && Math.abs(pose.pitch
+                            - animatable.visualPitch(animationState.getPartialTick()))
+                            <= 0.08F) {
+                        releasePoses.remove(animatable);
+                    }
+                }
             }
 
             if (yaw != null) {
@@ -117,6 +152,12 @@ public final class SurveillanceCameraClient {
                     camera.getBlockPos(), camera.getBlockState());
             return Scp079PlayableClient.viewPosition().distanceToSqr(baseEye)
                     <= 0.64D;
+        }
+
+        private static final class ReleasePose {
+            private float yaw;
+            private float pitch;
+            private long lastNanos;
         }
     }
 

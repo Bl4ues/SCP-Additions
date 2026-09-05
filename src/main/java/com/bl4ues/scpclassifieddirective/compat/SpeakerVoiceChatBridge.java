@@ -10,6 +10,7 @@ import de.maxhenkel.voicechat.api.opus.OpusDecoder;
 import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import de.maxhenkel.voicechat.api.packets.LocationalSoundPacket;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
+import de.maxhenkel.voicechat.api.packets.StaticSoundPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -47,9 +48,11 @@ public final class SpeakerVoiceChatBridge {
         short[] decoded = decode(api, operator.getUUID(), opus);
         if (decoded == null || decoded.length == 0) return;
 
+        byte[] monitorFrame = null;
         for (SpeakerBroadcastManager.VoiceSource source : sources) {
             byte[] filtered = encode(api, operator.getUUID(), source, decoded);
             if (filtered == null || filtered.length == 0) continue;
+            if (monitorFrame == null) monitorFrame = filtered;
             LocationalSoundPacket packet;
             try {
                 packet = microphone.locationalSoundPacketBuilder()
@@ -67,6 +70,7 @@ public final class SpeakerVoiceChatBridge {
             }
             sendToReceivers(api, operator.getServer(), operator, source, packet);
         }
+        sendMonitor(api, operator, microphone, monitorFrame);
     }
 
     private static short[] decode(VoicechatServerApi api, UUID operator,
@@ -128,6 +132,41 @@ public final class SpeakerVoiceChatBridge {
         }
     }
 
+    /**
+     * Simple Voice Chat normally suppresses a player's own microphone. Give the
+     * active operator one non-positional return of the already filtered signal
+     * so a solo SCP-079 can hear and verify the Speaker feed without receiving
+     * the room's microphone audio through the remote camera.
+     */
+    private static void sendMonitor(VoicechatServerApi api,
+            ServerPlayer operator, MicrophonePacket microphone, byte[] opus) {
+        if (opus == null || opus.length == 0) return;
+        VoicechatConnection connection = api.getConnectionOf(operator.getUUID());
+        if (connection == null || !connection.isConnected()
+                || !connection.isInstalled()) return;
+
+        StaticSoundPacket packet;
+        try {
+            packet = microphone.staticSoundPacketBuilder()
+                    .channelId(monitorChannelId(operator.getUUID()))
+                    .opusEncodedData(opus)
+                    .build();
+        } catch (RuntimeException | LinkageError exception) {
+            ScpClassifiedDirectiveMod.LOGGER.debug(
+                    "Could not build facility Speaker monitor frame",
+                    exception);
+            return;
+        }
+
+        try {
+            api.sendStaticSoundPacketTo(connection, packet);
+        } catch (RuntimeException | LinkageError exception) {
+            ScpClassifiedDirectiveMod.LOGGER.debug(
+                    "Could not send facility Speaker monitor frame",
+                    exception);
+        }
+    }
+
     private static void prune(UUID operator,
             List<SpeakerBroadcastManager.VoiceSource> sources) {
         Set<ChannelKey> active = new HashSet<>();
@@ -172,6 +211,12 @@ public final class SpeakerVoiceChatBridge {
         String key = ScpClassifiedDirectiveMod.MODID + ":speaker:"
                 + operator + ":" + source.dimension().location() + ":"
                 + source.pos().asLong();
+        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static UUID monitorChannelId(UUID operator) {
+        String key = ScpClassifiedDirectiveMod.MODID + ":speaker_monitor:"
+                + operator;
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 

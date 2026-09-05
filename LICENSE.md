@@ -34,6 +34,7 @@ The following font files are redistributed with SCP: Classified Directive and re
 | Titillium Web Regular | Core Room elevator arrival display | Copyright 2009–2011 Accademia di Belle Arti di Urbino and the Titillium Web project authors | [SIL Open Font License 1.1](https://github.com/google/fonts/blob/main/ofl/titilliumweb/OFL.txt) |
 | Liberation Sans Bold 1.04 | Core Room Sign text | Digitized data © 2007 Ascender Corporation; designed by Steve Matteson; Liberation is a trademark of Red Hat, Inc. | [GNU GPL v2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) with the [Liberation Fonts exceptions](https://github.com/liberationfonts/liberation-sans-narrow/blob/master/License.txt) |
 | Anonymous Pro Regular 1.003 | Door Sign text | Copyright © 2009 Mark Simonson; Reserved Font Name: Anonymous Pro | [SIL Open Font License 1.1](https://www.marksimonson.com/fonts/view/anonymous/) |
+| PF Videotext | SCP-079 playable interface | Copyright Parachute® Typefoundry; designed by Panos Vassiliou | Proprietary commercial font; embedding and redistribution are subject to the applicable [Parachute Type Foundry license](https://parachutefonts.com/) |
 | Jura Variable 5.106 | Door Sign numbers | Copyright 2019 The Jura Project Authors; designed by Daniel Johnson, Alexei Vanyashin, and Mirko Velimirovic | [SIL Open Font License 1.1](https://github.com/ossobuffo/jura/blob/master/OFL.txt) |
 | Noto Sans Bold | Facility Signs text | Copyright 2018 The Noto Project Authors | [SIL Open Font License 1.1](https://github.com/notofonts/noto-fonts/blob/main/LICENSE) |
 

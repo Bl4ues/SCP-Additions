@@ -43,7 +43,8 @@ public final class SpeakerAudioClient {
     }
 
     private static final class SpeakerLoop extends AbstractTickableSoundInstance {
-        private static final float TARGET_VOLUME = 0.72F;
+        private static final float TARGET_VOLUME = 1.55F;
+        private static final float START_VOLUME = 0.08F;
         private final Key key;
         private boolean stopRequested;
         private boolean finished;
@@ -54,7 +55,7 @@ public final class SpeakerAudioClient {
             this.key = key;
             this.looping = true;
             this.delay = 0;
-            this.volume = 0.01F;
+            this.volume = START_VOLUME;
             this.pitch = 1.0F;
             this.relative = false;
             this.attenuation = SoundInstance.Attenuation.LINEAR;
@@ -72,6 +73,11 @@ public final class SpeakerAudioClient {
         }
 
         @Override
+        public boolean canStartSilent() {
+            return true;
+        }
+
+        @Override
         public void tick() {
             Minecraft minecraft = Minecraft.getInstance();
             boolean valid = minecraft.level == key.level
@@ -81,10 +87,10 @@ public final class SpeakerAudioClient {
                     && key.level.getBlockState(key.pos)
                     .getValue(SpeakerModule.ACTIVE);
             if (!stopRequested && valid) {
-                volume = Mth.approach(volume, TARGET_VOLUME, 0.09F);
+                volume = Mth.approach(volume, TARGET_VOLUME, 0.12F);
                 return;
             }
-            volume = Mth.approach(volume, 0.0F, 0.12F);
+            volume = Mth.approach(volume, 0.0F, 0.16F);
             if (volume <= 0.001F) {
                 finished = true;
                 stop();

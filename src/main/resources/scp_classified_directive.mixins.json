@@ -28,6 +28,7 @@
     "Scp079PlayerControlAiGateMixin",
     "Scp079PlayableProcessingMixin",
     "Scp079PlayableRoomRangeMixin",
+    "Scp079PlayablePersistenceMixin",
     "Scp079ActionAudioNetworkRegistrationMixin",
     "Scp079PlayableActionAudioMixin",
     "Scp079TeslaActionAudioMixin",

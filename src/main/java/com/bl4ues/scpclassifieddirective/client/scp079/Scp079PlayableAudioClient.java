@@ -24,8 +24,9 @@ import java.util.function.Supplier;
 /** Listener-relative audio heard only by the player currently controlling SCP-079. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, value = Dist.CLIENT)
 public final class Scp079PlayableAudioClient {
-    /** Slightly below the Live Personnel Feed's 1.0 static bed. */
-    private static final float STATIC_LOOP_VOLUME = 0.72F;
+    private static final float CAMERA_STATIC_VOLUME = 0.60F;
+    private static final float MAP_STATIC_VOLUME = 0.46F;
+    private static final float LOCAL_STATIC_VOLUME = 0.22F;
     private static final float MINIMUM_RUNNING_VOLUME = 0.001F;
 
     private static FeedLoopSound feedStatic;
@@ -38,9 +39,7 @@ public final class Scp079PlayableAudioClient {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
-        boolean feedActive = Scp079PlayableClient.cameraMode();
-
-        if (!feedActive) {
+        if (!Scp079PlayableClient.active()) {
             stop(minecraft, feedStatic);
             stop(minecraft, feedTransition);
             feedStatic = null;
@@ -52,7 +51,7 @@ public final class Scp079PlayableAudioClient {
                 || !minecraft.getSoundManager().isActive(feedStatic)) {
             stop(minecraft, feedStatic);
             feedStatic = new FeedLoopSound("feed_static",
-                    () -> STATIC_LOOP_VOLUME);
+                    Scp079PlayableAudioClient::staticVolume);
             minecraft.getSoundManager().play(feedStatic);
         }
         if (feedTransition == null
@@ -72,12 +71,27 @@ public final class Scp079PlayableAudioClient {
         playRaw("079select_2", 1.0F, 1.0F);
     }
 
+    /** Lower, quieter room-selection cue for map/local-host display changes. */
+    public static void playDisplaySwitch() {
+        playRaw("079select_2", 0.70F, 0.50F);
+    }
+
     public static void playLockOrTesla() {
         playRaw("079select_3", 1.0F, 1.0F);
     }
 
     public static void playDoorToggle() {
         playRaw("079select_4", 1.0F, 1.0F);
+    }
+
+    private static float staticVolume() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof Scp079FacilityMapScreen
+                || minecraft.screen instanceof Scp079LeaveRoleScreen) {
+            return MAP_STATIC_VOLUME;
+        }
+        return Scp079PlayableClient.cameraMode()
+                ? CAMERA_STATIC_VOLUME : LOCAL_STATIC_VOLUME;
     }
 
     private static void playRaw(String path, float volume, float pitch) {
@@ -92,7 +106,6 @@ public final class Scp079PlayableAudioClient {
         minecraft.getSoundManager().stop(sound);
     }
 
-    /** Raw, listener-relative OGG used for the four authored SCP-079 UI cues. */
     private static final class DirectSound extends AbstractSoundInstance {
         private final Sound directSound;
         private final WeighedSoundEvents directEvent;
@@ -116,7 +129,7 @@ public final class Scp079PlayableAudioClient {
             this.relative = true;
             this.attenuation = SoundInstance.Attenuation.NONE;
             this.volume = Mth.clamp(volume, 0.0F, 1.0F);
-            this.pitch = pitch;
+            this.pitch = Mth.clamp(pitch, 0.05F, 2.0F);
         }
 
         @Override
@@ -164,7 +177,7 @@ public final class Scp079PlayableAudioClient {
 
         @Override
         public void tick() {
-            if (!Scp079PlayableClient.cameraMode()) {
+            if (!Scp079PlayableClient.active()) {
                 stop();
                 return;
             }

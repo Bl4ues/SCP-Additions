@@ -41,6 +41,13 @@ import java.util.UUID;
  */
 public final class SurveillanceCameraPlaceholderModule {
     public static final String PATH = "surveillance_camera";
+    /** Full manual range: 180 degrees horizontal, centered on the mount. */
+    public static final float MANUAL_YAW_LIMIT = 90.0F;
+    /** Full manual range: 90 degrees vertical. */
+    public static final float MANUAL_MIN_PITCH = -45.0F;
+    public static final float MANUAL_MAX_PITCH = 45.0F;
+    /** Target half-range for the future idle sweep when nobody controls it. */
+    public static final float IDLE_SWEEP_YAW_LIMIT = 50.0F;
 
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpClassifiedDirectiveMod.MODID);
@@ -152,7 +159,8 @@ public final class SurveillanceCameraPlaceholderModule {
                     + ", " + pos.getZ();
             FacilitySurveillanceRegistry.register(level, cameraId(level, pos),
                     pos, eye, name, facing.toYRot(), 0.0F,
-                    75.0F, -50.0F, 55.0F, 2.5F);
+                    MANUAL_YAW_LIMIT, MANUAL_MIN_PITCH,
+                    MANUAL_MAX_PITCH, 2.5F);
         }
 
         private static UUID cameraId(ServerLevel level, BlockPos pos) {

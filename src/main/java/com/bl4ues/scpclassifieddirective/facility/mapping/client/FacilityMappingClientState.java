@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.mapping.client;
 
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -39,9 +41,25 @@ public final class FacilityMappingClientState {
     public static FacilityRoomSnapshot roomAt(ResourceLocation dimension,
             BlockPos pos) {
         for (FacilityRoomSnapshot room : rooms(dimension)) {
-            if (room.containsColumn(pos)) return room;
+            if (room.containsColumn(pos) || withinBorder(room, pos, 1)) return room;
         }
         return null;
+    }
+
+    private static boolean withinBorder(FacilityRoomSnapshot room,
+            BlockPos pos, int border) {
+        if (room == null || pos == null) return false;
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (pos.getX() < patch.minX() - border
+                    || pos.getX() > patch.maxX() + border
+                    || pos.getZ() < patch.minZ() - border
+                    || pos.getZ() > patch.maxZ() + border) continue;
+            if (pos.getY() >= patch.y() - 1
+                    && pos.getY() <= patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void clear() {

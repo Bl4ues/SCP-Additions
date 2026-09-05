@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
@@ -18,7 +19,10 @@ import net.minecraftforge.fml.common.Mod;
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079CameraEffectsClient {
     private static final long INTERFERENCE_NANOS = 280_000_000L;
+    private static final long AUDIO_FADE_IN_NANOS = 110_000_000L;
+    private static final long AUDIO_FADE_OUT_NANOS = 150_000_000L;
     private static Vec3 lastFeedPosition;
+    private static long interferenceStartedAt;
     private static long interferenceUntil;
 
     private Scp079CameraEffectsClient() { }
@@ -28,14 +32,43 @@ public final class Scp079CameraEffectsClient {
         if (event.phase != TickEvent.Phase.END) return;
         if (!Scp079PlayableClient.cameraMode()) {
             lastFeedPosition = null;
+            interferenceStartedAt = 0L;
+            interferenceUntil = 0L;
             return;
         }
         Vec3 current = Scp079PlayableClient.viewPosition();
         if (lastFeedPosition == null
                 || current.distanceToSqr(lastFeedPosition) > 0.25D) {
-            interferenceUntil = System.nanoTime() + INTERFERENCE_NANOS;
+            long now = System.nanoTime();
+            interferenceStartedAt = now;
+            interferenceUntil = now + INTERFERENCE_NANOS;
             lastFeedPosition = current;
         }
+    }
+
+    /**
+     * Shared hand-off envelope for effects tied to the authored feed transition.
+     * Keeping this here prevents the visual static and transition audio from
+     * drifting onto independent timers when cameras are switched quickly.
+     */
+    public static float transitionEnvelope() {
+        if (!Scp079PlayableClient.cameraMode() || interferenceStartedAt <= 0L) {
+            return 0.0F;
+        }
+        long now = System.nanoTime();
+        if (now >= interferenceUntil) return 0.0F;
+        float fadeIn = smootherStep(Mth.clamp(
+                (now - interferenceStartedAt) / (float) AUDIO_FADE_IN_NANOS,
+                0.0F, 1.0F));
+        float fadeOut = smootherStep(Mth.clamp(
+                (interferenceUntil - now) / (float) AUDIO_FADE_OUT_NANOS,
+                0.0F, 1.0F));
+        return Mth.clamp(fadeIn * fadeOut, 0.0F, 1.0F);
+    }
+
+    private static float smootherStep(float value) {
+        float t = Mth.clamp(value, 0.0F, 1.0F);
+        return t * t * (3.0F - 2.0F * t);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

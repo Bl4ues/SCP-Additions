@@ -1,7 +1,8 @@
 package com.bl4ues.scpclassifieddirective.facility.surveillance;
 
+import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
-import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.Vec3;
@@ -43,14 +44,15 @@ public final class FacilitySurveillanceRegistry {
     public static List<FacilityCameraDefinition> camerasForRoom(
             ServerLevel level, UUID roomId) {
         if (level == null || roomId == null) return List.of();
+        FacilityRoomSnapshot targetRoom = FacilityMappingManager.roomSnapshots(level)
+                .stream().filter(room -> room.id().equals(roomId))
+                .findFirst().orElse(null);
+        if (targetRoom == null) return List.of();
         return FacilitySurveillanceSavedData.get(level.getServer()).all().stream()
                 .filter(camera -> camera.dimension().equals(
                         level.dimension().location()))
-                .filter(camera -> {
-                    FacilityRoom room = FacilityMappingManager.roomForPosition(
-                            level, camera.anchorPos());
-                    return room != null && room.id().equals(roomId);
-                })
+                .filter(camera -> Scp079RoomInteractionPolicy.withinExpandedFloor(
+                        targetRoom, camera.anchorPos(), 1))
                 .sorted(Comparator.comparing(FacilityCameraDefinition::name,
                         String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(camera -> camera.id().toString()))

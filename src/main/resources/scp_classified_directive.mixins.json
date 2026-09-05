@@ -81,6 +81,7 @@
     "client.FontMixin",
     "client.DamageIndicatorParticleMixin",
     "client.ChatComponentMixin",
+    "client.ChatScreenMixin",
     "client.CommandSuggestionsMixin",
     "client.AdvancementToastMixin",
     "client.ToastVisibilityMixin",

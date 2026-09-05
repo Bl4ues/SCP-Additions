@@ -37,8 +37,9 @@ public final class FacilitySurveillanceRegistry {
         if (level == null || id == null) return null;
         FacilityCameraDefinition camera = FacilitySurveillanceSavedData
                 .get(level.getServer()).get(id);
-        return camera != null && camera.dimension().equals(
-                level.dimension().location()) ? camera : null;
+        if (camera == null || !camera.dimension().equals(
+                level.dimension().location())) return null;
+        return normalizePlaceholder(level, camera);
     }
 
     public static List<FacilityCameraDefinition> camerasForRoom(
@@ -51,6 +52,7 @@ public final class FacilitySurveillanceRegistry {
         return FacilitySurveillanceSavedData.get(level.getServer()).all().stream()
                 .filter(camera -> camera.dimension().equals(
                         level.dimension().location()))
+                .map(camera -> normalizePlaceholder(level, camera))
                 .filter(camera -> Scp079RoomInteractionPolicy.withinExpandedFloor(
                         targetRoom, camera.anchorPos(), 1))
                 .sorted(Comparator.comparing(FacilityCameraDefinition::name,
@@ -70,5 +72,33 @@ public final class FacilitySurveillanceRegistry {
             }
         }
         return cameras.get(0);
+    }
+
+    /**
+     * Existing test worlds may have placeholder cameras persisted with the old
+     * movement envelope. Upgrade those definitions lazily without touching
+     * cameras supplied by future integrations or map-makers.
+     */
+    private static FacilityCameraDefinition normalizePlaceholder(
+            ServerLevel level, FacilityCameraDefinition camera) {
+        if (camera == null || !level.getBlockState(camera.anchorPos()).is(
+                SurveillanceCameraPlaceholderModule.BLOCK.get())) {
+            return camera;
+        }
+        float yaw = SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT;
+        float minPitch = SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH;
+        float maxPitch = SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH;
+        if (Float.compare(camera.yawLimit(), yaw) == 0
+                && Float.compare(camera.minPitch(), minPitch) == 0
+                && Float.compare(camera.maxPitch(), maxPitch) == 0) {
+            return camera;
+        }
+        FacilityCameraDefinition upgraded = new FacilityCameraDefinition(
+                camera.id(), camera.dimension(), camera.anchorPos(),
+                camera.eyePosition(), camera.name(), camera.baseYaw(),
+                camera.basePitch(), yaw, minPitch, maxPitch,
+                camera.maxZoom());
+        FacilitySurveillanceSavedData.get(level.getServer()).put(upgraded);
+        return upgraded;
     }
 }

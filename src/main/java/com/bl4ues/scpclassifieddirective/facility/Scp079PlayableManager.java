@@ -5,6 +5,8 @@ import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilityCameraDef
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveillanceRegistry;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
+import com.bl4ues.scpclassifieddirective.facility.speaker.FacilitySpeakerRegistry;
+import com.bl4ues.scpclassifieddirective.facility.speaker.SpeakerBroadcastManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -127,12 +129,14 @@ public final class Scp079PlayableManager {
             }
             SESSIONS.remove(player.getServer());
         }
+        SpeakerBroadcastManager.stop(player);
         restore(player, session);
     }
 
     public static void returnToHost(ServerPlayer player) {
         Session session = session(player);
         if (session == null) return;
+        SpeakerBroadcastManager.stop(player);
         session.cameraId = null;
         ServerLevel level = player.server.getLevel(session.hostDimension);
         if (level == null) return;
@@ -158,11 +162,44 @@ public final class Scp079PlayableManager {
             sync(player, session);
             return false;
         }
+        SpeakerBroadcastManager.stop(player);
         session.cameraId = camera.id();
         Scp079ScreenState.setLocalActive(hostLevel, session.hostPos, false);
         anchorToCamera(player, camera, true);
         sync(player, session);
         return true;
+    }
+
+    /** Toggles the room-wide voice endpoint without requiring an aimed block. */
+    public static boolean toggleSpeaker(ServerPlayer player) {
+        Session session = session(player);
+        if (session == null || session.cameraId == null) return false;
+        ServerLevel hostLevel = player.server.getLevel(session.hostDimension);
+        if (hostLevel == null || !networkAvailable(player, hostLevel)) {
+            SpeakerBroadcastManager.stop(player);
+            sync(player, session);
+            return false;
+        }
+        if (SpeakerBroadcastManager.isBroadcasting(player)) {
+            SpeakerBroadcastManager.stop(player);
+            sync(player, session);
+            return true;
+        }
+
+        FacilityCameraDefinition camera = currentCamera(player, session);
+        ServerLevel level = levelFor(player.server, camera == null
+                ? null : camera.dimension());
+        if (camera == null || level == null) return false;
+        var speakers = FacilitySpeakerRegistry.speakersForCamera(level,
+                camera.anchorPos());
+        if (speakers.isEmpty()) {
+            sync(player, session);
+            return false;
+        }
+        boolean started = SpeakerBroadcastManager.start(player,
+                SpeakerBroadcastManager.SourceType.SCP_079, speakers);
+        sync(player, session);
+        return started;
     }
 
     public static boolean performAction(ServerPlayer player,
@@ -320,8 +357,12 @@ public final class Scp079PlayableManager {
         FacilityCameraDefinition camera = network
                 ? currentCamera(player, session) : null;
         if (session.cameraId != null && camera == null) session.cameraId = null;
+        boolean speakerAvailable = camera != null && !FacilitySpeakerRegistry
+                .speakersForCamera(level, camera.anchorPos()).isEmpty();
+        boolean speakerActive = SpeakerBroadcastManager.isBroadcasting(player);
         Scp079PlayableNetwork.sendState(player, session.hostDimension,
-                session.hostPos, power, auxiliary, network, camera);
+                session.hostPos, power, auxiliary, network, camera,
+                speakerAvailable, speakerActive);
     }
 
     /**
@@ -399,6 +440,7 @@ public final class Scp079PlayableManager {
             synchronized (SESSIONS) {
                 SESSIONS.remove(event.getServer());
             }
+            SpeakerBroadcastManager.stop(event.getServer(), session.playerId);
             return;
         }
         if (hostLevel == null || !isHost(hostLevel.getBlockState(session.hostPos))) {
@@ -441,6 +483,7 @@ public final class Scp079PlayableManager {
         if (level != null) {
             Scp079ScreenState.setLocalActive(level, session.hostPos, false);
         }
+        SpeakerBroadcastManager.stop(player.getServer(), player.getUUID());
     }
 
     @SubscribeEvent

@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "scp_classified_directive:speaker",
     "scp_classified_directive:button_roff",
     "scp_classified_directive:button_loff",
     "scp_classified_directive:tesla_gate",

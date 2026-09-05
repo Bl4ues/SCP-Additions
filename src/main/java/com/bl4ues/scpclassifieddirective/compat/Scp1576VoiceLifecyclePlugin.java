@@ -6,7 +6,7 @@ import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.PlayerDisconnectedEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStoppedEvent;
 
-/** Cleans native Opus resources owned by the SCP-1576 voice filter. */
+/** Cleans native Opus resources owned by custom voice-routing filters. */
 @ForgeVoicechatPlugin
 public final class Scp1576VoiceLifecyclePlugin implements VoicechatPlugin {
     @Override
@@ -17,9 +17,14 @@ public final class Scp1576VoiceLifecyclePlugin implements VoicechatPlugin {
     @Override
     public void registerEvents(EventRegistration registration) {
         registration.registerEvent(PlayerDisconnectedEvent.class,
-                event -> Scp1576VoiceChatBridge.forgetSpeaker(
-                        event.getPlayerUuid()));
+                event -> {
+                    Scp1576VoiceChatBridge.forgetSpeaker(event.getPlayerUuid());
+                    SpeakerVoiceChatBridge.forgetOperator(event.getPlayerUuid());
+                });
         registration.registerEvent(VoicechatServerStoppedEvent.class,
-                event -> Scp1576VoiceChatBridge.closeAll());
+                event -> {
+                    Scp1576VoiceChatBridge.closeAll();
+                    SpeakerVoiceChatBridge.closeAll();
+                });
     }
 }

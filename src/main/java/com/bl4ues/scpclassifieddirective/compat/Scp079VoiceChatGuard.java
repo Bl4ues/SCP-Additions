@@ -34,6 +34,7 @@ public final class Scp079VoiceChatGuard implements VoicechatPlugin {
         if (!ModCompatibilityConfig.simpleVoiceChatEnabled()) return;
         ServerPlayer sender = minecraftPlayer(event.getSenderConnection());
         if (sender != null && Scp079PlayableManager.isCameraMode(sender)) {
+            SpeakerVoiceChatBridge.relay(event, sender);
             event.cancel();
         }
     }

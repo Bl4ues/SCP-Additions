@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.client;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModParticleTypes;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079Keybinds;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
@@ -81,6 +82,7 @@ public final class Scp173ClientModEvents {
     public static void registerKeys(RegisterKeyMappingsEvent event) {
         event.register(Scp173Keybinds.BLINK);
         event.register(Scp131Keybinds.DISMISS);
+        event.register(Scp079Keybinds.USE_SPEAKER);
     }
 
     @SubscribeEvent

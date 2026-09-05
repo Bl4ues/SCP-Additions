@@ -43,6 +43,9 @@ public final class Scp079PlayableNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(ActionRequest.class,
                 ActionRequest::encode, ActionRequest::decode,
                 ActionRequest::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(ToggleSpeakerRequest.class,
+                ToggleSpeakerRequest::encode, ToggleSpeakerRequest::decode,
+                ToggleSpeakerRequest::handle);
         ScpClassifiedDirectiveMod.addNetworkMessage(TrackingState.class,
                 TrackingState::encode, TrackingState::decode,
                 TrackingState::handle);
@@ -51,13 +54,15 @@ public final class Scp079PlayableNetwork {
     public static void sendState(ServerPlayer player,
             ResourceKey<Level> dimension, BlockPos hostPos, int power,
             boolean auxiliaryOnline, boolean networkAvailable,
-            FacilityCameraDefinition camera) {
+            FacilityCameraDefinition camera, boolean speakerAvailable,
+            boolean speakerActive) {
         if (player == null || dimension == null || hostPos == null) return;
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 State.active(dimension.location(), hostPos,
                         Math.max(0, Math.min(100, power)), auxiliaryOnline,
-                        networkAvailable, camera));
+                        networkAvailable, camera, speakerAvailable,
+                        speakerActive));
     }
 
     public static void sendInactive(ServerPlayer player) {
@@ -99,37 +104,46 @@ public final class Scp079PlayableNetwork {
                 new ActionRequest(action, aimedPos));
     }
 
+    public static void requestSpeakerToggle() {
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                new ToggleSpeakerRequest());
+    }
+
     public record State(boolean active, ResourceLocation dimension,
             BlockPos hostPos, int power, boolean auxiliaryOnline,
             boolean networkAvailable, UUID cameraId, String cameraName,
             double cameraX, double cameraY, double cameraZ,
             float baseYaw, float basePitch, float yawLimit,
-            float minPitch, float maxPitch, float maxZoom) {
+            float minPitch, float maxPitch, float maxZoom,
+            boolean speakerAvailable, boolean speakerActive) {
         public boolean cameraMode() {
             return active && cameraId != null;
         }
 
         private static State active(ResourceLocation dimension,
                 BlockPos hostPos, int power, boolean auxiliaryOnline,
-                boolean networkAvailable, FacilityCameraDefinition camera) {
+                boolean networkAvailable, FacilityCameraDefinition camera,
+                boolean speakerAvailable, boolean speakerActive) {
             if (camera == null) {
                 return new State(true, dimension, hostPos, power,
                         auxiliaryOnline, networkAvailable, null, "",
                         0.0D, 0.0D, 0.0D, 0.0F, 0.0F, 0.0F,
-                        -55.0F, 55.0F, 1.0F);
+                        -55.0F, 55.0F, 1.0F, false, false);
             }
             return new State(true, dimension, hostPos, power,
                     auxiliaryOnline, networkAvailable, camera.id(),
                     camera.name(), camera.eyePosition().x,
                     camera.eyePosition().y, camera.eyePosition().z,
                     camera.baseYaw(), camera.basePitch(), camera.yawLimit(),
-                    camera.minPitch(), camera.maxPitch(), camera.maxZoom());
+                    camera.minPitch(), camera.maxPitch(), camera.maxZoom(),
+                    speakerAvailable, speakerActive);
         }
 
         private static State inactive() {
             return new State(false, Level.OVERWORLD.location(), BlockPos.ZERO,
                     0, false, false, null, "", 0.0D, 0.0D, 0.0D,
-                    0.0F, 0.0F, 0.0F, -55.0F, 55.0F, 1.0F);
+                    0.0F, 0.0F, 0.0F, -55.0F, 55.0F, 1.0F,
+                    false, false);
         }
 
         private static void encode(State message, FriendlyByteBuf buffer) {
@@ -139,6 +153,8 @@ public final class Scp079PlayableNetwork {
             buffer.writeVarInt(message.power);
             buffer.writeBoolean(message.auxiliaryOnline);
             buffer.writeBoolean(message.networkAvailable);
+            buffer.writeBoolean(message.speakerAvailable);
+            buffer.writeBoolean(message.speakerActive);
             buffer.writeBoolean(message.cameraId != null);
             if (message.cameraId != null) {
                 buffer.writeUUID(message.cameraId);
@@ -162,17 +178,20 @@ public final class Scp079PlayableNetwork {
             int power = buffer.readVarInt();
             boolean auxiliary = buffer.readBoolean();
             boolean network = buffer.readBoolean();
+            boolean speakerAvailable = buffer.readBoolean();
+            boolean speakerActive = buffer.readBoolean();
             if (!buffer.readBoolean()) {
                 return new State(active, dimension, host, power, auxiliary,
                         network, null, "", 0.0D, 0.0D, 0.0D,
-                        0.0F, 0.0F, 0.0F, -55.0F, 55.0F, 1.0F);
+                        0.0F, 0.0F, 0.0F, -55.0F, 55.0F, 1.0F,
+                        false, false);
             }
             return new State(active, dimension, host, power, auxiliary,
                     network, buffer.readUUID(), buffer.readUtf(64),
                     buffer.readDouble(), buffer.readDouble(),
                     buffer.readDouble(), buffer.readFloat(), buffer.readFloat(),
                     buffer.readFloat(), buffer.readFloat(), buffer.readFloat(),
-                    buffer.readFloat());
+                    buffer.readFloat(), speakerAvailable, speakerActive);
         }
 
         private static void handle(State message,
@@ -318,6 +337,23 @@ public final class Scp079PlayableNetwork {
                     Scp079PlayableManager.performAction(player,
                             message.action, message.aimedPos);
                 }
+            });
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record ToggleSpeakerRequest() {
+        private static void encode(ToggleSpeakerRequest message,
+                FriendlyByteBuf buffer) { }
+        private static ToggleSpeakerRequest decode(FriendlyByteBuf buffer) {
+            return new ToggleSpeakerRequest();
+        }
+        private static void handle(ToggleSpeakerRequest message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer player = context.getSender();
+                if (player != null) Scp079PlayableManager.toggleSpeaker(player);
             });
             context.setPacketHandled(true);
         }

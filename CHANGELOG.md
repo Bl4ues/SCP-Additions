@@ -153,6 +153,9 @@
 - Added the Creative-only **Facility Mapping Tool** for defining persistent, irregular room floors and associating them with configured Core Room Floor Stations for surveillance and future CCTV systems;
 - Added the Creative-only **SCP Role Selector** placeholder in **Tools & Utility**; while SCP-079 is the only implemented playable role, right-clicking it assumes or releases SCP-079 through the nearest registered computer in the current dimension;
 - Added a functional **Surveillance Camera** placeholder in the Facility **Functional** section; placed cameras persist in the shared surveillance registry, inherit room membership from the mapped floor beneath them, and reserve the stable `surveillance_camera` registry ID for the future animated GeckoLib replacement;
+- Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section; playable SCP-079 can use a dedicated rebindable shortcut to begin or stop room-wide broadcasts without aiming at the device;
+- Active Speakers play positional startup, shutdown, and continuous static audio, and optionally relay SCP-079's Simple Voice Chat microphone through a deliberately narrow-band, distorted radio filter without adding synthetic noise;
+- Added a shared source-to-Speaker routing layer so the future Intercom can use the same room endpoints, activation state, audio presentation, and voice-filter path;
 - Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## SCP-079 auxiliary isolation and SCiPNET reindexing

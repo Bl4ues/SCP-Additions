@@ -1663,5 +1663,35 @@
         "volume": 1.0
       }
     ]
+  },
+  "speaker_on": {
+    "subtitle": "subtitles.scp_classified_directive.speaker_on",
+    "sounds": [
+      {
+        "name": "scp_classified_directive:speaker_on",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "speaker_off": {
+    "subtitle": "subtitles.scp_classified_directive.speaker_off",
+    "sounds": [
+      {
+        "name": "scp_classified_directive:speaker_off",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "speaker_loop": {
+    "subtitle": "subtitles.scp_classified_directive.speaker_loop",
+    "sounds": [
+      {
+        "name": "scp_classified_directive:speaker_loop",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

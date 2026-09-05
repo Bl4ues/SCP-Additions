@@ -80,6 +80,8 @@ public final class Scp079PlayableClient {
     private static int power;
     private static boolean auxiliaryOnline;
     private static boolean networkAvailable;
+    private static boolean speakerAvailable;
+    private static boolean speakerActive;
     private static UUID cameraId;
     private static String cameraName = "";
     private static Vec3 cameraPosition = Vec3.ZERO;
@@ -111,6 +113,8 @@ public final class Scp079PlayableClient {
         power = Mth.clamp(state.power(), 0, 100);
         auxiliaryOnline = state.auxiliaryOnline();
         networkAvailable = state.networkAvailable();
+        speakerAvailable = state.speakerAvailable();
+        speakerActive = state.speakerActive();
         cameraId = state.cameraId();
         cameraName = state.cameraName();
         cameraPosition = new Vec3(state.cameraX(), state.cameraY(), state.cameraZ());
@@ -206,6 +210,13 @@ public final class Scp079PlayableClient {
         }
         minecraft.player.setDeltaMovement(Vec3.ZERO);
         handleShiftCursor(minecraft);
+        if (cameraMode() && minecraft.screen == null) {
+            while (Scp079Keybinds.USE_SPEAKER.consumeClick()) {
+                if (speakerAvailable || speakerActive) {
+                    Scp079PlayableNetwork.requestSpeakerToggle();
+                }
+            }
+        }
         if (cameraMode() && minecraft.screen == null && !cursorReleased) {
             consumeCameraActions(minecraft);
         }
@@ -478,6 +489,8 @@ public final class Scp079PlayableClient {
         cameraRigLevel = null;
         previousCameraType = null;
         cameraId = null;
+        speakerAvailable = false;
+        speakerActive = false;
         zoom = 1.0F;
     }
 
@@ -567,6 +580,17 @@ public final class Scp079PlayableClient {
         graphics.drawString(minecraft.font,
                 ScpFonts.roboto("HOLD SHIFT  CURSOR"),
                 width - 180, 42, 0xFF7FA5B4, false);
+        if (speakerAvailable || speakerActive) {
+            String speakerPrompt = speakerActive
+                    ? "Stop using Speaker" : "Use Speaker";
+            String key = Scp079Keybinds.USE_SPEAKER
+                    .getTranslatedKeyMessage().getString().toUpperCase(
+                            Locale.ROOT);
+            graphics.drawString(minecraft.font,
+                    ScpFonts.roboto(speakerPrompt + "  [" + key + "]"),
+                    width - 180, 56,
+                    speakerActive ? 0xFFFFC68A : 0xFFBDEEFF, false);
+        }
 
         TargetKind target = aimedTarget(minecraft);
         if (target != TargetKind.NONE) {

@@ -29,6 +29,7 @@ import net.minecraftforge.fml.ModList;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.acoustics.AcousticStimulusSystem;
 import com.bl4ues.scpclassifieddirective.death.DeathSpectateCoordinator;
+import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.scp939.Scp939MimicryHooks;
 
@@ -192,6 +193,11 @@ public final class SimpleVoiceChatCompatibility implements VoicechatPlugin {
         }
         ServerPlayer sender = minecraftPlayer(event.getSenderConnection());
         if (sender == null) return;
+
+        // Camera-mode SCP-079 is an implementation spectator, not a physical
+        // microphone source. Its optional room broadcast is handled by the
+        // dedicated guard regardless of voice-plugin registration order.
+        if (Scp079PlayableManager.isCameraMode(sender)) return;
 
         // A MineZero SCP-714 coma removes player agency completely. Cancel the
         // microphone at the earliest routing point so an unconscious player

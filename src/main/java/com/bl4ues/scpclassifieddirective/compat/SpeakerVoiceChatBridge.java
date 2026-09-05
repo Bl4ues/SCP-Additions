@@ -28,6 +28,10 @@ public final class SpeakerVoiceChatBridge {
     private static final Map<UUID, OpusDecoder> DECODERS = new HashMap<>();
     private static final Map<ChannelKey, FilterChannel> CHANNELS = new HashMap<>();
 
+    // Temporary QA monitor. Flip this single switch off once the Speaker filter
+    // has been validated; ordinary receivers are unaffected either way.
+    private static final boolean OPERATOR_SELF_MONITOR = true;
+
     private SpeakerVoiceChatBridge() {
     }
 
@@ -65,7 +69,7 @@ public final class SpeakerVoiceChatBridge {
                         exception);
                 continue;
             }
-            sendToReceivers(api, operator.getServer(), source, packet);
+            sendToReceivers(api, operator.getServer(), operator, source, packet);
         }
     }
 
@@ -105,11 +109,14 @@ public final class SpeakerVoiceChatBridge {
     }
 
     private static void sendToReceivers(VoicechatServerApi api,
-            MinecraftServer server, SpeakerBroadcastManager.VoiceSource source,
+            MinecraftServer server, ServerPlayer operator,
+            SpeakerBroadcastManager.VoiceSource source,
             LocationalSoundPacket packet) {
         for (ServerPlayer receiver : server.getPlayerList().getPlayers()) {
             if (!receiver.level().dimension().equals(source.dimension())
-                    || DeathSpectateCoordinator.isDeadVoiceParticipant(receiver)) {
+                    || DeathSpectateCoordinator.isDeadVoiceParticipant(receiver)
+                    || (!OPERATOR_SELF_MONITOR
+                    && receiver.getUUID().equals(operator.getUUID()))) {
                 continue;
             }
             VoicechatConnection connection = api.getConnectionOf(
@@ -117,10 +124,9 @@ public final class SpeakerVoiceChatBridge {
             if (connection == null || !connection.isConnected()
                     || !connection.isInstalled()) continue;
             try {
-                // The operator receives the exact same positional packet as
-                // everyone else. This keeps self-monitoring anchored to the
-                // physical Speaker instead of turning the camera into a fake
-                // non-positional audio source.
+                // While QA monitoring is enabled, the operator receives the
+                // same positional Speaker packet as everyone else. There is no
+                // separate camera-anchored or non-positional echo path.
                 api.sendLocationalSoundPacketTo(connection, packet);
             } catch (RuntimeException | LinkageError exception) {
                 ScpClassifiedDirectiveMod.LOGGER.debug(

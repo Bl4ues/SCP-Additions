@@ -19,6 +19,7 @@ public final class Scp079UiTheme {
     public static final int ACCENT = 0xFFBDEEFF;
     public static final int DIM_ACCENT = 0xFF618999;
     public static final int OFFLINE = 0xFFD57D78;
+    private static final float CONTROL_TEXT_OPTICAL_OFFSET = 3.0F;
 
     private Scp079UiTheme() {
     }
@@ -63,6 +64,16 @@ public final class Scp079UiTheme {
         graphics.drawString(font, text, -font.width(text) / 2, 0,
                 color, false);
         graphics.pose().popPose();
+    }
+
+    /** Centers PF Videotext inside a control, including its visual top padding. */
+    public static void drawCenteredInControl(GuiGraphics graphics, Font font,
+            String value, float centerX, int controlY, int controlHeight,
+            float scale, int color) {
+        float textHeight = font.lineHeight * scale;
+        float y = controlY + (controlHeight - textHeight) * 0.5F
+                + CONTROL_TEXT_OPTICAL_OFFSET;
+        drawCentered(graphics, font, value, centerX, y, scale, color);
     }
 
     public static int scaledWidth(Font font, String value, float scale) {

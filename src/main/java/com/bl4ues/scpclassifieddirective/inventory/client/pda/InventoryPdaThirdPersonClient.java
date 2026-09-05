@@ -53,12 +53,12 @@ public final class InventoryPdaThirdPersonClient {
         ArmPose original = new ArmPose(model);
         ARM_POSES.put(model, original);
         poseArm(model.rightArm,
-                lerp(original.rightX, -1.16F, progress),
-                lerp(original.rightY, -0.24F, progress),
+                lerp(original.rightX, -1.05F, progress),
+                lerp(original.rightY, -0.34F, progress),
                 lerp(original.rightZ, 0.12F, progress));
         poseArm(model.leftArm,
-                lerp(original.leftX, -1.16F, progress),
-                lerp(original.leftY, 0.24F, progress),
+                lerp(original.leftX, -1.05F, progress),
+                lerp(original.leftY, 0.34F, progress),
                 lerp(original.leftZ, -0.12F, progress));
         model.rightSleeve.copyFrom(model.rightArm);
         model.leftSleeve.copyFrom(model.leftArm);
@@ -81,19 +81,23 @@ public final class InventoryPdaThirdPersonClient {
         }
 
         event.getPoseStack().pushPose();
-        float hiddenY = player.isCrouching() ? 0.38F : 0.58F;
-        float heldY = player.isCrouching() ? 0.86F : 1.06F;
+        // RenderPlayerEvent uses a body-local coordinate system whose positive
+        // Y points down after the player renderer's own transform. Keep this
+        // smartphone-sized PDA in front of the upper chest and draw it upward
+        // from the player's lower-right side.
+        float hiddenY = player.isCrouching() ? 0.92F : 1.12F;
+        float heldY = player.isCrouching() ? 0.36F : 0.50F;
         event.getPoseStack().translate(
-                lerp(0.28F, 0.0F, progress),
+                lerp(0.16F, 0.0F, progress),
                 lerp(hiddenY, heldY, progress),
-                lerp(0.06F, -0.34F, progress));
+                lerp(0.03F, -0.34F, progress));
         event.getPoseStack().mulPose(Axis.YP.rotationDegrees(
-                lerp(226.0F, 180.0F, progress)));
+                lerp(224.0F, 180.0F, progress)));
         event.getPoseStack().mulPose(Axis.XP.rotationDegrees(
-                lerp(12.0F, 68.0F, progress)));
+                lerp(8.0F, 22.0F, progress)));
         event.getPoseStack().mulPose(Axis.ZP.rotationDegrees(
-                lerp(-5.0F, -90.0F, progress)));
-        event.getPoseStack().scale(0.24F, -0.24F, 0.24F);
+                lerp(4.0F, 90.0F, progress)));
+        event.getPoseStack().scale(0.068F, -0.068F, 0.068F);
         // GeoObjectRenderer adds (0.5, 0.51, 0.5) before rendering. Offset
         // the authored screen center so the device, rather than its raw model
         // origin, sits between the player's hands.

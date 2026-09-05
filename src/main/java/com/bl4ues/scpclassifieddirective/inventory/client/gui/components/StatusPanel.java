@@ -122,6 +122,19 @@ public class StatusPanel {
     public int getConditionsScroll() { return conditionsScroll; }
     public boolean isShowingPositiveConditions() { return conditionTab == ConditionTab.POSITIVE; }
 
+    public int soundRegionAt(double mouseX, double mouseY) {
+        int tabX = getConditionTabX();
+        int tabY = getConditionTabY();
+        if (mouseY >= tabY && mouseY <= tabY + TAB_HEIGHT) {
+            if (mouseX >= tabX && mouseX <= tabX + TAB_WIDTH) return 1;
+            int negativeX = tabX + TAB_WIDTH + TAB_GAP;
+            if (mouseX >= negativeX
+                    && mouseX <= negativeX + TAB_WIDTH) return 2;
+        }
+        return hasScrollableConditions()
+                && isMouseOverConditionScrollbar(mouseX, mouseY) ? 3 : 0;
+    }
+
     public void restoreSessionState(int scroll, boolean positive) {
         conditionTab = positive ? ConditionTab.POSITIVE : ConditionTab.NEGATIVE;
         conditionsScroll = Math.max(0, scroll);

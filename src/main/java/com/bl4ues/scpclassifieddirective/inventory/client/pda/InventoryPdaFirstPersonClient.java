@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.inventory.client.pda;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.inventory.client.gui.ScpInventoryScreen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.CameraType;
 import net.minecraft.world.InteractionHand;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderHandEvent;
@@ -21,11 +22,14 @@ public final class InventoryPdaFirstPersonClient {
     public static void onRenderHand(RenderHandEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!(minecraft.screen instanceof ScpInventoryScreen screen)) return;
+        if (minecraft.options.getCameraType() != CameraType.FIRST_PERSON) {
+            return;
+        }
 
         // The PDA owns the complete two-handed pose while its screen exists.
         event.setCanceled(true);
         if (event.getHand() == InteractionHand.MAIN_HAND) {
-            screen.renderPhysicalPda(event.getPackedLight());
+            screen.renderPhysicalPda(event.getPackedLight(), true);
         }
     }
 }

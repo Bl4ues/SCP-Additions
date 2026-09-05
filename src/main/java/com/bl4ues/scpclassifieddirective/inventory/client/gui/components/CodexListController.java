@@ -88,6 +88,16 @@ final class CodexListController {
         return over(mouseX, mouseY, x - 1, contentY(), width - 15, height);
     }
 
+    int soundRegionAt(double mouseX, double mouseY) {
+        List<Row> rows = rows();
+        if (rows.size() > visible()
+                && over(mouseX, mouseY, barX() - 3, contentY(),
+                BAR_W + 6, barHeight())) return 1;
+        if (!inside(mouseX, mouseY)) return 0;
+        int index = scroll + (int) ((mouseY - contentY()) / ROW);
+        return index >= 0 && index < rows.size() ? 10 + index : 0;
+    }
+
     private List<Row> rows() {
         Map<String, List<Row>> groups = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (int i = 0; i < documents.size(); i++) {

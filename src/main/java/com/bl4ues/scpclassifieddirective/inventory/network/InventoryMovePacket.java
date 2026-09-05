@@ -202,12 +202,18 @@ public class InventoryMovePacket {
         }
 
         if (targetIndex < 0) {
-            addEquipmentToFirstAvailableSlot(player, inventory, sourceSlot, equippedStack);
+            if (addEquipmentToFirstAvailableSlot(player, inventory,
+                    sourceSlot, equippedStack)) {
+                InventoryInteractionSoundFeedback.equipped(player);
+            }
             return;
         }
 
         if (!inventory.isValidMainSlot(targetIndex)) {
-            addEquipmentToFirstAvailableSlot(player, inventory, sourceSlot, equippedStack);
+            if (addEquipmentToFirstAvailableSlot(player, inventory,
+                    sourceSlot, equippedStack)) {
+                InventoryInteractionSoundFeedback.equipped(player);
+            }
             return;
         }
 
@@ -216,6 +222,7 @@ public class InventoryMovePacket {
             inventory.setInventoryItem(targetIndex, equippedStack);
             inventory.clearEquipment(sourceSlot);
             InventoryActionPacket.syncVanillaEquipmentSlot(player, sourceSlot, ItemStack.EMPTY);
+            InventoryInteractionSoundFeedback.equipped(player);
             return;
         }
 
@@ -224,18 +231,24 @@ public class InventoryMovePacket {
             inventory.setEquipment(sourceSlot, targetStack);
             inventory.setInventoryItem(targetIndex, equippedStack);
             InventoryActionPacket.syncVanillaEquipmentSlot(player, sourceSlot, targetStack);
+            InventoryInteractionSoundFeedback.equipped(player);
             return;
         }
 
-        addEquipmentToFirstAvailableSlot(player, inventory, sourceSlot, equippedStack);
+        if (addEquipmentToFirstAvailableSlot(player, inventory, sourceSlot,
+                equippedStack)) {
+            InventoryInteractionSoundFeedback.equipped(player);
+        }
     }
 
-    private static void addEquipmentToFirstAvailableSlot(ServerPlayer player, IScpInventory inventory, ScpEquipmentSlot sourceSlot, ItemStack equippedStack) {
+    private static boolean addEquipmentToFirstAvailableSlot(ServerPlayer player, IScpInventory inventory, ScpEquipmentSlot sourceSlot, ItemStack equippedStack) {
         if (inventory.addInventoryItem(equippedStack)) {
             inventory.clearEquipment(sourceSlot);
             InventoryActionPacket.syncVanillaEquipmentSlot(player, sourceSlot, ItemStack.EMPTY);
+            return true;
         } else {
             ModNetwork.showInventoryFull(player);
+            return false;
         }
     }
 
@@ -266,6 +279,7 @@ public class InventoryMovePacket {
         inventory.setEquipment(sourceSlot, targetStack);
         InventoryActionPacket.syncVanillaEquipmentSlot(player, sourceSlot, targetStack);
         InventoryActionPacket.syncVanillaEquipmentSlot(player, targetSlot, sourceStack);
+        InventoryInteractionSoundFeedback.equipped(player);
     }
 
     private static ItemStack getEffectiveEquipment(ServerPlayer player, IScpInventory inventory, ScpEquipmentSlot slot) {

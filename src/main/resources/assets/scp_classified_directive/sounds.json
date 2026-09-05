@@ -1645,5 +1645,23 @@
         "volume": 1.0
       }
     ]
+  },
+  "pda_on": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:pda_on",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "pda_loop": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:pda_loop",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

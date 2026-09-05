@@ -11,7 +11,8 @@ public final class InventoryPdaGeoModel extends GeoModel<InventoryPdaAnimatable>
     private static final ResourceLocation MODEL = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "geo/gui/inventory_pda.geo.json");
     private static final ResourceLocation TEXTURE = new ResourceLocation(
-            ScpClassifiedDirectiveMod.MODID, "textures/gui/inventory_pda.png");
+            ScpClassifiedDirectiveMod.MODID,
+            "textures/entity/inventory_pda.png");
     private static final ResourceLocation ANIMATION = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID,
             "animations/gui/inventory_pda.animation.json");

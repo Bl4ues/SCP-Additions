@@ -19,9 +19,12 @@ import com.bl4ues.scpclassifieddirective.inventory.network.InventoryActionPacket
 import com.bl4ues.scpclassifieddirective.inventory.network.InventoryPdaStatePacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaPresentationRenderer;
+import com.bl4ues.scpclassifieddirective.inventory.client.pda.InventoryPdaAudioClient;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -115,6 +118,7 @@ public class ScpInventoryScreen extends Screen {
     private boolean dragMoved = false;
     private float dropPreviewFade = 0.0F;
     private static final long PDA_TRANSITION_NANOS = 820_000_000L;
+    private static final float PDA_POWER_ON_PROGRESS = 0.70F;
     private static final float PDA_DROP_LOWERING = 0.62F;
     private final InventoryPdaPresentationRenderer pdaPresentation =
             new InventoryPdaPresentationRenderer();
@@ -123,6 +127,8 @@ public class ScpInventoryScreen extends Screen {
     private Screen pdaNextScreen;
     private boolean completingPdaClose;
     private boolean pdaOpenStateSent;
+    private boolean pdaPowered;
+    private int pdaHoveredRegion;
     private boolean pdaCloseHiddenFrameRendered;
     private long pdaLastRenderNanos = System.nanoTime();
     private float pdaDocumentProgress;
@@ -130,7 +136,7 @@ public class ScpInventoryScreen extends Screen {
     private InventoryPdaPresentationRenderer.Pose pdaPose =
             new InventoryPdaPresentationRenderer.Pose(
                     0.95F, -4.10F, -4.70F,
-                    -28.0F, 238.0F, -4.0F, 0.82F);
+                    -28.0F, 238.0F, 4.0F, 0.82F);
     private InventoryPdaPresentationRenderer.Pose pdaInteractionPose = pdaPose;
 
     public ScpInventoryScreen() {
@@ -278,6 +284,7 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        updatePdaPowerState();
         if (!InventoryModuleRuntimeState.isEnabledForClient()) onClose();
         if (pdaCloseStartedNanos > 0L && pdaCloseHiddenFrameRendered) {
             completingPdaClose = true;
@@ -287,6 +294,7 @@ public class ScpInventoryScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        updatePdaPowerState();
         InventoryPdaPresentationRenderer.MappedMouse dropMouse =
                 mapPdaMouse(pdaInteractionPose, mouseX, mouseY);
         updateDropPreviewFade(isPreviewingWorldDrop(
@@ -295,13 +303,23 @@ public class ScpInventoryScreen extends Screen {
                 mapPdaMouse(mouseX, mouseY);
         int uiMouseX = (int) Math.round(mappedMouse.x());
         int uiMouseY = (int) Math.round(mappedMouse.y());
+        updatePdaHoverSound(mappedMouse);
 
         // Deliberately do not call renderBackground: the world remains clear
         // around the physical device, just as it does in the reference.
         pdaPresentation.captureInterface(g, () ->
                 renderPdaContents(g, uiMouseX, uiMouseY, partialTick));
-        pdaPresentation.renderDisplay(pdaPose, width, height,
-                rootX, rootY, rootWidth, rootHeight);
+        // RenderHandEvent is first-person-only. In a third-person camera the
+        // local player still needs the complete physical shell around the live
+        // interface, but detached first-person skin arms would be incorrect.
+        if (minecraft.options.getCameraType() != CameraType.FIRST_PERSON) {
+            pdaPresentation.renderPhysical(pdaPose, LightTexture.FULL_BRIGHT,
+                    width, height, false);
+        }
+        if (pdaPowered) {
+            pdaPresentation.renderDisplay(pdaPose, width, height,
+                    rootX, rootY, rootWidth, rootHeight);
+        }
         // Forge-added builder/admin controls intentionally live outside the
         // physical display. Draw Screen widgets on the main target only after
         // the PDA pass so they stay visible and retain raw window coordinates.
@@ -324,8 +342,40 @@ public class ScpInventoryScreen extends Screen {
     }
 
     /** Called from RenderHandEvent while the shader pack's PBR pass is active. */
-    public void renderPhysicalPda(int packedLight) {
-        pdaPresentation.renderPhysical(pdaPose, packedLight, width, height);
+    public void renderPhysicalPda(int packedLight, boolean renderHands) {
+        pdaPresentation.renderPhysical(pdaPose, packedLight, width, height,
+                renderHands);
+    }
+
+    public boolean isPdaPowered() {
+        return pdaPowered;
+    }
+
+    public boolean isPdaClosing() {
+        return pdaCloseStartedNanos >= 0L;
+    }
+
+    private void updatePdaPowerState() {
+        float progress = presentationProgress();
+        if (pdaCloseStartedNanos < 0L && !pdaPowered
+                && progress >= PDA_POWER_ON_PROGRESS) {
+            pdaPowered = true;
+            InventoryPdaAudioClient.powerOn();
+        } else if (pdaCloseStartedNanos >= 0L && pdaPowered
+                && progress < PDA_POWER_ON_PROGRESS) {
+            pdaPowered = false;
+            pdaHoveredRegion = 0;
+        }
+    }
+
+    private void updatePdaHoverSound(
+            InventoryPdaPresentationRenderer.MappedMouse mouse) {
+        int region = pdaPowered && isPdaInteractive()
+                && mouse.overSurface()
+                ? pdaUiRegionAt(mouse.x(), mouse.y()) : 0;
+        if (region == pdaHoveredRegion) return;
+        pdaHoveredRegion = region;
+        if (region != 0) InventoryPdaAudioClient.playHover();
     }
 
     private void renderPdaContents(GuiGraphics g, int mouseX, int mouseY,
@@ -378,7 +428,7 @@ public class ScpInventoryScreen extends Screen {
         float pitch = lerp(-28.0F, 2.0F, turn);
         // 180 degrees faces the authored negative-Z screen toward the camera.
         float yaw = lerp(238.0F, 176.5F, turn);
-        float roll = lerp(-4.0F, -90.0F, turn);
+        float roll = lerp(4.0F, 90.0F, turn);
 
         float idleWeight = smootherStep(clamp01(
                 (progress - 0.86F) / 0.14F));
@@ -476,6 +526,8 @@ public class ScpInventoryScreen extends Screen {
             pdaCloseHiddenFrameRendered = false;
             clearDragSource();
             if (contextMenu != null) contextMenu.close();
+            pdaHoveredRegion = 0;
+            InventoryPdaAudioClient.beginClose();
             if (pdaOpenStateSent) {
                 ModNetwork.CHANNEL.sendToServer(
                         InventoryPdaStatePacket.request(false));
@@ -640,6 +692,8 @@ public class ScpInventoryScreen extends Screen {
         mouseY = mapped.y();
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
+        if (mode == ScreenMode.CRAFTING && craftingPanel != null
+                && craftingPanel.mouseScrolled(mouseX, mouseY, delta)) return true;
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.isMouseOver(mouseX, mouseY)) return itemList.mouseScrolled(delta);
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
@@ -658,11 +712,20 @@ public class ScpInventoryScreen extends Screen {
         }
         mouseX = mapped.x();
         mouseY = mapped.y();
+        if (mapped.overSurface() && (button == 0 || button == 1)
+                && pdaUiRegionAt(mouseX, mouseY) != 0) {
+            InventoryPdaAudioClient.playSelect();
+        }
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.isExpandedImage()) return codexPanel.mouseClicked(mouseX, mouseY, button);
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseClickedScrollbar(mouseX, mouseY, button)) return true;
         if (button == 0 && clickedBottomNavigation(mouseX, mouseY)) return true;
-        if (mode == ScreenMode.STATUS || mode == ScreenMode.CRAFTING) return super.mouseClicked(mouseX, mouseY, button);
+        if (mode == ScreenMode.STATUS) return super.mouseClicked(mouseX, mouseY, button);
+        if (mode == ScreenMode.CRAFTING) {
+            return craftingPanel != null
+                    && craftingPanel.mouseClicked(mouseX, mouseY, button)
+                    || super.mouseClicked(mouseX, mouseY, button);
+        }
         if (mode == ScreenMode.CODEX) return codexPanel != null && codexPanel.mouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
         if (button == 0 && clickedTabs(mouseX, mouseY)) return true;
 
@@ -712,6 +775,9 @@ public class ScpInventoryScreen extends Screen {
         dragY = mapped.y() - previous.y();
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseDraggedScrollbar(mouseY)) return true;
+        if (mode == ScreenMode.CRAFTING && craftingPanel != null
+                && craftingPanel.mouseDragged(mouseX, mouseY, button,
+                dragX, dragY)) return true;
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseDraggedScrollbar(mouseY)) return true;
         if (button == 0 && hasDragSource()) {
             if (Math.abs(mouseX - dragStartX) > DRAG_THRESHOLD || Math.abs(mouseY - dragStartY) > DRAG_THRESHOLD) dragMoved = true;
@@ -735,6 +801,10 @@ public class ScpInventoryScreen extends Screen {
         mouseY = mapped.y();
         if (mode == ScreenMode.CODEX && codexPanel != null && codexPanel.mouseReleased(button)) return true;
         if (mode == ScreenMode.STATUS && statusPanel != null && statusPanel.mouseReleasedScrollbar(button)) return true;
+        if (mode == ScreenMode.CRAFTING && craftingPanel != null
+                && craftingPanel.mouseReleased(mouseX, mouseY, button)) {
+            return true;
+        }
         if (mode == ScreenMode.INVENTORY && itemList != null && itemList.mouseReleasedScrollbar(button)) return true;
         if (button == 0 && hasDragSource()) {
             if (dragMoved) finishDrag(dropMapped.x(), dropMapped.y());
@@ -884,6 +954,69 @@ public class ScpInventoryScreen extends Screen {
         return mouseX >= listPanelX && mouseX <= listPanelX + listPanelWidth && mouseY >= listPanelY && mouseY <= listPanelY + listPanelHeight;
     }
 
+    private int pdaUiRegionAt(double mouseX, double mouseY) {
+        if (mouseY >= navY && mouseY <= navY + NAV_BUTTON_HEIGHT) {
+            int[] nav = {getInventoryNavX(), getStatusNavX(),
+                    getCraftingNavX(), getCodexNavX()};
+            for (int i = 0; i < nav.length; i++) {
+                if (mouseX >= nav[i]
+                        && mouseX <= nav[i] + NAV_BUTTON_WIDTH) {
+                    return 1000 + i;
+                }
+            }
+        }
+        if (mode == ScreenMode.STATUS) {
+            int region = statusPanel == null ? 0
+                    : statusPanel.soundRegionAt(mouseX, mouseY);
+            return region == 0 ? 0 : 2000 + region;
+        }
+        if (mode == ScreenMode.CRAFTING) {
+            int region = craftingPanel == null ? 0
+                    : craftingPanel.soundRegionAt(mouseX, mouseY);
+            return region == 0 ? 0 : 3000 + region;
+        }
+        if (mode == ScreenMode.CODEX) {
+            int region = codexPanel == null ? 0
+                    : codexPanel.soundRegionAt(mouseX, mouseY);
+            return region == 0 ? 0 : 4000 + region;
+        }
+        if (contextMenu != null && contextMenu.isOpen()) {
+            int option = contextMenu.clicked(mouseX, mouseY);
+            if (option >= 0) return 5000 + option;
+        }
+        int tabDrawY = tabY + 3;
+        if (mouseY >= tabDrawY && mouseY <= tabDrawY + TAB_HEIGHT) {
+            int gap = 12;
+            int startX = listPanelX + Math.max(0,
+                    (listPanelWidth - INVENTORY_TAB_WIDTH * 2 - gap) / 2);
+            if (mouseX >= startX
+                    && mouseX <= startX + INVENTORY_TAB_WIDTH) return 6000;
+            int keysX = startX + INVENTORY_TAB_WIDTH + gap;
+            if (mouseX >= keysX
+                    && mouseX <= keysX + KEYS_TAB_WIDTH) return 6001;
+        }
+        if (equipmentPanel != null && inventory != null) {
+            ScpEquipmentSlot slot = equipmentPanel.getClickedSlot(
+                    mouseX, mouseY);
+            if (slot != null && !inventory.getEquipment(slot).isEmpty()) {
+                return 7000 + slot.ordinal();
+            }
+        }
+        if (itemList != null && inventory != null) {
+            int index = itemList.getClickedIndex(mouseX, mouseY);
+            if (showingKeys) {
+                if (index >= 0 && index < inventory.getKeys().size()
+                        && !inventory.getKeys().get(index).isEmpty()) {
+                    return 8000 + index;
+                }
+            } else if (inventory.isValidMainSlot(index)
+                    && !inventory.getInventoryItem(index).isEmpty()) {
+                return 8000 + index;
+            }
+        }
+        return 0;
+    }
+
     private boolean isDoubleLeftClick(int index, boolean keyList) {
         long now = System.currentTimeMillis();
         boolean result = index == lastLeftClickIndex && keyList == lastLeftClickWasKey && now - lastLeftClickTimeMs <= DOUBLE_LEFT_CLICK_WINDOW_MS;
@@ -1000,6 +1133,7 @@ public class ScpInventoryScreen extends Screen {
     @Override
     public void removed() {
         captureSessionState();
+        InventoryPdaAudioClient.beginClose();
         pdaPresentation.close();
         if (pdaOpenStateSent) {
             ModNetwork.CHANNEL.sendToServer(

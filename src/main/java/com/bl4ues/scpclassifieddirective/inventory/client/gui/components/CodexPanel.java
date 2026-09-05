@@ -126,6 +126,28 @@ public class CodexPanel {
         dragX = lastX = mouseX; dragY = lastY = mouseY; dragMoved = false; return true;
     }
 
+    public int soundRegionAt(double mouseX, double mouseY) {
+        if (expandedImage) return 1;
+        if (contextMenu.isOpen()) {
+            int option = contextMenu.clicked(mouseX, mouseY);
+            if (option >= 0) return 10 + option;
+        }
+        if (valid()) {
+            if (showingText && over(mouseX, mouseY, left(), controlY(),
+                    58, BUTTON_H)) return 20;
+            int gap = 6;
+            int width = (right() - left() - gap) / 2;
+            if (!showingText && over(mouseX, mouseY, left(), buttonY(),
+                    width, BUTTON_H)) return 21;
+            if (!showingText && over(mouseX, mouseY,
+                    left() + width + gap, buttonY(), width, BUTTON_H)) {
+                return 22;
+            }
+        }
+        int listRegion = list.soundRegionAt(mouseX, mouseY);
+        return listRegion == 0 ? 0 : 100 + listRegion;
+    }
+
     public boolean mouseDragged(double mouseX, double mouseY, int button, double ignoredX, double ignoredY) {
         if (button != 0) return false;
         if (list.drag(mouseY)) return true;

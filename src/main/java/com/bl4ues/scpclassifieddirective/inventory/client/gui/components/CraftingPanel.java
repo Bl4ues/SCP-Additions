@@ -191,6 +191,34 @@ public final class CraftingPanel {
         return false;
     }
 
+    public int soundRegionAt(double mouseX, double mouseY) {
+        IScpInventory inventory = getInventory();
+        List<RecipeEntry> recipes = buildRecipeEntries(inventory);
+        int recipe = getClickedRecipeIndex(mouseX, mouseY, recipes.size());
+        if (recipe >= 0) return 100 + recipe;
+        if (recipes.size() > getVisibleRecipeRows()
+                && isInside(mouseX, mouseY, getRecipeScrollbarX(),
+                getRecipeListY(), SCROLL_WIDTH, getRecipeListHeight())) {
+            return 2;
+        }
+        if (isInside(mouseX, mouseY, getOutputX(), getOutputY(),
+                GRID_SLOT_SIZE, GRID_SLOT_SIZE)
+                && !getCurrentResult().isEmpty()) return 3;
+        int grid = getGridSlotAt(mouseX, mouseY);
+        if (grid >= 0 && !getGridStack(grid).isEmpty()) return 200 + grid;
+        int main = getMainSlotAt(mouseX, mouseY, inventory);
+        if (main >= 0 && inventory != null
+                && !inventory.getInventoryItem(main).isEmpty()) {
+            return 300 + main;
+        }
+        int totalMain = getNonEmptyMainSlots(inventory).size();
+        if (totalMain > getVisibleInventoryRows()
+                && isInside(mouseX, mouseY, getInventoryScrollbarX(),
+                getInventoryListY(), SCROLL_WIDTH,
+                getInventoryListHeight())) return 4;
+        return 0;
+    }
+
     public boolean mouseDragged(double mouseX, double mouseY, int button,
                                 double dragX, double dragY) {
         if (button != 0) return false;

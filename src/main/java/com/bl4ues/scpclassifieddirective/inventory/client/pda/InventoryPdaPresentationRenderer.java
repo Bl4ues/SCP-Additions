@@ -42,7 +42,10 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     private static final float GEO_CENTER_Y = 43.0F / 16.0F;
     private static final float RIGHT_HAND_ANCHOR_Y = 17.5F / 16.0F;
     private static final float LEFT_HAND_ANCHOR_Y = 58.5F / 16.0F;
-    private static final float HAND_ANCHOR_Z = 1.0F / 16.0F;
+    // The exported hand locators sit behind the casing. Vanilla player arms
+    // need their grip point on the camera-facing lip so the fingers remain
+    // visible instead of being completely depth-occluded by the PDA.
+    private static final float HAND_CONTACT_Z = -0.07F;
     private static final float ARM_CENTER_X = 6.0F / 16.0F;
     private static final float ARM_LENGTH = 12.0F / 16.0F;
 
@@ -79,7 +82,7 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
      * inventory_pda_n and inventory_pda_s as an actual LabPBR material.
      */
     public void renderPhysical(Pose pose, int packedLight, int guiWidth,
-            int guiHeight) {
+            int guiHeight, boolean renderHands) {
         if (guiWidth <= 0 || guiHeight <= 0) return;
 
         Matrix4f projection = projection(guiWidth, guiHeight);
@@ -103,8 +106,8 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
 
-            renderHands(screenPose(pose), packedLight);
             InventoryPdaRenderer.INSTANCE.render(modelPose, packedLight);
+            if (renderHands) renderHands(handPose(pose), packedLight);
         } finally {
             RenderSystem.depthMask(true);
             RenderSystem.enableCull();
@@ -178,11 +181,12 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         float localX = near.x() + (far.x() - near.x()) * distance;
         float localY = near.y() + (far.y() - near.y()) * distance;
 
-        // The authored portrait settles at -90 degrees. Raw Y then runs from
-        // left to right and raw X from top to bottom on the physical display.
-        double u = (localY - SCREEN_MIN_Y)
+        // The authored portrait settles at +90 degrees so its upper-right
+        // antenna becomes upper-left in the reading pose. Raw Y therefore
+        // runs right-to-left and raw X bottom-to-top on the live display.
+        double u = (SCREEN_MAX_Y - localY)
                 / (SCREEN_MAX_Y - SCREEN_MIN_Y);
-        double v = (localX - SCREEN_MIN_X)
+        double v = (SCREEN_MAX_X - localX)
                 / (SCREEN_MAX_X - SCREEN_MIN_X);
         double mappedX = rootX + u * rootWidth;
         double mappedY = rootY + v * rootHeight;
@@ -215,13 +219,13 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         builder.begin(VertexFormat.Mode.QUADS,
                 DefaultVertexFormat.POSITION_TEX);
-        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
-                .uv(u0, vTop).endVertex();
-        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u1, vTop).endVertex();
         builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MAX_Y, SCREEN_Z)
-                .uv(u1, vBottom).endVertex();
+                .uv(u0, vTop).endVertex();
         builder.vertex(matrix, SCREEN_MAX_X, SCREEN_MIN_Y, SCREEN_Z)
+                .uv(u1, vTop).endVertex();
+        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MIN_Y, SCREEN_Z)
+                .uv(u1, vBottom).endVertex();
+        builder.vertex(matrix, SCREEN_MIN_X, SCREEN_MAX_Y, SCREEN_Z)
                 .uv(u0, vBottom).endVertex();
         BufferUploader.drawWithShader(builder.end());
     }
@@ -236,9 +240,9 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
         renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
-                true, RIGHT_HAND_ANCHOR_Y + ARM_CENTER_X);
+                true, GEO_CENTER_Y - RIGHT_HAND_ANCHOR_Y);
         renderGripArm(pdaSpace, renderer, player, buffers, packedLight,
-                false, LEFT_HAND_ANCHOR_Y - ARM_CENTER_X);
+                false, GEO_CENTER_Y - LEFT_HAND_ANCHOR_Y);
         buffers.endBatch();
     }
 
@@ -250,8 +254,15 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         // The exported locators mark the hand contacts. The distal end of the
         // vanilla skin arm lands on that contact while its forearm continues
         // toward the bottom edge of the view in the landscape reading pose.
-        pdaSpace.translate(ARM_LENGTH, anchorY, HAND_ANCHOR_Z);
-        pdaSpace.mulPose(Axis.ZP.rotationDegrees(90.0F));
+        // This arm stack deliberately has no negative scale. The former
+        // reflected transform reversed triangle winding; the player's culled
+        // skin RenderType consequently discarded both arms. Convert the
+        // authored locator coordinates explicitly and orient each vanilla arm
+        // so its distal end lands on the side grip.
+        pdaSpace.translate(-ARM_LENGTH,
+                anchorY + (right ? -ARM_CENTER_X : ARM_CENTER_X),
+                HAND_CONTACT_Z);
+        pdaSpace.mulPose(Axis.ZP.rotationDegrees(-90.0F));
         if (right) renderer.renderRightHand(
                 pdaSpace, buffers, packedLight, player);
         else renderer.renderLeftHand(
@@ -274,6 +285,17 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
         PoseStack stack = modelPose(pose);
         // This is the pre-translation performed by GeoObjectRenderer.
         stack.translate(0.5F, 0.51F, 0.5F);
+        return stack;
+    }
+
+    private PoseStack handPose(Pose pose) {
+        PoseStack stack = new PoseStack();
+        stack.translate(pose.x(), pose.y(), pose.depth());
+        stack.mulPose(Axis.YP.rotationDegrees(pose.yaw()));
+        stack.mulPose(Axis.XP.rotationDegrees(pose.pitch()));
+        stack.mulPose(Axis.ZP.rotationDegrees(pose.roll()));
+        // Positive determinant preserves the front faces of the skin mesh.
+        stack.scale(pose.scale(), pose.scale(), pose.scale());
         return stack;
     }
 

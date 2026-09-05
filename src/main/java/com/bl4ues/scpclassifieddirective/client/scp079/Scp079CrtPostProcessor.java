@@ -12,7 +12,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -56,13 +55,11 @@ public final class Scp079CrtPostProcessor {
         apply(Minecraft.getInstance(), event.getGuiGraphics());
     }
 
-    /** Maps a visible, curved-screen pointer back into the logical pre-warp UI. */
     public static double logicalX(double screenX, double screenY,
             int width, int height) {
         return logical(screenX, screenY, width, height)[0];
     }
 
-    /** Maps a visible, curved-screen pointer back into the logical pre-warp UI. */
     public static double logicalY(double screenX, double screenY,
             int width, int height) {
         return logical(screenX, screenY, width, height)[1];
@@ -75,9 +72,10 @@ public final class Scp079CrtPostProcessor {
         double r2 = px * px + py * py;
         double factor = 1.0D + WARP_QUADRATIC * r2
                 + WARP_QUARTIC * r2 * r2;
-        double logicalX = (px * factor * 0.5D + 0.5D) * width;
-        double logicalY = (py * factor * 0.5D + 0.5D) * height;
-        return new double[] {logicalX, logicalY};
+        return new double[] {
+                (px * factor * 0.5D + 0.5D) * width,
+                (py * factor * 0.5D + 0.5D) * height
+        };
     }
 
     private static void apply(Minecraft minecraft, GuiGraphics graphics) {
@@ -111,12 +109,12 @@ public final class Scp079CrtPostProcessor {
         Matrix4f identity = new Matrix4f();
         BufferBuilder buffer = Tesselator.getInstance().getBuilder();
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        // Direct clip-space quad. It is intentionally independent from whatever
-        // pose/projection a Screen left behind, preventing raw strips from leaking.
-        buffer.vertex(identity, -1.0F, 1.0F, 0.0F).uv(0.0F, 0.0F).endVertex();
-        buffer.vertex(identity, 1.0F, 1.0F, 0.0F).uv(1.0F, 0.0F).endVertex();
-        buffer.vertex(identity, 1.0F, -1.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
-        buffer.vertex(identity, -1.0F, -1.0F, 0.0F).uv(0.0F, 1.0F).endVertex();
+        // FBO textures use a bottom-left UV origin. The quad itself is clip-space,
+        // so no GUI matrix can leave unfiltered strips around a Screen.
+        buffer.vertex(identity, -1.0F, -1.0F, 0.0F).uv(0.0F, 0.0F).endVertex();
+        buffer.vertex(identity, 1.0F, -1.0F, 0.0F).uv(1.0F, 0.0F).endVertex();
+        buffer.vertex(identity, 1.0F, 1.0F, 0.0F).uv(1.0F, 1.0F).endVertex();
+        buffer.vertex(identity, -1.0F, 1.0F, 0.0F).uv(0.0F, 1.0F).endVertex();
         BufferUploader.drawWithShader(buffer.end());
 
         RenderSystem.enableBlend();

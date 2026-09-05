@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  */
 @Mixin(ScpRoleSelectorScreen.class)
 public abstract class ScpRoleSelectorPreviewMixin {
-    private static final float DESTINATION_SCALE = 1.16F;
+    private static final float DESTINATION_SCALE = 1.05F;
 
     @Redirect(method = "renderCard",
             at = @At(value = "INVOKE",

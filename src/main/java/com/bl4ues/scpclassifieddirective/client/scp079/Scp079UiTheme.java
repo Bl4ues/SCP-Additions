@@ -18,6 +18,7 @@ public final class Scp079UiTheme {
     public static final int MUTED = 0xFF8BAAB6;
     public static final int ACCENT = 0xFFBDEEFF;
     public static final int DIM_ACCENT = 0xFF618999;
+    public static final int OFFLINE = 0xFFD57D78;
 
     private Scp079UiTheme() {
     }
@@ -77,13 +78,15 @@ public final class Scp079UiTheme {
         int x = width - FRAME_MARGIN - barW - 5;
         int y = height - FRAME_MARGIN - barH - 8;
         float headerScale = 1.08F;
+        int headerColor = Scp079PlayableClient.active()
+                && !Scp079PlayableClient.networkAvailable() ? OFFLINE : TEXT;
 
         draw(graphics, minecraft.font, "AUXILIARY POWER",
-                x, y - 18, headerScale, TEXT);
+                x, y - 18, headerScale, headerColor);
         String amount = Mth.clamp(power, 0, 100) + " / 100";
         int amountW = scaledWidth(minecraft.font, amount, headerScale);
         draw(graphics, minecraft.font, amount,
-                x + barW - amountW, y - 18, headerScale, TEXT);
+                x + barW - amountW, y - 18, headerScale, headerColor);
 
         graphics.fill(x, y, x + barW, y + barH, 0xEC071116);
         graphics.fill(x, y, x + barW, y + 1, FRAME_COLOR);

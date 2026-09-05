@@ -1,11 +1,17 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraViewGeometry;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -36,8 +42,6 @@ public final class SurveillanceCameraClient {
     @SubscribeEvent
     public static void registerRenderers(
             EntityRenderersEvent.RegisterRenderers event) {
-        // Keep the renderer registration on this top-level MOD-bus subscriber,
-        // matching the known-good SCP-330/914 pattern used throughout the mod.
         event.registerBlockEntityRenderer(
                 SurveillanceCameraPlaceholderModule.BLOCK_ENTITY.get(),
                 context -> new BlockRenderer());
@@ -72,17 +76,47 @@ public final class SurveillanceCameraClient {
             super.setCustomAnimations(animatable, instanceId, animationState);
             CoreGeoBone yaw = getAnimationProcessor().getBone("camera_yaw");
             CoreGeoBone pitch = getAnimationProcessor().getBone("camera_pitch");
+
+            float yawDegrees = animatable.visualYaw(animationState.getPartialTick());
+            float pitchDegrees = animatable.visualPitch(animationState.getPartialTick());
+
+            Minecraft minecraft = Minecraft.getInstance();
+            if (isLocallyControlled(animatable, minecraft)) {
+                BlockState state = animatable.getBlockState();
+                Direction facing = state.hasProperty(
+                        SurveillanceCameraPlaceholderModule.FACING)
+                        ? state.getValue(SurveillanceCameraPlaceholderModule.FACING)
+                        : Direction.NORTH;
+                yawDegrees = Mth.clamp(Mth.wrapDegrees(
+                                minecraft.player.getYRot() - facing.toYRot()),
+                        -SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT,
+                        SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT);
+                pitchDegrees = Mth.clamp(minecraft.player.getXRot(),
+                        SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH,
+                        SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH);
+            }
+
             if (yaw != null) {
-                // Minecraft yaw increases opposite to the authored GeckoLib Y axis.
-                yaw.setRotY(-animatable.visualYaw(animationState.getPartialTick())
-                        * Mth.DEG_TO_RAD);
+                yaw.setRotY(-yawDegrees * Mth.DEG_TO_RAD);
             }
             if (pitch != null) {
-                // Positive Minecraft pitch looks down, while positive model X
-                // rotation raises the lens, so invert this axis as well.
-                pitch.setRotX(-animatable.visualPitch(animationState.getPartialTick())
-                        * Mth.DEG_TO_RAD);
+                float physicalPitch = pitchDegrees
+                        + SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH;
+                pitch.setRotX(-physicalPitch * Mth.DEG_TO_RAD);
             }
+        }
+
+        private static boolean isLocallyControlled(
+                SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity camera,
+                Minecraft minecraft) {
+            if (!Scp079PlayableClient.cameraMode() || minecraft.player == null
+                    || minecraft.level == null || camera.getLevel() != minecraft.level) {
+                return false;
+            }
+            Vec3 baseEye = SurveillanceCameraPlaceholderModule.eyePosition(
+                    camera.getBlockPos(), camera.getBlockState());
+            return Scp079PlayableClient.viewPosition().distanceToSqr(baseEye)
+                    <= 0.64D;
         }
     }
 
@@ -125,8 +159,6 @@ public final class SurveillanceCameraClient {
         @Override
         public boolean shouldRenderOffScreen(
                 SurveillanceCameraPlaceholderModule.SurveillanceCameraBlockEntity blockEntity) {
-            // The wall mount and moving head can extend beyond the block's
-            // ordinary frustum cell. Never let that cull the GeckoLib renderer.
             return true;
         }
     }

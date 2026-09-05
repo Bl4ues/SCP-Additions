@@ -10,7 +10,6 @@ import de.maxhenkel.voicechat.api.opus.OpusDecoder;
 import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import de.maxhenkel.voicechat.api.packets.LocationalSoundPacket;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
-import de.maxhenkel.voicechat.api.packets.StaticSoundPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -48,11 +47,9 @@ public final class SpeakerVoiceChatBridge {
         short[] decoded = decode(api, operator.getUUID(), opus);
         if (decoded == null || decoded.length == 0) return;
 
-        byte[] monitorFrame = null;
         for (SpeakerBroadcastManager.VoiceSource source : sources) {
             byte[] filtered = encode(api, operator.getUUID(), source, decoded);
             if (filtered == null || filtered.length == 0) continue;
-            if (monitorFrame == null) monitorFrame = filtered;
             LocationalSoundPacket packet;
             try {
                 packet = microphone.locationalSoundPacketBuilder()
@@ -68,9 +65,8 @@ public final class SpeakerVoiceChatBridge {
                         exception);
                 continue;
             }
-            sendToReceivers(api, operator.getServer(), operator, source, packet);
+            sendToReceivers(api, operator.getServer(), source, packet);
         }
-        sendMonitor(api, operator, microphone, monitorFrame);
     }
 
     private static short[] decode(VoicechatServerApi api, UUID operator,
@@ -109,12 +105,10 @@ public final class SpeakerVoiceChatBridge {
     }
 
     private static void sendToReceivers(VoicechatServerApi api,
-            MinecraftServer server, ServerPlayer operator,
-            SpeakerBroadcastManager.VoiceSource source,
+            MinecraftServer server, SpeakerBroadcastManager.VoiceSource source,
             LocationalSoundPacket packet) {
         for (ServerPlayer receiver : server.getPlayerList().getPlayers()) {
-            if (receiver.getUUID().equals(operator.getUUID())
-                    || !receiver.level().dimension().equals(source.dimension())
+            if (!receiver.level().dimension().equals(source.dimension())
                     || DeathSpectateCoordinator.isDeadVoiceParticipant(receiver)) {
                 continue;
             }
@@ -123,47 +117,16 @@ public final class SpeakerVoiceChatBridge {
             if (connection == null || !connection.isConnected()
                     || !connection.isInstalled()) continue;
             try {
+                // The operator receives the exact same positional packet as
+                // everyone else. This keeps self-monitoring anchored to the
+                // physical Speaker instead of turning the camera into a fake
+                // non-positional audio source.
                 api.sendLocationalSoundPacketTo(connection, packet);
             } catch (RuntimeException | LinkageError exception) {
                 ScpClassifiedDirectiveMod.LOGGER.debug(
                         "Could not send a facility Speaker voice frame",
                         exception);
             }
-        }
-    }
-
-    /**
-     * Simple Voice Chat normally suppresses a player's own microphone. Give the
-     * active operator one non-positional return of the already filtered signal
-     * so a solo SCP-079 can hear and verify the Speaker feed without receiving
-     * the room's microphone audio through the remote camera.
-     */
-    private static void sendMonitor(VoicechatServerApi api,
-            ServerPlayer operator, MicrophonePacket microphone, byte[] opus) {
-        if (opus == null || opus.length == 0) return;
-        VoicechatConnection connection = api.getConnectionOf(operator.getUUID());
-        if (connection == null || !connection.isConnected()
-                || !connection.isInstalled()) return;
-
-        StaticSoundPacket packet;
-        try {
-            packet = microphone.staticSoundPacketBuilder()
-                    .channelId(monitorChannelId(operator.getUUID()))
-                    .opusEncodedData(opus)
-                    .build();
-        } catch (RuntimeException | LinkageError exception) {
-            ScpClassifiedDirectiveMod.LOGGER.debug(
-                    "Could not build facility Speaker monitor frame",
-                    exception);
-            return;
-        }
-
-        try {
-            api.sendStaticSoundPacketTo(connection, packet);
-        } catch (RuntimeException | LinkageError exception) {
-            ScpClassifiedDirectiveMod.LOGGER.debug(
-                    "Could not send facility Speaker monitor frame",
-                    exception);
         }
     }
 
@@ -214,12 +177,6 @@ public final class SpeakerVoiceChatBridge {
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static UUID monitorChannelId(UUID operator) {
-        String key = ScpClassifiedDirectiveMod.MODID + ":speaker_monitor:"
-                + operator;
-        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
-    }
-
     private static void close(OpusDecoder decoder) {
         if (decoder == null) return;
         try {
@@ -231,11 +188,18 @@ public final class SpeakerVoiceChatBridge {
     private record ChannelKey(UUID operator, String dimension, long position) {
     }
 
-    /** Stable narrow-band radio coloration. It intentionally adds no noise. */
+    /**
+     * Intentionally obvious low-quality PA/radio coloration. The authored
+     * Speaker loop already provides static, so this stage only narrows the
+     * spectrum, reduces temporal/detail resolution and compresses the voice.
+     */
     private static final class FilterChannel {
         private final OpusEncoder encoder;
-        private double lowPass;
-        private double lowShelf;
+        private double lowCut;
+        private double bandOne;
+        private double bandTwo;
+        private double heldSample;
+        private long sampleClock;
 
         private FilterChannel(OpusEncoder encoder) {
             this.encoder = encoder;
@@ -245,13 +209,29 @@ public final class SpeakerVoiceChatBridge {
             short[] output = new short[input.length];
             for (int index = 0; index < input.length; index++) {
                 double sample = input[index];
-                lowPass += 0.24D * (sample - lowPass);
-                lowShelf += 0.022D * (lowPass - lowShelf);
-                double band = lowPass - lowShelf;
-                double compressed = Math.tanh(band / 5200.0D) * 11200.0D;
-                double quantized = Math.rint(compressed / 72.0D) * 72.0D;
+
+                // Remove bass first, then pass the remainder through two
+                // low-pass stages. At the 48 kHz SVC sample rate this leaves a
+                // deliberately narrow telephone/PA speech band.
+                lowCut += 0.045D * (sample - lowCut);
+                double highPassed = sample - lowCut;
+                bandOne += 0.34D * (highPassed - bandOne);
+                bandTwo += 0.34D * (bandOne - bandTwo);
+
+                // Hard compression/saturation gives the small wall speaker its
+                // unmistakable cheap-amplifier character without adding hiss.
+                double saturated = Math.tanh(bandTwo / 3000.0D) * 13200.0D;
+                double clipped = Mth.clamp(saturated, -10800.0D, 10800.0D);
+                double quantized = Math.rint(clipped / 240.0D) * 240.0D;
+
+                // Hold every third sample. This keeps speech intelligible while
+                // removing the pristine high-resolution quality of normal voice
+                // chat and remains deterministic/noise-free.
+                if (sampleClock % 3L == 0L) heldSample = quantized;
+                sampleClock++;
+
                 output[index] = (short) Mth.clamp(
-                        (int) Math.round(quantized * 0.82D),
+                        (int) Math.round(heldSample * 1.08D),
                         Short.MIN_VALUE, Short.MAX_VALUE);
             }
             return output;

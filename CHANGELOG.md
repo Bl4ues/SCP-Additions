@@ -112,7 +112,8 @@
 - Reduced SCP-173's rendered height to approximately two blocks;
 - Updated and Reworked SCP-173's movement audio;
 - Added a synchronized two-layer encounter score triggered by SCP-173 reveal scares: the first layer dominates during direct danger, the second paranoia layer crossfades in as the Blink HUD disappears, and the score lingers after the statue leaves before fading out;
-- Prevented SCP-173 from scraping and shuffling against closed doors when no complete path to its target exists.
+- Prevented SCP-173 from scraping and shuffling against closed doors when no complete path to its target exists;
+- SCP-173 can now move while local illumination is below light level 5, including outdoors at night when no other light reaches it; Night Vision and registered future vision aids preserve observation in darkness, while playable SCP-079 never counts as an observer.
 
 ## SCP-131
 
@@ -149,12 +150,17 @@
 - Added a positional hacking sound at each door, Tesla Gate, SCP-012 box, or other facility device successfully manipulated by SCP-079;
 - Added a playable SCP-079 control mode with a local orbit around its physical computer and server-authoritative transfer to registered surveillance cameras while keeping the autonomous decision layer suspended for the duration of player control;
 - Added an SCP-079 surveillance HUD and facility map built from persistent authored room floors, including floor selection, room/camera switching, AP and network state, lifeform counts, SCP tracking, target labels, low-light enhancement, scanline treatment, and interference during feed changes;
+- The SCP-079 facility map now marks the physical local host with a white **079** marker, visually dims rooms without surveillance cameras, and prevents those offline rooms from being selected;
+- Added map-topology-based **WASD** camera navigation with `GO TO` room labels and disabled `NO CAMERA` routes; connected camera switches cost 3 AP on Euclid and follow the existing difficulty cost scaling on Safe, Keter, and Thaumiel;
+- Added room **Blackout**, disabling redstone-powered lights in the active mapped room for 10 seconds at a 40 AP Euclid baseline, doubled on Surface before difficulty scaling;
+- Added room **Lockdown**, consuming exactly 100 AP to close and deny every controllable door in the active mapped room for 7 seconds, with a 10-second cooldown and AP regeneration paused while active;
 - Playable SCP-079 can manually open, close, and temporarily deny connected heavy-door controls and suppress Tesla Gates from a camera feed, with all actions consuming the same processing-power resource;
 - Added the Creative-only **Facility Mapping Tool** for defining persistent, irregular room floors and associating them with configured Core Room Floor Stations for surveillance and future CCTV systems;
 - Added the Creative-only **SCP Role Selector** placeholder in **Tools & Utility**; while SCP-079 is the only implemented playable role, right-clicking it assumes or releases SCP-079 through the nearest registered computer in the current dimension;
 - Added a functional **Surveillance Camera** placeholder in the Facility **Functional** section; placed cameras persist in the shared surveillance registry, inherit room membership from the mapped floor beneath them, and reserve the stable `surveillance_camera` registry ID for the future animated GeckoLib replacement;
 - Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section; playable SCP-079 can use a dedicated rebindable shortcut to begin or stop room-wide broadcasts without aiming at the device;
 - Active Speakers play positional startup, shutdown, and continuous static audio, and optionally relay SCP-079's Simple Voice Chat microphone through a deliberately narrow-band, distorted radio filter without adding synthetic noise;
+- SCP-079 Speaker broadcasts now add a separate deterministic robotic filter chain on top of the shared PA/radio coloration, while future manual Intercom sources retain the normal human voice filter path;
 - Added a shared source-to-Speaker routing layer so the future Intercom can use the same room endpoints, activation state, audio presentation, and voice-filter path;
 - Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 

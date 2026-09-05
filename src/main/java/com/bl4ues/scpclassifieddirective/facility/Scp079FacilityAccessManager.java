@@ -478,7 +478,11 @@ public final class Scp079FacilityAccessManager {
             }
         }
         data.markChanged();
-        refreshAuxiliaryBus(level.getServer(), data);
+        // ChunkEvent.Load can fire while this chunk is still being promoted.
+        // Do not refresh the global auxiliary bus here: that path can inspect
+        // tracked Tesla gates and other world positions, re-entering the chunk
+        // pipeline. The existing once-per-second server tick refreshes the bus
+        // immediately after startup in a safe phase.
     }
 
     private static boolean isTracked(BlockState state) {

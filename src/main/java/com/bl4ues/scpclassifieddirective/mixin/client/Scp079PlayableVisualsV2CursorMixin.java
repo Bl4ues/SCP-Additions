@@ -9,6 +9,7 @@ import com.bl4ues.scpclassifieddirective.client.scp079.Scp079LeaveRoleScreen;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079UiTheme;
+import com.bl4ues.scpclassifieddirective.facility.Scp079RoomAbilityManager;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -118,6 +119,27 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
                 right, y, 1.05F, Scp079UiTheme.TEXT, true);
         y += 19;
 
+        double blackoutCost = adjustedCost(minecraft,
+                Scp079RoomAbilityManager.BLACKOUT_BASE_COST);
+        boolean blackoutAffordable = Scp079PlayableClient.power() + 0.001D
+                >= blackoutCost;
+        drawCommand(graphics, minecraft,
+                "BLACKOUT  " + formatCost(blackoutCost),
+                keyLabel(Scp079Keybinds.BLACKOUT), right, y, 1.04F,
+                blackoutAffordable ? Scp079UiTheme.TEXT : 0xFF526873,
+                blackoutAffordable);
+        y += 19;
+
+        boolean lockdownAffordable = Scp079PlayableClient.power() + 0.001D
+                >= Scp079RoomAbilityManager.LOCKDOWN_COST;
+        drawCommand(graphics, minecraft,
+                "LOCKDOWN  " + formatCost(
+                        Scp079RoomAbilityManager.LOCKDOWN_COST),
+                keyLabel(Scp079Keybinds.LOCKDOWN), right, y, 1.04F,
+                lockdownAffordable ? Scp079UiTheme.TEXT : 0xFF526873,
+                lockdownAffordable);
+        y += 19;
+
         boolean speakerAvailable = Scp079PlayableClientSpeakerAccessor
                 .scpclassifieddirective$speakerAvailable();
         boolean speakerActive = Scp079PlayableClientSpeakerAccessor
@@ -138,12 +160,28 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
 
     private static int drawMove(GuiGraphics graphics, Minecraft minecraft,
             NavigationTarget target, KeyMapping key, int right, int y) {
-        boolean enabled = target != null;
+        boolean enabled = target != null && target.available();
         String destination = enabled ? target.roomName() : "NO CAMERA";
         int color = enabled ? Scp079UiTheme.TEXT : 0xFF526873;
         drawCommand(graphics, minecraft, "GO TO: " + destination,
                 keyLabel(key), right, y, 1.03F, color, enabled);
         return y + 18;
+    }
+
+    private static double adjustedCost(Minecraft minecraft, double base) {
+        if (minecraft.level == null) return base;
+        return base * switch (minecraft.level.getDifficulty()) {
+            case PEACEFUL -> 1.50D;
+            case EASY -> 1.25D;
+            case HARD -> 0.80D;
+            default -> 1.00D;
+        };
+    }
+
+    private static String formatCost(double value) {
+        return Math.abs(value - Math.rint(value)) < 0.01D
+                ? (int) Math.rint(value) + " AP"
+                : String.format(Locale.ROOT, "%.1f AP", value);
     }
 
     private static void drawCommand(GuiGraphics graphics, Minecraft minecraft,
@@ -154,7 +192,8 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         int keyTextW = Scp079UiTheme.scaledWidth(minecraft.font,
                 normalizedKey, keyScale);
         int capW = keyTextW + 10;
-        int capH = Math.max(13, Math.round(minecraft.font.lineHeight * keyScale) + 5);
+        int capH = Math.max(13,
+                Math.round(minecraft.font.lineHeight * keyScale) + 5);
         int capX = right - capW;
         int capY = y - 2;
         int fill = enabled ? opaque(color) : 0xFF526873;

@@ -373,8 +373,8 @@ public final class SurveillanceCameraPlaceholderModule {
             if (phase < firstEnd) {
                 float t = (phase - IDLE_PAUSE_TICKS)
                         / (float) IDLE_TRAVEL_TICKS;
-                return Mth.lerp(t, -IDLE_SWEEP_YAW_LIMIT,
-                        IDLE_SWEEP_YAW_LIMIT);
+                return mechanicalLerp(-IDLE_SWEEP_YAW_LIMIT,
+                        IDLE_SWEEP_YAW_LIMIT, t);
             }
             int secondPauseEnd = firstEnd + IDLE_PAUSE_TICKS;
             if (phase < secondPauseEnd) {
@@ -384,10 +384,17 @@ public final class SurveillanceCameraPlaceholderModule {
             if (phase < secondEnd) {
                 float t = (phase - secondPauseEnd)
                         / (float) IDLE_TRAVEL_TICKS;
-                return Mth.lerp(t, IDLE_SWEEP_YAW_LIMIT,
-                        -IDLE_SWEEP_YAW_LIMIT);
+                return mechanicalLerp(IDLE_SWEEP_YAW_LIMIT,
+                        -IDLE_SWEEP_YAW_LIMIT, t);
             }
             return -IDLE_SWEEP_YAW_LIMIT;
+        }
+
+        /** Ease the motor into and out of each sweep instead of reversing hard. */
+        private static float mechanicalLerp(float from, float to, float progress) {
+            float t = Mth.clamp(progress, 0.0F, 1.0F);
+            float eased = t * t * (3.0F - 2.0F * t);
+            return Mth.lerp(eased, from, to);
         }
 
         public float visualYaw(float partialTick) {
@@ -443,7 +450,8 @@ public final class SurveillanceCameraPlaceholderModule {
 
         @Override
         public AABB getRenderBoundingBox() {
-            return new AABB(worldPosition).inflate(0.75D);
+            // Covers the wall mount and the full +/-90 degree moving-head arc.
+            return new AABB(worldPosition).inflate(1.25D);
         }
 
         @Override
@@ -493,11 +501,8 @@ public final class SurveillanceCameraPlaceholderModule {
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
             tooltip.add(Component.literal(
-                    "Functional Equipment - Surveillance Network")
-                    .withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal(
                     "Automatically associates with mapped facility rooms.")
-                    .withStyle(ChatFormatting.DARK_GRAY));
+                    .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }
 

@@ -1,7 +1,6 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractSoundInstance;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
@@ -15,7 +14,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.valueproviders.ConstantFloat;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -26,17 +24,12 @@ import java.util.function.Supplier;
 /** Listener-relative audio heard only by the player currently controlling SCP-079. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID, value = Dist.CLIENT)
 public final class Scp079PlayableAudioClient {
-    private static final float STATIC_LOOP_VOLUME = 0.56F;
+    /** Slightly below the Live Personnel Feed's 1.0 static bed. */
+    private static final float STATIC_LOOP_VOLUME = 0.72F;
     private static final float MINIMUM_RUNNING_VOLUME = 0.001F;
-    private static final long TRANSITION_FADE_IN_MS = 140L;
-    private static final long TRANSITION_DURATION_MS = 420L;
-    private static final long TRANSITION_FADE_OUT_MS = 260L;
 
     private static FeedLoopSound feedStatic;
     private static FeedLoopSound feedTransition;
-    private static boolean feedWasActive;
-    private static Vec3 previousFeedPosition;
-    private static long transitionStartedAt = -1L;
 
     private Scp079PlayableAudioClient() {
     }
@@ -46,26 +39,14 @@ public final class Scp079PlayableAudioClient {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
         boolean feedActive = Scp079PlayableClient.cameraMode();
-        long now = Util.getMillis();
 
         if (!feedActive) {
             stop(minecraft, feedStatic);
             stop(minecraft, feedTransition);
             feedStatic = null;
             feedTransition = null;
-            feedWasActive = false;
-            previousFeedPosition = null;
-            transitionStartedAt = -1L;
             return;
         }
-
-        Vec3 position = Scp079PlayableClient.viewPosition();
-        if (!feedWasActive || previousFeedPosition == null
-                || position.distanceToSqr(previousFeedPosition) > 0.25D) {
-            transitionStartedAt = now;
-        }
-        feedWasActive = true;
-        previousFeedPosition = position;
 
         if (feedStatic == null
                 || !minecraft.getSoundManager().isActive(feedStatic)) {
@@ -78,7 +59,7 @@ public final class Scp079PlayableAudioClient {
                 || !minecraft.getSoundManager().isActive(feedTransition)) {
             stop(minecraft, feedTransition);
             feedTransition = new FeedLoopSound("feed_transition",
-                    Scp079PlayableAudioClient::transitionVolume);
+                    Scp079CameraEffectsClient::transitionEnvelope);
             minecraft.getSoundManager().play(feedTransition);
         }
     }
@@ -89,7 +70,6 @@ public final class Scp079PlayableAudioClient {
 
     public static void playRoomSwitch() {
         playRaw("079select_2", 1.0F, 1.0F);
-        transitionStartedAt = Util.getMillis();
     }
 
     public static void playLockOrTesla() {
@@ -104,23 +84,6 @@ public final class Scp079PlayableAudioClient {
         if (!Scp079PlayableClient.active()) return;
         Minecraft.getInstance().getSoundManager().play(
                 new DirectSound(path, volume, pitch));
-    }
-
-    private static float transitionVolume() {
-        if (!feedWasActive || transitionStartedAt < 0L) return 0.0F;
-        long elapsed = Math.max(0L, Util.getMillis() - transitionStartedAt);
-        if (elapsed >= TRANSITION_DURATION_MS) return 0.0F;
-        float fadeIn = smootherStep(Mth.clamp(
-                elapsed / (float) TRANSITION_FADE_IN_MS, 0.0F, 1.0F));
-        long remaining = TRANSITION_DURATION_MS - elapsed;
-        float fadeOut = smootherStep(Mth.clamp(
-                remaining / (float) TRANSITION_FADE_OUT_MS, 0.0F, 1.0F));
-        return Mth.clamp(fadeIn * fadeOut, 0.0F, 1.0F);
-    }
-
-    private static float smootherStep(float value) {
-        float t = Mth.clamp(value, 0.0F, 1.0F);
-        return t * t * (3.0F - 2.0F * t);
     }
 
     private static void stop(Minecraft minecraft, FeedLoopSound sound) {

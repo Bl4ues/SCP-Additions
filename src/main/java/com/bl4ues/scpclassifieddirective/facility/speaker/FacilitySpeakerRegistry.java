@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.facility.speaker;
 
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
@@ -13,8 +14,6 @@ import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,7 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Loaded physical speaker endpoints, resolved through authored room floors. */
+/** Loaded physical Speaker endpoints, with both room and facility-wide queries. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FacilitySpeakerRegistry {
@@ -62,7 +61,6 @@ public final class FacilitySpeakerRegistry {
         return speakersForRoom(level, room);
     }
 
-    /** Room-ID lookup reserved for selectors such as the future Intercom. */
     public static List<SpeakerEndpoint> speakersForRoom(ServerLevel level,
             UUID roomId) {
         if (level == null || roomId == null) return List.of();
@@ -72,9 +70,41 @@ public final class FacilitySpeakerRegistry {
         return room == null ? List.of() : speakersForRoom(level, room);
     }
 
+    /**
+     * Every currently loaded, physically valid Speaker on this server. Intercoms
+     * intentionally use this facility-wide route and do not depend on the room
+     * containing the Intercom itself.
+     */
+    public static List<SpeakerEndpoint> allSpeakers(MinecraftServer server) {
+        if (server == null) return List.of();
+        Set<SpeakerRef> refs;
+        synchronized (SPEAKERS) {
+            Set<SpeakerRef> registered = SPEAKERS.get(server);
+            if (registered == null || registered.isEmpty()) return List.of();
+            refs = Set.copyOf(registered);
+        }
+
+        return refs.stream()
+                .map(ref -> {
+                    ServerLevel level = server.getLevel(ref.dimension);
+                    if (level == null || !level.hasChunkAt(ref.pos)
+                            || !level.getBlockState(ref.pos)
+                            .is(SpeakerModule.BLOCK.get())) {
+                        return null;
+                    }
+                    return new SpeakerEndpoint(ref.dimension, ref.pos,
+                            Vec3.atCenterOf(ref.pos));
+                })
+                .filter(endpoint -> endpoint != null)
+                .sorted(Comparator
+                        .comparing((SpeakerEndpoint endpoint) ->
+                                endpoint.dimension().location().toString())
+                        .thenComparingLong(endpoint -> endpoint.pos().asLong()))
+                .toList();
+    }
+
     private static List<SpeakerEndpoint> speakersForRoom(ServerLevel level,
             FacilityRoomSnapshot room) {
-
         Set<SpeakerRef> refs;
         synchronized (SPEAKERS) {
             refs = SPEAKERS.get(level.getServer());

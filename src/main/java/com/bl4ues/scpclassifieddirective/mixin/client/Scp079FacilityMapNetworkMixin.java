@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.client.scp079.Scp079FacilityMapScreen;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,7 +40,8 @@ public abstract class Scp079FacilityMapNetworkMixin {
             GuiGraphics graphics, int mouseX, int mouseY, float partialTick,
             CallbackInfo ci) {
         if (!Scp079PlayableClient.active() || leaveConfirmation) return;
+        Screen screen = (Screen) (Object) this;
         Scp079FacilityMapNetworkOverlay.render(graphics, floorIndex,
-                mapZoom, panX, panY);
+                mapZoom, panX, panY, screen.width, screen.height);
     }
 }

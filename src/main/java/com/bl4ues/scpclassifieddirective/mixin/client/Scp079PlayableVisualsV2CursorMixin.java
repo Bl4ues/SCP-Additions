@@ -205,12 +205,20 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         int fill = enabled ? opaque(color) : 0xFF526873;
         graphics.fill(capX, capY, right, capY + capH, fill);
 
+        // PF Videotext carries visible top padding. Align both pieces by
+        // their optical centre instead of using the raw draw-string Y.
+        float labelTextHeight = minecraft.font.lineHeight * scale;
+        float labelY = capY + (capH - labelTextHeight) * 0.5F + 4.0F;
+        float keyTextHeight = minecraft.font.lineHeight * keyScale;
+        float keyY = capY + (capH - keyTextHeight) * 0.5F + 4.0F;
+
         int labelW = Scp079UiTheme.scaledWidth(minecraft.font, label, scale);
         int labelRight = capX - 7;
         Scp079UiTheme.draw(graphics, minecraft.font, label,
-                labelRight - labelW, y, scale, color);
+                labelRight - labelW, labelY, scale, color);
         Scp079UiTheme.drawCentered(graphics, minecraft.font, normalizedKey,
-                capX + capW * 0.5F, capY + 3, keyScale, 0xFF071116);
+                capX + capW * 0.5F - 1.0F, keyY,
+                keyScale, 0xFF071116);
     }
 
     private static int opaque(int color) {

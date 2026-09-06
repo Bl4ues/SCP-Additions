@@ -109,7 +109,7 @@ public final class Scp079CameraEffectsClient {
         if (Scp079PlayableClient.cameraMode() && lowLight > 0.04F) {
             int alpha = Mth.clamp(Math.round(lowLight * 255.0F), 0, 255);
             Scp079UiTheme.draw(event.getGuiGraphics(), minecraft.font,
-                    "LOW-LIGHT ENHANCEMENT", 24, height - 50,
+                    "NIGHT-VISION MODE ACTIVE", 24, height - 50,
                     1.08F, (alpha << 24) | 0x0079DDF3);
         }
         renderInterference(event.getGuiGraphics(), width, height);

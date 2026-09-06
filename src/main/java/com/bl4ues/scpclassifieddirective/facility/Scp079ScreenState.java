@@ -84,6 +84,17 @@ public final class Scp079ScreenState {
         else settle(level, pos);
     }
 
+    /** Same operation using the persistent host identity stored by a broadcast. */
+    public static void setSpeakerActive(MinecraftServer server,
+            Scp079FacilityAccessSavedData.TrackedPosition host,
+            boolean active) {
+        if (server == null || host == null) return;
+        ServerLevel level = level(server, host.dimension());
+        if (level != null) {
+            setSpeakerActive(level, BlockPos.of(host.packedPos()), active);
+        }
+    }
+
     public static void refreshLocal(ServerLevel level, BlockPos pos) {
         if (isLocalActive(level, pos) || isSpeakerActive(level, pos)
                 || isActionActive(level, pos)) {

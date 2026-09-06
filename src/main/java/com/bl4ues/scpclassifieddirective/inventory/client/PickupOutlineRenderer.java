@@ -50,10 +50,13 @@ import java.util.Map;
 public final class PickupOutlineRenderer {
     private static final double MODEL_UNIT = 1.0D / 16.0D;
     private static final double SCP_914_FLOOR_EPSILON = 0.1D / 16.0D;
+    private static final float SCP_914_TEXTURE_SIZE = 512.0F;
     private static final ResourceLocation POST_CHAIN = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "shaders/post/pickup_outline.json");
     private static final ResourceLocation BUTTON_MASK_TEXTURE =
             new ResourceLocation("minecraft", "textures/block/white_concrete.png");
+    private static final ResourceLocation SCP_914_TEXTURE = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID, "textures/block/scp914.png");
     private static final String MASK_TARGET = "pickup_mask";
     private static final String EDGE_TARGET = "pickup_edge";
 
@@ -200,8 +203,8 @@ public final class PickupOutlineRenderer {
     /**
      * SCP-914 shares one huge GeckoLib BlockEntity, but its normal prompts are
      * attached to two tiny physical controls. Replaying only those authored
-     * cubes prevents the complete machine from flashing when the player aims at
-     * the dial or winding key.
+     * controls prevents the complete machine from flashing when the player aims
+     * at the dial or winding key.
      */
     private static void renderScp914ControlMask(Minecraft minecraft,
             ContextPromptOutlineTarget.Target context, PoseStack poseStack,
@@ -223,30 +226,107 @@ public final class PickupOutlineRenderer {
             poseStack.translate(0.5D, 0.0D, 0.5D);
             rotateForFacing(poseStack, facing);
 
-            VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
-                    RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
             if ("scp_914_dial".equals(context.interactionKey())) {
-                BlockEntity blockEntity = minecraft.level.getBlockEntity(pos);
-                float dialAngle = blockEntity instanceof Scp914BlockEntity machine
-                        ? Scp914InteractionClient.renderDialAngle(machine) : 0.0F;
-                applyAuthoredBoneTransform(poseStack,
-                        0.0D, 20.04D, -8.25D,
-                        0.0D, 0.0D, dialAngle);
-                // Main grab_dial cube from scp914.geo.json.
-                emitAuthoredCube(consumer, poseStack.last(),
-                        -1.07D, 18.97D, -8.785D,
-                        2.14D, 2.14D, 0.535D);
+                renderScp914DialMask(minecraft, pos, poseStack);
             } else if ("scp_914_start".equals(context.interactionKey())) {
-                // wind_key is authored as a zero-thickness X plane. Give the
-                // mask a sub-pixel physical thickness while preserving its exact
-                // Y/Z bounds so the post-process can recover a stable silhouette.
-                emitAuthoredCube(consumer, poseStack.last(),
-                        -0.18D, 13.75D, -9.95D,
-                        0.36D, 1.5D, 1.75D);
+                renderScp914WindingKeyMask(poseStack);
             }
         } finally {
             poseStack.popPose();
         }
+    }
+
+    /**
+     * Replays every cube in the animated grab_dial bone from scp914.geo.json.
+     * triangle_dial and dial_body are deliberately excluded: the triangle moves
+     * in the opposite direction and dial_body is the stationary backing plate.
+     */
+    private static void renderScp914DialMask(Minecraft minecraft, BlockPos pos,
+            PoseStack poseStack) {
+        VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
+                RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
+        BlockEntity blockEntity = minecraft.level.getBlockEntity(pos);
+        float dialAngle = blockEntity instanceof Scp914BlockEntity machine
+                ? Scp914InteractionClient.renderDialAngle(machine) : 0.0F;
+
+        poseStack.pushPose();
+        try {
+            applyAuthoredBoneTransform(poseStack,
+                    0.0D, 20.04D, -8.25D,
+                    0.0D, 0.0D, dialAngle);
+
+            emitAuthoredCube(consumer, poseStack.last(),
+                    -1.07D, 18.97D, -8.785D,
+                    2.14D, 2.14D, 0.535D);
+            emitAuthoredCube(consumer, poseStack.last(),
+                    -0.0535D, 19.612D, -9.534D,
+                    0.107D, 0.856D, 0.107D);
+            emitAuthoredCube(consumer, poseStack.last(),
+                    0.428D, 19.505D, -9.534D,
+                    0.107D, 1.07D, 0.107D);
+            emitAuthoredCube(consumer, poseStack.last(),
+                    -0.535D, 19.505D, -9.534D,
+                    0.107D, 1.07D, 0.107D);
+            emitAuthoredCube(consumer, poseStack.last(),
+                    -0.428D, 20.468D, -9.534D,
+                    0.856D, 0.107D, 0.107D);
+            emitAuthoredCube(consumer, poseStack.last(),
+                    -0.428D, 19.505D, -9.534D,
+                    0.856D, 0.107D, 0.107D);
+            emitAuthoredCube(consumer, poseStack.last(),
+                    -0.535D, 19.505D, -9.427D,
+                    1.07D, 1.07D, 0.0D);
+
+            emitTransformedAuthoredCube(consumer, poseStack,
+                    -0.8025D, 20.8425D, -9.5875D,
+                    1.605D, 0.0D, 0.8025D,
+                    0.0D, 20.8425D, -8.75825D,
+                    22.5D, 0.0D, 0.0D);
+            emitTransformedAuthoredCube(consumer, poseStack,
+                    -0.8025D, 19.2375D, -9.5875D,
+                    1.605D, 0.0D, 0.8025D,
+                    0.0D, 19.2375D, -8.75825D,
+                    -22.5D, 0.0D, 0.0D);
+            emitTransformedAuthoredCube(consumer, poseStack,
+                    0.0D, 20.04D, -9.5875D,
+                    1.605D, 0.0D, 0.8025D,
+                    0.8025D, 20.04D, -8.75825D,
+                    -22.5D, 0.0D, -90.0D);
+            emitTransformedAuthoredCube(consumer, poseStack,
+                    -1.605D, 20.04D, -9.5875D,
+                    1.605D, 0.0D, 0.8025D,
+                    -0.8025D, 20.04D, -8.75825D,
+                    -22.5D, 0.0D, 90.0D);
+
+            // These are the two authored faces that form the arrow above the
+            // draggable dial. They belong to grab_dial and rotate with it.
+            emitTransformedAuthoredCube(consumer, poseStack,
+                    -0.73064D, 21.41264D, -8.892D,
+                    0.856D, 0.0D, 0.642D,
+                    -0.30264D, 21.41264D, -8.25D,
+                    45.0D, 0.0D, -45.0D);
+            emitTransformedAuthoredCube(consumer, poseStack,
+                    -0.12536D, 21.41264D, -8.892D,
+                    0.856D, 0.0D, 0.642D,
+                    0.30264D, 21.41264D, -8.25D,
+                    45.0D, 0.0D, 45.0D);
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    /**
+     * wind_key is a textured zero-thickness plane. Its visible key silhouette is
+     * defined by alpha in scp914.png, not by the rectangular plane bounds, so the
+     * outline must sample the same authored face instead of substituting a box.
+     */
+    private static void renderScp914WindingKeyMask(PoseStack poseStack) {
+        VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
+                RenderType.entityCutoutNoCull(SCP_914_TEXTURE));
+        emitAuthoredTexturedXPlane(consumer, poseStack.last(),
+                0.0D, 13.75D, -9.95D,
+                1.5D, 1.75D,
+                266.5F, 20.0F, 8.0F, 5.0F);
     }
 
     /**
@@ -383,6 +463,22 @@ public final class PickupOutlineRenderer {
         };
     }
 
+    private static void emitTransformedAuthoredCube(VertexConsumer consumer,
+            PoseStack poseStack, double originX, double originY,
+            double originZ, double sizeX, double sizeY, double sizeZ,
+            double pivotX, double pivotY, double pivotZ,
+            double rotationX, double rotationY, double rotationZ) {
+        poseStack.pushPose();
+        try {
+            applyAuthoredBoneTransform(poseStack, pivotX, pivotY, pivotZ,
+                    rotationX, rotationY, rotationZ);
+            emitAuthoredCube(consumer, poseStack.last(), originX, originY,
+                    originZ, sizeX, sizeY, sizeZ);
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
     /** Emit the exact converted bounds of one cube from a GeckoLib geo file. */
     private static void emitAuthoredCube(VertexConsumer consumer,
             PoseStack.Pose pose, double originX, double originY,
@@ -431,6 +527,38 @@ public final class PickupOutlineRenderer {
                 (float) maxX, (float) minY, (float) minZ,
                 (float) maxX, (float) minY, (float) maxZ,
                 0.0F, -1.0F, 0.0F);
+    }
+
+    /**
+     * Emits the authored east face of a zero-thickness X cube while retaining
+     * the atlas alpha. No-cull rendering makes the same physical silhouette
+     * visible from either side without replacing it with artificial thickness.
+     */
+    private static void emitAuthoredTexturedXPlane(VertexConsumer consumer,
+            PoseStack.Pose pose, double x, double originY, double originZ,
+            double sizeY, double sizeZ, float uvX, float uvY,
+            float uvWidth, float uvHeight) {
+        float px = (float) (-x * MODEL_UNIT);
+        float minY = (float) (originY * MODEL_UNIT);
+        float maxY = (float) ((originY + sizeY) * MODEL_UNIT);
+        float minZ = (float) (originZ * MODEL_UNIT);
+        float maxZ = (float) ((originZ + sizeZ) * MODEL_UNIT);
+        float u0 = uvX / SCP_914_TEXTURE_SIZE;
+        float v0 = uvY / SCP_914_TEXTURE_SIZE;
+        float u1 = (uvX + uvWidth) / SCP_914_TEXTURE_SIZE;
+        float v1 = (uvY + uvHeight) / SCP_914_TEXTURE_SIZE;
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
+
+        // Bedrock's east face maps U across Z and V from top to bottom.
+        vertex(consumer, matrix, normal, px, minY, maxZ,
+                u0, v1, 1.0F, 0.0F, 0.0F);
+        vertex(consumer, matrix, normal, px, minY, minZ,
+                u1, v1, 1.0F, 0.0F, 0.0F);
+        vertex(consumer, matrix, normal, px, maxY, minZ,
+                u1, v0, 1.0F, 0.0F, 0.0F);
+        vertex(consumer, matrix, normal, px, maxY, maxZ,
+                u0, v0, 1.0F, 0.0F, 0.0F);
     }
 
     private static void quad(VertexConsumer consumer, Matrix4f matrix,

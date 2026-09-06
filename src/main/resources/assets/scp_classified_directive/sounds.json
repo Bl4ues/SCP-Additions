@@ -1693,5 +1693,32 @@
         "volume": 1.0
       }
     ]
+  },
+  "intercom_on": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:intercom_on",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "intercom_off": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:intercom_off",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "intercom_loop": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:intercom_loop",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

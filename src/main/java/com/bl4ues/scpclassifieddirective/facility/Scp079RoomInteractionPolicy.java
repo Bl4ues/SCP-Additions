@@ -10,7 +10,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /** Spatial authority for devices exposed through the active surveillance room. */
 public final class Scp079RoomInteractionPolicy {
-    private static final int FLOOR_BORDER = 1;
+    private static final int TARGET_BORDER = 1;
+    private static final int CAMERA_BORDER = 4;
 
     private Scp079RoomInteractionPolicy() {
     }
@@ -20,12 +21,20 @@ public final class Scp079RoomInteractionPolicy {
                 || !Scp079PlayableManager.isController(player)) return false;
         ServerLevel level = player.serverLevel();
         BlockPos viewpoint = BlockPos.containing(player.position());
-        FacilityRoomSnapshot room = FacilityMappingManager.roomSnapshots(level)
-                .stream()
-                .filter(candidate -> withinExpandedFloor(candidate, viewpoint,
-                        FLOOR_BORDER))
-                .findFirst().orElse(null);
-        return room != null && withinExpandedFloor(room, target, FLOOR_BORDER);
+
+        // Do not resolve the camera to the first nearby room and then test the
+        // target. Wall-mounted/angled cameras can sit on a boundary shared by two
+        // mapped rooms, making iteration order choose the wrong one. Instead,
+        // accept any authored room that contains both the camera vicinity and the
+        // aimed device. The target allowance stays tight so doors on the border
+        // work without granting control of devices several blocks outside.
+        for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
+            if (withinExpandedFloor(room, target, TARGET_BORDER)
+                    && withinExpandedFloor(room, viewpoint, CAMERA_BORDER)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean withinExpandedFloor(FacilityRoom room,

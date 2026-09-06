@@ -45,11 +45,7 @@ public final class Scp079RemoteHostAudioBridge {
             return;
         }
         BlockPos hostPos = Scp079PlayableManager.hostPosition(operator);
-        if (hostPos == null || !level.dimension().equals(
-                operator.getServer().getLevel(operator.level().dimension()) == null
-                        ? level.dimension() : level.dimension())) {
-            return;
-        }
+        if (hostPos == null) return;
 
         Vec3 sourcePos = event.getPosition();
         Vec3 host = Vec3.atCenterOf(hostPos);

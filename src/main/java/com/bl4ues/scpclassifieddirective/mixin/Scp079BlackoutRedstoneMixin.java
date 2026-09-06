@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Makes active blackout light cells report no redstone power for their duration. */
 @Mixin(SignalGetter.class)
-public abstract class Scp079BlackoutRedstoneMixin {
+public interface Scp079BlackoutRedstoneMixin {
     @Inject(method = "hasNeighborSignal", at = @At("HEAD"), cancellable = true)
-    private void scpclassifieddirective$suppressBlackoutLightPower(
+    default void scpclassifieddirective$suppressBlackoutLightPower(
             BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
         Object self = this;
         if (self instanceof ServerLevel level

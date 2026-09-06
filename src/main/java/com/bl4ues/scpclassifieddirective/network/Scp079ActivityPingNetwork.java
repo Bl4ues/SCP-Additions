@@ -6,9 +6,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -16,20 +13,13 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /** One-way visual activity hints for the playable SCP-079 facility map. */
-@Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
-        bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Scp079ActivityPingNetwork {
     private static boolean registered;
 
     private Scp079ActivityPingNetwork() {
     }
 
-    @SubscribeEvent
-    public static void onCommonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(Scp079ActivityPingNetwork::register);
-    }
-
-    private static synchronized void register() {
+    public static synchronized void register() {
         if (registered) return;
         registered = true;
         ScpClassifiedDirectiveMod.addNetworkMessage(ActivityPing.class,

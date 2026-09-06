@@ -84,9 +84,23 @@ public final class Scp079ScreenState {
         else settle(level, pos);
     }
 
+    /** Resolve the controlled physical host into a package-independent token. */
+    public static HostRef speakerHost(ServerPlayer operator) {
+        if (operator == null || operator.getServer() == null) return null;
+        BlockPos hostPos = Scp079PlayableManager.hostPosition(operator);
+        if (hostPos == null) return null;
+        long packed = hostPos.asLong();
+        for (Scp079FacilityAccessSavedData.TrackedPosition host
+                : Scp079FacilityAccessSavedData.get(operator.getServer()).hosts()) {
+            if (host.packedPos() == packed) {
+                return new HostRef(host.dimension(), host.packedPos());
+            }
+        }
+        return null;
+    }
+
     /** Same operation using the persistent host identity stored by a broadcast. */
-    public static void setSpeakerActive(MinecraftServer server,
-            Scp079FacilityAccessSavedData.TrackedPosition host,
+    public static void setSpeakerActive(MinecraftServer server, HostRef host,
             boolean active) {
         if (server == null || host == null) return;
         ServerLevel level = level(server, host.dimension());
@@ -232,5 +246,11 @@ public final class Scp079ScreenState {
         ResourceLocation id = ResourceLocation.tryParse(dimension);
         if (id == null) return null;
         return server.getLevel(ResourceKey.create(Registries.DIMENSION, id));
+    }
+
+    public record HostRef(String dimension, long packedPos) {
+        public HostRef {
+            dimension = dimension == null ? "" : dimension;
+        }
     }
 }

@@ -67,34 +67,11 @@ public final class Scp079FacilityMapNetworkOverlay {
         if (hostRoom == null || floor.rooms().stream().noneMatch(room ->
                 room.id().equals(hostRoom.id()))) return;
 
-        double markerX = host.getX() + 0.5D;
-        double markerZ = host.getZ() + 0.5D;
-        Set<Long> cells = roomCells(hostRoom);
-
-        // roomAt intentionally accepts a one-block border so wall-mounted
-        // devices still belong to their room. That is useful for gameplay, but
-        // drawing the raw host block can therefore place the 079 marker outside
-        // the authored map shape. Snap only those border cases back onto the
-        // nearest actual room cell; hosts already inside the room keep their
-        // precise world position.
-        if (!cells.contains(pack(host.getX(), host.getZ())) && !cells.isEmpty()) {
-            double bestDistance = Double.MAX_VALUE;
-            for (long packed : cells) {
-                double cellX = unpackX(packed) + 0.5D;
-                double cellZ = unpackZ(packed) + 0.5D;
-                double dx = cellX - markerX;
-                double dz = cellZ - markerZ;
-                double distance = dx * dx + dz * dz;
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    markerX = cellX;
-                    markerZ = cellZ;
-                }
-            }
-        }
-
-        int centerX = transform.sx(markerX);
-        int centerY = transform.sy(markerZ);
+        // The marker represents the physical SCP-079 host itself, not the room
+        // that owns it. Always project the exact center of the host block into
+        // map space, even if the authored room floor does not cover that cell.
+        int centerX = transform.sx(host.getX() + 0.5D);
+        int centerY = transform.sy(host.getZ() + 0.5D);
         int size = Math.max(2, Math.min(7,
                 (int) Math.floor(transform.scale() * 0.48D)));
         int half = Math.max(1, size / 2);

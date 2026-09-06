@@ -13,8 +13,10 @@ import com.bl4ues.scpclassifieddirective.compat.MineZeroScpCheckpoint;
 /** Persistent selected pictogram for a Hazard Sign. */
 public final class HazardSignBlockEntity extends BlockEntity {
     private static final String HAZARD_KEY = "Hazard";
+    private static final String CONFIGURED_KEY = "Configured";
 
     private String hazardId = "";
+    private boolean configured;
 
     public HazardSignBlockEntity(BlockPos pos, BlockState state) {
         super(HazardSignModule.BLOCK_ENTITY.get(), pos, state);
@@ -24,9 +26,13 @@ public final class HazardSignBlockEntity extends BlockEntity {
         return hazardId;
     }
 
+    public boolean configured() {
+        return configured;
+    }
+
     public void setHazardId(String id) {
         String clean = ScpSignHazards.normalizeId(id);
-        if (clean.equals(hazardId)) return;
+        if (clean.equals(hazardId) && configured) return;
         if (level instanceof ServerLevel serverLevel) {
             try {
                 MineZeroScpCheckpoint.recordBlockBeforeChange(serverLevel,
@@ -38,6 +44,7 @@ public final class HazardSignBlockEntity extends BlockEntity {
             }
         }
         hazardId = clean;
+        configured = true;
         setChanged();
         if (level != null && !level.isClientSide) {
             BlockState state = getBlockState();
@@ -49,12 +56,14 @@ public final class HazardSignBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putString(HAZARD_KEY, hazardId);
+        tag.putBoolean(CONFIGURED_KEY, configured);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         hazardId = ScpSignHazards.normalizeId(tag.getString(HAZARD_KEY));
+        configured = tag.getBoolean(CONFIGURED_KEY);
     }
 
     @Override

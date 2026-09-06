@@ -2,10 +2,15 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -27,10 +32,13 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents;
+import com.bl4ues.scpclassifieddirective.network.HazardSignNetwork;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -132,6 +140,30 @@ public final class HazardSignBlock extends BaseEntityBlock
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new HazardSignBlockEntity(pos, state);
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+            @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!level.isClientSide && placer instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(pos)
+                        instanceof HazardSignBlockEntity sign) {
+            HazardSignNetwork.openEditor(serverPlayer, sign);
+        }
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+            Player player, InteractionHand hand, BlockHitResult hit) {
+        ItemStack screwdriver = KeycardReaderInteractionEvents.screwdriver(player);
+        if (screwdriver.isEmpty()) return InteractionResult.PASS;
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(pos)
+                        instanceof HazardSignBlockEntity sign) {
+            HazardSignNetwork.openEditor(serverPlayer, sign);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override

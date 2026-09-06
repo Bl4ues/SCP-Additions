@@ -60,7 +60,8 @@ public final class IntercomAudioClient {
             this.z = key.pos.getZ() + 0.5D;
         }
 
-        private boolean isStopped() {
+        @Override
+        public boolean isStopped() {
             return stopped;
         }
 

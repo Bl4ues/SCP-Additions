@@ -25,6 +25,7 @@
     "Scp1576VoiceBridgeMixin",
     "RoombaNoEntityPushMixin",
     "NativeMachineScrewdriverRulesMixin",
+    "IntercomContextAvailabilityMixin",
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",
     "Scp079PlayerControlAiGateMixin",

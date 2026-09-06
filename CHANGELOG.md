@@ -160,8 +160,11 @@
 - Added a functional **Surveillance Camera** placeholder in the Facility **Functional** section; placed cameras persist in the shared surveillance registry, inherit room membership from the mapped floor beneath them, and reserve the stable `surveillance_camera` registry ID for the future animated GeckoLib replacement;
 - Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section; playable SCP-079 can use a dedicated rebindable shortcut to begin or stop room-wide broadcasts without aiming at the device;
 - Active Speakers play positional startup, shutdown, and continuous static audio, and optionally relay SCP-079's Simple Voice Chat microphone through a deliberately narrow-band, distorted radio filter without adding synthetic noise;
-- SCP-079 Speaker broadcasts now add a separate deterministic robotic filter chain on top of the shared PA/radio coloration, while future manual Intercom sources retain the normal human voice filter path;
-- Added a shared source-to-Speaker routing layer so the future Intercom can use the same room endpoints, activation state, audio presentation, and voice-filter path;
+- SCP-079 Speaker broadcasts now add a separate deterministic robotic filter chain on top of the shared PA/radio coloration, while physical Intercom sources retain the normal human voice filter path;
+- Added an animated desk-mounted **Intercom** to the Facility **Functional** section; its physical contextual button toggles the authored turn-on/turn-off animation, indicator state, and local on/off/loop audio;
+- Active Intercoms route every valid Speaker in their mapped room, remain active while a living player stays within two blocks, refresh room endpoints continuously, and shut down when abandoned or when no mapped Speaker remains available;
+- With Simple Voice Chat available, active Intercoms capture ordinary player speech within five blocks of the authored microphone position and relay a filtered positional copy through the room Speakers; nearby server-side world sounds are relayed independently through the same Speaker coloration;
+- The shared source-to-Speaker routing layer now serves both playable SCP-079 and physical Intercoms, keeping room endpoints, activation state, audio presentation, and voice filtering consistent between the two sources;
 - Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## SCP-079 auxiliary isolation and SCiPNET reindexing

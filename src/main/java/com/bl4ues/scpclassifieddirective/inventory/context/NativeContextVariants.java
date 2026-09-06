@@ -26,14 +26,19 @@ public final class NativeContextVariants {
             "left_reader", "lv_2_left_reader", "lv_3_left_reader",
             "lv_4_left_reader", "lv_5_left_reader", "lv_6_left_reader");
 
-    private static final Map<String, String> TOOL_BLOCKS = Map.of(
-            "tesla_terminal_block", "Configure",
-            "tesla_terminal_off", "Configure",
-            "core_room_elevator_station", "Configure Display",
-            "sign_support", "Edit",
-            "core_room_sign", "Edit",
-            "door_sign", "Edit",
-            "facility_prop_part", "Edit");
+    private static final Map<String, String> TOOL_BLOCKS = Map.ofEntries(
+            Map.entry("tesla_terminal_block", "Configure"),
+            Map.entry("tesla_terminal_off", "Configure"),
+            Map.entry("core_room_elevator_station", "Configure Display"),
+            Map.entry("sign_support", "Edit"),
+            Map.entry("core_room_sign", "Edit"),
+            Map.entry("door_sign", "Edit"),
+            Map.entry("facility_prop_part", "Edit"),
+            Map.entry("scp_294", "Configure"),
+            Map.entry("scp_914", "Configure"),
+            Map.entry("scp_914_reservation", "Configure"),
+            Map.entry("scp_914_collision", "Configure"),
+            Map.entry("scp_914_door_collision", "Configure"));
 
     private static final Set<String> TOOL_ENTITIES = Set.of(
             "scp_131_a", "scp_131_b", "roomba");
@@ -103,7 +108,7 @@ public final class NativeContextVariants {
         boolean entity = "entity".equalsIgnoreCase(type);
         variant.addProperty("interactionId", entity
                 ? DISMANTLE_INTERACTION : SCREWDRIVER_INTERACTION);
-        variant.addProperty("priority", 45);
+        variant.addProperty("priority", isScpMachine(id) ? 150 : 45);
         variant.addProperty("useItem", "hand");
 
         JsonObject text = new JsonObject();
@@ -119,6 +124,11 @@ public final class NativeContextVariants {
         visual.addProperty("icon", "config");
         variant.add("visual", visual);
         return variant;
+    }
+
+    private static boolean isScpMachine(ResourceLocation id) {
+        return id != null && ("scp_294".equals(id.getPath())
+                || id.getPath().startsWith("scp_914"));
     }
 
     private static String nativeAction(String type, ResourceLocation id) {

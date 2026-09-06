@@ -8,12 +8,7 @@ import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import net.minecraft.server.level.ServerPlayer;
 
-/**
- * Prevents the implementation-only spectator anchor used by playable SCP-079
- * camera feeds from becoming a physical Simple Voice Chat microphone source.
- * Local-host control intentionally remains unaffected so voice can still come
- * from SCP-079's actual physical computer when that mode is being used.
- */
+/** Routes SCP-079 and physical Intercom microphone traffic into facility Speakers. */
 @ForgeVoicechatPlugin
 public final class Scp079VoiceChatGuard implements VoicechatPlugin {
     private static final String PLUGIN_ID =
@@ -33,10 +28,19 @@ public final class Scp079VoiceChatGuard implements VoicechatPlugin {
     private static void onMicrophone(MicrophonePacketEvent event) {
         if (!ModCompatibilityConfig.simpleVoiceChatEnabled()) return;
         ServerPlayer sender = minecraftPlayer(event.getSenderConnection());
-        if (sender != null && Scp079PlayableManager.isCameraMode(sender)) {
+        if (sender == null) return;
+
+        if (Scp079PlayableManager.isCameraMode(sender)) {
+            // The camera-mode player is an implementation anchor, not a physical
+            // microphone. Only SCP-079's explicit Speaker route is allowed.
             SpeakerVoiceChatBridge.relay(event, sender);
             event.cancel();
+            return;
         }
+
+        // Ordinary proximity voice remains untouched, but an active Intercom
+        // microphone within five blocks receives a filtered copy for its room.
+        SpeakerVoiceChatBridge.relayIntercom(event, sender);
     }
 
     private static ServerPlayer minecraftPlayer(VoicechatConnection connection) {

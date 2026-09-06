@@ -14,6 +14,8 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -126,12 +128,45 @@ public final class IntercomClient {
                 IntercomModule.IntercomItem animatable) {
             return ANIMATION;
         }
+
+        @Override
+        public void setCustomAnimations(IntercomModule.IntercomItem animatable,
+                long instanceId,
+                AnimationState<IntercomModule.IntercomItem> animationState) {
+            super.setCustomAnimations(animatable, instanceId, animationState);
+            // The authored geometry contains both indicator meshes at the same
+            // location. A placed Intercom's idle animation chooses one of them;
+            // the inventory renderer has no active state, so force the proper
+            // powered-off representation instead of drawing both surfaces.
+            CoreGeoBone lightOff = getAnimationProcessor().getBone("light_off");
+            CoreGeoBone lightOn = getAnimationProcessor().getBone("light_on");
+            if (lightOff != null) lightOff.setHidden(false);
+            if (lightOn != null) lightOn.setHidden(true);
+        }
     }
 
     public static final class ItemRenderer extends
             GeoItemRenderer<IntercomModule.IntercomItem> {
         public ItemRenderer() {
             super(new ItemModel());
+            // Preserve the same shader-safe emissive resource path in item
+            // contexts. In the forced off pose the active indicator bone stays
+            // hidden, while any authored always-emissive pixels still render.
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        IntercomModule.IntercomItem animatable,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight, int packedOverlay) {
+                    RenderType emissive = RenderType.eyes(GLOWMASK);
+                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                            animatable, emissive,
+                            bufferSource.getBuffer(emissive), partialTick,
+                            FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                            1.0F, 1.0F, 1.0F, 1.0F);
+                }
+            });
         }
 
         @Override

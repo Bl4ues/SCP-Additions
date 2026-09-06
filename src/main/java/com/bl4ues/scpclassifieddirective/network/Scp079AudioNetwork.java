@@ -15,17 +15,32 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
 
 /** Audio-only packets for SCP-079's remote host and facility Speaker perception. */
+@Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
+        bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Scp079AudioNetwork {
     private static boolean registered;
 
     private Scp079AudioNetwork() {
+    }
+
+    @SubscribeEvent
+    public static void onCommonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
+            // Keep both late SCP-079 packet families registered in one explicit
+            // order on dedicated and client runtimes. Message IDs are sequential.
+            Scp079ActivityPingNetwork.register();
+            register();
+        });
     }
 
     public static synchronized void register() {

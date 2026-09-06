@@ -88,7 +88,7 @@ public final class Scp079CameraNavigationClient {
             CameraNode camera = cameraForRoom(destination.id(),
                     destinationCenter);
             String roomName = destination.name().isBlank()
-                    ? "UNNAMED ROOM"
+                    ? directionalRoomName(move)
                     : destination.name().toUpperCase(Locale.ROOT);
             result.put(move, new NavigationTarget(
                     camera == null ? null : camera.cameraId(),
@@ -96,6 +96,15 @@ public final class Scp079CameraNavigationClient {
                     roomDistances.getOrDefault(move, Double.MAX_VALUE)));
         }
         return result;
+    }
+
+    private static String directionalRoomName(Move move) {
+        return switch (move) {
+            case FORWARD -> "NORTH ROOM";
+            case LEFT -> "WEST ROOM";
+            case BACK -> "SOUTH ROOM";
+            case RIGHT -> "EAST ROOM";
+        };
     }
 
     private static CameraNode currentNode() {

@@ -45,9 +45,14 @@ public final class Scp079RoomAbilityNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player != null) {
-                    Scp079RoomAbilityManager.use(player, message.ability);
+                if (player == null
+                        || !Scp079RoomAbilityManager.use(player, message.ability)) {
+                    return;
                 }
+                Scp079ActionAudioNetwork.send(player,
+                        message.ability == Scp079RoomAbilityManager.Ability.BLACKOUT
+                                ? Scp079ActionAudioNetwork.Cue.BLACKOUT
+                                : Scp079ActionAudioNetwork.Cue.LOCKDOWN);
             });
             context.setPacketHandled(true);
         }

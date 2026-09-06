@@ -19,7 +19,9 @@ public final class Scp079ActionAudioNetwork {
 
     public enum Cue {
         LOCK_OR_TESLA,
-        DOOR_TOGGLE
+        DOOR_TOGGLE,
+        BLACKOUT,
+        LOCKDOWN
     }
 
     public static synchronized void register() {
@@ -50,10 +52,15 @@ public final class Scp079ActionAudioNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> {
-                        if (message.cue == Cue.LOCK_OR_TESLA) {
-                            Scp079PlayableAudioClient.playLockOrTesla();
-                        } else if (message.cue == Cue.DOOR_TOGGLE) {
-                            Scp079PlayableAudioClient.playDoorToggle();
+                        switch (message.cue) {
+                            case LOCK_OR_TESLA ->
+                                    Scp079PlayableAudioClient.playLockOrTesla();
+                            case DOOR_TOGGLE ->
+                                    Scp079PlayableAudioClient.playDoorToggle();
+                            case BLACKOUT ->
+                                    Scp079PlayableAudioClient.playButton();
+                            case LOCKDOWN ->
+                                    Scp079PlayableAudioClient.playLockOrTesla();
                         }
                     }));
             context.setPacketHandled(true);

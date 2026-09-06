@@ -167,9 +167,9 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
     private static int drawMove(GuiGraphics graphics, Minecraft minecraft,
             NavigationTarget target, KeyMapping key, int right, int y) {
         boolean enabled = target != null && target.available();
-        String destination = enabled ? target.roomName() : "NO CAMERA";
+        String label = enabled ? "GO TO: " + target.roomName() : "NO CAMERA";
         int color = enabled ? Scp079UiTheme.TEXT : 0xFF526873;
-        drawCommand(graphics, minecraft, "GO TO: " + destination,
+        drawCommand(graphics, minecraft, label,
                 keyLabel(key), right, y, 1.03F, color, enabled);
         return y + 18;
     }

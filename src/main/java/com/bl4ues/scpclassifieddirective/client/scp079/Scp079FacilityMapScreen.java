@@ -33,7 +33,9 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static final int MAP_BOTTOM = 64;
     private static final int TOP_Y = 29;
     private static final int TOP_BUTTON_H = 27;
+    private static final int TOP_CONTROL_GAP = 12;
     private static final int LEAVE_BUTTON_W = 142;
+    private static final int RETURN_BUTTON_W = 164;
     private static final double MIN_ZOOM = 0.55D;
     private static final double MAX_ZOOM = 4.5D;
 
@@ -108,17 +110,16 @@ public final class Scp079FacilityMapScreen extends Screen {
                 1.06F, leaveHover ? 0xFFFFFFFF : 0xFFCBA7AA);
 
         if (!Scp079PlayableClient.cameraMode()) return;
-        int returnW = 164;
-        int returnX = leaveX - returnW - 12;
+        int returnX = returnX();
         boolean hover = !leaveConfirmation && inside(mouseX, mouseY,
-                returnX, TOP_Y, returnW, TOP_BUTTON_H);
-        graphics.fill(returnX, TOP_Y, returnX + returnW,
+                returnX, TOP_Y, RETURN_BUTTON_W, TOP_BUTTON_H);
+        graphics.fill(returnX, TOP_Y, returnX + RETURN_BUTTON_W,
                 TOP_Y + TOP_BUTTON_H,
                 hover ? 0xD51A3545 : 0xB8122835);
-        border(graphics, returnX, TOP_Y, returnW, TOP_BUTTON_H,
+        border(graphics, returnX, TOP_Y, RETURN_BUTTON_W, TOP_BUTTON_H,
                 hover ? Scp079UiTheme.ACCENT : 0xFF52798C);
         Scp079UiTheme.drawCenteredInControl(graphics, font,
-                "RETURN TO LOCAL HOST", returnX + returnW * 0.5F,
+                "RETURN TO LOCAL HOST", returnX + RETURN_BUTTON_W * 0.5F,
                 TOP_Y, TOP_BUTTON_H, 1.03F,
                 hover ? 0xFFFFFFFF : Scp079UiTheme.ACCENT);
     }
@@ -126,9 +127,8 @@ public final class Scp079FacilityMapScreen extends Screen {
     private void renderFloorSelector(GuiGraphics graphics, int mouseX,
             int mouseY, FloorGroup floor) {
         String label = floor.longLabel;
-        int w = Math.max(190,
-                Scp079UiTheme.scaledWidth(font, label, 1.08F) + 46);
-        int x = (width - w) / 2;
+        int w = floorSelectorWidth(floor);
+        int x = floorSelectorX(w);
         boolean hovered = !leaveConfirmation
                 && inside(mouseX, mouseY, x, TOP_Y, w, TOP_BUTTON_H);
         graphics.fill(x, TOP_Y, x + w, TOP_Y + TOP_BUTTON_H,
@@ -322,10 +322,9 @@ public final class Scp079FacilityMapScreen extends Screen {
             return true;
         }
         if (Scp079PlayableClient.cameraMode()) {
-            int returnW = 164;
-            int returnX = leaveX - returnW - 12;
+            int returnX = returnX();
             if (inside(mouseX, mouseY, returnX, TOP_Y,
-                    returnW, TOP_BUTTON_H)) {
+                    RETURN_BUTTON_W, TOP_BUTTON_H)) {
                 Scp079PlayableNetwork.requestLocal();
                 onClose();
                 return true;
@@ -334,10 +333,8 @@ public final class Scp079FacilityMapScreen extends Screen {
 
         if (!floors.isEmpty()) {
             FloorGroup floor = floors.get(floorIndex);
-            int w = Math.max(190,
-                    Scp079UiTheme.scaledWidth(font,
-                            floor.longLabel, 1.08F) + 46);
-            int x = (width - w) / 2;
+            int w = floorSelectorWidth(floor);
+            int x = floorSelectorX(w);
             if (inside(mouseX, mouseY, x, TOP_Y, w, TOP_BUTTON_H)) {
                 floorMenuOpen = !floorMenuOpen;
                 return true;
@@ -491,6 +488,29 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private int leaveX() {
         return width - LEAVE_BUTTON_W - 36;
+    }
+
+    private int returnX() {
+        return leaveX() - RETURN_BUTTON_W - TOP_CONTROL_GAP;
+    }
+
+    private int floorSelectorWidth(FloorGroup floor) {
+        return Math.max(190,
+                Scp079UiTheme.scaledWidth(font, floor.longLabel, 1.08F) + 46);
+    }
+
+    /**
+     * Center the floor selector when space permits, but constrain its right edge
+     * to the action-button group. This uses the same calculation for rendering
+     * and hit testing, so fullscreen/GUI-scale changes cannot produce overlap or
+     * a visually correct control with a stale click box.
+     */
+    private int floorSelectorX(int selectorWidth) {
+        int centered = (width - selectorWidth) / 2;
+        int actionLeft = Scp079PlayableClient.cameraMode()
+                ? returnX() : leaveX();
+        int rightSafe = actionLeft - TOP_CONTROL_GAP - selectorWidth;
+        return Math.max(24, Math.min(centered, rightSafe));
     }
 
     private boolean insideMap(double mouseX, double mouseY) {

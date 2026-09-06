@@ -90,9 +90,9 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         if (Scp079PlayableClient.networkAvailable()) {
             drawCommand(graphics, minecraft, "OPEN FACILITY MAP", inventory,
                     right, y, 1.08F, Scp079UiTheme.ACCENT, true);
-            y += 20;
+            y += 29;
         } else {
-            y = 43;
+            y = 52;
         }
         drawCommand(graphics, minecraft, "LEAVE SCP ROLE",
                 "SHIFT + " + inventory, right, y, 1.05F,
@@ -105,9 +105,17 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         Minecraft minecraft = Minecraft.getInstance();
         int right = minecraft.getWindow().getGuiScaledWidth() - 24;
         int y = 22;
+        String inventory = keyLabel(minecraft.options.keyInventory);
+
+        // Primary navigation action first, then a small visual break before
+        // the directional camera graph. This keeps the command list readable
+        // as groups instead of one uninterrupted wall of text.
+        drawCommand(graphics, minecraft, "OPEN FACILITY MAP", inventory,
+                right, y, 1.05F, Scp079UiTheme.TEXT, true);
+        y += 26;
+
         Map<Move, NavigationTarget> targets =
                 Scp079CameraNavigationClient.targets();
-
         y = drawMove(graphics, minecraft, targets.get(Move.FORWARD),
                 minecraft.options.keyUp, right, y);
         y = drawMove(graphics, minecraft, targets.get(Move.LEFT),
@@ -116,11 +124,7 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
                 minecraft.options.keyDown, right, y);
         y = drawMove(graphics, minecraft, targets.get(Move.RIGHT),
                 minecraft.options.keyRight, right, y);
-
-        String inventory = keyLabel(minecraft.options.keyInventory);
-        drawCommand(graphics, minecraft, "OPEN FACILITY MAP", inventory,
-                right, y, 1.05F, Scp079UiTheme.TEXT, true);
-        y += 19;
+        y += 7;
 
         FacilityRoomSnapshot activeRoom = FacilityMappingClientState.roomAt(
                 Scp079PlayableClient.hostDimension(),
@@ -159,6 +163,7 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
             y += 19;
         }
 
+        y += 7;
         drawCommand(graphics, minecraft, "LEAVE SCP ROLE",
                 "SHIFT + " + inventory, right, y, 1.02F,
                 Scp079UiTheme.MUTED, true);
@@ -205,12 +210,12 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         int fill = enabled ? opaque(color) : 0xFF526873;
         graphics.fill(capX, capY, right, capY + capH, fill);
 
-        // PF Videotext carries visible top padding. Align both pieces by
-        // their optical centre instead of using the raw draw-string Y.
+        // PF Videotext carries visible top padding. Two pixels of optical
+        // correction centres the glyphs without dropping them below the cap.
         float labelTextHeight = minecraft.font.lineHeight * scale;
-        float labelY = capY + (capH - labelTextHeight) * 0.5F + 4.0F;
+        float labelY = capY + (capH - labelTextHeight) * 0.5F + 2.0F;
         float keyTextHeight = minecraft.font.lineHeight * keyScale;
-        float keyY = capY + (capH - keyTextHeight) * 0.5F + 4.0F;
+        float keyY = capY + (capH - keyTextHeight) * 0.5F + 2.0F;
 
         int labelW = Scp079UiTheme.scaledWidth(minecraft.font, label, scale);
         int labelRight = capX - 7;

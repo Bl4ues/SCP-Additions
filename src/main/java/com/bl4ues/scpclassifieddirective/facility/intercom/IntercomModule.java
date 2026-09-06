@@ -11,6 +11,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -110,7 +111,7 @@ public final class IntercomModule {
 
     private static RegistryObject<SoundEvent> sound(String path) {
         return SOUNDS.register(path, () -> SoundEvent.createVariableRangeEvent(
-                ScpClassifiedDirectiveMod.id(path)));
+                new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path)));
     }
 
     /** Authored push-button centre in the canonical NORTH orientation. */
@@ -304,7 +305,8 @@ public final class IntercomModule {
             BlockState state = getBlockState();
             server.setBlock(worldPosition, state.setValue(ACTIVE, true),
                     Block.UPDATE_CLIENTS);
-            server.playSound(null, microphonePosition(worldPosition, state),
+            Vec3 microphone = microphonePosition(worldPosition, state);
+            server.playSound(null, microphone.x, microphone.y, microphone.z,
                     ON.get(), SoundSource.BLOCKS, 0.32F, 1.0F);
             triggerAnim("intercom", "turn_on");
             endpointRefreshTicks = 0;
@@ -318,7 +320,8 @@ public final class IntercomModule {
             server.setBlock(worldPosition, state.setValue(ACTIVE, false),
                     Block.UPDATE_CLIENTS);
             if (playCue) {
-                server.playSound(null, microphonePosition(worldPosition, state),
+                Vec3 microphone = microphonePosition(worldPosition, state);
+                server.playSound(null, microphone.x, microphone.y, microphone.z,
                         OFF.get(), SoundSource.BLOCKS, 0.30F, 1.0F);
             }
             triggerAnim("intercom", "turn_off");

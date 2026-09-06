@@ -1,6 +1,8 @@
 package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
+import com.bl4ues.scpclassifieddirective.client.Scp914InteractionClient;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.mixin.client.LevelRendererEntityTargetAccessor;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -37,7 +39,7 @@ import java.util.Map;
 /**
  * Produces the thin SCP Unity / Secret Lab-style outline shared by physical
  * prompts. Pickup items take priority; otherwise the active contextual block,
- * elevator control, or interactable player corpse is captured.
+ * elevator control, SCP-914 control, or interactable player corpse is captured.
  *
  * <p>The selected geometry is rendered into an off-screen outline mask while
  * world-space rendering is still valid. A one-pixel post pass extracts only
@@ -47,6 +49,7 @@ import java.util.Map;
  */
 public final class PickupOutlineRenderer {
     private static final double MODEL_UNIT = 1.0D / 16.0D;
+    private static final double SCP_914_FLOOR_EPSILON = 0.1D / 16.0D;
     private static final ResourceLocation POST_CHAIN = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "shaders/post/pickup_outline.json");
     private static final ResourceLocation BUTTON_MASK_TEXTURE =
@@ -99,6 +102,8 @@ public final class PickupOutlineRenderer {
             OUTLINE_BUFFER.setColor(255, 255, 255, 255);
             if (pickup != null && pickup.isAlive()) {
                 renderEntityMask(minecraft, pickup, poseStack, camera);
+            } else if (context != null && context.isScp914Control()) {
+                renderScp914ControlMask(minecraft, context, poseStack, camera);
             } else if (context != null && context.isElevatorButton()) {
                 renderButtonMask(minecraft, context, poseStack, camera);
             } else if (context != null && context.isCorpse()) {
@@ -186,6 +191,58 @@ public final class PickupOutlineRenderer {
             if (blockEntity != null) {
                 minecraft.getBlockEntityRenderDispatcher().render(
                         blockEntity, partialTick, poseStack, OUTLINE_BUFFER);
+            }
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    /**
+     * SCP-914 shares one huge GeckoLib BlockEntity, but its normal prompts are
+     * attached to two tiny physical controls. Replaying only those authored
+     * cubes prevents the complete machine from flashing when the player aims at
+     * the dial or winding key.
+     */
+    private static void renderScp914ControlMask(Minecraft minecraft,
+            ContextPromptOutlineTarget.Target context, PoseStack poseStack,
+            Camera camera) {
+        if (minecraft.level == null || context.blockPos() == null) return;
+        BlockPos pos = context.blockPos();
+        BlockState state = minecraft.level.getBlockState(pos);
+        Direction facing = state.hasProperty(
+                BlockStateProperties.HORIZONTAL_FACING)
+                ? state.getValue(BlockStateProperties.HORIZONTAL_FACING)
+                : Direction.NORTH;
+        Vec3 cameraPosition = camera.getPosition();
+
+        poseStack.pushPose();
+        try {
+            poseStack.translate(pos.getX() - cameraPosition.x,
+                    pos.getY() - cameraPosition.y + SCP_914_FLOOR_EPSILON,
+                    pos.getZ() - cameraPosition.z);
+            poseStack.translate(0.5D, 0.0D, 0.5D);
+            rotateForFacing(poseStack, facing);
+
+            VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
+                    RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
+            if ("scp_914_dial".equals(context.interactionKey())) {
+                BlockEntity blockEntity = minecraft.level.getBlockEntity(pos);
+                float dialAngle = blockEntity instanceof Scp914BlockEntity machine
+                        ? Scp914InteractionClient.renderDialAngle(machine) : 0.0F;
+                applyAuthoredBoneTransform(poseStack,
+                        0.0D, 20.04D, -8.25D,
+                        0.0D, 0.0D, dialAngle);
+                // Main grab_dial cube from scp914.geo.json.
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -1.07D, 18.97D, -8.785D,
+                        2.14D, 2.14D, 0.535D);
+            } else if ("scp_914_start".equals(context.interactionKey())) {
+                // wind_key is authored as a zero-thickness X plane. Give the
+                // mask a sub-pixel physical thickness while preserving its exact
+                // Y/Z bounds so the post-process can recover a stable silhouette.
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.18D, 13.75D, -9.95D,
+                        0.36D, 1.5D, 1.75D);
             }
         } finally {
             poseStack.popPose();

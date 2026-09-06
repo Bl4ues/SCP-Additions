@@ -47,11 +47,10 @@ public final class Scp079CrtPostProcessor {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
-        if (!Scp079PlayableClient.active()
-                || !(event.getScreen() instanceof Scp079FacilityMapScreen
-                || event.getScreen() instanceof Scp079LeaveRoleScreen)) {
-            return;
-        }
+        if (!Scp079PlayableClient.active()) return;
+        // The CRT is SCP-079's display surface, not merely a world-HUD effect.
+        // Keep the final pass over every GUI, including chat and pause/options,
+        // so opening a vanilla screen cannot momentarily reveal a flat display.
         apply(Minecraft.getInstance(), event.getGuiGraphics());
     }
 

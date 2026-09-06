@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079SpeakerCueSoundInstance;
+import com.bl4ues.scpclassifieddirective.facility.intercom.IntercomWorldSoundBridge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -14,6 +15,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -24,7 +26,7 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
 
-/** Audio-only packets for SCP-079's remote host and facility Speaker perception. */
+/** Audio-only packets for SCP-079, facility Speakers, and Intercom capture. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class Scp079AudioNetwork {
@@ -36,8 +38,6 @@ public final class Scp079AudioNetwork {
     @SubscribeEvent
     public static void onCommonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            // Keep both late SCP-079 packet families registered in one explicit
-            // order on dedicated and client runtimes. Message IDs are sequential.
             Scp079ActivityPingNetwork.register();
             register();
         });
@@ -51,6 +51,9 @@ public final class Scp079AudioNetwork {
                 RemoteHostSound::handle);
         ScpClassifiedDirectiveMod.addNetworkMessage(SpeakerCue.class,
                 SpeakerCue::encode, SpeakerCue::decode, SpeakerCue::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(IntercomSoundReport.class,
+                IntercomSoundReport::encode, IntercomSoundReport::decode,
+                IntercomSoundReport::handle);
     }
 
     public static void sendRemoteHostSound(ServerPlayer player,
@@ -74,6 +77,19 @@ public final class Scp079AudioNetwork {
                     PacketDistributor.PLAYER.with(() -> player),
                     new SpeakerCue(sound, x, y, z, volume, pitch));
         }
+    }
+
+    /** Reports client-only positional ambience such as fire crackle. */
+    public static void reportIntercomSound(ResourceLocation sound,
+            Vec3 position, float volume, float pitch) {
+        if (sound == null || position == null
+                || !Double.isFinite(position.x)
+                || !Double.isFinite(position.y)
+                || !Double.isFinite(position.z)
+                || !Float.isFinite(volume) || !Float.isFinite(pitch)) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                new IntercomSoundReport(sound, position.x, position.y,
+                        position.z, volume, pitch));
     }
 
     public record RemoteHostSound(ResourceLocation sound, SoundSource source,
@@ -137,6 +153,44 @@ public final class Scp079AudioNetwork {
                                     message.x, message.y, message.z,
                                     Mth.clamp(message.volume, 0.0F, 4.0F),
                                     Mth.clamp(message.pitch, 0.05F, 2.0F)))));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record IntercomSoundReport(ResourceLocation sound, double x,
+            double y, double z, float volume, float pitch) {
+        private static void encode(IntercomSoundReport message,
+                FriendlyByteBuf buffer) {
+            buffer.writeResourceLocation(message.sound);
+            buffer.writeDouble(message.x);
+            buffer.writeDouble(message.y);
+            buffer.writeDouble(message.z);
+            buffer.writeFloat(message.volume);
+            buffer.writeFloat(message.pitch);
+        }
+
+        private static IntercomSoundReport decode(FriendlyByteBuf buffer) {
+            return new IntercomSoundReport(buffer.readResourceLocation(),
+                    buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
+                    buffer.readFloat(), buffer.readFloat());
+        }
+
+        private static void handle(IntercomSoundReport message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer reporter = context.getSender();
+                if (reporter == null || message.sound == null
+                        || !Double.isFinite(message.x)
+                        || !Double.isFinite(message.y)
+                        || !Double.isFinite(message.z)
+                        || !Float.isFinite(message.volume)
+                        || !Float.isFinite(message.pitch)) return;
+                IntercomWorldSoundBridge.relayClientSound(reporter,
+                        message.sound, new Vec3(message.x, message.y, message.z),
+                        Mth.clamp(message.volume, 0.0F, 4.0F),
+                        Mth.clamp(message.pitch, 0.05F, 2.0F));
+            });
             context.setPacketHandled(true);
         }
     }

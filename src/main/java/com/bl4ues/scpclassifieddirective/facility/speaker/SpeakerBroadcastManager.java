@@ -60,8 +60,6 @@ public final class SpeakerBroadcastManager {
         valid.forEach(endpoint -> setEndpoint(operator.getServer(), endpoint,
                 true));
         if (host != null) {
-            // The broadcast must already be registered before the CRT changes
-            // state so its startup cue is relayed through these same Speakers.
             Scp079ScreenState.setSpeakerActive(operator.getServer(), host, true);
         }
         return true;
@@ -71,7 +69,7 @@ public final class SpeakerBroadcastManager {
             BlockPos sourcePos, ServerPlayer activator,
             List<FacilitySpeakerRegistry.SpeakerEndpoint> endpoints) {
         if (sourceLevel == null || sourcePos == null || activator == null
-                || endpoints == null || sourceLevel.getServer() == null) {
+                || sourceLevel.getServer() == null) {
             return false;
         }
         MinecraftServer server = sourceLevel.getServer();
@@ -79,9 +77,7 @@ public final class SpeakerBroadcastManager {
         stopById(server, broadcastId);
 
         List<FacilitySpeakerRegistry.SpeakerEndpoint> valid = validEndpoints(
-                server, endpoints);
-        if (valid.isEmpty()) return false;
-
+                server, endpoints == null ? List.of() : endpoints);
         Broadcast broadcast = new Broadcast(server, broadcastId,
                 activator.getUUID(), SourceType.INTERCOM, List.copyOf(valid),
                 null, sourceLevel.dimension(), sourcePos.immutable());
@@ -90,13 +86,11 @@ public final class SpeakerBroadcastManager {
         return true;
     }
 
-    /** Reconciles mapped-room Speaker membership without restarting the Intercom. */
+    /** Reconciles facility-wide Speaker membership without restarting the Intercom. */
     public static boolean refreshIntercom(ServerLevel sourceLevel,
             BlockPos sourcePos,
             List<FacilitySpeakerRegistry.SpeakerEndpoint> endpoints) {
-        if (sourceLevel == null || sourcePos == null || endpoints == null) {
-            return false;
-        }
+        if (sourceLevel == null || sourcePos == null) return false;
         MinecraftServer server = sourceLevel.getServer();
         UUID id = intercomId(sourceLevel.dimension(), sourcePos);
         Broadcast old = ACTIVE.get(id);
@@ -104,11 +98,7 @@ public final class SpeakerBroadcastManager {
                 || old.source != SourceType.INTERCOM) return false;
 
         List<FacilitySpeakerRegistry.SpeakerEndpoint> valid = validEndpoints(
-                server, endpoints);
-        if (valid.isEmpty()) {
-            stopById(server, id);
-            return false;
-        }
+                server, endpoints == null ? List.of() : endpoints);
         if (old.endpoints.equals(valid)) return true;
 
         Broadcast replacement = new Broadcast(old.server, old.broadcastId,
@@ -199,7 +189,6 @@ public final class SpeakerBroadcastManager {
         return false;
     }
 
-    /** Immutable SCP-079 snapshots safe for Simple Voice Chat's packet thread. */
     public static List<VoiceSource> voiceSources(MinecraftServer server,
             UUID operatorId) {
         Broadcast broadcast = ACTIVE.get(operatorId);
@@ -215,13 +204,12 @@ public final class SpeakerBroadcastManager {
         return List.copyOf(result);
     }
 
-    /** Every active Intercom close enough to this speaker can capture their voice. */
     public static List<VoiceSource> intercomVoiceSources(ServerPlayer speaker) {
         if (speaker == null || !(speaker.level() instanceof ServerLevel level)) {
             return List.of();
         }
         List<AudioSource> sources = intercomAudioSources(level,
-                speaker.position());
+                speaker.getEyePosition());
         List<VoiceSource> result = new ArrayList<>(sources.size());
         for (AudioSource source : sources) {
             result.add(new VoiceSource(source.dimension(), source.pos(),
@@ -277,13 +265,11 @@ public final class SpeakerBroadcastManager {
                             !endpoint.dimension().equals(level.dimension())
                                     || !endpoint.pos().equals(pos)).toList();
             if (remaining.size() == broadcast.endpoints.size()) continue;
-            if (remaining.isEmpty()) {
-                if (ACTIVE.remove(entry.getKey(), broadcast)) {
-                    if (broadcast.source == SourceType.SCP_079
-                            && broadcast.scp079Host != null) {
-                        Scp079ScreenState.setSpeakerActive(level.getServer(),
-                                broadcast.scp079Host, false);
-                    }
+            if (remaining.isEmpty() && broadcast.source == SourceType.SCP_079) {
+                if (ACTIVE.remove(entry.getKey(), broadcast)
+                        && broadcast.scp079Host != null) {
+                    Scp079ScreenState.setSpeakerActive(level.getServer(),
+                            broadcast.scp079Host, false);
                 }
             } else {
                 ACTIVE.replace(entry.getKey(), broadcast,
@@ -298,6 +284,9 @@ public final class SpeakerBroadcastManager {
     private static List<FacilitySpeakerRegistry.SpeakerEndpoint> validEndpoints(
             MinecraftServer server,
             List<FacilitySpeakerRegistry.SpeakerEndpoint> endpoints) {
+        if (server == null || endpoints == null || endpoints.isEmpty()) {
+            return List.of();
+        }
         return endpoints.stream()
                 .filter(endpoint -> endpoint != null)
                 .filter(endpoint -> {

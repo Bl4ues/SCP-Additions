@@ -17,6 +17,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.intercom.IntercomModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import com.bl4ues.scpclassifieddirective.facility.speaker.SpeakerModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
@@ -67,6 +68,7 @@ public final class AreaUnderConstructionSignModule {
         ObjectContainmentUnitModule.register(bus);
         SurveillanceCameraPlaceholderModule.register(bus);
         SpeakerModule.register(bus);
+        IntercomModule.register(bus);
     }
 
     @SubscribeEvent
@@ -76,6 +78,7 @@ public final class AreaUnderConstructionSignModule {
             event.accept(ObjectContainmentUnitModule.ITEM.get());
             event.accept(SurveillanceCameraPlaceholderModule.ITEM.get());
             event.accept(SpeakerModule.ITEM.get());
+            event.accept(IntercomModule.ITEM.get());
         }
     }
 
@@ -101,6 +104,7 @@ public final class AreaUnderConstructionSignModule {
                 addUnique(items, new ItemStack(
                         SurveillanceCameraPlaceholderModule.ITEM.get()));
                 addUnique(items, new ItemStack(SpeakerModule.ITEM.get()));
+                addUnique(items, new ItemStack(IntercomModule.ITEM.get()));
             }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     items));

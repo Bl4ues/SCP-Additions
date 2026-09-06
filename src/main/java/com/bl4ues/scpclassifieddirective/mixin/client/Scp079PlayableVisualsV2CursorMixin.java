@@ -29,6 +29,9 @@ import java.util.Map;
 /** Screen-only cursor routing and compact SCP-079 command keycaps. */
 @Mixin(Scp079PlayableVisualsV2.class)
 public abstract class Scp079PlayableVisualsV2CursorMixin {
+    /** Matches the server-authoritative CAMERA_SWITCH_COST in Scp079PlayableManager. */
+    private static final double CAMERA_SWITCH_BASE_COST = 3.0D;
+
     @Inject(method = "handleInventoryKey", at = @At("HEAD"),
             cancellable = true, remap = false)
     private static void scpclassifieddirective$screenOnlyCursorRouting(
@@ -51,7 +54,6 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         }
     }
 
-    /** Feed interaction always resolves from the screen centre/crosshair. */
     @Redirect(method = "pointer",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/client/KeyMapping;isDown()Z"),
@@ -61,7 +63,6 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         return false;
     }
 
-    /** Removes the old inline/bracket command text before the keycap pass. */
     @Redirect(method = {"renderLocalHud", "renderCameraHud"},
             at = @At(value = "INVOKE",
                     target = "Lcom/bl4ues/scpclassifieddirective/client/scp079/Scp079PlayableVisualsV2;drawRight(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/Minecraft;Ljava/lang/String;IIFI)V"),
@@ -107,9 +108,6 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         int y = 22;
         String inventory = keyLabel(minecraft.options.keyInventory);
 
-        // Primary navigation action first, then a small visual break before
-        // the directional camera graph. This keeps the command list readable
-        // as groups instead of one uninterrupted wall of text.
         drawCommand(graphics, minecraft, "OPEN FACILITY MAP", inventory,
                 right, y, 1.05F, Scp079UiTheme.TEXT, true);
         y += 26;
@@ -134,17 +132,18 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         boolean blackoutAffordable = Scp079PlayableClient.power() + 0.001D
                 >= blackoutCost;
         drawCommand(graphics, minecraft,
-                "BLACKOUT  " + formatCost(blackoutCost),
+                "BLACKOUT (" + formatCost(blackoutCost) + ")",
                 keyLabel(Scp079Keybinds.BLACKOUT), right, y, 1.04F,
                 blackoutAffordable ? Scp079UiTheme.TEXT : 0xFF526873,
                 blackoutAffordable);
         y += 19;
 
+        double lockdownCost = adjustedCost(minecraft,
+                Scp079RoomAbilityManager.LOCKDOWN_COST);
         boolean lockdownAffordable = Scp079PlayableClient.power() + 0.001D
-                >= Scp079RoomAbilityManager.LOCKDOWN_COST;
+                >= lockdownCost;
         drawCommand(graphics, minecraft,
-                "LOCKDOWN  " + formatCost(
-                        Scp079RoomAbilityManager.LOCKDOWN_COST),
+                "LOCKDOWN (" + formatCost(lockdownCost) + ")",
                 keyLabel(Scp079Keybinds.LOCKDOWN), right, y, 1.04F,
                 lockdownAffordable ? Scp079UiTheme.TEXT : 0xFF526873,
                 lockdownAffordable);
@@ -171,8 +170,15 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
 
     private static int drawMove(GuiGraphics graphics, Minecraft minecraft,
             NavigationTarget target, KeyMapping key, int right, int y) {
-        boolean enabled = target != null && target.available();
-        String label = enabled ? "GO TO: " + target.roomName() : "NO CAMERA";
+        boolean available = target != null && target.available();
+        double movementCost = adjustedCost(minecraft, CAMERA_SWITCH_BASE_COST);
+        boolean affordable = Scp079PlayableClient.power() + 0.001D
+                >= movementCost;
+        boolean enabled = available && affordable;
+        String label = available
+                ? "GO TO: " + target.roomName() + " ("
+                + formatCost(movementCost) + ")"
+                : "NO CAMERA";
         int color = enabled ? Scp079UiTheme.TEXT : 0xFF526873;
         drawCommand(graphics, minecraft, label,
                 keyLabel(key), right, y, 1.03F, color, enabled);
@@ -210,8 +216,6 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         int fill = enabled ? opaque(color) : 0xFF526873;
         graphics.fill(capX, capY, right, capY + capH, fill);
 
-        // PF Videotext carries visible top padding. Two pixels of optical
-        // correction centres the glyphs without dropping them below the cap.
         float labelTextHeight = minecraft.font.lineHeight * scale;
         float labelY = capY + (capH - labelTextHeight) * 0.5F + 2.0F;
         float keyTextHeight = minecraft.font.lineHeight * keyScale;

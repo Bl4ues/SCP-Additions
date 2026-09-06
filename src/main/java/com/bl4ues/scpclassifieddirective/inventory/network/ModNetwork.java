@@ -62,6 +62,10 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, Scp914DialPacket.class, Scp914DialPacket::encode, Scp914DialPacket::decode, Scp914DialPacket::handle);
         CHANNEL.registerMessage(id++, Scp426ExposureSyncPacket.class, Scp426ExposureSyncPacket::encode, Scp426ExposureSyncPacket::decode, Scp426ExposureSyncPacket::handle);
         CHANNEL.registerMessage(id++, InventoryPdaStatePacket.class, InventoryPdaStatePacket::encode, InventoryPdaStatePacket::decode, InventoryPdaStatePacket::handle);
+        CHANNEL.registerMessage(id++, MachineConfigDirectOpenPacket.class,
+                MachineConfigDirectOpenPacket::encode,
+                MachineConfigDirectOpenPacket::decode,
+                MachineConfigDirectOpenPacket::handle);
         ConfigCenterNetwork.register(CHANNEL, id);
     }
 

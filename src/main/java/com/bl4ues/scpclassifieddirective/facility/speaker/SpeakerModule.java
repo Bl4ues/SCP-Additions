@@ -45,7 +45,7 @@ import net.minecraftforge.registries.RegistryObject;
 import javax.annotation.Nullable;
 import java.util.List;
 
-/** Wall-mounted voice endpoint shared by SCP-079 and the future Intercom. */
+/** Wall-mounted voice endpoint shared by SCP-079 and physical Intercoms. */
 public final class SpeakerModule {
     public static final String PATH = "speaker";
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -245,7 +245,8 @@ public final class SpeakerModule {
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
-            tooltip.add(Component.literal("Broadcasts voice")
+            tooltip.add(Component.literal(
+                    "Broadcasts from the Intercom or Camera Operators")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }

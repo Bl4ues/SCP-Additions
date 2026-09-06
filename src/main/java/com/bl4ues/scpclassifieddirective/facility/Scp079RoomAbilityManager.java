@@ -10,16 +10,19 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -186,36 +189,83 @@ public final class Scp079RoomAbilityManager {
         return true;
     }
 
+    /**
+     * Finds only currently luminous, redstone-powered blocks in the authored
+     * room. The old implementation allocated one BlockPos and performed one
+     * loaded-chunk lookup for every X/Y/Z cell, including overlapping patches.
+     * Large mapped rooms could therefore stall the server thread even when only
+     * one lamp actually existed. Collapse patches into unique X/Z columns, reuse
+     * one mutable position and read directly from already-loaded chunks instead.
+     */
     private static List<LightTarget> poweredLights(ServerLevel level,
             FacilityRoomSnapshot room) {
         List<LightTarget> result = new ArrayList<>();
-        Set<Long> visited = new HashSet<>();
+        Map<Long, ColumnRange> columns = new HashMap<>();
         for (FacilityFloorPatch patch : room.patches()) {
+            int minY = patch.y() - 1;
+            int maxY = patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT;
             for (int x = patch.minX(); x <= patch.maxX(); x++) {
                 for (int z = patch.minZ(); z <= patch.maxZ(); z++) {
-                    for (int y = patch.y() - 1;
-                            y <= patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT;
-                            y++) {
-                        BlockPos pos = new BlockPos(x, y, z);
-                        if (!visited.add(pos.asLong()) || !level.hasChunkAt(pos)) {
-                            continue;
-                        }
-                        BlockState state = level.getBlockState(pos);
-                        if (state.isAir()
-                                || state.getLightEmission(level, pos) <= 0) {
-                            continue;
-                        }
-                        boolean powered = level.hasNeighborSignal(pos)
-                                || state.hasProperty(BlockStateProperties.POWERED)
-                                && state.getValue(BlockStateProperties.POWERED);
-                        if (!powered) continue;
-                        result.add(new LightTarget(pos.immutable(),
-                                state.getBlock()));
+                    long key = packColumn(x, z);
+                    ColumnRange previous = columns.get(key);
+                    if (previous == null) {
+                        columns.put(key, new ColumnRange(minY, maxY));
+                    } else if (minY < previous.minY || maxY > previous.maxY) {
+                        columns.put(key, new ColumnRange(
+                                Math.min(minY, previous.minY),
+                                Math.max(maxY, previous.maxY)));
                     }
                 }
             }
         }
+
+        Map<Long, LevelChunk> loadedChunks = new HashMap<>();
+        Set<Long> missingChunks = new HashSet<>();
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (Map.Entry<Long, ColumnRange> entry : columns.entrySet()) {
+            int x = unpackColumnX(entry.getKey());
+            int z = unpackColumnZ(entry.getKey());
+            int chunkX = x >> 4;
+            int chunkZ = z >> 4;
+            long chunkKey = ChunkPos.asLong(chunkX, chunkZ);
+            if (missingChunks.contains(chunkKey)) continue;
+            LevelChunk chunk = loadedChunks.get(chunkKey);
+            if (chunk == null) {
+                chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
+                if (chunk == null) {
+                    missingChunks.add(chunkKey);
+                    continue;
+                }
+                loadedChunks.put(chunkKey, chunk);
+            }
+
+            ColumnRange range = entry.getValue();
+            for (int y = range.minY; y <= range.maxY; y++) {
+                cursor.set(x, y, z);
+                BlockState state = chunk.getBlockState(cursor);
+                if (state.isAir() || state.getLightEmission(level, cursor) <= 0) {
+                    continue;
+                }
+                boolean powered = level.hasNeighborSignal(cursor)
+                        || state.hasProperty(BlockStateProperties.POWERED)
+                        && state.getValue(BlockStateProperties.POWERED);
+                if (!powered) continue;
+                result.add(new LightTarget(cursor.immutable(), state.getBlock()));
+            }
+        }
         return result;
+    }
+
+    private static long packColumn(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+    }
+
+    private static int unpackColumnX(long packed) {
+        return (int) (packed >> 32);
+    }
+
+    private static int unpackColumnZ(long packed) {
+        return (int) packed;
     }
 
     private static List<BlockPos> roomDoors(ServerLevel level,
@@ -373,5 +423,8 @@ public final class Scp079RoomAbilityManager {
     }
 
     private record LightKey(ResourceKey<Level> dimension, long pos) {
+    }
+
+    private record ColumnRange(int minY, int maxY) {
     }
 }

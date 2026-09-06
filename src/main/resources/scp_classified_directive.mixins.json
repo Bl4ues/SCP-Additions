@@ -24,6 +24,7 @@
     "Scp939CollisionAuthorityMixin",
     "Scp1576VoiceBridgeMixin",
     "RoombaNoEntityPushMixin",
+    "NativeMachineScrewdriverRulesMixin",
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",
     "Scp079PlayerControlAiGateMixin",

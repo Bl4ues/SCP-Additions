@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "active=false,facing=north": { "model": "scp_classified_directive:block/intercom" },
+    "active=false,facing=east": { "model": "scp_classified_directive:block/intercom", "y": 90 },
+    "active=false,facing=south": { "model": "scp_classified_directive:block/intercom", "y": 180 },
+    "active=false,facing=west": { "model": "scp_classified_directive:block/intercom", "y": 270 },
+    "active=true,facing=north": { "model": "scp_classified_directive:block/intercom" },
+    "active=true,facing=east": { "model": "scp_classified_directive:block/intercom", "y": 90 },
+    "active=true,facing=south": { "model": "scp_classified_directive:block/intercom", "y": 180 },
+    "active=true,facing=west": { "model": "scp_classified_directive:block/intercom", "y": 270 }
+  }
+}

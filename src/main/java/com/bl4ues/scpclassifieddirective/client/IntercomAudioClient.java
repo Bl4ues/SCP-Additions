@@ -9,11 +9,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/** Owns the quiet five-second authored Intercom loop while the unit is active. */
+/** Owns the quiet authored Intercom loop and tracks active client microphones. */
 public final class IntercomAudioClient {
     private static final Map<Key, IntercomLoop> LOOPS = new HashMap<>();
 
@@ -32,6 +34,22 @@ public final class IntercomAudioClient {
         IntercomLoop created = new IntercomLoop(key);
         LOOPS.put(key, created);
         Minecraft.getInstance().getSoundManager().play(created);
+    }
+
+    /** Cheap client-side gate before reporting a possibly client-only sound. */
+    public static boolean canCapture(ClientLevel level, Vec3 soundPosition) {
+        if (level == null || soundPosition == null) return false;
+        double radiusSqr = IntercomModule.CAPTURE_RADIUS
+                * IntercomModule.CAPTURE_RADIUS;
+        for (Key key : LOOPS.keySet()) {
+            if (key.level != level || !level.hasChunkAt(key.pos)) continue;
+            BlockState state = level.getBlockState(key.pos);
+            if (!state.is(IntercomModule.BLOCK.get())
+                    || !state.getValue(IntercomModule.ACTIVE)) continue;
+            if (IntercomModule.microphonePosition(key.pos, state)
+                    .distanceToSqr(soundPosition) <= radiusSqr) return true;
+        }
+        return false;
     }
 
     private static void finished(Key key, IntercomLoop sound) {

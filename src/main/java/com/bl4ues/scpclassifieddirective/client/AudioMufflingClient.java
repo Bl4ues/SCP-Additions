@@ -1,7 +1,9 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079FacilityMapScreen;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079SpeakerCueSoundInstance;
 import com.bl4ues.scpclassifieddirective.equipment.HazmatSuitAccess;
 import com.mojang.blaze3d.audio.Channel;
 import com.mojang.logging.LogUtils;
@@ -12,9 +14,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.client.event.sound.PlaySoundSourceEvent;
 import net.minecraftforge.client.event.sound.PlayStreamingSourceEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.openal.AL10;
@@ -38,8 +42,12 @@ public final class AudioMufflingClient {
 
     private static final float HAZMAT_STRENGTH = 0.60F;
     private static final float SCP_714_INITIAL_STRENGTH = 0.08F;
-    /** Camera microphones keep the world intelligible while trimming high frequencies. */
-    private static final float SCP_079_CAMERA_STRENGTH = 0.30F;
+    /**
+     * A remote surveillance microphone is deliberately narrow and lossy. The
+     * low-pass gain also leaves host-monitor audio at roughly half strength.
+     */
+    private static final float SCP_079_CAMERA_STRENGTH = 0.48F;
+    private static final float SCP_079_SPEAKER_STRENGTH = 0.64F;
     private static final float TRANSITION_SPEED = 0.16F;
     private static final float UPDATE_EPSILON = 0.0015F;
 
@@ -52,6 +60,7 @@ public final class AudioMufflingClient {
     private static SoundEngine filterEngine;
     private static int worldFilter;
     private static int internalFilter;
+    private static int speakerFilter;
     private static boolean efxUnavailable;
     private static boolean loggedUnavailable;
 
@@ -66,6 +75,22 @@ public final class AudioMufflingClient {
     private static float masterVolume = 1.0F;
 
     private AudioMufflingClient() {
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onSoundRequested(PlaySoundEvent event) {
+        SoundInstance sound = event.getSound();
+        if (!Scp079PlayableClient.active() || sound == null
+                || sound instanceof Scp079SpeakerCueSoundInstance) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!(minecraft.screen instanceof Scp079FacilityMapScreen)) return;
+        ResourceLocation id = sound.getLocation();
+        if (!ScpClassifiedDirectiveMod.MODID.equals(id.getNamespace())) return;
+        if ("scp079_1".equals(id.getPath()) || "scp079_2".equals(id.getPath())) {
+            // The map is a remote operating view. SCP-079's own physical CRT
+            // click is not part of that monitor unless a camera/speaker hears it.
+            event.setSound(null);
+        }
     }
 
     @SubscribeEvent
@@ -86,7 +111,10 @@ public final class AudioMufflingClient {
         float targetHazmat = 0.0F;
         float targetScp714 = 0.0F;
         float targetDeath = 0.0F;
-        float targetScp079Camera = Scp079PlayableClient.cameraMode()
+        boolean remote079View = Scp079PlayableClient.active()
+                && (Scp079PlayableClient.cameraMode()
+                || minecraft.screen instanceof Scp079FacilityMapScreen);
+        float targetScp079Camera = remote079View
                 ? SCP_079_CAMERA_STRENGTH : 0.0F;
         masterVolume = minecraft.options.getSoundSourceVolume(SoundSource.MASTER);
 
@@ -112,7 +140,7 @@ public final class AudioMufflingClient {
         currentHazmatStrength = approach(currentHazmatStrength, targetHazmat);
         currentScp714Strength = approach(currentScp714Strength, targetScp714);
         currentScp079CameraStrength = approach(currentScp079CameraStrength,
-                targetScp079Camera, 0.24F);
+                targetScp079Camera, 0.30F);
         // The death screen owns its deliberate two-second delay and ramp. Apply a
         // slightly faster secondary ease here so spectate/full-death changes blend
         // without adding another visibly long lag on top of that authored curve.
@@ -195,8 +223,13 @@ public final class AudioMufflingClient {
 
         float worldStrength = combine(
                 combine(combine(hazmat, scp714), death), scp079Camera);
-        if (worldStrength <= UPDATE_EPSILON && scp714 <= UPDATE_EPSILON) {
-            if (worldFilter != 0 || internalFilter != 0) detachFilters(channels);
+        boolean hasSpeakerCue = SOUNDS_BY_CHANNEL.values().stream()
+                .anyMatch(Scp079SpeakerCueSoundInstance.class::isInstance);
+        if (worldStrength <= UPDATE_EPSILON && scp714 <= UPDATE_EPSILON
+                && !hasSpeakerCue) {
+            if (worldFilter != 0 || internalFilter != 0 || speakerFilter != 0) {
+                detachFilters(channels);
+            }
             engine.listener.setGain(requestedMasterVolume);
             return;
         }
@@ -208,11 +241,14 @@ public final class AudioMufflingClient {
 
         engine.listener.setGain(requestedMasterVolume);
         if (!configureFilter(worldFilter, worldStrength)
-                || !configureFilter(internalFilter, scp714)) {
+                || !configureFilter(internalFilter, scp714)
+                || !configureFilter(speakerFilter, SCP_079_SPEAKER_STRENGTH)) {
             resetFilterHandles(engine);
             if (!ensureFilters(engine)
                     || !configureFilter(worldFilter, worldStrength)
-                    || !configureFilter(internalFilter, scp714)) {
+                    || !configureFilter(internalFilter, scp714)
+                    || !configureFilter(speakerFilter,
+                    SCP_079_SPEAKER_STRENGTH)) {
                 detachFilters(channels);
                 engine.listener.setGain(requestedMasterVolume);
                 return;
@@ -222,7 +258,9 @@ public final class AudioMufflingClient {
         for (Channel channel : channels) {
             SoundInstance sound = SOUNDS_BY_CHANNEL.get(channel);
             int filter;
-            if (isInternalHazmatSound(sound)) {
+            if (sound instanceof Scp079SpeakerCueSoundInstance) {
+                filter = speakerFilter;
+            } else if (isInternalHazmatSound(sound)) {
                 filter = scp714 > UPDATE_EPSILON
                         ? internalFilter : AL10.AL_NONE;
             } else if (isDiegetic(sound)) {
@@ -231,7 +269,7 @@ public final class AudioMufflingClient {
             } else {
                 // SCP-079's listener-relative select/static/transition sounds use
                 // MASTER specifically so the camera microphone filter never muddies
-                // its own internal interface feedback.
+                // its own internal interface feedback. MUSIC is also exempt.
                 filter = AL10.AL_NONE;
             }
             AL10.alSourcei(channel.source, EXTEfx.AL_DIRECT_FILTER, filter);
@@ -273,7 +311,9 @@ public final class AudioMufflingClient {
 
     private static boolean ensureFilters(SoundEngine engine) {
         if (filterEngine != engine) resetFilterHandles(engine);
-        if (worldFilter != 0 && internalFilter != 0) return true;
+        if (worldFilter != 0 && internalFilter != 0 && speakerFilter != 0) {
+            return true;
+        }
         if (efxUnavailable) return false;
 
         long context = ALC10.alcGetCurrentContext();
@@ -287,19 +327,24 @@ public final class AudioMufflingClient {
         clearAlError();
         int first = EXTEfx.alGenFilters();
         int second = EXTEfx.alGenFilters();
+        int third = EXTEfx.alGenFilters();
         EXTEfx.alFilteri(first, EXTEfx.AL_FILTER_TYPE,
                 EXTEfx.AL_FILTER_LOWPASS);
         EXTEfx.alFilteri(second, EXTEfx.AL_FILTER_TYPE,
                 EXTEfx.AL_FILTER_LOWPASS);
+        EXTEfx.alFilteri(third, EXTEfx.AL_FILTER_TYPE,
+                EXTEfx.AL_FILTER_LOWPASS);
         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
             if (first != 0) EXTEfx.alDeleteFilters(first);
             if (second != 0) EXTEfx.alDeleteFilters(second);
+            if (third != 0) EXTEfx.alDeleteFilters(third);
             markEfxUnavailable();
             return false;
         }
 
         worldFilter = first;
         internalFilter = second;
+        speakerFilter = third;
         filterEngine = engine;
         return true;
     }
@@ -325,6 +370,7 @@ public final class AudioMufflingClient {
         filterEngine = engine;
         worldFilter = 0;
         internalFilter = 0;
+        speakerFilter = 0;
         efxUnavailable = false;
     }
 

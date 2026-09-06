@@ -3,8 +3,6 @@ package com.bl4ues.scpclassifieddirective.facility.intercom;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.IntercomAudioClient;
 import com.bl4ues.scpclassifieddirective.client.IntercomClient;
-import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
-import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.speaker.FacilitySpeakerRegistry;
 import com.bl4ues.scpclassifieddirective.facility.speaker.SpeakerBroadcastManager;
 import net.minecraft.ChatFormatting;
@@ -75,7 +73,8 @@ public final class IntercomModule {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
     public static final double CAPTURE_RADIUS = 5.0D;
-    public static final double USER_RADIUS = 2.0D;
+    /** Slightly exceeds the 2.25-block contextual prompt reach. */
+    public static final double USER_RADIUS = 2.75D;
 
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpClassifiedDirectiveMod.MODID);
@@ -114,16 +113,19 @@ public final class IntercomModule {
                 new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path)));
     }
 
-    /** Authored push-button centre in the canonical NORTH orientation. */
+    /**
+     * Centre of the authored red toggle. GeckoLib mirrors Blockbench X for this
+     * model, so the positive-X button becomes the low-X world anchor.
+     */
     public static Vec3 buttonAnchor(BlockPos pos, BlockState state) {
-        return localToWorld(pos, state, 12.25D / 16.0D,
-                6.85D / 16.0D, 5.0D / 16.0D);
+        return localToWorld(pos, state,
+                0.1547D, 0.2000D, 0.3453D);
     }
 
-    /** Acoustic origin follows the lapel microphone head rather than block centre. */
+    /** Approximate world centre of the authored gooseneck microphone head. */
     public static Vec3 microphonePosition(BlockPos pos, BlockState state) {
-        return localToWorld(pos, state, 4.0D / 16.0D,
-                13.0D / 16.0D, 4.5D / 16.0D);
+        return localToWorld(pos, state,
+                0.775D, 1.055D, 0.735D);
     }
 
     private static Vec3 localToWorld(BlockPos pos, BlockState state,
@@ -141,13 +143,10 @@ public final class IntercomModule {
     }
 
     public static final class IntercomBlock extends BaseEntityBlock {
-        // Collision remains the rectangular console body. Selection extends
-        // over the authored flexible microphone as requested, so aiming at the
-        // visible upper part still outlines/selects the complete Intercom.
+        // Exact rectangular body envelope from the authored main cube. The
+        // microphone and raised controls do not enlarge selection/collision.
         private static final VoxelShape BODY_NORTH = Block.box(
-                1.0D, 0.0D, 2.0D, 15.0D, 7.0D, 14.0D);
-        private static final VoxelShape OUTLINE_NORTH = Block.box(
-                -0.1D, 0.0D, 2.0D, 16.1D, 19.0D, 14.0D);
+                0.0D, 0.0D, 3.0D, 16.0D, 5.4D, 12.75D);
 
         private IntercomBlock() {
             super(BlockBehaviour.Properties.of()
@@ -230,7 +229,7 @@ public final class IntercomModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return rotateNorthShape(OUTLINE_NORTH, state.getValue(FACING));
+            return rotateNorthShape(BODY_NORTH, state.getValue(FACING));
         }
 
         @Override
@@ -268,18 +267,22 @@ public final class IntercomModule {
 
     public static final class IntercomBlockEntity extends BlockEntity
             implements GeoBlockEntity {
+        private static final int TRANSITION_TICKS = 5;
         private static final RawAnimation IDLE_OFF = RawAnimation.begin()
                 .thenLoop("idle_off");
         private static final RawAnimation IDLE_ON = RawAnimation.begin()
                 .thenLoop("idle_on");
         private static final RawAnimation TURN_ON = RawAnimation.begin()
-                .thenPlay("turn_on");
+                .thenPlay("turn_on").thenLoop("idle_on");
         private static final RawAnimation TURN_OFF = RawAnimation.begin()
-                .thenPlay("turn_off");
+                .thenPlay("turn_off").thenLoop("idle_off");
 
         private final AnimatableInstanceCache animationCache =
                 GeckoLibUtil.createInstanceCache(this);
         private int endpointRefreshTicks;
+        private boolean animationInitialized;
+        private boolean animatedActive;
+        private long transitionUntilTick;
 
         public IntercomBlockEntity(BlockPos pos, BlockState state) {
             super(BLOCK_ENTITY.get(), pos, state);
@@ -295,11 +298,9 @@ public final class IntercomModule {
         }
 
         private boolean activate(ServerLevel server, ServerPlayer player) {
-            FacilityRoom room = FacilityMappingManager.roomForPosition(server,
-                    worldPosition);
-            if (room == null) return false;
+            if (!isValidUser(player)) return false;
             List<FacilitySpeakerRegistry.SpeakerEndpoint> endpoints =
-                    FacilitySpeakerRegistry.speakersForRoom(server, room.id());
+                    FacilitySpeakerRegistry.allSpeakers(server.getServer());
             if (!SpeakerBroadcastManager.startIntercom(server, worldPosition,
                     player, endpoints)) {
                 return false;
@@ -311,7 +312,6 @@ public final class IntercomModule {
             Vec3 microphone = microphonePosition(worldPosition, state);
             server.playSound(null, microphone.x, microphone.y, microphone.z,
                     ON.get(), SoundSource.BLOCKS, 0.32F, 1.0F);
-            triggerAnim("intercom", "turn_on");
             endpointRefreshTicks = 0;
             return true;
         }
@@ -327,7 +327,6 @@ public final class IntercomModule {
                 server.playSound(null, microphone.x, microphone.y, microphone.z,
                         OFF.get(), SoundSource.BLOCKS, 0.30F, 1.0F);
             }
-            triggerAnim("intercom", "turn_off");
         }
 
         private static void serverTick(Level level, BlockPos pos,
@@ -342,22 +341,27 @@ public final class IntercomModule {
 
             if (++intercom.endpointRefreshTicks < 20) return;
             intercom.endpointRefreshTicks = 0;
-            FacilityRoom room = FacilityMappingManager.roomForPosition(server, pos);
-            List<FacilitySpeakerRegistry.SpeakerEndpoint> endpoints = room == null
-                    ? List.of()
-                    : FacilitySpeakerRegistry.speakersForRoom(server, room.id());
+            List<FacilitySpeakerRegistry.SpeakerEndpoint> endpoints =
+                    FacilitySpeakerRegistry.allSpeakers(server.getServer());
             if (!SpeakerBroadcastManager.refreshIntercom(server, pos, endpoints)) {
                 intercom.deactivate(server, true);
             }
         }
 
+        private boolean isValidUser(Player player) {
+            if (player == null || !player.isAlive() || player.isSpectator()) {
+                return false;
+            }
+            Vec3 anchor = buttonAnchor(worldPosition, getBlockState());
+            return player.getEyePosition().distanceToSqr(anchor)
+                    <= USER_RADIUS * USER_RADIUS;
+        }
+
         private boolean hasNearbyUser(ServerLevel server) {
-            AABB area = new AABB(worldPosition).inflate(USER_RADIUS);
-            Vec3 centre = Vec3.atCenterOf(worldPosition);
-            return !server.getEntitiesOfClass(Player.class, area, player ->
-                    player.isAlive() && !player.isSpectator()
-                            && player.position().distanceToSqr(centre)
-                            <= USER_RADIUS * USER_RADIUS).isEmpty();
+            Vec3 anchor = buttonAnchor(worldPosition, getBlockState());
+            AABB area = new AABB(anchor, anchor).inflate(USER_RADIUS);
+            return !server.getEntitiesOfClass(Player.class, area,
+                    this::isValidUser).isEmpty();
         }
 
         private static void clientTick(Level level, BlockPos pos,
@@ -376,16 +380,31 @@ public final class IntercomModule {
             }
         }
 
+        private software.bernie.geckolib.core.object.PlayState animate(
+                software.bernie.geckolib.core.animation.AnimationState<IntercomBlockEntity> state) {
+            boolean active = getBlockState().getValue(ACTIVE);
+            long now = level == null ? 0L : level.getGameTime();
+            if (!animationInitialized) {
+                animationInitialized = true;
+                animatedActive = active;
+                transitionUntilTick = 0L;
+                return state.setAndContinue(active ? IDLE_ON : IDLE_OFF);
+            }
+            if (active != animatedActive) {
+                animatedActive = active;
+                transitionUntilTick = now + TRANSITION_TICKS;
+            }
+            if (now < transitionUntilTick) {
+                return state.setAndContinue(active ? TURN_ON : TURN_OFF);
+            }
+            return state.setAndContinue(active ? IDLE_ON : IDLE_OFF);
+        }
+
         @Override
         public void registerControllers(
                 AnimatableManager.ControllerRegistrar controllers) {
-            AnimationController<IntercomBlockEntity> controller =
-                    new AnimationController<>(this, "intercom", 0, state ->
-                            state.setAndContinue(getBlockState().getValue(ACTIVE)
-                                    ? IDLE_ON : IDLE_OFF));
-            controller.triggerableAnim("turn_on", TURN_ON);
-            controller.triggerableAnim("turn_off", TURN_OFF);
-            controllers.add(controller);
+            controllers.add(new AnimationController<>(this, "intercom", 0,
+                    this::animate));
         }
 
         @Override
@@ -438,7 +457,6 @@ public final class IntercomModule {
         @Override
         public void registerControllers(
                 AnimatableManager.ControllerRegistrar controllers) {
-            // Inventory representation uses the authored default/off pose.
         }
 
         @Override

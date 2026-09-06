@@ -20,6 +20,7 @@ public final class Scp079ActionAudioNetwork {
     public enum Cue {
         LOCK_OR_TESLA,
         DOOR_TOGGLE,
+        ROOM_SWITCH,
         BLACKOUT,
         LOCKDOWN
     }
@@ -57,6 +58,8 @@ public final class Scp079ActionAudioNetwork {
                                     Scp079PlayableAudioClient.playLockOrTesla();
                             case DOOR_TOGGLE ->
                                     Scp079PlayableAudioClient.playDoorToggle();
+                            case ROOM_SWITCH ->
+                                    Scp079PlayableAudioClient.playRoomSwitch();
                             case BLACKOUT ->
                                     Scp079PlayableAudioClient.playButton();
                             case LOCKDOWN ->

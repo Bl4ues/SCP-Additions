@@ -187,9 +187,10 @@ public final class Scp079CameraNavigationNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player != null) {
-                    Scp079PlayableManager.switchToCamera(player,
-                            message.cameraId);
+                if (player != null && Scp079PlayableManager.switchToCamera(
+                        player, message.cameraId)) {
+                    Scp079ActionAudioNetwork.send(player,
+                            Scp079ActionAudioNetwork.Cue.ROOM_SWITCH);
                 }
             });
             context.setPacketHandled(true);

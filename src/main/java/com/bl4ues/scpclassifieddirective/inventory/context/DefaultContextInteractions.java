@@ -55,7 +55,7 @@ public final class DefaultContextInteractions {
               "type":"block","id":"scp_classified_directive:intercom","interactionId":"turn_on_intercom",
               "range":2.25,"priority":82,"useItem":"hand","icon":"hand",
               "text":{"action":"Turn on","nameMode":"manual","name":"Intercom","showAction":true,"showName":true},
-              "anchor":{"position":[0.765625,0.428125,0.3125],"rotateWith":"horizontal_facing"},
+              "anchor":{"position":[0.1547,0.2,0.3453],"rotateWith":"horizontal_facing"},
               "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
               "visual":{"allowOffscreen":false,"scale":0.82}
             }
@@ -65,7 +65,7 @@ public final class DefaultContextInteractions {
               "type":"block","id":"scp_classified_directive:intercom","interactionId":"turn_off_intercom",
               "range":2.25,"priority":83,"useItem":"hand","icon":"hand",
               "text":{"action":"Turn off","nameMode":"manual","name":"Intercom","showAction":true,"showName":true},
-              "anchor":{"position":[0.765625,0.428125,0.3125],"rotateWith":"horizontal_facing"},
+              "anchor":{"position":[0.1547,0.2,0.3453],"rotateWith":"horizontal_facing"},
               "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
               "visual":{"allowOffscreen":false,"scale":0.82}
             }
@@ -119,6 +119,7 @@ public final class DefaultContextInteractions {
                 JsonObject object = element.getAsJsonObject();
                 String type = string(object, "type");
                 String id = string(object, "id");
+                String key = string(object, "interactionId");
                 if ("block".equalsIgnoreCase(type) && isLegacyScp914Id(id)) {
                     interactions.remove(i);
                     continue;
@@ -132,6 +133,15 @@ public final class DefaultContextInteractions {
                 if ("block".equalsIgnoreCase(type)
                         && "scp_classified_directive:scp_1176".equals(id)) {
                     normalizeScp1176(object);
+                    continue;
+                }
+                if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:intercom".equals(id)
+                        && ("turn_on_intercom".equals(key)
+                        || "turn_off_intercom".equals(key))) {
+                    setAnchor(object, 0.1547D, 0.2000D, 0.3453D);
+                    object.getAsJsonObject("anchor").addProperty(
+                            "rotateWith", "horizontal_facing");
                 }
             }
 

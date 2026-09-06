@@ -71,6 +71,11 @@ final class ContextPromptOutlineTarget {
                 || interactionKey.startsWith("elevator_carriage_"));
     }
 
+    private static boolean isScp914Control(String interactionKey) {
+        return "scp_914_dial".equals(interactionKey)
+                || "scp_914_start".equals(interactionKey);
+    }
+
     private static Access createAccess() {
         try {
             Field targetField = ContextPromptClient.class.getDeclaredField("target");
@@ -117,6 +122,11 @@ final class ContextPromptOutlineTarget {
         boolean isElevatorButton() {
             return anchor != null && ContextPromptOutlineTarget
                     .isElevatorButton(interactionKey);
+        }
+
+        boolean isScp914Control() {
+            return blockPos != null && anchor != null
+                    && ContextPromptOutlineTarget.isScp914Control(interactionKey);
         }
     }
 

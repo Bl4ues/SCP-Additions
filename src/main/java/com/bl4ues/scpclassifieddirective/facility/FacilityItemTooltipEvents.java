@@ -16,14 +16,22 @@ public final class FacilityItemTooltipEvents {
 
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
-        if (!event.getItemStack().is(FacilityModule.SIGN_SUPPORT.get().asItem())) {
+        if (event.getItemStack().is(FacilityModule.SIGN_SUPPORT.get().asItem())) {
+            event.getToolTip().add(Component.literal(
+                            "Displays SCP information, facility notices, or custom artwork")
+                    .withStyle(ChatFormatting.GRAY));
+            event.getToolTip().add(Component.literal(
+                            "Use a Screwdriver to configure after placement")
+                    .withStyle(ChatFormatting.AQUA));
             return;
         }
-        event.getToolTip().add(Component.literal(
-                        "Displays SCP information, facility notices, or custom artwork")
-                .withStyle(ChatFormatting.GRAY));
-        event.getToolTip().add(Component.literal(
-                        "Use a Screwdriver to configure after placement")
-                .withStyle(ChatFormatting.AQUA));
+        if (event.getItemStack().is(HazardSignModule.ITEM.get())) {
+            event.getToolTip().add(Component.literal(
+                            "Displays one selectable Anomaly Trait pictogram as a facility hazard warning")
+                    .withStyle(ChatFormatting.GRAY));
+            event.getToolTip().add(Component.literal(
+                            "Choose the pictogram when placed; use a Screwdriver to edit it later")
+                    .withStyle(ChatFormatting.AQUA));
+        }
     }
 }

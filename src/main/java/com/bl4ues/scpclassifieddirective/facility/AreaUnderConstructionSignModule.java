@@ -65,6 +65,7 @@ public final class AreaUnderConstructionSignModule {
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
+        HazardSignModule.register(bus);
         ObjectContainmentUnitModule.register(bus);
         SurveillanceCameraPlaceholderModule.register(bus);
         SpeakerModule.register(bus);
@@ -79,6 +80,7 @@ public final class AreaUnderConstructionSignModule {
             event.accept(SurveillanceCameraPlaceholderModule.ITEM.get());
             event.accept(SpeakerModule.ITEM.get());
             event.accept(IntercomModule.ITEM.get());
+            event.accept(HazardSignModule.ITEM.get());
         }
     }
 
@@ -95,6 +97,9 @@ public final class AreaUnderConstructionSignModule {
                     continue;
                 }
                 addUnique(items, stack);
+                if (stack.is(FacilityModule.SIGN_SUPPORT.get().asItem())) {
+                    addUnique(items, new ItemStack(HazardSignModule.ITEM.get()));
+                }
                 if (stack.is(UnifiedReaderItems.KEYCARD_READER.get())) {
                     addUnique(items,
                             new ItemStack(ObjectContainmentUnitModule.ITEM.get()));

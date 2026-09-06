@@ -47,7 +47,25 @@ public final class FramedSignFrameRenderer {
         poseStack.translate(-0.5D, -0.5D, -0.5D);
         poseStack.translate(state.getValue(AbstractFramedSignBlock.POSITION)
                 .modelOffsetBlocks(), 0.0D, 0.0D);
+        renderGeometry(poseStack, buffer, packedLight, packedOverlay);
+        poseStack.popPose();
+    }
 
+    /** Uses the exact shared frame turned ninety degrees around its front face. */
+    public static void renderPortrait(Direction facing, PoseStack poseStack,
+            MultiBufferSource buffer, int packedLight, int packedOverlay) {
+        if (facing == null || facing.getAxis() == Direction.Axis.Y) return;
+        poseStack.pushPose();
+        poseStack.translate(0.5D, 0.5D, 0.5D);
+        poseStack.mulPose(Axis.YP.rotationDegrees(rotationDegrees(facing)));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
+        poseStack.translate(-0.5D, -0.5D, -0.5D);
+        renderGeometry(poseStack, buffer, packedLight, packedOverlay);
+        poseStack.popPose();
+    }
+
+    private static void renderGeometry(PoseStack poseStack,
+            MultiBufferSource buffer, int packedLight, int packedOverlay) {
         VertexConsumer glass = buffer.getBuffer(
                 RenderType.entityTranslucent(GLASS));
         renderFrontPanel(glass, poseStack, packedLight, packedOverlay,
@@ -71,8 +89,6 @@ public final class FramedSignFrameRenderer {
                 14.8F, 3.45F, 15.3F, 3.95F, 15.3F, 3.95F);
         renderRotatedCorner(metal, poseStack, packedLight, packedOverlay,
                 0.2F, 3.45F, 0.7F, 3.95F, 0.7F, 3.95F);
-
-        poseStack.popPose();
     }
 
     private static void renderRotatedCorner(VertexConsumer consumer,

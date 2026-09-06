@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/** Keeps SCP-079's ears at its physical host while its view uses remote cameras. */
+/** Uses the physical host listener only while SCP-079 is actually at its host. */
 @Mixin(SoundEngine.class)
 public abstract class Scp079LocalHostAudioMixin {
     @Redirect(method = "updateSource",
@@ -43,7 +43,9 @@ public abstract class Scp079LocalHostAudioMixin {
 
     private static boolean useLocalHostListener() {
         Minecraft minecraft = Minecraft.getInstance();
-        return Scp079PlayableClient.active() && minecraft.level != null
+        return Scp079PlayableClient.active()
+                && !Scp079PlayableClient.cameraMode()
+                && minecraft.level != null
                 && minecraft.level.dimension().location().equals(
                         Scp079PlayableClient.hostDimension());
     }

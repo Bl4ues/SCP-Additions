@@ -15,7 +15,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,16 +28,14 @@ public final class SpeakerVoiceChatBridge {
     private static final Map<UUID, OpusDecoder> DECODERS = new HashMap<>();
     private static final Map<ChannelKey, FilterChannel> CHANNELS = new HashMap<>();
 
-    // Speaker users can hear the same physical endpoint packet as everybody
-    // else. This is intentional for Intercom proximity and current 079 QA.
     private static final boolean OPERATOR_SELF_MONITOR = true;
-    private static final double VOICE_OUTPUT_GAIN = 0.50D;
+    private static final double SCP079_VOICE_OUTPUT_GAIN = 0.50D;
+    private static final double INTERCOM_VOICE_OUTPUT_GAIN = 0.28D;
     private static final double VOICE_SAMPLE_RATE = 48_000.0D;
 
     private SpeakerVoiceChatBridge() {
     }
 
-    /** SCP-079's operator microphone, already routed to its selected Speakers. */
     public static void relay(MicrophonePacketEvent event, ServerPlayer operator) {
         if (event == null || operator == null || operator.getServer() == null
                 || !ModCompatibilityConfig.simpleVoiceChatEnabled()) return;
@@ -46,7 +43,6 @@ public final class SpeakerVoiceChatBridge {
                 operator.getServer(), operator.getUUID()));
     }
 
-    /** Any ordinary player inside an active Intercom's five-block pickup radius. */
     public static void relayIntercom(MicrophonePacketEvent event,
             ServerPlayer speaker) {
         if (event == null || speaker == null || speaker.getServer() == null
@@ -241,11 +237,11 @@ public final class SpeakerVoiceChatBridge {
             boolean robotic = sourceType
                     == SpeakerBroadcastManager.SourceType.SCP_079;
             double capture = Mth.clamp(captureGain, 0.0F, 1.0F);
+            double outputGain = robotic
+                    ? SCP079_VOICE_OUTPUT_GAIN : INTERCOM_VOICE_OUTPUT_GAIN;
             for (int index = 0; index < input.length; index++) {
                 double sample = input[index];
 
-                // Shared Speaker coloration: remove bass, narrow the speech band
-                // and compress it hard enough to sound like a cheap wall PA.
                 lowCut += 0.045D * (sample - lowCut);
                 double highPassed = sample - lowCut;
                 bandOne += 0.34D * (highPassed - bandOne);
@@ -260,7 +256,7 @@ public final class SpeakerVoiceChatBridge {
                 if (robotic) processed = robotize(processed);
                 processed *= capture;
                 output[index] = (short) Mth.clamp(
-                        (int) Math.round(processed * VOICE_OUTPUT_GAIN),
+                        (int) Math.round(processed * outputGain),
                         Short.MIN_VALUE, Short.MAX_VALUE);
             }
             return output;

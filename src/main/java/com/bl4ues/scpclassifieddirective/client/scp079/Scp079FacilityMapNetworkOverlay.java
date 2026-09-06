@@ -9,9 +9,11 @@ import net.minecraft.core.BlockPos;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * SCP-079-only facility map overlay.
@@ -41,14 +43,16 @@ public final class Scp079FacilityMapNetworkOverlay {
 
         for (FacilityRoomSnapshot room : floor.rooms()) {
             if (Scp079CameraNetworkClientState.hasCamera(room.id())) continue;
-            for (FacilityFloorPatch patch : room.patches()) {
-                for (int x = patch.minX(); x <= patch.maxX(); x++) {
-                    for (int z = patch.minZ(); z <= patch.maxZ(); z++) {
-                        graphics.fill(transform.sx(x), transform.sy(z),
-                                transform.sx(x + 1), transform.sy(z + 1),
-                                0xB806121A);
-                    }
-                }
+
+            // Authored floor patches may overlap. Darkening each patch directly
+            // stacks translucent fills and makes no-camera rooms look striped or
+            // blotchy, so render the geometric union exactly once per cell.
+            for (long packed : roomCells(room)) {
+                int x = unpackX(packed);
+                int z = unpackZ(packed);
+                graphics.fill(transform.sx(x), transform.sy(z),
+                        transform.sx(x + 1), transform.sy(z + 1),
+                        0xB806121A);
             }
         }
 
@@ -63,8 +67,34 @@ public final class Scp079FacilityMapNetworkOverlay {
         if (hostRoom == null || floor.rooms().stream().noneMatch(room ->
                 room.id().equals(hostRoom.id()))) return;
 
-        int centerX = transform.sx(host.getX() + 0.5D);
-        int centerY = transform.sy(host.getZ() + 0.5D);
+        double markerX = host.getX() + 0.5D;
+        double markerZ = host.getZ() + 0.5D;
+        Set<Long> cells = roomCells(hostRoom);
+
+        // roomAt intentionally accepts a one-block border so wall-mounted
+        // devices still belong to their room. That is useful for gameplay, but
+        // drawing the raw host block can therefore place the 079 marker outside
+        // the authored map shape. Snap only those border cases back onto the
+        // nearest actual room cell; hosts already inside the room keep their
+        // precise world position.
+        if (!cells.contains(pack(host.getX(), host.getZ())) && !cells.isEmpty()) {
+            double bestDistance = Double.MAX_VALUE;
+            for (long packed : cells) {
+                double cellX = unpackX(packed) + 0.5D;
+                double cellZ = unpackZ(packed) + 0.5D;
+                double dx = cellX - markerX;
+                double dz = cellZ - markerZ;
+                double distance = dx * dx + dz * dz;
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    markerX = cellX;
+                    markerZ = cellZ;
+                }
+            }
+        }
+
+        int centerX = transform.sx(markerX);
+        int centerY = transform.sy(markerZ);
         int size = Math.max(2, Math.min(7,
                 (int) Math.floor(transform.scale() * 0.48D)));
         int half = Math.max(1, size / 2);
@@ -72,6 +102,30 @@ public final class Scp079FacilityMapNetworkOverlay {
                 centerX - half + size, centerY - half + size, 0xFFFFFFFF);
         Scp079UiTheme.drawCentered(graphics, minecraft.font, "079",
                 centerX, centerY + half + 5, 1.03F, 0xFFFFFFFF);
+    }
+
+    private static Set<Long> roomCells(FacilityRoomSnapshot room) {
+        Set<Long> cells = new HashSet<>();
+        for (FacilityFloorPatch patch : room.patches()) {
+            for (int x = patch.minX(); x <= patch.maxX(); x++) {
+                for (int z = patch.minZ(); z <= patch.maxZ(); z++) {
+                    cells.add(pack(x, z));
+                }
+            }
+        }
+        return cells;
+    }
+
+    private static long pack(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+    }
+
+    private static int unpackX(long value) {
+        return (int) (value >> 32);
+    }
+
+    private static int unpackZ(long value) {
+        return (int) value;
     }
 
     private static List<FloorView> buildFloors() {

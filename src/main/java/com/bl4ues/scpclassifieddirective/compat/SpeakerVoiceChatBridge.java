@@ -15,6 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,14 +23,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-/** Relays an operator microphone through active facility speaker endpoints. */
+/** Relays microphone audio through active facility Speaker endpoints. */
 public final class SpeakerVoiceChatBridge {
     private static final Object CODEC_LOCK = new Object();
     private static final Map<UUID, OpusDecoder> DECODERS = new HashMap<>();
     private static final Map<ChannelKey, FilterChannel> CHANNELS = new HashMap<>();
 
-    // Temporary QA monitor. Flip this single switch off once the Speaker filter
-    // has been validated; ordinary receivers are unaffected either way.
+    // Speaker users can hear the same physical endpoint packet as everybody
+    // else. This is intentional for Intercom proximity and current 079 QA.
     private static final boolean OPERATOR_SELF_MONITOR = true;
     private static final double VOICE_OUTPUT_GAIN = 0.50D;
     private static final double VOICE_SAMPLE_RATE = 48_000.0D;
@@ -37,29 +38,43 @@ public final class SpeakerVoiceChatBridge {
     private SpeakerVoiceChatBridge() {
     }
 
+    /** SCP-079's operator microphone, already routed to its selected Speakers. */
     public static void relay(MicrophonePacketEvent event, ServerPlayer operator) {
         if (event == null || operator == null || operator.getServer() == null
                 || !ModCompatibilityConfig.simpleVoiceChatEnabled()) return;
-        List<SpeakerBroadcastManager.VoiceSource> sources =
-                SpeakerBroadcastManager.voiceSources(operator.getServer(),
-                        operator.getUUID());
-        prune(operator.getUUID(), sources);
+        relaySources(event, operator, SpeakerBroadcastManager.voiceSources(
+                operator.getServer(), operator.getUUID()));
+    }
+
+    /** Any ordinary player inside an active Intercom's five-block pickup radius. */
+    public static void relayIntercom(MicrophonePacketEvent event,
+            ServerPlayer speaker) {
+        if (event == null || speaker == null || speaker.getServer() == null
+                || !ModCompatibilityConfig.simpleVoiceChatEnabled()) return;
+        relaySources(event, speaker,
+                SpeakerBroadcastManager.intercomVoiceSources(speaker));
+    }
+
+    private static void relaySources(MicrophonePacketEvent event,
+            ServerPlayer speaker,
+            List<SpeakerBroadcastManager.VoiceSource> sources) {
+        prune(speaker.getUUID(), sources);
         if (sources.isEmpty()) return;
 
         VoicechatServerApi api = event.getVoicechat();
         MicrophonePacket microphone = event.getPacket();
         byte[] opus = microphone.getOpusEncodedData();
         if (api == null || opus == null || opus.length == 0) return;
-        short[] decoded = decode(api, operator.getUUID(), opus);
+        short[] decoded = decode(api, speaker.getUUID(), opus);
         if (decoded == null || decoded.length == 0) return;
 
         for (SpeakerBroadcastManager.VoiceSource source : sources) {
-            byte[] filtered = encode(api, operator.getUUID(), source, decoded);
+            byte[] filtered = encode(api, speaker.getUUID(), source, decoded);
             if (filtered == null || filtered.length == 0) continue;
             LocationalSoundPacket packet;
             try {
                 packet = microphone.locationalSoundPacketBuilder()
-                        .channelId(channelId(operator.getUUID(), source))
+                        .channelId(channelId(speaker.getUUID(), source))
                         .opusEncodedData(filtered)
                         .position(api.createPosition(source.position().x,
                                 source.position().y, source.position().z))
@@ -71,15 +86,15 @@ public final class SpeakerVoiceChatBridge {
                         exception);
                 continue;
             }
-            sendToReceivers(api, operator.getServer(), operator, source, packet);
+            sendToReceivers(api, speaker.getServer(), speaker, source, packet);
         }
     }
 
-    private static short[] decode(VoicechatServerApi api, UUID operator,
+    private static short[] decode(VoicechatServerApi api, UUID speaker,
             byte[] opus) {
         synchronized (CODEC_LOCK) {
             try {
-                OpusDecoder decoder = DECODERS.computeIfAbsent(operator,
+                OpusDecoder decoder = DECODERS.computeIfAbsent(speaker,
                         ignored -> api.createDecoder());
                 return decoder == null ? null : decoder.decode(opus);
             } catch (RuntimeException | LinkageError exception) {
@@ -91,9 +106,9 @@ public final class SpeakerVoiceChatBridge {
         }
     }
 
-    private static byte[] encode(VoicechatServerApi api, UUID operator,
+    private static byte[] encode(VoicechatServerApi api, UUID speaker,
             SpeakerBroadcastManager.VoiceSource source, short[] decoded) {
-        ChannelKey key = new ChannelKey(operator,
+        ChannelKey key = new ChannelKey(speaker, source.sourceId(),
                 source.dimension().location().toString(), source.pos().asLong(),
                 source.sourceType());
         synchronized (CODEC_LOCK) {
@@ -102,7 +117,7 @@ public final class SpeakerVoiceChatBridge {
                         ignored -> new FilterChannel(api.createEncoder()));
                 if (channel.encoder == null) return null;
                 return channel.encoder.encode(channel.filter(decoded,
-                        source.sourceType()));
+                        source.sourceType(), source.captureGain()));
             } catch (RuntimeException | LinkageError exception) {
                 ScpClassifiedDirectiveMod.LOGGER.debug(
                         "Could not encode a filtered facility Speaker voice frame",
@@ -113,14 +128,14 @@ public final class SpeakerVoiceChatBridge {
     }
 
     private static void sendToReceivers(VoicechatServerApi api,
-            MinecraftServer server, ServerPlayer operator,
+            MinecraftServer server, ServerPlayer speaker,
             SpeakerBroadcastManager.VoiceSource source,
             LocationalSoundPacket packet) {
         for (ServerPlayer receiver : server.getPlayerList().getPlayers()) {
             if (!receiver.level().dimension().equals(source.dimension())
                     || DeathSpectateCoordinator.isDeadVoiceParticipant(receiver)
                     || (!OPERATOR_SELF_MONITOR
-                    && receiver.getUUID().equals(operator.getUUID()))) {
+                    && receiver.getUUID().equals(speaker.getUUID()))) {
                 continue;
             }
             VoicechatConnection connection = api.getConnectionOf(
@@ -128,9 +143,6 @@ public final class SpeakerVoiceChatBridge {
             if (connection == null || !connection.isConnected()
                     || !connection.isInstalled()) continue;
             try {
-                // While QA monitoring is enabled, the operator receives the
-                // same positional Speaker packet as everyone else. There is no
-                // separate camera-anchored or non-positional echo path.
                 api.sendLocationalSoundPacketTo(connection, packet);
             } catch (RuntimeException | LinkageError exception) {
                 ScpClassifiedDirectiveMod.LOGGER.debug(
@@ -140,17 +152,17 @@ public final class SpeakerVoiceChatBridge {
         }
     }
 
-    private static void prune(UUID operator,
+    private static void prune(UUID speaker,
             List<SpeakerBroadcastManager.VoiceSource> sources) {
         Set<ChannelKey> active = new HashSet<>();
         for (SpeakerBroadcastManager.VoiceSource source : sources) {
-            active.add(new ChannelKey(operator,
+            active.add(new ChannelKey(speaker, source.sourceId(),
                     source.dimension().location().toString(),
                     source.pos().asLong(), source.sourceType()));
         }
         synchronized (CODEC_LOCK) {
             CHANNELS.entrySet().removeIf(entry -> {
-                if (!entry.getKey().operator.equals(operator)
+                if (!entry.getKey().speaker.equals(speaker)
                         || active.contains(entry.getKey())) return false;
                 entry.getValue().close();
                 return true;
@@ -158,12 +170,12 @@ public final class SpeakerVoiceChatBridge {
         }
     }
 
-    public static void forgetOperator(UUID operator) {
-        if (operator == null) return;
+    public static void forgetOperator(UUID speaker) {
+        if (speaker == null) return;
         synchronized (CODEC_LOCK) {
-            close(DECODERS.remove(operator));
+            close(DECODERS.remove(speaker));
             CHANNELS.entrySet().removeIf(entry -> {
-                if (!entry.getKey().operator.equals(operator)) return false;
+                if (!entry.getKey().speaker.equals(speaker)) return false;
                 entry.getValue().close();
                 return true;
             });
@@ -179,11 +191,12 @@ public final class SpeakerVoiceChatBridge {
         }
     }
 
-    private static UUID channelId(UUID operator,
+    private static UUID channelId(UUID speaker,
             SpeakerBroadcastManager.VoiceSource source) {
         String key = ScpClassifiedDirectiveMod.MODID + ":speaker:"
-                + source.sourceType().name() + ":" + operator + ":"
-                + source.dimension().location() + ":" + source.pos().asLong();
+                + source.sourceType().name() + ":" + speaker + ":"
+                + source.sourceId() + ":" + source.dimension().location()
+                + ":" + source.pos().asLong();
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -195,16 +208,11 @@ public final class SpeakerVoiceChatBridge {
         }
     }
 
-    private record ChannelKey(UUID operator, String dimension, long position,
-            SpeakerBroadcastManager.SourceType sourceType) {
+    private record ChannelKey(UUID speaker, UUID sourceId, String dimension,
+            long position, SpeakerBroadcastManager.SourceType sourceType) {
     }
 
-    /**
-     * Every Speaker receives the same low-quality PA/radio treatment. SCP-079
-     * alone gets a second deterministic robotic chain; future Intercom operators
-     * therefore keep a human-sounding filtered voice without special casing the
-     * speaker block itself.
-     */
+    /** Shared cheap-PA filter, with the extra robot chain exclusive to SCP-079. */
     private static final class FilterChannel {
         private static final int ROBOT_DELAY_SAMPLES = 168;
         private static final double ROBOT_RING_HZ = 86.0D;
@@ -227,9 +235,12 @@ public final class SpeakerVoiceChatBridge {
         }
 
         private short[] filter(short[] input,
-                SpeakerBroadcastManager.SourceType sourceType) {
+                SpeakerBroadcastManager.SourceType sourceType,
+                float captureGain) {
             short[] output = new short[input.length];
-            boolean robotic = sourceType == SpeakerBroadcastManager.SourceType.SCP_079;
+            boolean robotic = sourceType
+                    == SpeakerBroadcastManager.SourceType.SCP_079;
+            double capture = Mth.clamp(captureGain, 0.0F, 1.0F);
             for (int index = 0; index < input.length; index++) {
                 double sample = input[index];
 
@@ -247,6 +258,7 @@ public final class SpeakerVoiceChatBridge {
 
                 double processed = heldSample * 1.08D;
                 if (robotic) processed = robotize(processed);
+                processed *= capture;
                 output[index] = (short) Mth.clamp(
                         (int) Math.round(processed * VOICE_OUTPUT_GAIN),
                         Short.MIN_VALUE, Short.MAX_VALUE);
@@ -254,11 +266,6 @@ public final class SpeakerVoiceChatBridge {
             return output;
         }
 
-        /**
-         * 079-specific robot chain: short metallic comb delay, resonant smoothing,
-         * low-depth ring modulation, coarse amplitude stepping and a final sample
-         * hold. It is intentionally deterministic and adds no hiss/noise layer.
-         */
         private double robotize(double sample) {
             double delayed = robotDelay[robotDelayIndex];
             robotDelay[robotDelayIndex] = sample;

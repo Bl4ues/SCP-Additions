@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * SCP-079-only facility map overlay.
@@ -56,7 +57,45 @@ public final class Scp079FacilityMapNetworkOverlay {
             }
         }
 
+        renderActivityPings(graphics, floor, transform);
         renderHostMarker(graphics, floor, transform, minecraft);
+    }
+
+    private static void renderActivityPings(GuiGraphics graphics,
+            FloorView floor, Transform transform) {
+        Set<UUID> roomIds = new HashSet<>();
+        for (FacilityRoomSnapshot room : floor.rooms()) roomIds.add(room.id());
+        long now = System.nanoTime();
+        for (Scp079ActivityPingClientState.Ping ping
+                : Scp079ActivityPingClientState.active()) {
+            if (!ping.dimension().equals(Scp079PlayableClient.hostDimension())
+                    || !roomIds.contains(ping.roomId())) continue;
+            double age = Math.max(0.0D, Math.min(1.0D,
+                    (now - ping.startedAtNanos())
+                            / (double) Scp079ActivityPingClientState.LIFETIME_NANOS));
+            int centerX = transform.sx(ping.x());
+            int centerY = transform.sy(ping.z());
+            renderPingRing(graphics, centerX, centerY, age, 0.0D);
+            renderPingRing(graphics, centerX, centerY, age, 0.22D);
+        }
+    }
+
+    private static void renderPingRing(GuiGraphics graphics, int centerX,
+            int centerY, double age, double delay) {
+        if (age < delay) return;
+        double progress = Math.min(1.0D, (age - delay) / (1.0D - delay));
+        int radius = 3 + (int) Math.round(progress * 18.0D);
+        int alpha = Math.max(0, Math.min(220,
+                (int) Math.round((1.0D - progress) * 220.0D)));
+        if (alpha <= 2) return;
+        int color = (alpha << 24) | 0x00BDEEFF;
+        int points = Math.max(20, radius * 3);
+        for (int index = 0; index < points; index++) {
+            double angle = Math.PI * 2.0D * index / points;
+            int x = centerX + (int) Math.round(Math.cos(angle) * radius);
+            int y = centerY + (int) Math.round(Math.sin(angle) * radius);
+            graphics.fill(x, y, x + 2, y + 2, color);
+        }
     }
 
     private static void renderHostMarker(GuiGraphics graphics,

@@ -141,10 +141,13 @@ public final class IntercomModule {
     }
 
     public static final class IntercomBlock extends BaseEntityBlock {
-        // Only the rectangular console body participates in selection/collision.
-        // The flexible microphone and controls deliberately do not enlarge it.
-        private static final VoxelShape NORTH = Block.box(
+        // Collision remains the rectangular console body. Selection extends
+        // over the authored flexible microphone as requested, so aiming at the
+        // visible upper part still outlines/selects the complete Intercom.
+        private static final VoxelShape BODY_NORTH = Block.box(
                 1.0D, 0.0D, 2.0D, 15.0D, 7.0D, 14.0D);
+        private static final VoxelShape OUTLINE_NORTH = Block.box(
+                -0.1D, 0.0D, 2.0D, 16.1D, 19.0D, 14.0D);
 
         private IntercomBlock() {
             super(BlockBehaviour.Properties.of()
@@ -227,13 +230,13 @@ public final class IntercomModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return rotateNorthShape(NORTH, state.getValue(FACING));
+            return rotateNorthShape(OUTLINE_NORTH, state.getValue(FACING));
         }
 
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return getShape(state, level, pos, context);
+            return rotateNorthShape(BODY_NORTH, state.getValue(FACING));
         }
 
         @Override

@@ -245,7 +245,8 @@ public final class SpeakerModule {
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
-            tooltip.add(Component.literal("Broadcasts voice")
+            tooltip.add(Component.literal(
+                            "Broadcasts from the Intercom or Camera Operators")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }

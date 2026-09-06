@@ -50,6 +50,26 @@ public final class DefaultContextInteractions {
               "visual":{"allowOffscreen":false,"scale":0.72}
             }
             """;
+    private static final String INTERCOM_ON_RULE = """
+            {
+              "type":"block","id":"scp_classified_directive:intercom","interactionId":"turn_on_intercom",
+              "range":2.25,"priority":82,"useItem":"hand","icon":"hand",
+              "text":{"action":"Turn on","nameMode":"manual","name":"Intercom","showAction":true,"showName":true},
+              "anchor":{"position":[0.765625,0.428125,0.3125],"rotateWith":"horizontal_facing"},
+              "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
+              "visual":{"allowOffscreen":false,"scale":0.82}
+            }
+            """;
+    private static final String INTERCOM_OFF_RULE = """
+            {
+              "type":"block","id":"scp_classified_directive:intercom","interactionId":"turn_off_intercom",
+              "range":2.25,"priority":83,"useItem":"hand","icon":"hand",
+              "text":{"action":"Turn off","nameMode":"manual","name":"Intercom","showAction":true,"showName":true},
+              "anchor":{"position":[0.765625,0.428125,0.3125],"rotateWith":"horizontal_facing"},
+              "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
+              "visual":{"allowOffscreen":false,"scale":0.82}
+            }
+            """;
 
     private DefaultContextInteractions() {
     }
@@ -121,6 +141,8 @@ public final class DefaultContextInteractions {
             boolean scp426 = false;
             boolean dial = false;
             boolean start = false;
+            boolean intercomOn = false;
+            boolean intercomOff = false;
             for (JsonElement element : interactions) {
                 if (!element.isJsonObject()) continue;
                 JsonObject object = element.getAsJsonObject();
@@ -144,6 +166,11 @@ public final class DefaultContextInteractions {
                     dial |= "scp_914_dial".equals(key);
                     start |= "scp_914_start".equals(key);
                 }
+                if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:intercom".equals(id)) {
+                    intercomOn |= "turn_on_intercom".equals(key);
+                    intercomOff |= "turn_off_intercom".equals(key);
+                }
             }
 
             appendIfMissing(interactions, corpse, CORPSE_SEARCH_RULE);
@@ -152,6 +179,8 @@ public final class DefaultContextInteractions {
             appendIfMissing(interactions, scp426, SCP426_TAKE_RULE);
             appendIfMissing(interactions, dial, SCP914_DIAL_RULE);
             appendIfMissing(interactions, start, SCP914_START_RULE);
+            appendIfMissing(interactions, intercomOn, INTERCOM_ON_RULE);
+            appendIfMissing(interactions, intercomOff, INTERCOM_OFF_RULE);
             return root.toString();
         } catch (Exception exception) {
             ScpInventoryMod.LOGGER.error(

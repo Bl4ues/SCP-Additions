@@ -289,6 +289,7 @@
 ## Facility signs
 
 - Added the Facility Direction Sign and Door Sign, both editable with the Screwdriver;
+- Added the centered portrait **Hazard Sign**, which opens a dedicated Anomaly Trait pictogram picker on placement and can be edited later with a Screwdriver;
 - Upgraded the SCP Sign into a unified sign system whose first editor option selects between **SCP Information Sign**, **SCP-914 Usage Notice**, **Area Under Construction Sign**, and reusable custom world templates;
 - Preserved the SCP Information editor for the SCP number, containment class, clearance level, anomaly type, and up to three anomaly-trait pictograms;
 - Added template previews to the selector and support for naming, uploading, reusing, and deleting custom PNG sign templates stored within the server world;
@@ -357,7 +358,6 @@
 - Kept off-screen prompts disabled by default while enabling them in the bundled configuration for door buttons and keycard readers;
 - Added pickup feedback to contextual interactions whose action is exactly **Take**, so SCP-714, SCP-1576, and future item-recovery prompts use the custom pickup cue when **Custom Item Interaction Sounds** is enabled and the vanilla pickup cue when it is disabled;
 - Added a warning in the visual anchor editor when the selected block probably has no native right-click interaction.
-
 ## Configuration integration
 
 - Added update-safe integrated defaults for SCP-914 recipes involving SCP: Classified Directive content, allowing new bundled transformations to appear in existing installations without resetting `914recipes.json` while keeping configured recipes and fragments authoritative;

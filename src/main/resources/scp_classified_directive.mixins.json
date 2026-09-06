@@ -35,7 +35,6 @@
     "Scp079TeslaActionAudioMixin",
     "Scp079PlayableActionCooldownMixin",
     "Scp079CameraNavigationRegistrationMixin",
-    "Scp079BlackoutRedstoneMixin",
     "Scp079LockdownPowerRegenMixin",
     "compat.MineZeroDeathHandlerMixin",
     "compat.MineZeroCheckpointManagerMixin",

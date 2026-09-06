@@ -1,14 +1,18 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.block.Scp079onBlock;
+import com.bl4ues.scpclassifieddirective.facility.speaker.SpeakerBroadcastManager;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
+import com.bl4ues.scpclassifieddirective.network.Scp079AudioNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,6 +27,7 @@ import java.util.WeakHashMap;
 public final class Scp079ScreenState {
     private static final int ACTION_PULSE_TICKS = 60;
     private static final float CRT_STATE_SOUND_VOLUME = 0.42F;
+    private static final float SPEAKER_CRT_CUE_VOLUME = 0.78F;
     private static final Map<MinecraftServer, Set<Scp079FacilityAccessSavedData.TrackedPosition>>
             LOCAL_ACTIVE = new WeakHashMap<>();
     private static final Map<MinecraftServer, Map<Scp079FacilityAccessSavedData.TrackedPosition, Long>>
@@ -153,10 +158,31 @@ public final class Scp079ScreenState {
                     state.getValue(Scp079onBlock.WATERLOGGED));
         }
         level.setBlock(pos, next, 3);
-        level.playSound(null, pos,
-                powered ? ScpClassifiedDirectiveModSounds.SCP079_1.get()
-                        : ScpClassifiedDirectiveModSounds.SCP079_2.get(),
-                SoundSource.BLOCKS, CRT_STATE_SOUND_VOLUME, 1.0F);
+        SoundEvent cue = powered
+                ? ScpClassifiedDirectiveModSounds.SCP079_1.get()
+                : ScpClassifiedDirectiveModSounds.SCP079_2.get();
+        level.playSound(null, pos, cue, SoundSource.BLOCKS,
+                CRT_STATE_SOUND_VOLUME, 1.0F);
+        relayCueThroughScp079Speakers(level.getServer(), cue);
+    }
+
+    private static void relayCueThroughScp079Speakers(MinecraftServer server,
+            SoundEvent cue) {
+        if (server == null || cue == null) return;
+        ServerPlayer operator = Scp079PlayableManager.controller(server);
+        if (operator == null || !SpeakerBroadcastManager.isBroadcasting(operator)) {
+            return;
+        }
+        for (SpeakerBroadcastManager.VoiceSource source
+                : SpeakerBroadcastManager.voiceSources(server,
+                operator.getUUID())) {
+            if (source.sourceType() != SpeakerBroadcastManager.SourceType.SCP_079) {
+                continue;
+            }
+            Scp079AudioNetwork.sendSpeakerCue(server, source.dimension(),
+                    cue.getLocation(), source.position().x, source.position().y,
+                    source.position().z, SPEAKER_CRT_CUE_VOLUME, 1.0F);
+        }
     }
 
     private static ServerLevel level(MinecraftServer server,

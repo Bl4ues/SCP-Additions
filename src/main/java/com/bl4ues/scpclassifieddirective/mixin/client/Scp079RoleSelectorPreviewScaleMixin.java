@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Keeps the SCP-079 role card presentation aligned with its current toolkit. */
-@Mixin(ScpRoleSelectorScreen.class)
+@Mixin(value = ScpRoleSelectorScreen.class, remap = false)
 public abstract class Scp079RoleSelectorPreviewScaleMixin {
     @ModifyConstant(method = "<clinit>",
             constant = @Constant(floatValue = 2.28F), require = 1)

@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Server-authoritative room abilities for playable SCP-079. */
+/** Server-authoritative room abilities shared by playable and autonomous SCP-079. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079RoomAbilityManager {
@@ -63,9 +63,31 @@ public final class Scp079RoomAbilityManager {
         ServerLevel level = player.serverLevel();
         FacilityRoomSnapshot room = currentRoom(level, player.blockPosition());
         if (room == null) return false;
+        return useMapped(level, room, ability, true);
+    }
+
+    /**
+     * Autonomous SCP-079 uses the exact same mapped-room implementation. A human
+     * operator always owns the strategist exclusively, so AI calls are rejected
+     * while the playable role is occupied.
+     */
+    public static boolean useAutonomous(ServerLevel level,
+            FacilityRoomSnapshot room, Ability ability) {
+        if (level == null || room == null || ability == null
+                || level.getServer() == null
+                || Scp079PlayableManager.hasController(level.getServer())
+                || !Scp079ProcessingManager.isActive(level)
+                || !isMappedRoom(level, room.id())) {
+            return false;
+        }
+        return useMapped(level, room, ability, false);
+    }
+
+    private static boolean useMapped(ServerLevel level, FacilityRoomSnapshot room,
+            Ability ability, boolean manual) {
         return switch (ability) {
-            case BLACKOUT -> blackout(player, level, room);
-            case LOCKDOWN -> lockdown(player, level, room);
+            case BLACKOUT -> blackout(level, room, manual);
+            case LOCKDOWN -> lockdown(level, room, manual);
         };
     }
 
@@ -99,9 +121,9 @@ public final class Scp079RoomAbilityManager {
                 state.nextLockdownAt - server.getTickCount());
     }
 
-    private static boolean blackout(ServerPlayer player, ServerLevel level,
-            FacilityRoomSnapshot room) {
-        MinecraftServer server = player.getServer();
+    private static boolean blackout(ServerLevel level,
+            FacilityRoomSnapshot room, boolean manual) {
+        MinecraftServer server = level.getServer();
         State state = STATES.computeIfAbsent(server, ignored -> new State());
         if (state.blackout != null
                 && state.blackout.endsAt > server.getTickCount()) {
@@ -111,7 +133,7 @@ public final class Scp079RoomAbilityManager {
         List<LightTarget> lights = poweredLights(level, room);
         if (lights.isEmpty()) return false;
         double baseCost = blackoutBaseCost(room);
-        if (!Scp079PlayerPower.trySpend(level, baseCost)) return false;
+        if (!spend(level, baseCost, manual)) return false;
 
         int endsAt = server.getTickCount() + BLACKOUT_DURATION_TICKS;
         ActiveBlackout active = new ActiveBlackout(level.dimension(), room.id(),
@@ -126,16 +148,16 @@ public final class Scp079RoomAbilityManager {
         return true;
     }
 
-    private static boolean lockdown(ServerPlayer player, ServerLevel level,
-            FacilityRoomSnapshot room) {
-        MinecraftServer server = player.getServer();
+    private static boolean lockdown(ServerLevel level,
+            FacilityRoomSnapshot room, boolean manual) {
+        MinecraftServer server = level.getServer();
         State state = STATES.computeIfAbsent(server, ignored -> new State());
         int now = server.getTickCount();
         if (now < state.nextLockdownAt || state.lockdownEndsAt > now) return false;
 
         List<BlockPos> doors = roomDoors(level, room);
         if (doors.isEmpty()) return false;
-        if (!trySpendExact(level, LOCKDOWN_COST)) return false;
+        if (!trySpendExact(level, LOCKDOWN_COST, manual)) return false;
 
         int affected = 0;
         for (BlockPos door : doors) {
@@ -153,6 +175,14 @@ public final class Scp079RoomAbilityManager {
 
         state.lockdownEndsAt = now + LOCKDOWN_DURATION_TICKS;
         state.nextLockdownAt = now + LOCKDOWN_COOLDOWN_TICKS;
+        return true;
+    }
+
+    private static boolean spend(ServerLevel level, double baseCost,
+            boolean manual) {
+        if (manual) return Scp079PlayerPower.trySpend(level, baseCost);
+        if (!Scp079ProcessingManager.trySpend(level, baseCost)) return false;
+        Scp079ScreenState.pulse(level.getServer());
         return true;
     }
 
@@ -229,6 +259,11 @@ public final class Scp079RoomAbilityManager {
         return null;
     }
 
+    private static boolean isMappedRoom(ServerLevel level, UUID roomId) {
+        return FacilityMappingManager.roomSnapshots(level).stream()
+                .anyMatch(room -> room.id().equals(roomId));
+    }
+
     private static void forceOff(ServerLevel level, LightTarget target) {
         if (!level.hasChunkAt(target.pos)) return;
         BlockState state = level.getBlockState(target.pos);
@@ -257,10 +292,13 @@ public final class Scp079RoomAbilityManager {
         level.updateNeighborsAt(target.pos, state.getBlock());
     }
 
-    private static boolean trySpendExact(ServerLevel level, double cost) {
+    private static boolean trySpendExact(ServerLevel level, double cost,
+            boolean manual) {
         if (level == null || cost < 0.0D
-                || !Scp079PlayableManager.hasController(level.getServer())
                 || !Scp079ProcessingManager.isActive(level)) return false;
+        boolean controllerPresent = Scp079PlayableManager.hasController(
+                level.getServer());
+        if (manual != controllerPresent) return false;
         double current = Scp079ProcessingManager.getPower(level);
         if (current + 0.0001D < cost) return false;
         Scp079ProcessingSavedData.get(level.getServer())

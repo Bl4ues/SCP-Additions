@@ -1,8 +1,6 @@
 package com.bl4ues.scpclassifieddirective.facility.speaker;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessSavedData;
-import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ScreenState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -55,8 +53,8 @@ public final class SpeakerBroadcastManager {
                 }).toList();
         if (valid.isEmpty()) return false;
 
-        Scp079FacilityAccessSavedData.TrackedPosition host = source == SourceType.SCP_079
-                ? resolveScp079Host(operator) : null;
+        Scp079ScreenState.HostRef host = source == SourceType.SCP_079
+                ? Scp079ScreenState.speakerHost(operator) : null;
         Broadcast broadcast = new Broadcast(operator.getServer(),
                 operator.getUUID(), source, List.copyOf(valid), host);
         ACTIVE.put(operator.getUUID(), broadcast);
@@ -151,19 +149,6 @@ public final class SpeakerBroadcastManager {
         }
     }
 
-    private static Scp079FacilityAccessSavedData.TrackedPosition resolveScp079Host(
-            ServerPlayer operator) {
-        if (operator == null || operator.getServer() == null) return null;
-        BlockPos hostPos = Scp079PlayableManager.hostPosition(operator);
-        if (hostPos == null) return null;
-        long packed = hostPos.asLong();
-        for (Scp079FacilityAccessSavedData.TrackedPosition host
-                : Scp079FacilityAccessSavedData.get(operator.getServer()).hosts()) {
-            if (host.packedPos() == packed) return host;
-        }
-        return null;
-    }
-
     private static void setEndpoint(MinecraftServer server,
             FacilitySpeakerRegistry.SpeakerEndpoint endpoint, boolean active) {
         ServerLevel level = server.getLevel(endpoint.dimension());
@@ -187,7 +172,7 @@ public final class SpeakerBroadcastManager {
     private record Broadcast(MinecraftServer server, UUID operatorId,
             SourceType source,
             List<FacilitySpeakerRegistry.SpeakerEndpoint> endpoints,
-            Scp079FacilityAccessSavedData.TrackedPosition scp079Host) {
+            Scp079ScreenState.HostRef scp079Host) {
     }
 
     public record VoiceSource(net.minecraft.resources.ResourceKey<

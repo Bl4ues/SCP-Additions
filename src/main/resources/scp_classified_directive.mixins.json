@@ -26,6 +26,7 @@
     "RoombaNoEntityPushMixin",
     "NativeMachineScrewdriverRulesMixin",
     "IntercomContextAvailabilityMixin",
+    "ServerLevelIntercomSoundMixin",
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",
     "Scp079PlayerControlAiGateMixin",

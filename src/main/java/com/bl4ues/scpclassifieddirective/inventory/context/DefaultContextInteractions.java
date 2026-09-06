@@ -70,6 +70,16 @@ public final class DefaultContextInteractions {
               "visual":{"allowOffscreen":false,"scale":0.82}
             }
             """;
+    private static final String HAZARD_SIGN_EDIT_RULE = """
+            {
+              "type":"block","id":"scp_classified_directive:hazard_sign","interactionId":"configure_with_screwdriver",
+              "range":2.25,"priority":45,"useItem":"hand","icon":"config",
+              "text":{"action":"Edit","nameMode":"manual","name":"Hazard Sign","showAction":true,"showName":true},
+              "anchor":{"position":[0.5,0.5,0.5],"rotateWith":"horizontal_facing"},
+              "input":{"allowE":true,"allowRightClick":true,"requiredItem":"scp_classified_directive:screwdriver"},
+              "click":{"face":"front"},"visual":{"allowOffscreen":false,"scale":1.0}
+            }
+            """;
 
     private DefaultContextInteractions() {
     }
@@ -153,6 +163,7 @@ public final class DefaultContextInteractions {
             boolean start = false;
             boolean intercomOn = false;
             boolean intercomOff = false;
+            boolean hazardSignEdit = false;
             for (JsonElement element : interactions) {
                 if (!element.isJsonObject()) continue;
                 JsonObject object = element.getAsJsonObject();
@@ -181,6 +192,9 @@ public final class DefaultContextInteractions {
                     intercomOn |= "turn_on_intercom".equals(key);
                     intercomOff |= "turn_off_intercom".equals(key);
                 }
+                hazardSignEdit |= "block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:hazard_sign".equals(id)
+                        && "configure_with_screwdriver".equals(key);
             }
 
             appendIfMissing(interactions, corpse, CORPSE_SEARCH_RULE);
@@ -191,6 +205,7 @@ public final class DefaultContextInteractions {
             appendIfMissing(interactions, start, SCP914_START_RULE);
             appendIfMissing(interactions, intercomOn, INTERCOM_ON_RULE);
             appendIfMissing(interactions, intercomOff, INTERCOM_OFF_RULE);
+            appendIfMissing(interactions, hazardSignEdit, HAZARD_SIGN_EDIT_RULE);
             return root.toString();
         } catch (Exception exception) {
             ScpInventoryMod.LOGGER.error(

@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin;
 
 import com.bl4ues.scpclassifieddirective.facility.intercom.IntercomModule;
+import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -14,13 +15,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Makes the two static Intercom context rules behave like one stateful prompt. */
-@Mixin(targets = "com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry$Rule")
+@Mixin(value = ContextInteractionRegistry.Rule.class, remap = false)
 public abstract class IntercomContextAvailabilityMixin {
     @Shadow @Final private Block block;
     @Shadow @Final private String interactionKey;
 
     @Inject(method = "isAvailable(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/entity/player/Player;)Z",
-            at = @At("HEAD"), cancellable = true, remap = false)
+            at = @At("HEAD"), cancellable = true)
     private void scpclassifieddirective$intercomStatePrompt(Level level,
             BlockPos pos, BlockState state, Player player,
             CallbackInfoReturnable<Boolean> cir) {

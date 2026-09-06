@@ -30,6 +30,8 @@ public final class Scp079ScreenState {
     private static final float SPEAKER_CRT_CUE_VOLUME = 0.78F;
     private static final Map<MinecraftServer, Set<Scp079FacilityAccessSavedData.TrackedPosition>>
             LOCAL_ACTIVE = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Set<Scp079FacilityAccessSavedData.TrackedPosition>>
+            SPEAKER_ACTIVE = new WeakHashMap<>();
     private static final Map<MinecraftServer, Map<Scp079FacilityAccessSavedData.TrackedPosition, Long>>
             ACTION_ACTIVE_UNTIL = new WeakHashMap<>();
 
@@ -64,30 +66,35 @@ public final class Scp079ScreenState {
     public static void setLocalActive(ServerLevel level, BlockPos pos,
             boolean active) {
         if (level == null || pos == null) return;
-        MinecraftServer server = level.getServer();
-        Scp079FacilityAccessSavedData.TrackedPosition tracked =
-                tracked(level, pos);
-        synchronized (LOCAL_ACTIVE) {
-            Set<Scp079FacilityAccessSavedData.TrackedPosition> activeHosts =
-                    LOCAL_ACTIVE.computeIfAbsent(server,
-                            ignored -> new HashSet<>());
-            if (active) activeHosts.add(tracked);
-            else activeHosts.remove(tracked);
-            if (activeHosts.isEmpty()) LOCAL_ACTIVE.remove(server);
-        }
+        updatePersistentReason(LOCAL_ACTIVE, level, pos, active);
+        if (active) setPoweredFace(level, pos, true);
+        else settle(level, pos);
+    }
+
+    /**
+     * Holds the physical CRT on for the full lifetime of an SCP-079 Speaker
+     * broadcast. This is deliberately independent from LOCAL_ACTIVE because
+     * the operator is normally inside a remote camera while speaking.
+     */
+    public static void setSpeakerActive(ServerLevel level, BlockPos pos,
+            boolean active) {
+        if (level == null || pos == null) return;
+        updatePersistentReason(SPEAKER_ACTIVE, level, pos, active);
         if (active) setPoweredFace(level, pos, true);
         else settle(level, pos);
     }
 
     public static void refreshLocal(ServerLevel level, BlockPos pos) {
-        if (isLocalActive(level, pos) || isActionActive(level, pos)) {
+        if (isLocalActive(level, pos) || isSpeakerActive(level, pos)
+                || isActionActive(level, pos)) {
             setPoweredFace(level, pos, true);
         }
     }
 
     /** Called by the ON block's scheduled tick. */
     public static void settle(ServerLevel level, BlockPos pos) {
-        if (level == null || pos == null || isLocalActive(level, pos)) return;
+        if (level == null || pos == null || isLocalActive(level, pos)
+                || isSpeakerActive(level, pos)) return;
         Scp079FacilityAccessSavedData.TrackedPosition tracked = tracked(level, pos);
         long now = level.getGameTime();
         Long until;
@@ -112,11 +119,35 @@ public final class Scp079ScreenState {
     }
 
     public static boolean isLocalActive(ServerLevel level, BlockPos pos) {
+        return isPersistentReasonActive(LOCAL_ACTIVE, level, pos);
+    }
+
+    public static boolean isSpeakerActive(ServerLevel level, BlockPos pos) {
+        return isPersistentReasonActive(SPEAKER_ACTIVE, level, pos);
+    }
+
+    private static void updatePersistentReason(
+            Map<MinecraftServer, Set<Scp079FacilityAccessSavedData.TrackedPosition>> states,
+            ServerLevel level, BlockPos pos, boolean active) {
+        MinecraftServer server = level.getServer();
+        Scp079FacilityAccessSavedData.TrackedPosition tracked = tracked(level, pos);
+        synchronized (states) {
+            Set<Scp079FacilityAccessSavedData.TrackedPosition> activeHosts =
+                    states.computeIfAbsent(server, ignored -> new HashSet<>());
+            if (active) activeHosts.add(tracked);
+            else activeHosts.remove(tracked);
+            if (activeHosts.isEmpty()) states.remove(server);
+        }
+    }
+
+    private static boolean isPersistentReasonActive(
+            Map<MinecraftServer, Set<Scp079FacilityAccessSavedData.TrackedPosition>> states,
+            ServerLevel level, BlockPos pos) {
         if (level == null || pos == null) return false;
         Scp079FacilityAccessSavedData.TrackedPosition tracked = tracked(level, pos);
-        synchronized (LOCAL_ACTIVE) {
+        synchronized (states) {
             Set<Scp079FacilityAccessSavedData.TrackedPosition> activeHosts =
-                    LOCAL_ACTIVE.get(level.getServer());
+                    states.get(level.getServer());
             return activeHosts != null && activeHosts.contains(tracked);
         }
     }

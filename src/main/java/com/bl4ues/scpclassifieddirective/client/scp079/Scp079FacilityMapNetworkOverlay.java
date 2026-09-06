@@ -31,15 +31,16 @@ public final class Scp079FacilityMapNetworkOverlay {
     }
 
     public static void render(GuiGraphics graphics, int floorIndex,
-            double mapZoom, double panX, double panY) {
+            double mapZoom, double panX, double panY,
+            int screenWidth, int screenHeight) {
         Minecraft minecraft = Minecraft.getInstance();
         List<FloorView> floors = buildFloors();
         if (floors.isEmpty()) return;
 
         FloorView floor = floors.get(Math.max(0,
                 Math.min(floorIndex, floors.size() - 1)));
-        Transform transform = transformFor(floor.rooms(), minecraft,
-                mapZoom, panX, panY);
+        Transform transform = transformFor(floor.rooms(), screenWidth,
+                screenHeight, mapZoom, panX, panY);
         if (transform == null) return;
 
         for (FacilityRoomSnapshot room : floor.rooms()) {
@@ -106,9 +107,8 @@ public final class Scp079FacilityMapNetworkOverlay {
         if (hostRoom == null || floor.rooms().stream().noneMatch(room ->
                 room.id().equals(hostRoom.id()))) return;
 
-        // The marker represents the physical SCP-079 host itself, not the room
-        // that owns it. Always project the exact center of the host block into
-        // map space, even if the authored room floor does not cover that cell.
+        // The marker is the exact physical host block. It intentionally does not
+        // snap toward a room center or a nearby authored floor cell.
         int centerX = transform.sx(host.getX() + 0.5D);
         int centerY = transform.sy(host.getZ() + 0.5D);
         int size = Math.max(2, Math.min(7,
@@ -170,12 +170,13 @@ public final class Scp079FacilityMapNetworkOverlay {
     }
 
     private static Transform transformFor(List<FacilityRoomSnapshot> rooms,
-            Minecraft minecraft, double mapZoom, double panX, double panY) {
+            int screenWidth, int screenHeight, double mapZoom,
+            double panX, double panY) {
         Bounds bounds = Bounds.of(rooms);
         if (bounds == null) return null;
 
-        int width = minecraft.getWindow().getGuiScaledWidth();
-        int height = minecraft.getWindow().getGuiScaledHeight();
+        int width = Math.max(1, screenWidth);
+        int height = Math.max(1, screenHeight);
         int availableW = Math.max(80, width - MAP_MARGIN_X * 2);
         int availableH = Math.max(80, height - MAP_TOP - MAP_BOTTOM);
         double spanX = Math.max(1.0D, bounds.maxX - bounds.minX + 1.0D);

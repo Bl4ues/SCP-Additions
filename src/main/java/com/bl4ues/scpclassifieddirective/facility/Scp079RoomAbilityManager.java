@@ -10,23 +10,21 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,10 +39,11 @@ public final class Scp079RoomAbilityManager {
     public static final double LOCKDOWN_COST = 100.0D;
     public static final int LOCKDOWN_DURATION_TICKS = 140;
     public static final int LOCKDOWN_COOLDOWN_TICKS = 200;
+    private static final int ROOM_DEVICE_BORDER = 3;
 
-    private static final Map<MinecraftServer, State> STATES =
+    private static final java.util.Map<MinecraftServer, State> STATES =
             new ConcurrentHashMap<>();
-    private static final Map<MinecraftServer, Set<LightKey>> SUPPRESSED_LIGHTS =
+    private static final java.util.Map<MinecraftServer, Set<LightKey>> SUPPRESSED_LIGHTS =
             new ConcurrentHashMap<>();
 
     private Scp079RoomAbilityManager() {
@@ -190,82 +189,122 @@ public final class Scp079RoomAbilityManager {
     }
 
     /**
-     * Finds only currently luminous, redstone-powered blocks in the authored
-     * room. The old implementation allocated one BlockPos and performed one
-     * loaded-chunk lookup for every X/Y/Z cell, including overlapping patches.
-     * Large mapped rooms could therefore stall the server thread even when only
-     * one lamp actually existed. Collapse patches into unique X/Z columns, reuse
-     * one mutable position and read directly from already-loaded chunks instead.
+     * Finds luminous redstone-controlled blocks without materializing every X/Z
+     * column in a mapped room. The first pass is chunk/section based: palette
+     * data rejects sections which contain no LIT/POWERED states before any block
+     * positions are visited. Only candidate sections are walked, and chunks are
+     * read through getChunkNow so Blackout never causes synchronous chunk loads.
      */
     private static List<LightTarget> poweredLights(ServerLevel level,
             FacilityRoomSnapshot room) {
         List<LightTarget> result = new ArrayList<>();
-        Map<Long, ColumnRange> columns = new HashMap<>();
+        Set<Long> visited = new HashSet<>();
+        Set<Long> visitedChunkSections = new HashSet<>();
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        int minBuildY = level.getMinBuildHeight();
+        int maxBuildY = level.getMaxBuildHeight() - 1;
+
         for (FacilityFloorPatch patch : room.patches()) {
-            int minY = patch.y() - 1;
-            int maxY = patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT;
-            for (int x = patch.minX(); x <= patch.maxX(); x++) {
-                for (int z = patch.minZ(); z <= patch.maxZ(); z++) {
-                    long key = packColumn(x, z);
-                    ColumnRange previous = columns.get(key);
-                    if (previous == null) {
-                        columns.put(key, new ColumnRange(minY, maxY));
-                    } else if (minY < previous.minY || maxY > previous.maxY) {
-                        columns.put(key, new ColumnRange(
-                                Math.min(minY, previous.minY),
-                                Math.max(maxY, previous.maxY)));
+            int minY = Math.max(minBuildY, patch.y() - 1);
+            int maxY = Math.min(maxBuildY,
+                    patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT);
+            if (minY > maxY) continue;
+
+            int minChunkX = patch.minX() >> 4;
+            int maxChunkX = patch.maxX() >> 4;
+            int minChunkZ = patch.minZ() >> 4;
+            int maxChunkZ = patch.maxZ() >> 4;
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                    LevelChunk chunk = level.getChunkSource().getChunkNow(
+                            chunkX, chunkZ);
+                    if (chunk == null) continue;
+                    LevelChunkSection[] sections = chunk.getSections();
+                    if (sections.length == 0) continue;
+
+                    int firstSection = Math.max(0,
+                            (minY - minBuildY) >> 4);
+                    int lastSection = Math.min(sections.length - 1,
+                            (maxY - minBuildY) >> 4);
+                    for (int sectionIndex = firstSection;
+                            sectionIndex <= lastSection; sectionIndex++) {
+                        long sectionKey = (((long) chunkX & 0x3FFFFFL) << 42)
+                                ^ (((long) chunkZ & 0x3FFFFFL) << 20)
+                                ^ (sectionIndex & 0xFFFFFL);
+                        LevelChunkSection section = sections[sectionIndex];
+                        if (section == null || section.hasOnlyAir()
+                                || !section.maybeHas(
+                                Scp079RoomAbilityManager::isPotentialLightState)) {
+                            continue;
+                        }
+                        // Overlapping room patches commonly reference the same
+                        // section. We still need each patch's X/Z clipping, but a
+                        // previously fully-covered section needs no second pass.
+                        boolean sectionAlreadyVisited =
+                                !visitedChunkSections.add(sectionKey);
+
+                        int chunkMinX = chunkX << 4;
+                        int chunkMinZ = chunkZ << 4;
+                        int scanMinX = Math.max(patch.minX(), chunkMinX);
+                        int scanMaxX = Math.min(patch.maxX(), chunkMinX + 15);
+                        int scanMinZ = Math.max(patch.minZ(), chunkMinZ);
+                        int scanMaxZ = Math.min(patch.maxZ(), chunkMinZ + 15);
+                        int sectionMinY = minBuildY + sectionIndex * 16;
+                        int scanMinY = Math.max(minY, sectionMinY);
+                        int scanMaxY = Math.min(maxY, sectionMinY + 15);
+
+                        if (sectionAlreadyVisited && scanMinX == chunkMinX
+                                && scanMaxX == chunkMinX + 15
+                                && scanMinZ == chunkMinZ
+                                && scanMaxZ == chunkMinZ + 15) {
+                            continue;
+                        }
+
+                        for (int y = scanMinY; y <= scanMaxY; y++) {
+                            int localY = y - sectionMinY;
+                            for (int x = scanMinX; x <= scanMaxX; x++) {
+                                int localX = x & 15;
+                                for (int z = scanMinZ; z <= scanMaxZ; z++) {
+                                    cursor.set(x, y, z);
+                                    if (!visited.add(cursor.asLong())) continue;
+                                    BlockState state = section.getBlockState(
+                                            localX, localY, z & 15);
+                                    if (!isPotentialLightState(state)
+                                            || !isLightStateActive(state)
+                                            || state.getLightEmission(level,
+                                            cursor) <= 0) {
+                                        continue;
+                                    }
+                                    boolean powered = state.hasProperty(
+                                            BlockStateProperties.POWERED)
+                                            && state.getValue(
+                                            BlockStateProperties.POWERED);
+                                    if (!powered) {
+                                        powered = level.hasNeighborSignal(cursor);
+                                    }
+                                    if (!powered) continue;
+                                    result.add(new LightTarget(cursor.immutable(),
+                                            state.getBlock()));
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
-
-        Map<Long, LevelChunk> loadedChunks = new HashMap<>();
-        Set<Long> missingChunks = new HashSet<>();
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (Map.Entry<Long, ColumnRange> entry : columns.entrySet()) {
-            int x = unpackColumnX(entry.getKey());
-            int z = unpackColumnZ(entry.getKey());
-            int chunkX = x >> 4;
-            int chunkZ = z >> 4;
-            long chunkKey = ChunkPos.asLong(chunkX, chunkZ);
-            if (missingChunks.contains(chunkKey)) continue;
-            LevelChunk chunk = loadedChunks.get(chunkKey);
-            if (chunk == null) {
-                chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
-                if (chunk == null) {
-                    missingChunks.add(chunkKey);
-                    continue;
-                }
-                loadedChunks.put(chunkKey, chunk);
-            }
-
-            ColumnRange range = entry.getValue();
-            for (int y = range.minY; y <= range.maxY; y++) {
-                cursor.set(x, y, z);
-                BlockState state = chunk.getBlockState(cursor);
-                if (state.isAir() || state.getLightEmission(level, cursor) <= 0) {
-                    continue;
-                }
-                boolean powered = level.hasNeighborSignal(cursor)
-                        || state.hasProperty(BlockStateProperties.POWERED)
-                        && state.getValue(BlockStateProperties.POWERED);
-                if (!powered) continue;
-                result.add(new LightTarget(cursor.immutable(), state.getBlock()));
             }
         }
         return result;
     }
 
-    private static long packColumn(int x, int z) {
-        return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+    private static boolean isPotentialLightState(BlockState state) {
+        return state != null && (state.hasProperty(BlockStateProperties.LIT)
+                || state.hasProperty(BlockStateProperties.POWERED));
     }
 
-    private static int unpackColumnX(long packed) {
-        return (int) (packed >> 32);
-    }
-
-    private static int unpackColumnZ(long packed) {
-        return (int) packed;
+    private static boolean isLightStateActive(BlockState state) {
+        return state.hasProperty(BlockStateProperties.LIT)
+                && state.getValue(BlockStateProperties.LIT)
+                || state.hasProperty(BlockStateProperties.POWERED)
+                && state.getValue(BlockStateProperties.POWERED);
     }
 
     private static List<BlockPos> roomDoors(ServerLevel level,
@@ -273,8 +312,10 @@ public final class Scp079RoomAbilityManager {
         List<BlockPos> result = new ArrayList<>();
         Set<Long> visited = new HashSet<>();
         for (FacilityFloorPatch patch : room.patches()) {
-            for (int x = patch.minX() - 1; x <= patch.maxX() + 1; x++) {
-                for (int z = patch.minZ() - 1; z <= patch.maxZ() + 1; z++) {
+            for (int x = patch.minX() - ROOM_DEVICE_BORDER;
+                    x <= patch.maxX() + ROOM_DEVICE_BORDER; x++) {
+                for (int z = patch.minZ() - ROOM_DEVICE_BORDER;
+                        z <= patch.maxZ() + ROOM_DEVICE_BORDER; z++) {
                     for (int y = patch.y() - 1;
                             y <= patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT;
                             y++) {
@@ -423,8 +464,5 @@ public final class Scp079RoomAbilityManager {
     }
 
     private record LightKey(ResourceKey<Level> dimension, long pos) {
-    }
-
-    private record ColumnRange(int minY, int maxY) {
     }
 }

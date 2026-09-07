@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079LocalHostHud;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079LocalHostInputClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
@@ -38,7 +40,7 @@ public abstract class Scp079PlayableVisualMixin {
             cancellable = true, remap = false)
     private static void scpclassifieddirective$inventoryRouting(
             TickEvent.ClientTickEvent event, CallbackInfo ci) {
-        Scp079PlayableVisualsV2.handleInventoryKey(event);
+        Scp079LocalHostInputClient.handleInventoryKey(event);
         ci.cancel();
     }
 
@@ -62,7 +64,7 @@ public abstract class Scp079PlayableVisualMixin {
             cancellable = true, remap = false)
     private static void scpclassifieddirective$localHud(
             GuiGraphics graphics, CallbackInfo ci) {
-        Scp079PlayableVisualsV2.renderLocalHud(graphics);
+        Scp079LocalHostHud.render(graphics);
         ci.cancel();
     }
 

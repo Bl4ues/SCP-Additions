@@ -28,6 +28,8 @@ public final class IntercomClient {
     private static final int FULL_BRIGHT = 0xF000F0;
     private static final ResourceLocation GEO = id(
             "geo/block/intercom.geo.json");
+    private static final ResourceLocation ITEM_GEO = id(
+            "geo/item/intercom.geo.json");
     private static final ResourceLocation TEXTURE = id(
             "textures/block/intercom.png");
     private static final ResourceLocation GLOWMASK = id(
@@ -143,7 +145,7 @@ public final class IntercomClient {
         @Override
         public ResourceLocation getModelResource(
                 IntercomModule.IntercomItem animatable) {
-            return GEO;
+            return ITEM_GEO;
         }
 
         @Override

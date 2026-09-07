@@ -68,8 +68,12 @@ public final class CeilingCameraModule {
     /** North is the authored forward axis; the dome can rotate a full circle. */
     public static final float BASE_YAW = Direction.NORTH.toYRot();
     public static final float MANUAL_YAW_LIMIT = 180.0F;
-    /** Vanilla pitch convention: negative is up, positive is down. */
-    public static final float MANUAL_MIN_PITCH = -50.0F;
+    /**
+     * The authored neutral eye points straight down. Minecraft calls that +90
+     * pitch; the physical dome may tilt only 50 degrees away from that neutral,
+     * so its usable world-pitch range is +90 (down) through +40 (maximum tilt).
+     */
+    public static final float MANUAL_MIN_PITCH = 40.0F;
     public static final float MANUAL_MAX_PITCH = 90.0F;
 
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
@@ -230,8 +234,10 @@ public final class CeilingCameraModule {
         private static final float MANUAL_PITCH_SPEED = 4.5F;
         private static final float IDLE_YAW_SPEED = 1.35F;
         private static final float IDLE_PITCH_SPEED = 0.95F;
-        private static final float IDLE_MIN_PITCH = 24.0F;
-        private static final float IDLE_MAX_PITCH = 82.0F;
+        // Idle scans stay just inside the mechanical stops instead of repeatedly
+        // hammering the dome against its exact 0/50 degree endpoints.
+        private static final float IDLE_MIN_PITCH = 44.0F;
+        private static final float IDLE_MAX_PITCH = 86.0F;
         private static final float TRACKING_SYNC_EPSILON = 0.35F;
         private static final long YAW_SALT = 0x9E3779B97F4A7C15L;
         private static final long PITCH_SALT = 0xD1B54A32D192ED03L;
@@ -500,7 +506,7 @@ public final class CeilingCameraModule {
         @Override
         public void registerControllers(
                 AnimatableManager.ControllerRegistrar controllers) {
-            // The dome eye is driven procedurally by the renderer.
+            // The dome is driven procedurally by the renderer.
         }
 
         @Override

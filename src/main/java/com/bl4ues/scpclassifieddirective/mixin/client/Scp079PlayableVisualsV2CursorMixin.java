@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079BlackoutAvailabilityClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient.Move;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient.NavigationTarget;
@@ -128,16 +129,18 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         FacilityRoomSnapshot activeRoom = FacilityMappingClientState.roomAt(
                 Scp079PlayableClient.hostDimension(),
                 BlockPos.containing(Scp079PlayableClient.viewPosition()));
-        double blackoutCost = adjustedCost(minecraft,
-                Scp079RoomAbilityManager.blackoutBaseCost(activeRoom));
-        boolean blackoutAffordable = Scp079PlayableClient.power() + 0.001D
-                >= blackoutCost;
-        drawCommand(graphics, minecraft,
-                "BLACKOUT (" + formatCost(blackoutCost) + ")",
-                keyLabel(Scp079Keybinds.BLACKOUT), right, y, 1.04F,
-                blackoutAffordable ? Scp079UiTheme.TEXT : 0xFF526873,
-                blackoutAffordable);
-        y += 19;
+        if (Scp079BlackoutAvailabilityClient.available()) {
+            double blackoutCost = adjustedCost(minecraft,
+                    Scp079RoomAbilityManager.blackoutBaseCost(activeRoom));
+            boolean blackoutAffordable = Scp079PlayableClient.power() + 0.001D
+                    >= blackoutCost;
+            drawCommand(graphics, minecraft,
+                    "BLACKOUT (" + formatCost(blackoutCost) + ")",
+                    keyLabel(Scp079Keybinds.BLACKOUT), right, y, 1.04F,
+                    blackoutAffordable ? Scp079UiTheme.TEXT : 0xFF526873,
+                    blackoutAffordable);
+            y += 19;
+        }
 
         // Lockdown is intentionally an exact 100 AP action on every difficulty.
         // The server already spends it through trySpendExact; do not apply the

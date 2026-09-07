@@ -6,7 +6,9 @@ import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalScreen;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -15,6 +17,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -22,15 +25,24 @@ import net.minecraft.world.phys.Vec3;
 /** Full-bright physical CRT surface drawn a hair above the authored monitor. */
 public final class TeslaTerminalBlockEntityRenderer
         implements BlockEntityRenderer<TeslaTerminalBlockEntity> {
+    private static final ResourceLocation ROBOTO_FONT = new ResourceLocation(
+            "scp_classified_directive", "roboto");
     private static final ResourceLocation SCREEN_ON = screen("1");
     private static final ResourceLocation SCREEN_OFF = screen("3");
     private static final ResourceLocation SCREEN_ON_OVERRIDE = screen("11");
     private static final ResourceLocation SCREEN_AUXILIARY_OFFLINE = screen("12");
     private static final double BASE_EPSILON = 0.0022D;
+    private static final double TEXT_EPSILON = 0.0026D;
     private static final double OVERLAY_EPSILON = 0.0030D;
+    private static final float PERMISSION_TEXT_SCALE = 2.6F;
+    private static final float PERMISSION_X = 1278.0F;
+    private static final float PERMISSION_Y = 79.0F;
+
+    private final Font font;
 
     public TeslaTerminalBlockEntityRenderer(
             BlockEntityRendererProvider.Context context) {
+        this.font = context.getFont();
     }
 
     @Override
@@ -46,11 +58,13 @@ public final class TeslaTerminalBlockEntityRenderer
 
         ResourceLocation base;
         ResourceLocation overlay = null;
+        boolean authenticated = false;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof TeslaTerminalScreen screen
                 && screen.isFor(pos)) {
             base = screen.physicalBaseTexture();
             overlay = screen.physicalOverlayTexture();
+            authenticated = screen.physicalAuthenticated();
         } else {
             base = terminal.manualOverride() ? SCREEN_ON_OVERRIDE
                     : terminal.teslaGatesEnabled() ? SCREEN_ON : SCREEN_OFF;
@@ -60,10 +74,46 @@ public final class TeslaTerminalBlockEntityRenderer
         }
 
         renderQuad(poseStack, buffers, frame, pos, base, BASE_EPSILON);
+        renderPermissionText(poseStack, buffers, frame, pos, facing,
+                authenticated);
         if (overlay != null) {
             renderQuad(poseStack, buffers, frame, pos, overlay,
                     OVERLAY_EPSILON);
         }
+    }
+
+    private void renderPermissionText(PoseStack poseStack,
+            MultiBufferSource buffers, Frame frame, BlockPos pos,
+            Direction facing, boolean authenticated) {
+        Vec3 topLeft = local(frame.point(-0.5D, 0.5D, TEXT_EPSILON), pos);
+        float pixelScale = (float) (frame.width() / TeslaTerminalScreen.TEX_W);
+        int color = authenticated ? 0x608952 : 0xAC384A;
+        Component text = Component.literal(authenticated ? "GRANTED" : "DENIED")
+                .withStyle(style -> style.withFont(ROBOTO_FONT));
+
+        poseStack.pushPose();
+        poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
+        poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
+        poseStack.mulPose(Axis.XP.rotationDegrees(
+                (float) -TeslaTerminalFocusClient.SCREEN_TILT_DEGREES));
+        poseStack.scale(pixelScale, -pixelScale, pixelScale);
+        poseStack.translate(PERMISSION_X, PERMISSION_Y, 0.0F);
+        poseStack.scale(PERMISSION_TEXT_SCALE, PERMISSION_TEXT_SCALE,
+                PERMISSION_TEXT_SCALE);
+        font.drawInBatch(text, 0.0F, 0.0F, color, false,
+                poseStack.last().pose(), buffers, Font.DisplayMode.NORMAL,
+                0, LightTexture.FULL_BRIGHT);
+        poseStack.popPose();
+    }
+
+    private static float textYaw(Direction facing) {
+        return switch (facing) {
+            case NORTH -> 180.0F;
+            case EAST -> 90.0F;
+            case SOUTH -> 0.0F;
+            case WEST -> -90.0F;
+            default -> 180.0F;
+        };
     }
 
     private static void renderQuad(PoseStack poseStack,

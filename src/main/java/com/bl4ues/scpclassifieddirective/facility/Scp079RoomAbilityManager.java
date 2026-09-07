@@ -41,6 +41,8 @@ public final class Scp079RoomAbilityManager {
     public static final int LOCKDOWN_COOLDOWN_TICKS = 200;
     private static final int ROOM_DEVICE_BORDER = 3;
     private static final int BLACKOUT_SCAN_HEIGHT = 8;
+    private static final int LIGHT_SCAN_SLICES_PER_TICK = 2;
+    private static final int LIGHT_SCAN_REFRESH_TICKS = 100;
 
     private static final java.util.Map<MinecraftServer, State> STATES =
             new ConcurrentHashMap<>();
@@ -133,7 +135,7 @@ public final class Scp079RoomAbilityManager {
             return false;
         }
 
-        List<LightTarget> lights = poweredLights(level, room);
+        List<LightTarget> lights = poweredLights(level, room, state);
         if (lights.isEmpty()) return false;
         double baseCost = blackoutBaseCost(room);
         if (!spend(level, baseCost, manual)) return false;
@@ -190,18 +192,35 @@ public final class Scp079RoomAbilityManager {
     }
 
     /**
-     * Finds active redstone-controlled lights only inside the authored room floor
-     * and at most eight blocks above it. Chunks are never loaded for this scan,
-     * section palettes reject irrelevant 16x16x16 regions up front, and only
-     * actual light candidates are deduplicated. Avoiding a boxed visited entry
-     * for every room block removes the allocation spike that used to make a
-     * single-light Blackout hitch the server thread.
+     * Uses the room scan that is pre-warmed while an operator occupies a camera.
+     * The click path normally only re-checks a small set of possible light
+     * positions for their current state/redstone power. If Blackout is invoked
+     * before that cache has finished (mainly autonomous use or an immediate
+     * click after switching rooms), fall back to the same bounded synchronous
+     * scan so gameplay never depends on cache timing.
      */
     private static List<LightTarget> poweredLights(ServerLevel level,
+            FacilityRoomSnapshot room, State state) {
+        LightScanCache cache = state.lightCache;
+        if (cache != null && cache.complete
+                && cache.dimension.equals(level.dimension())
+                && cache.roomId.equals(room.id())) {
+            return resolvePoweredLights(level, cache.candidates);
+        }
+
+        LightScanCache completed = createLightScanCache(level, room);
+        while (!completed.complete) {
+            scanNextLightSlice(level, completed);
+        }
+        state.lightCache = completed;
+        return resolvePoweredLights(level, completed.candidates);
+    }
+
+    /** Build cheap bounded chunk/section tasks without touching block states. */
+    private static LightScanCache createLightScanCache(ServerLevel level,
             FacilityRoomSnapshot room) {
-        List<LightTarget> result = new ArrayList<>();
-        Set<Long> foundLights = new HashSet<>();
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        List<LightScanSlice> slices = new ArrayList<>();
+        Set<LightScanSlice> unique = new HashSet<>();
         int minBuildY = level.getMinBuildHeight();
         int maxBuildY = level.getMaxBuildHeight() - 1;
 
@@ -210,77 +229,104 @@ public final class Scp079RoomAbilityManager {
             int maxY = Math.min(maxBuildY,
                     patch.y() + BLACKOUT_SCAN_HEIGHT);
             if (minY > maxY) continue;
-
             int minChunkX = patch.minX() >> 4;
             int maxChunkX = patch.maxX() >> 4;
             int minChunkZ = patch.minZ() >> 4;
             int maxChunkZ = patch.maxZ() >> 4;
-            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                    LevelChunk chunk = level.getChunkSource().getChunkNow(
-                            chunkX, chunkZ);
-                    if (chunk == null) continue;
-                    LevelChunkSection[] sections = chunk.getSections();
-                    if (sections.length == 0) continue;
+            int firstSection = Math.max(0, (minY - minBuildY) >> 4);
+            int lastSection = Math.max(firstSection,
+                    (maxY - minBuildY) >> 4);
 
-                    int firstSection = Math.max(0,
-                            (minY - minBuildY) >> 4);
-                    int lastSection = Math.min(sections.length - 1,
-                            (maxY - minBuildY) >> 4);
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                int chunkMinX = chunkX << 4;
+                int scanMinX = Math.max(patch.minX(), chunkMinX);
+                int scanMaxX = Math.min(patch.maxX(), chunkMinX + 15);
+                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                    int chunkMinZ = chunkZ << 4;
+                    int scanMinZ = Math.max(patch.minZ(), chunkMinZ);
+                    int scanMaxZ = Math.min(patch.maxZ(), chunkMinZ + 15);
                     for (int sectionIndex = firstSection;
                             sectionIndex <= lastSection; sectionIndex++) {
-                        LevelChunkSection section = sections[sectionIndex];
-                        if (section == null || section.hasOnlyAir()
-                                || !section.maybeHas(
-                                Scp079RoomAbilityManager::isPotentialLightState)) {
-                            continue;
-                        }
-
-                        int chunkMinX = chunkX << 4;
-                        int chunkMinZ = chunkZ << 4;
-                        int scanMinX = Math.max(patch.minX(), chunkMinX);
-                        int scanMaxX = Math.min(patch.maxX(), chunkMinX + 15);
-                        int scanMinZ = Math.max(patch.minZ(), chunkMinZ);
-                        int scanMaxZ = Math.min(patch.maxZ(), chunkMinZ + 15);
                         int sectionMinY = minBuildY + sectionIndex * 16;
                         int scanMinY = Math.max(minY, sectionMinY);
                         int scanMaxY = Math.min(maxY, sectionMinY + 15);
+                        LightScanSlice slice = new LightScanSlice(chunkX,
+                                chunkZ, sectionIndex, scanMinX, scanMaxX,
+                                scanMinY, scanMaxY, scanMinZ, scanMaxZ);
+                        if (unique.add(slice)) slices.add(slice);
+                    }
+                }
+            }
+        }
+        return new LightScanCache(level.dimension(), room.id(), slices);
+    }
 
-                        for (int y = scanMinY; y <= scanMaxY; y++) {
-                            int localY = y - sectionMinY;
-                            for (int x = scanMinX; x <= scanMaxX; x++) {
-                                int localX = x & 15;
-                                for (int z = scanMinZ; z <= scanMaxZ; z++) {
-                                    BlockState blockState = section.getBlockState(
-                                            localX, localY, z & 15);
-                                    if (!isPotentialLightState(blockState)
-                                            || !isLightStateActive(blockState)) {
-                                        continue;
-                                    }
-
-                                    cursor.set(x, y, z);
-                                    if (blockState.getLightEmission(level,
-                                            cursor) <= 0) continue;
-
-                                    boolean powered = blockState.hasProperty(
-                                            BlockStateProperties.POWERED)
-                                            && blockState.getValue(
-                                            BlockStateProperties.POWERED);
-                                    if (!powered
-                                            && !level.hasNeighborSignal(cursor)) {
-                                        continue;
-                                    }
-
-                                    long packed = cursor.asLong();
-                                    if (!foundLights.add(packed)) continue;
-                                    result.add(new LightTarget(cursor.immutable(),
-                                            blockState.getBlock()));
+    /**
+     * Processes at most one palette-filtered room slice. Candidate collection is
+     * structural only; current power/emission is checked at activation time.
+     */
+    private static void scanNextLightSlice(ServerLevel level,
+            LightScanCache cache) {
+        if (cache.complete) return;
+        if (cache.nextSlice >= cache.slices.size()) {
+            cache.complete = true;
+            cache.completedAt = level.getServer().getTickCount();
+            return;
+        }
+        LightScanSlice slice = cache.slices.get(cache.nextSlice++);
+        LevelChunk chunk = level.getChunkSource().getChunkNow(
+                slice.chunkX, slice.chunkZ);
+        if (chunk != null) {
+            LevelChunkSection[] sections = chunk.getSections();
+            if (slice.sectionIndex >= 0
+                    && slice.sectionIndex < sections.length) {
+                LevelChunkSection section = sections[slice.sectionIndex];
+                if (section != null && !section.hasOnlyAir()
+                        && section.maybeHas(
+                        Scp079RoomAbilityManager::isPotentialLightState)) {
+                    int sectionMinY = level.getMinBuildHeight()
+                            + slice.sectionIndex * 16;
+                    for (int y = slice.minY; y <= slice.maxY; y++) {
+                        int localY = y - sectionMinY;
+                        for (int x = slice.minX; x <= slice.maxX; x++) {
+                            int localX = x & 15;
+                            for (int z = slice.minZ; z <= slice.maxZ; z++) {
+                                BlockState blockState = section.getBlockState(
+                                        localX, localY, z & 15);
+                                if (isPotentialLightState(blockState)) {
+                                    cache.candidates.add(BlockPos.asLong(x, y, z));
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+        if (cache.nextSlice >= cache.slices.size()) {
+            cache.complete = true;
+            cache.completedAt = level.getServer().getTickCount();
+        }
+    }
+
+    /** Only candidate positions pay redstone/light-emission checks on click. */
+    private static List<LightTarget> resolvePoweredLights(ServerLevel level,
+            Set<Long> candidates) {
+        List<LightTarget> result = new ArrayList<>();
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (long packed : candidates) {
+            cursor.set(packed);
+            if (!level.hasChunkAt(cursor)) continue;
+            BlockState blockState = level.getBlockState(cursor);
+            if (!isPotentialLightState(blockState)
+                    || !isLightStateActive(blockState)
+                    || blockState.getLightEmission(level, cursor) <= 0) {
+                continue;
+            }
+            boolean powered = blockState.hasProperty(BlockStateProperties.POWERED)
+                    && blockState.getValue(BlockStateProperties.POWERED);
+            if (!powered && !level.hasNeighborSignal(cursor)) continue;
+            result.add(new LightTarget(cursor.immutable(),
+                    blockState.getBlock()));
         }
         return result;
     }
@@ -400,6 +446,19 @@ public final class Scp079RoomAbilityManager {
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         MinecraftServer server = event.getServer();
+
+        // Pre-warm the current camera room in tiny section-sized pieces. The
+        // player normally spends several ticks in a feed before pressing
+        // Blackout, so activation no longer performs a room scan in that frame.
+        ServerPlayer controller = Scp079PlayableManager.controller(server);
+        if (controller != null && Scp079PlayableManager.isCameraMode(controller)) {
+            State warmState = STATES.computeIfAbsent(server,
+                    ignored -> new State());
+            FacilityRoomSnapshot room = currentRoom(controller.serverLevel(),
+                    controller.blockPosition());
+            warmLightCache(controller.serverLevel(), room, warmState);
+        }
+
         State state = STATES.get(server);
         if (state == null) return;
         int now = server.getTickCount();
@@ -417,6 +476,26 @@ public final class Scp079RoomAbilityManager {
             }
         }
         if (state.lockdownEndsAt <= now) state.lockdownEndsAt = 0;
+    }
+
+    private static void warmLightCache(ServerLevel level,
+            FacilityRoomSnapshot room, State state) {
+        if (level == null || room == null || state == null) return;
+        int now = level.getServer().getTickCount();
+        LightScanCache cache = state.lightCache;
+        boolean wrongRoom = cache == null
+                || !cache.dimension.equals(level.dimension())
+                || !cache.roomId.equals(room.id());
+        boolean expired = cache != null && cache.complete
+                && now - cache.completedAt >= LIGHT_SCAN_REFRESH_TICKS;
+        if (wrongRoom || expired) {
+            cache = createLightScanCache(level, room);
+            state.lightCache = cache;
+        }
+        for (int i = 0; i < LIGHT_SCAN_SLICES_PER_TICK
+                && !cache.complete; i++) {
+            scanNextLightSlice(level, cache);
+        }
     }
 
     private static void endBlackout(MinecraftServer server, ServerLevel level,
@@ -444,6 +523,29 @@ public final class Scp079RoomAbilityManager {
         private ActiveBlackout blackout;
         private int lockdownEndsAt;
         private int nextLockdownAt;
+        private LightScanCache lightCache;
+    }
+
+    private static final class LightScanCache {
+        private final ResourceKey<Level> dimension;
+        private final UUID roomId;
+        private final List<LightScanSlice> slices;
+        private final Set<Long> candidates = new HashSet<>();
+        private int nextSlice;
+        private int completedAt;
+        private boolean complete;
+
+        private LightScanCache(ResourceKey<Level> dimension, UUID roomId,
+                List<LightScanSlice> slices) {
+            this.dimension = dimension;
+            this.roomId = roomId;
+            this.slices = List.copyOf(slices);
+            this.complete = slices.isEmpty();
+        }
+    }
+
+    private record LightScanSlice(int chunkX, int chunkZ, int sectionIndex,
+            int minX, int maxX, int minY, int maxY, int minZ, int maxZ) {
     }
 
     private record ActiveBlackout(ResourceKey<Level> dimension, UUID roomId,

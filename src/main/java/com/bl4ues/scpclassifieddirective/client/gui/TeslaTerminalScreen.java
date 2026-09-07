@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -14,22 +15,24 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
+import com.bl4ues.scpclassifieddirective.client.TeslaTerminalFocusClient;
 import com.bl4ues.scpclassifieddirective.network.TeslaTerminalButtonMessage;
 import com.bl4ues.scpclassifieddirective.procedures.TeslaTerminalController;
 import com.bl4ues.scpclassifieddirective.world.inventory.TeslaTerminalMenu;
 
 import com.bl4ues.scpclassifieddirective.inventory.client.ClientNetwork;
-import com.mojang.blaze3d.systems.RenderSystem;
 
+/**
+ * Input/state controller for the Tesla Gate terminal. The interface itself is
+ * rendered on the real block by TeslaTerminalBlockEntityRenderer; this Screen
+ * only owns the cursor, menu lifecycle and the original pixel-space hitboxes.
+ */
 public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMenu> {
-	private static final int TEX_W = 1410;
-	private static final int TEX_H = 1080;
-	private static final ResourceLocation ROBOTO_FONT = new ResourceLocation("scp_classified_directive", "roboto");
+	public static final int TEX_W = 1410;
+	public static final int TEX_H = 1080;
 	private static final ResourceLocation SCREEN_ON = screen("1");
 	private static final ResourceLocation SCREEN_STANDBY_DISABLE = screen("2");
 	private static final ResourceLocation SCREEN_OFF = screen("3");
@@ -80,6 +83,9 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		super.init();
 		ClientNetwork.requestInventorySync();
 		lastAuxiliaryPowerOnline = menu.auxiliaryPowerOnline;
+		initializeDisplayState();
+		updateLayout();
+		TeslaTerminalFocusClient.begin(terminalPos());
 	}
 
 	private static ResourceLocation screen(String id) {
@@ -88,88 +94,10 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	@Override
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+		// Deliberately render no 2D panel. The cursor remains a normal Screen
+		// cursor while the exact same pixel coordinates address the physical CRT.
 		initializeDisplayState();
 		updateLayout();
-		this.renderBackground(guiGraphics);
-		renderTerminal(guiGraphics);
-	}
-
-	private void renderTerminal(GuiGraphics guiGraphics) {
-		RenderSystem.enableBlend();
-		RenderSystem.defaultBlendFunc();
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(this.leftPos, this.topPos, 0);
-		guiGraphics.pose().scale((float) guiScale, (float) guiScale, 1.0F);
-
-		if (visualState == VisualState.STANDBY_DISABLE || visualState == VisualState.STANDBY_ENABLE) {
-			guiGraphics.blit(currentTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-			renderPermissionText(guiGraphics);
-		} else {
-			guiGraphics.blit(mainTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-			renderPermissionText(guiGraphics);
-			if (isOverlayState()) {
-				renderOverlay(guiGraphics);
-			}
-		}
-
-		if (!menu.auxiliaryPowerOnline) {
-			RenderSystem.setShaderColor(1, 1, 1, 1);
-			guiGraphics.blit(SCREEN_AUXILIARY_OFFLINE, 0, 0, 0, 0,
-					TEX_W, TEX_H, TEX_W, TEX_H);
-		}
-
-		guiGraphics.pose().popPose();
-		RenderSystem.disableBlend();
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-	}
-
-	private void renderOverlay(GuiGraphics guiGraphics) {
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-		guiGraphics.blit(overlayTexture(), 0, 0, 0, 0, TEX_W, TEX_H, TEX_W, TEX_H);
-		RenderSystem.setShaderColor(1, 1, 1, 1);
-	}
-
-	private void renderPermissionText(GuiGraphics guiGraphics) {
-		String text = authenticated ? "GRANTED" : "DENIED";
-		int color = authenticated ? 0x608952 : 0xAC384A;
-		guiGraphics.pose().pushPose();
-		guiGraphics.pose().translate(1278, 79, 0);
-		guiGraphics.pose().scale(2.6F, 2.6F, 1.0F);
-		guiGraphics.drawString(this.font, Component.literal(text).withStyle(style -> style.withFont(ROBOTO_FONT)), 0, 0, color, false);
-		guiGraphics.pose().popPose();
-	}
-
-	private ResourceLocation currentTexture() {
-		return switch (visualState) {
-			case STANDBY_DISABLE -> SCREEN_STANDBY_DISABLE;
-			case STANDBY_ENABLE -> SCREEN_STANDBY_ENABLE;
-			case MAIN, CREDENTIAL_PROMPT, INVALID_CREDENTIALS, AUTH_SUCCESS, OVERRIDE_WARNING, OVERRIDE_STANDBY, OVERRIDE_ENGAGED -> mainTexture();
-		};
-	}
-
-	private ResourceLocation mainTexture() {
-		if (displayedManualOverride) {
-			return SCREEN_ON_OVERRIDE;
-		}
-		return displayedTeslaGatesEnabled ? SCREEN_ON : SCREEN_OFF;
-	}
-
-	private ResourceLocation overlayTexture() {
-		return switch (visualState) {
-			case CREDENTIAL_PROMPT -> SCREEN_CREDENTIAL_PROMPT;
-			case INVALID_CREDENTIALS -> SCREEN_INVALID_CREDENTIALS;
-			case AUTH_SUCCESS -> SCREEN_AUTH_SUCCESS;
-			case OVERRIDE_WARNING -> SCREEN_OVERRIDE_WARNING;
-			case OVERRIDE_STANDBY -> SCREEN_OVERRIDE_STANDBY;
-			case OVERRIDE_ENGAGED -> SCREEN_OVERRIDE_ENGAGED;
-			default -> mainTexture();
-		};
-	}
-
-	private boolean isOverlayState() {
-		return visualState == VisualState.CREDENTIAL_PROMPT || visualState == VisualState.INVALID_CREDENTIALS || visualState == VisualState.AUTH_SUCCESS || visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY
-				|| visualState == VisualState.OVERRIDE_ENGAGED;
 	}
 
 	@Override
@@ -181,9 +109,10 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	@Override
-	public boolean keyPressed(int key, int b, int c) {
-		if (key == 256) {
-			this.minecraft.player.closeContainer();
+	public boolean keyPressed(int key, int scanCode, int modifiers) {
+		if (key == 256 || minecraft != null
+				&& minecraft.options.keyInventory.matches(key, scanCode)) {
+			closeTerminal();
 			return true;
 		}
 		return true;
@@ -191,6 +120,10 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+		if (button == 1) {
+			closeTerminal();
+			return true;
+		}
 		if (button != 0) {
 			return true;
 		}
@@ -287,6 +220,84 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 				onTimedStateFinished();
 			}
 		}
+	}
+
+	@Override
+	public void removed() {
+		if (TeslaTerminalFocusClient.activeFor(terminalPos())) {
+			TeslaTerminalFocusClient.end();
+		}
+		super.removed();
+	}
+
+	public BlockPos terminalPos() {
+		return new BlockPos(x, y, z);
+	}
+
+	public boolean isFor(BlockPos pos) {
+		return terminalPos().equals(pos);
+	}
+
+	/** Base full-screen image painted onto the physical CRT this frame. */
+	public ResourceLocation physicalBaseTexture() {
+		initializeDisplayState();
+		if (visualState == VisualState.STANDBY_DISABLE
+				|| visualState == VisualState.STANDBY_ENABLE) {
+			return currentTexture();
+		}
+		return mainTexture();
+	}
+
+	/** Optional transparent/full-screen layer painted immediately above the base. */
+	public ResourceLocation physicalOverlayTexture() {
+		if (!menu.auxiliaryPowerOnline) return SCREEN_AUXILIARY_OFFLINE;
+		return isOverlayState() ? overlayTexture() : null;
+	}
+
+	public boolean physicalAuthenticated() {
+		return authenticated;
+	}
+
+	public boolean physicalAuxiliaryPowerOnline() {
+		return menu.auxiliaryPowerOnline;
+	}
+
+	private void closeTerminal() {
+		if (minecraft != null && minecraft.player != null) {
+			minecraft.player.closeContainer();
+		}
+	}
+
+	private ResourceLocation currentTexture() {
+		return switch (visualState) {
+			case STANDBY_DISABLE -> SCREEN_STANDBY_DISABLE;
+			case STANDBY_ENABLE -> SCREEN_STANDBY_ENABLE;
+			case MAIN, CREDENTIAL_PROMPT, INVALID_CREDENTIALS, AUTH_SUCCESS, OVERRIDE_WARNING, OVERRIDE_STANDBY, OVERRIDE_ENGAGED -> mainTexture();
+		};
+	}
+
+	private ResourceLocation mainTexture() {
+		if (displayedManualOverride) {
+			return SCREEN_ON_OVERRIDE;
+		}
+		return displayedTeslaGatesEnabled ? SCREEN_ON : SCREEN_OFF;
+	}
+
+	private ResourceLocation overlayTexture() {
+		return switch (visualState) {
+			case CREDENTIAL_PROMPT -> SCREEN_CREDENTIAL_PROMPT;
+			case INVALID_CREDENTIALS -> SCREEN_INVALID_CREDENTIALS;
+			case AUTH_SUCCESS -> SCREEN_AUTH_SUCCESS;
+			case OVERRIDE_WARNING -> SCREEN_OVERRIDE_WARNING;
+			case OVERRIDE_STANDBY -> SCREEN_OVERRIDE_STANDBY;
+			case OVERRIDE_ENGAGED -> SCREEN_OVERRIDE_ENGAGED;
+			default -> mainTexture();
+		};
+	}
+
+	private boolean isOverlayState() {
+		return visualState == VisualState.CREDENTIAL_PROMPT || visualState == VisualState.INVALID_CREDENTIALS || visualState == VisualState.AUTH_SUCCESS || visualState == VisualState.OVERRIDE_WARNING || visualState == VisualState.OVERRIDE_STANDBY
+				|| visualState == VisualState.OVERRIDE_ENGAGED;
 	}
 
 	private void onTimedStateFinished() {
@@ -426,7 +437,10 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 	}
 
 	private void updateLayout() {
-		this.guiScale = Math.min(1.0D, Math.min((this.width - 20.0D) / TEX_W, (this.height - 20.0D) / TEX_H));
+		double aspect = TEX_W / (double) TEX_H;
+		double targetHeight = Math.min(this.height * TeslaTerminalFocusClient.VIEW_HEIGHT_FRACTION,
+				(this.width * 0.90D) / aspect);
+		this.guiScale = Math.max(0.01D, targetHeight / TEX_H);
 		this.leftPos = (int) Math.round((this.width - TEX_W * guiScale) / 2.0D);
 		this.topPos = (int) Math.round((this.height - TEX_H * guiScale) / 2.0D);
 	}

@@ -21,7 +21,7 @@ import java.util.UUID;
 public final class InventoryPdaThirdPersonClient {
     private static final long OPEN_TRANSITION_NANOS = 820_000_000L;
     private static final long CLOSE_TRANSITION_NANOS = 1_050_000_000L;
-    private static final float INITIAL_RIGHT_GRIP = 0.72F;
+    private static final float INITIAL_RIGHT_GRIP = 0.96F;
     private static final Map<UUID, PresentationState> PRESENTATIONS =
             new HashMap<>();
 
@@ -47,9 +47,9 @@ public final class InventoryPdaThirdPersonClient {
         float progress = progress(player.getUUID());
         if (progress <= 0.0F) return;
 
-        // The PDA now appears already supported by the right hand instead of
-        // materializing near the player's legs and flying toward two idle arms.
-        // The left hand still completes the familiar two-handed reading pose.
+        // The right hand owns the PDA from the first visible frame. The opening
+        // motion is the left hand joining the grip, not the device teleporting
+        // out of the player's lower body and waiting for both hands to catch it.
         float rightGrip = INITIAL_RIGHT_GRIP
                 + (1.0F - INITIAL_RIGHT_GRIP) * progress;
         poseArm(model.rightArm,

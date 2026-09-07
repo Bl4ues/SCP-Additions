@@ -69,11 +69,11 @@ public final class CeilingCameraModule {
     public static final float BASE_YAW = Direction.NORTH.toYRot();
     public static final float MANUAL_YAW_LIMIT = 180.0F;
     /**
-     * The authored neutral eye points straight down. Minecraft calls that +90
-     * pitch; the physical dome may tilt only 50 degrees away from that neutral,
-     * so its usable world-pitch range is +90 (down) through +40 (maximum tilt).
+     * The authored neutral eye points straight down (+90 vanilla pitch). Manual
+     * control can now travel the complete quarter-circle up to the horizon (0),
+     * while idle scans intentionally stay inside the original restrained range.
      */
-    public static final float MANUAL_MIN_PITCH = 40.0F;
+    public static final float MANUAL_MIN_PITCH = 0.0F;
     public static final float MANUAL_MAX_PITCH = 90.0F;
 
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
@@ -111,8 +111,6 @@ public final class CeilingCameraModule {
     }
 
     public static final class CeilingCameraBlock extends BaseEntityBlock {
-        // The dome occupies only the top few pixels of its block space. Keep the
-        // selection slightly generous without creating a dangling full block.
         private static final VoxelShape SHAPE = Block.box(
                 5.0D, 13.0D, 5.0D, 11.0D, 16.0D, 11.0D);
 
@@ -148,8 +146,6 @@ public final class CeilingCameraModule {
         @Nullable
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
-            // It is a ceiling camera in the literal sense, not a human exercise
-            // in finding increasingly inventive walls to stick it to.
             if (context.getClickedFace() != Direction.DOWN) return null;
             BlockState state = defaultBlockState();
             return state.canSurvive(context.getLevel(), context.getClickedPos())
@@ -234,8 +230,6 @@ public final class CeilingCameraModule {
         private static final float MANUAL_PITCH_SPEED = 4.5F;
         private static final float IDLE_YAW_SPEED = 1.35F;
         private static final float IDLE_PITCH_SPEED = 0.95F;
-        // Idle scans stay just inside the mechanical stops instead of repeatedly
-        // hammering the dome against its exact 0/50 degree endpoints.
         private static final float IDLE_MIN_PITCH = 44.0F;
         private static final float IDLE_MAX_PITCH = 86.0F;
         private static final float TRACKING_SYNC_EPSILON = 0.35F;
@@ -506,7 +500,6 @@ public final class CeilingCameraModule {
         @Override
         public void registerControllers(
                 AnimatableManager.ControllerRegistrar controllers) {
-            // The dome is driven procedurally by the renderer.
         }
 
         @Override
@@ -560,7 +553,6 @@ public final class CeilingCameraModule {
         @Override
         public void registerControllers(
                 AnimatableManager.ControllerRegistrar controllers) {
-            // Inventory representation keeps the authored downward-facing eye.
         }
 
         @Override

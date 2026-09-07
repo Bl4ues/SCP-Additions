@@ -29,13 +29,26 @@ public abstract class CommandSuggestionsMixin {
     @Inject(method = "<init>", at = @At("TAIL"))
     private void scpClassifiedDirective$useFacilitySuggestionStyle(CallbackInfo ci) {
         if (Scp079PlayableClient.active()) {
-            this.anchorToBottom = false;
+            // ChatScreen's suggestion list is designed to grow upward when this
+            // flag is true. The previous false value treated our custom y as a
+            // top anchor and produced the upside-down detached list seen in-game.
+            this.anchorToBottom = true;
             this.fillColor = 0xED061018;
             return;
         }
         if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
         this.anchorToBottom = false;
         this.fillColor = 0xE6081022;
+    }
+
+    /** Replaces vanilla's bottom margin so the upward list ends at our input. */
+    @ModifyConstant(method = "showSuggestions",
+            constant = @Constant(intValue = 12), require = 0)
+    private int scpClassifiedDirective$moveBottomAnchoredSuggestions(
+            int original) {
+        if (!Scp079PlayableClient.active()) return original;
+        return Math.max(0,
+                this.screen.height - Scp079ChatLayout.suggestionAnchor(this.input));
     }
 
     @ModifyConstant(method = "showSuggestions",

@@ -285,7 +285,10 @@ public final class Scp079PlayableVisualsV2 {
         for (WorldTarget target : cachedTargets) {
             Vec3 anchor = anchor(target);
             boolean visible = target.kind == TargetKind.CAMERA
-                    || visibleFromCamera(minecraft, context.cameraPos, anchor);
+                    || target.kind == TargetKind.DOOR
+                            ? visibleDoorFromCamera(minecraft, context.cameraPos,
+                                    target.pos, anchor)
+                            : visibleFromCamera(minecraft, context.cameraPos, anchor);
             if (!visible) continue;
             ScreenPoint point = project(anchor, context);
             if (point == null) continue;
@@ -498,6 +501,27 @@ public final class Scp079PlayableVisualsV2 {
                 ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, minecraft.player));
         return hit.getType() != HitResult.Type.BLOCK
                 || camera.distanceToSqr(hit.getLocation()) + 0.35D >= camera.distanceToSqr(target);
+    }
+
+    /**
+     * A multi-block door can intercept the ray before the representative block
+     * chosen by the room scanner. Treat a hit on the same nearby door assembly
+     * as visible rather than hiding the prompt behind the door it belongs to.
+     */
+    private static boolean visibleDoorFromCamera(Minecraft minecraft,
+            Vec3 camera, BlockPos targetPos, Vec3 target) {
+        if (minecraft.level == null || minecraft.player == null) return false;
+        BlockHitResult hit = minecraft.level.clip(new ClipContext(camera, target,
+                ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, minecraft.player));
+        if (hit.getType() != HitResult.Type.BLOCK
+                || camera.distanceToSqr(hit.getLocation()) + 0.35D
+                        >= camera.distanceToSqr(target)) {
+            return true;
+        }
+        BlockPos hitPos = hit.getBlockPos();
+        return FacilityModule.isFacilityDoor(
+                minecraft.level.getBlockState(hitPos))
+                && hitPos.distSqr(targetPos) <= 9.0D;
     }
 
     private static int scpNumber(Entity entity) {

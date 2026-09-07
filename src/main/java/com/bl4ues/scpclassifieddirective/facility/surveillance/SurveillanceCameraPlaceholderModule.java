@@ -305,8 +305,9 @@ public final class SurveillanceCameraPlaceholderModule {
                     && controller.level().dimension().equals(server.dimension());
             boolean autonomousAccess = Scp079ProcessingManager.isActive(server)
                     && Scp079FacilityAccessManager.hasFacilityAccess(server);
-            boolean roomWatching = controllerHere || autonomousAccess;
-            FacilityCameraDefinition definition = roomWatching ?
+            boolean autonomousWatching = controller == null && autonomousAccess;
+            boolean needsDefinition = controllerHere || autonomousWatching;
+            FacilityCameraDefinition definition = needsDefinition ?
                     FacilitySurveillanceRegistry.camera(
                             server, cameraId(server, pos)) : null;
 
@@ -327,9 +328,8 @@ public final class SurveillanceCameraPlaceholderModule {
                         -MANUAL_YAW_LIMIT, MANUAL_YAW_LIMIT);
                 wantedPitch = Mth.clamp(controller.getXRot(),
                         MANUAL_MIN_PITCH, MANUAL_MAX_PITCH);
-            } else if (roomWatching && definition != null) {
-                ServerPlayer target = trackingTarget(server, definition,
-                        controller);
+            } else if (autonomousWatching && definition != null) {
+                ServerPlayer target = trackingTarget(server, definition, null);
                 if (target != null) {
                     directed = true;
                     Vec3 delta = target.getEyePosition()

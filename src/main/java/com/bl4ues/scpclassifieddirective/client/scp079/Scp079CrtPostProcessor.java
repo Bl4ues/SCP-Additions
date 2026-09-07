@@ -104,6 +104,12 @@ public final class Scp079CrtPostProcessor {
             shader.getUniform("Time").set((System.nanoTime() % 60_000_000_000L)
                     / 1_000_000_000.0F);
         }
+        if (shader.getUniform("CameraTint") != null) {
+            float tint = Scp079PlayableClient.cameraMode()
+                    ? 1.0F - Scp079NightVisionPostProcessor.strength() : 0.0F;
+            shader.getUniform("CameraTint").set(
+                    Math.max(0.0F, Math.min(1.0F, tint)));
+        }
 
         Matrix4f identity = new Matrix4f();
         BufferBuilder buffer = Tesselator.getInstance().getBuilder();

@@ -108,6 +108,7 @@
     "client.Scp079PlayableVisualLayoutMixin",
     "client.Scp079DoorPromptVisibilityMixin",
     "client.Scp079FeedPowerAnchorMixin",
+    "client.Scp079FacilityMapRoomLabelMixin",
     "client.Scp079ActionCooldownVisualMixin",
     "client.Scp079PlayableNetworkAudioMixin",
     "client.Scp079FacilityMapScreenAccessor",

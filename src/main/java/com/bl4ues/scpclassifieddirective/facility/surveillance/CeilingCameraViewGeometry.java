@@ -11,21 +11,26 @@ public final class CeilingCameraViewGeometry {
     // The eye plane is authored 1.75 Blockbench units from the [0, 16, 0]
     // spherical pivot. A tiny clearance keeps the feed outside the rendered lens.
     private static final double PIVOT_TO_LENS = 1.75D / 16.0D + 0.018D;
+    // At horizontal pitch the spherical lens reaches the ceiling plane itself.
+    // Keep the optical pivot slightly below that plane so the near clip never
+    // samples the support block above the camera.
+    private static final double CEILING_VIEW_CLEARANCE = 1.5D / 16.0D;
 
     private CeilingCameraViewGeometry() {
     }
 
-    /** Neutral physical eye point, directly below the ceiling pivot. */
+    /** Neutral physical eye point, directly below the lowered ceiling pivot. */
     public static Vec3 baseEye(BlockPos pos) {
         Vec3 pivot = new Vec3(pos.getX() + 0.5D,
-                pos.getY() + 1.0D, pos.getZ() + 0.5D);
+                pos.getY() + 1.0D - CEILING_VIEW_CLEARANCE,
+                pos.getZ() + 0.5D);
         return pivot.add(forward(180.0F, DEFAULT_DOWN_PITCH)
                 .scale(PIVOT_TO_LENS));
     }
 
     /**
-     * Reconstructs the dome pivot from the persisted neutral eye point and moves
-     * the feed along the same spherical arc as the physical lens.
+     * Reconstructs the lowered dome pivot from the persisted neutral eye point
+     * and moves the feed along the same spherical arc as the physical lens.
      */
     public static Vec3 lensFromBaseEye(Vec3 baseEye, float baseYaw,
             float basePitch, float yaw, float pitch) {

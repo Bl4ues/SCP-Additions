@@ -32,6 +32,9 @@ public final class SurveillanceCameraClient {
     private static final ResourceLocation MODEL = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID,
             "geo/block/surveillance_camera.geo.json");
+    private static final ResourceLocation ITEM_MODEL = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID,
+            "geo/item/surveillance_camera.geo.json");
     private static final ResourceLocation TEXTURE = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID,
             "textures/block/surveillance_camera.png");
@@ -166,7 +169,7 @@ public final class SurveillanceCameraClient {
         @Override
         public ResourceLocation getModelResource(
                 SurveillanceCameraPlaceholderModule.SurveillanceCameraItem animatable) {
-            return MODEL;
+            return ITEM_MODEL;
         }
 
         @Override

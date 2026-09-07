@@ -49,6 +49,15 @@ public final class IntercomClient {
         return new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path);
     }
 
+    private static void forceIndicator(CoreGeoBone bone, boolean visible) {
+        if (bone == null) return;
+        bone.setHidden(!visible);
+        float scale = visible ? 1.0F : 0.0F;
+        bone.setScaleX(scale);
+        bone.setScaleY(scale);
+        bone.setScaleZ(scale);
+    }
+
     private static final class BlockModel extends
             GeoModel<IntercomModule.IntercomBlockEntity> {
         @Override
@@ -67,6 +76,26 @@ public final class IntercomClient {
         public ResourceLocation getAnimationResource(
                 IntercomModule.IntercomBlockEntity animatable) {
             return ANIMATION;
+        }
+
+        @Override
+        public void setCustomAnimations(
+                IntercomModule.IntercomBlockEntity animatable,
+                long instanceId,
+                AnimationState<IntercomModule.IntercomBlockEntity> animationState) {
+            super.setCustomAnimations(animatable, instanceId, animationState);
+
+            // GeckoLib reuses this GeoModel across every placed Intercom. The
+            // authored on/off meshes are coplanar and animation scale state can
+            // otherwise leak from the previously rendered instance, which is why
+            // a lone Intercom behaved differently from a pair. Make the indicator
+            // state explicit per block entity after the authored button animation
+            // has been evaluated. This also guarantees that the emissive rerender
+            // sees the active LED bone instead of an inherited zero-scale one.
+            boolean active = animatable.getBlockState()
+                    .getValue(IntercomModule.ACTIVE);
+            forceIndicator(getAnimationProcessor().getBone("light_off"), !active);
+            forceIndicator(getAnimationProcessor().getBone("light_on"), active);
         }
     }
 
@@ -134,14 +163,10 @@ public final class IntercomClient {
                 long instanceId,
                 AnimationState<IntercomModule.IntercomItem> animationState) {
             super.setCustomAnimations(animatable, instanceId, animationState);
-            // The authored geometry contains both indicator meshes at the same
-            // location. A placed Intercom's idle animation chooses one of them;
-            // the inventory renderer has no active state, so force the proper
-            // powered-off representation instead of drawing both surfaces.
-            CoreGeoBone lightOff = getAnimationProcessor().getBone("light_off");
-            CoreGeoBone lightOn = getAnimationProcessor().getBone("light_on");
-            if (lightOff != null) lightOff.setHidden(false);
-            if (lightOn != null) lightOn.setHidden(true);
+            // Inventory has no active block state, so always present the proper
+            // powered-off geometry and clear any stale shared bone scale.
+            forceIndicator(getAnimationProcessor().getBone("light_off"), true);
+            forceIndicator(getAnimationProcessor().getBone("light_on"), false);
         }
     }
 

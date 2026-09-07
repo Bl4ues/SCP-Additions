@@ -470,7 +470,9 @@ public final class Scp079PlayableVisualsV2 {
                     focused ? 1.0F : 0.80F);
             if (!focused) continue;
             String primary = switch (prompt.kind) {
-                case DOOR -> "OPEN / CLOSE  [LMB]  " + cost(5.0D, minecraft);
+                case DOOR -> (FacilityModule.isDoorPassable(
+                        minecraft.level.getBlockState(prompt.pos)) ? "CLOSE" : "OPEN")
+                        + "  [LMB]  " + cost(5.0D, minecraft);
                 case TESLA -> "SUPPRESS  [LMB]  " + cost(12.0D, minecraft);
                 case CAMERA -> "SWITCH CAMERA  [LMB]";
             };

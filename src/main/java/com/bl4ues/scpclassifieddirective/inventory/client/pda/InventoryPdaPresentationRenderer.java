@@ -42,23 +42,19 @@ public final class InventoryPdaPresentationRenderer implements AutoCloseable {
     private static final float GEO_CENTER_Y = 43.0F / 16.0F;
     private static final float RIGHT_HAND_ANCHOR_Y = 17.5F / 16.0F;
     private static final float LEFT_HAND_ANCHOR_Y = 58.5F / 16.0F;
-    // The authored left locator is only 2.5 px outside the live display. The
-    // enlarged skin arm therefore crossed the screen even though its palm was
-    // technically on the bezel. Move that grip to the casing edge so the UI
-    // never appears painted over the hand.
-    private static final float LEFT_HAND_OUTSET = 5.0F / 16.0F;
+    // Keep the left palm on the casing edge without pushing the now-larger arm
+    // away from the PDA. The previous five-pixel correction overcompensated.
+    private static final float LEFT_HAND_OUTSET = 2.0F / 16.0F;
     // The exported hand locators sit behind the casing. Vanilla player arms
     // need their grip point on the camera-facing lip so the fingers remain
     // visible instead of being completely depth-occluded by the PDA.
     private static final float HAND_CONTACT_Z = -0.07F;
     private static final float ARM_CENTER_X = 6.0F / 16.0F;
     private static final float ARM_LENGTH = 12.0F / 16.0F;
-    // The authored PDA is cellphone-sized in player space. Vanilla first-person
-    // arms are authored for held items much farther from this fixed camera, so
-    // rendering them at unit scale makes the grip read as miniature hands.
-    // Scale around the distal contact, not around the camera, so both palms stay
-    // locked to their exported locators throughout the presentation motion.
-    private static final float GRIP_ARM_SCALE = 2.0F;
+    // Vanilla first-person arms need to read at the same physical scale as the
+    // PDA rather than as miniature detached hands. Scale around the distal grip
+    // contact so increasing their size does not move the intended palm anchor.
+    private static final float GRIP_ARM_SCALE = 2.55F;
 
     private final Minecraft minecraft = Minecraft.getInstance();
     private TextureTarget interfaceTarget;

@@ -18,6 +18,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.intercom.IntercomModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import com.bl4ues.scpclassifieddirective.facility.speaker.SpeakerModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
@@ -68,6 +69,7 @@ public final class AreaUnderConstructionSignModule {
         HazardSignModule.register(bus);
         ObjectContainmentUnitModule.register(bus);
         SurveillanceCameraPlaceholderModule.register(bus);
+        CeilingCameraModule.register(bus);
         SpeakerModule.register(bus);
         IntercomModule.register(bus);
     }
@@ -78,6 +80,7 @@ public final class AreaUnderConstructionSignModule {
         if (event.getTab() == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
             event.accept(ObjectContainmentUnitModule.ITEM.get());
             event.accept(SurveillanceCameraPlaceholderModule.ITEM.get());
+            event.accept(CeilingCameraModule.ITEM.get());
             event.accept(SpeakerModule.ITEM.get());
             event.accept(IntercomModule.ITEM.get());
             event.accept(HazardSignModule.ITEM.get());
@@ -108,6 +111,7 @@ public final class AreaUnderConstructionSignModule {
             if (section.sprite().getPath().endsWith("/functionaltab.png")) {
                 addUnique(items, new ItemStack(
                         SurveillanceCameraPlaceholderModule.ITEM.get()));
+                addUnique(items, new ItemStack(CeilingCameraModule.ITEM.get()));
                 addUnique(items, new ItemStack(SpeakerModule.ITEM.get()));
                 addUnique(items, new ItemStack(IntercomModule.ITEM.get()));
             }

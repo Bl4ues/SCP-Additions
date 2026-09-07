@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 /** Renders the observer-facing PDA inside the player's body-local pose. */
 public final class InventoryPdaPlayerLayer extends
         RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-    private static final float MODEL_SCALE = 0.095F;
+    private static final float MODEL_SCALE = 0.145F;
     private static final float GEO_CENTER_Y = 43.0F / 16.0F;
 
     public InventoryPdaPlayerLayer(RenderLayerParent<AbstractClientPlayer,
@@ -34,21 +34,21 @@ public final class InventoryPdaPlayerLayer extends
         }
 
         poseStack.pushPose();
-        // Keep the final two-handed pose unchanged, but begin the draw beside
-        // the right hand at chest height. The previous hidden pose started down
-        // at the legs and made the PDA visibly fly upward before being grabbed.
-        float startY = player.isCrouching() ? 0.50F : 0.42F;
-        float heldY = player.isCrouching() ? 0.38F : 0.30F;
+        // The device is already in the right hand on its first visible frame.
+        // Opening the inventory now mostly brings the left hand onto the bezel
+        // instead of launching the PDA upward from the player's waist.
+        float startY = player.isCrouching() ? 0.20F : 0.14F;
+        float heldY = player.isCrouching() ? 0.15F : 0.09F;
         poseStack.translate(
-                lerp(0.20F, 0.0F, progress),
+                lerp(0.14F, 0.0F, progress),
                 lerp(startY, heldY, progress),
-                lerp(-0.48F, -0.72F, progress));
+                lerp(-0.53F, -0.62F, progress));
         poseStack.mulPose(Axis.YP.rotationDegrees(
-                lerp(205.0F, 180.0F, progress)));
+                lerp(191.0F, 180.0F, progress)));
         poseStack.mulPose(Axis.XP.rotationDegrees(
-                lerp(11.0F, 15.0F, progress)));
+                lerp(13.0F, 15.0F, progress)));
         poseStack.mulPose(Axis.ZP.rotationDegrees(
-                lerp(-50.0F, -90.0F, progress)));
+                lerp(-78.0F, -90.0F, progress)));
         poseStack.scale(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
         // GeoObjectRenderer adds (0.5, 0.51, 0.5) before rendering. Offset the
         // authored display center so the device center meets the hand pose.

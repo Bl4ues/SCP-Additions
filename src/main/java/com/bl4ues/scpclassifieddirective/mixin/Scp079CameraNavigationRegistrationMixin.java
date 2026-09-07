@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin;
 
 import com.bl4ues.scpclassifieddirective.network.Scp079CameraNavigationNetwork;
+import com.bl4ues.scpclassifieddirective.network.Scp079InitialFeedNetwork;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import com.bl4ues.scpclassifieddirective.network.Scp079RoomAbilityNetwork;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,5 +17,6 @@ public abstract class Scp079CameraNavigationRegistrationMixin {
             CallbackInfo ci) {
         Scp079CameraNavigationNetwork.register();
         Scp079RoomAbilityNetwork.register();
+        Scp079InitialFeedNetwork.register();
     }
 }

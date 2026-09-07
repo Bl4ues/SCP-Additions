@@ -2,7 +2,9 @@ package com.bl4ues.scpclassifieddirective.facility.surveillance;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.SurveillanceCameraClient;
+import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
+import com.bl4ues.scpclassifieddirective.facility.Scp079ProcessingManager;
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
@@ -299,18 +301,22 @@ public final class SurveillanceCameraPlaceholderModule {
             if (!(level instanceof ServerLevel server)) return;
             ServerPlayer controller = Scp079PlayableManager.controller(
                     server.getServer());
-            FacilityCameraDefinition definition = controller == null ? null
-                    : FacilitySurveillanceRegistry.camera(
-                            server, cameraId(server, pos));
+            boolean controllerHere = controller != null
+                    && controller.level().dimension().equals(server.dimension());
+            boolean autonomousAccess = Scp079ProcessingManager.isActive(server)
+                    && Scp079FacilityAccessManager.hasFacilityAccess(server);
+            boolean roomWatching = controllerHere || autonomousAccess;
+            FacilityCameraDefinition definition = roomWatching ?
+                    FacilitySurveillanceRegistry.camera(
+                            server, cameraId(server, pos)) : null;
 
             boolean operatorControl = false;
             boolean directed = false;
             float wantedYaw = camera.targetYaw;
             float wantedPitch = camera.targetPitch;
 
-            if (controller != null && definition != null
+            if (controllerHere && definition != null
                     && Scp079PlayableManager.isCameraMode(controller)
-                    && controller.level().dimension().equals(server.dimension())
                     && controller.position().distanceToSqr(
                             definition.eyePosition()) <= 0.36D) {
                 operatorControl = true;
@@ -321,7 +327,7 @@ public final class SurveillanceCameraPlaceholderModule {
                         -MANUAL_YAW_LIMIT, MANUAL_YAW_LIMIT);
                 wantedPitch = Mth.clamp(controller.getXRot(),
                         MANUAL_MIN_PITCH, MANUAL_MAX_PITCH);
-            } else if (controller != null && definition != null) {
+            } else if (roomWatching && definition != null) {
                 ServerPlayer target = trackingTarget(server, definition,
                         controller);
                 if (target != null) {
@@ -363,7 +369,7 @@ public final class SurveillanceCameraPlaceholderModule {
         }
 
         private static ServerPlayer trackingTarget(ServerLevel level,
-                FacilityCameraDefinition camera, ServerPlayer controller) {
+                FacilityCameraDefinition camera, @Nullable ServerPlayer controller) {
             List<FacilityRoomSnapshot> rooms = roomSnapshots(level);
             FacilityRoomSnapshot cameraRoom = roomForCamera(rooms, camera);
             if (cameraRoom == null) return null;

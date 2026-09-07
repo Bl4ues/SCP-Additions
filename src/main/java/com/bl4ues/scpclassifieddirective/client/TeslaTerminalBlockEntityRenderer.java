@@ -86,7 +86,9 @@ public final class TeslaTerminalBlockEntityRenderer
             MultiBufferSource buffers, Frame frame, BlockPos pos,
             Direction facing, boolean authenticated) {
         Vec3 topLeft = local(frame.point(-0.5D, 0.5D, TEXT_EPSILON), pos);
-        float pixelScale = (float) (frame.width() / TeslaTerminalScreen.TEX_W);
+        float pixelScaleX = (float) (frame.width() / TeslaTerminalScreen.TEX_W);
+        float pixelScaleY = (float) (frame.height() / TeslaTerminalScreen.TEX_H);
+        float depthScale = Math.min(pixelScaleX, pixelScaleY);
         int color = authenticated ? 0x608952 : 0xAC384A;
         Component text = Component.literal(authenticated ? "GRANTED" : "DENIED")
                 .withStyle(style -> style.withFont(ROBOTO_FONT));
@@ -96,7 +98,10 @@ public final class TeslaTerminalBlockEntityRenderer
         poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
         poseStack.mulPose(Axis.XP.rotationDegrees(
                 (float) -TeslaTerminalFocusClient.SCREEN_TILT_DEGREES));
-        poseStack.scale(pixelScale, -pixelScale, pixelScale);
+        // The authored CRT is not the same aspect ratio as the old 1410x1080
+        // fullscreen GUI. Map texture pixels independently on X/Y so dynamic
+        // permission text remains on the same pixel as the stretched image.
+        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
         poseStack.translate(PERMISSION_X, PERMISSION_Y, 0.0F);
         poseStack.scale(PERMISSION_TEXT_SCALE, PERMISSION_TEXT_SCALE,
                 PERMISSION_TEXT_SCALE);

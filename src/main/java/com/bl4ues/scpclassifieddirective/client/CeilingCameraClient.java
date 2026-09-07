@@ -124,10 +124,11 @@ public final class CeilingCameraClient {
             }
 
             if (dome != null) {
-                // The original model authors the eye at +90 degrees under the
-                // dome. Rotate the complete dome assembly, never the eye alone:
-                // 90 world pitch = neutral/down, 40 = the 50-degree hard stop.
-                dome.setRotY(-yawDegrees * Mth.DEG_TO_RAD);
+                // Gecko's dome yaw uses the same handedness as the camera's
+                // world-space target once the authored north-facing base is
+                // accounted for. The old negative sign made tracking mirror the
+                // player across the camera whenever it tilted away from straight down.
+                dome.setRotY(yawDegrees * Mth.DEG_TO_RAD);
                 float relativePitch = pitchDegrees
                         - CeilingCameraViewGeometry.DEFAULT_DOWN_PITCH;
                 dome.setRotX(relativePitch * Mth.DEG_TO_RAD);

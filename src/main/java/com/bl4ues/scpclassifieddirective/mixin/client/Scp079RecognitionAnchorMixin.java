@@ -21,7 +21,7 @@ public abstract class Scp079RecognitionAnchorMixin {
     private static final double SCP_131_VISUAL_CENTER_Y = 0.30D;
     private static final double SCP_939_HEAD_CENTER_Y = 0.88D;
     private static final double SCP_939_HEAD_FORWARD = 0.78D;
-    private static final double CORPSE_HEAD_BACKWARD = 0.72D;
+    private static final double CORPSE_HEAD_FORWARD = 0.72D;
     private static final float SCP_131_RECOGNITION_WIDTH = 0.58F;
     private static final float SCP_939_HEAD_RECOGNITION_WIDTH = 0.60F;
 
@@ -59,10 +59,9 @@ public abstract class Scp079RecognitionAnchorMixin {
     }
 
     /**
-     * The settled corpse is rendered after a -90 degree X rotation. Its head is
-     * therefore behind the entity's horizontal look direction rather than above
-     * the vanilla eye point. Move only the recognition sample, not the entity or
-     * its collision box, to the rendered head end of the body.
+     * The settled corpse is rendered after a -90 degree X rotation. In this
+     * renderer the head lands along the entity's horizontal look direction.
+     * Move only the recognition sample to that rendered head end of the body.
      */
     @Redirect(method = "captureRecognition",
             at = @At(value = "INVOKE",
@@ -75,8 +74,8 @@ public abstract class Scp079RecognitionAnchorMixin {
         Vec3 look = entity.getLookAngle();
         double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
         if (horizontal < 1.0E-5D) return origin;
-        return origin.add(-look.x / horizontal * CORPSE_HEAD_BACKWARD,
-                0.0D, -look.z / horizontal * CORPSE_HEAD_BACKWARD);
+        return origin.add(look.x / horizontal * CORPSE_HEAD_FORWARD,
+                0.0D, look.z / horizontal * CORPSE_HEAD_FORWARD);
     }
 
     @Redirect(method = "captureRecognition",

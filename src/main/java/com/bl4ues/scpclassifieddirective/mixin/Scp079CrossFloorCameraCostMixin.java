@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.mixin;
 
+import com.bl4ues.scpclassifieddirective.facility.Scp079CameraTravelRules;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayerPower;
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
@@ -17,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.List;
 import java.util.UUID;
 
-/** Doubles playable SCP-079 camera travel cost when the feed changes floors. */
+/** Applies the authored same-floor / cross-floor / cross-zone camera tiers. */
 @Mixin(Scp079PlayableManager.class)
 public abstract class Scp079CrossFloorCameraCostMixin {
     @Redirect(method = "switchToRoom",
@@ -27,16 +28,12 @@ public abstract class Scp079CrossFloorCameraCostMixin {
     private static boolean scpclassifieddirective$roomSwitchCost(
             ServerLevel level, double baseCost, ServerPlayer player,
             UUID roomId) {
-        double cost = baseCost;
-        if (Scp079PlayableManager.isCameraMode(player)) {
-            FacilityRoomSnapshot current = scpclassifieddirective$currentRoom(
-                    level, player.blockPosition());
-            FacilityRoomSnapshot target = scpclassifieddirective$roomById(
-                    level, roomId);
-            if (scpclassifieddirective$differentFloor(current, target)) {
-                cost *= 2.0D;
-            }
-        }
+        FacilityRoomSnapshot current = scpclassifieddirective$currentRoom(
+                level, player.blockPosition());
+        FacilityRoomSnapshot target = scpclassifieddirective$roomById(level,
+                roomId);
+        double cost = baseCost * Scp079CameraTravelRules.multiplier(current,
+                target);
         return Scp079PlayerPower.trySpend(level, cost);
     }
 
@@ -47,18 +44,14 @@ public abstract class Scp079CrossFloorCameraCostMixin {
     private static boolean scpclassifieddirective$cameraSwitchCost(
             ServerLevel level, double baseCost, ServerPlayer player,
             UUID cameraId) {
-        double cost = baseCost;
-        if (Scp079PlayableManager.isCameraMode(player)) {
-            FacilityRoomSnapshot current = scpclassifieddirective$currentRoom(
-                    level, player.blockPosition());
-            FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
-                    level, cameraId);
-            FacilityRoomSnapshot target = scpclassifieddirective$roomForCamera(
-                    level, camera);
-            if (scpclassifieddirective$differentFloor(current, target)) {
-                cost *= 2.0D;
-            }
-        }
+        FacilityRoomSnapshot current = scpclassifieddirective$currentRoom(
+                level, player.blockPosition());
+        FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
+                level, cameraId);
+        FacilityRoomSnapshot target = scpclassifieddirective$roomForCamera(
+                level, camera);
+        double cost = baseCost * Scp079CameraTravelRules.multiplier(current,
+                target);
         return Scp079PlayerPower.trySpend(level, cost);
     }
 
@@ -101,20 +94,5 @@ public abstract class Scp079CrossFloorCameraCostMixin {
             }
         }
         return null;
-    }
-
-    private static boolean scpclassifieddirective$differentFloor(
-            FacilityRoomSnapshot current, FacilityRoomSnapshot target) {
-        if (current == null || target == null) return false;
-        String currentLabel = (current.floorLongLabel() + "\n"
-                + current.floorShortLabel()).strip();
-        String targetLabel = (target.floorLongLabel() + "\n"
-                + target.floorShortLabel()).strip();
-        if (!currentLabel.isBlank() || !targetLabel.isBlank()) {
-            return !currentLabel.equalsIgnoreCase(targetLabel);
-        }
-        int currentY = current.patches().isEmpty() ? 0 : current.patches().get(0).y();
-        int targetY = target.patches().isEmpty() ? 0 : target.patches().get(0).y();
-        return Math.abs(currentY - targetY) > 3;
     }
 }

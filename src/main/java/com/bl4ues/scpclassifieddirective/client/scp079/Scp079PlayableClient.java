@@ -72,6 +72,7 @@ public final class Scp079PlayableClient {
     private static final double FRONT_DISTANCE = 1.02D;
     private static final double WALL_MARGIN = 0.12D;
     private static final long SWITCH_INTERFERENCE_NANOS = 260_000_000L;
+    private static final long ZOOM_SERVO_HOLD_NANOS = 180_000_000L;
 
     private static boolean active;
     private static ResourceLocation hostDimension = new ResourceLocation(
@@ -93,6 +94,7 @@ public final class Scp079PlayableClient {
     private static float maxZoom = 1.0F;
     private static float zoom = 1.0F;
     private static long interferenceUntil;
+    private static long zoomServoUntil;
     private static ArmorStand cameraRig;
     private static ClientLevel cameraRigLevel;
     private static CameraType previousCameraType;
@@ -140,6 +142,7 @@ public final class Scp079PlayableClient {
         if (cameraId != null && !cameraId.equals(previousCamera)) {
             interferenceUntil = System.nanoTime() + SWITCH_INTERFERENCE_NANOS;
             zoom = 1.0F;
+            zoomServoUntil = 0L;
             if (minecraft.player != null) {
                 minecraft.player.setYRot(baseYaw);
                 minecraft.player.setXRot(basePitch);
@@ -152,6 +155,7 @@ public final class Scp079PlayableClient {
         }
         if (cameraId == null && previousCamera != null) {
             zoom = 1.0F;
+            zoomServoUntil = 0L;
         }
     }
 
@@ -161,6 +165,9 @@ public final class Scp079PlayableClient {
     public static ResourceLocation hostDimension() { return hostDimension; }
     public static BlockPos hostPos() { return hostPos; }
     public static int power() { return power; }
+    public static boolean zoomServoActive() {
+        return cameraMode() && System.nanoTime() < zoomServoUntil;
+    }
     public static Vec3 viewPosition() {
         return cameraMode() ? cameraPosition : Vec3.atCenterOf(hostPos);
     }
@@ -226,8 +233,12 @@ public final class Scp079PlayableClient {
     public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
         if (!cameraMode() || Minecraft.getInstance().screen != null) return;
         if (event.getScrollDelta() == 0.0D) return;
+        float previousZoom = zoom;
         zoom = Mth.clamp(zoom + (event.getScrollDelta() > 0.0D ? 0.18F : -0.18F),
                 1.0F, maxZoom);
+        if (Math.abs(zoom - previousZoom) > 1.0E-4F) {
+            zoomServoUntil = System.nanoTime() + ZOOM_SERVO_HOLD_NANOS;
+        }
         event.setCanceled(true);
     }
 
@@ -492,6 +503,7 @@ public final class Scp079PlayableClient {
         speakerAvailable = false;
         speakerActive = false;
         zoom = 1.0F;
+        zoomServoUntil = 0L;
     }
 
     private static void renderLocalHud(GuiGraphics graphics) {

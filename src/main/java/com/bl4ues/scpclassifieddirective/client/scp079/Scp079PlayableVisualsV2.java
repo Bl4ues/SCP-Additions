@@ -49,7 +49,9 @@ public final class Scp079PlayableVisualsV2 {
             "textures/gui/scp079/icons/tesla_gate.png");
     private static final ResourceLocation CAMERA_ICON = resource(
             "textures/gui/scp079/icons/camera.png");
-    private static final int ROOM_DEVICE_BORDER = 1;
+    // Mirrors the server-side room-edge interaction allowance so visible doors
+    // never disappear merely because their structure sits outside the floor fill.
+    private static final int ROOM_DEVICE_BORDER = 3;
     private static final int ADJACENT_ROOM_GAP = 2;
     private static final int ROOM_COLUMN_HEIGHT = 12;
     private static final int MAX_SCAN_BLOCKS = 280_000;

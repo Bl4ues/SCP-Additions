@@ -20,9 +20,17 @@ public abstract class TeslaTerminalPhysicalInputMixin {
                     target = "Lcom/bl4ues/scpclassifieddirective/client/gui/TeslaTerminalScreen;textureX(D)D"))
     private double scpclassifieddirective$physicalTextureX(
             TeslaTerminalScreen screen, double mouseX) {
-        Layout layout = scpclassifieddirective$layout();
-        return (mouseX - layout.left) / layout.width
-                * TeslaTerminalScreen.TEX_W;
+        Minecraft minecraft = Minecraft.getInstance();
+        double guiWidth = minecraft.getWindow().getGuiScaledWidth();
+        double guiHeight = minecraft.getWindow().getGuiScaledHeight();
+        double physicalAspect = TeslaTerminalFocusClient.SCREEN_WIDTH
+                / TeslaTerminalFocusClient.SCREEN_HEIGHT;
+        double displayHeight = Math.min(
+                guiHeight * TeslaTerminalFocusClient.VIEW_HEIGHT_FRACTION,
+                guiWidth * 0.90D / physicalAspect);
+        double displayWidth = displayHeight * physicalAspect;
+        double left = (guiWidth - displayWidth) * 0.5D;
+        return (mouseX - left) / displayWidth * TeslaTerminalScreen.TEX_W;
     }
 
     @Redirect(method = "mouseClicked",
@@ -30,25 +38,15 @@ public abstract class TeslaTerminalPhysicalInputMixin {
                     target = "Lcom/bl4ues/scpclassifieddirective/client/gui/TeslaTerminalScreen;textureY(D)D"))
     private double scpclassifieddirective$physicalTextureY(
             TeslaTerminalScreen screen, double mouseY) {
-        Layout layout = scpclassifieddirective$layout();
-        return (mouseY - layout.top) / layout.height
-                * TeslaTerminalScreen.TEX_H;
-    }
-
-    private static Layout scpclassifieddirective$layout() {
         Minecraft minecraft = Minecraft.getInstance();
-        double screenWidth = minecraft.getWindow().getGuiScaledWidth();
-        double screenHeight = minecraft.getWindow().getGuiScaledHeight();
+        double guiWidth = minecraft.getWindow().getGuiScaledWidth();
+        double guiHeight = minecraft.getWindow().getGuiScaledHeight();
         double physicalAspect = TeslaTerminalFocusClient.SCREEN_WIDTH
                 / TeslaTerminalFocusClient.SCREEN_HEIGHT;
-        double height = Math.min(
-                screenHeight * TeslaTerminalFocusClient.VIEW_HEIGHT_FRACTION,
-                screenWidth * 0.90D / physicalAspect);
-        double width = height * physicalAspect;
-        return new Layout((screenWidth - width) * 0.5D,
-                (screenHeight - height) * 0.5D, width, height);
-    }
-
-    private record Layout(double left, double top, double width, double height) {
+        double displayHeight = Math.min(
+                guiHeight * TeslaTerminalFocusClient.VIEW_HEIGHT_FRACTION,
+                guiWidth * 0.90D / physicalAspect);
+        double top = (guiHeight - displayHeight) * 0.5D;
+        return (mouseY - top) / displayHeight * TeslaTerminalScreen.TEX_H;
     }
 }

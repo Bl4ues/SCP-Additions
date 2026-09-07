@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 public final class Scp079PlayableAudioClient {
     private static final float CAMERA_STATIC_VOLUME = 0.60F;
     private static final float MAP_STATIC_VOLUME = 0.46F;
+    private static final float BOOT_STATIC_VOLUME = 0.31F;
     private static final float LOCAL_STATIC_VOLUME = 0.22F;
     private static final float MINIMUM_RUNNING_VOLUME = 0.001F;
 
@@ -84,8 +85,35 @@ public final class Scp079PlayableAudioClient {
         playRaw("079select_4", 1.0F, 1.0F);
     }
 
+    public static void playBootStart() {
+        playRaw("terminalon", 0.58F, 0.82F);
+    }
+
+    public static void playBootKey() {
+        playRaw("079select_1", 0.24F, 1.34F);
+    }
+
+    public static void playBootStatus() {
+        playRaw("079select_2", 0.30F, 1.08F);
+    }
+
+    public static void playBootSuccess() {
+        playRaw("079select_4", 0.36F, 1.18F);
+    }
+
+    public static void playBootError() {
+        playRaw("079select_3", 0.48F, 0.72F);
+    }
+
+    public static void playBootComplete() {
+        playRaw("079select_4", 0.58F, 0.88F);
+    }
+
     private static float staticVolume() {
         Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof Scp079BootSequenceScreen) {
+            return BOOT_STATIC_VOLUME;
+        }
         if (minecraft.screen instanceof Scp079FacilityMapScreen
                 || minecraft.screen instanceof Scp079LeaveRoleScreen) {
             return MAP_STATIC_VOLUME;

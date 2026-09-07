@@ -61,4 +61,19 @@ public abstract class TeslaTerminalPhysicalInputMixin {
         double top = (guiHeight - displayHeight) * 0.5D;
         return (mouseY - top) / displayHeight * TeslaTerminalScreen.TEX_H;
     }
+
+    /**
+     * The legacy screen played its generic click for every LMB press before it
+     * knew whether a button was actually hit. On a physical terminal that is
+     * actively misleading: empty CRT space sounded successful. Every real
+     * control already calls playSelect(), so suppress only the unconditional
+     * pre-hit-test sound and keep valid-button feedback intact.
+     */
+    @Redirect(method = "mouseClicked",
+            at = @At(value = "INVOKE",
+                    target = "Lcom/bl4ues/scpclassifieddirective/client/gui/TeslaTerminalScreen;playRandomClick()V"))
+    private void scpclassifieddirective$onlySoundValidControls(
+            TeslaTerminalScreen screen) {
+        // Intentionally empty. Valid controls still emit playSelect().
+    }
 }

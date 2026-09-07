@@ -9,7 +9,7 @@ import com.bl4ues.scpclassifieddirective.client.ClientModulePreferences;
 import com.bl4ues.scpclassifieddirective.client.FacilityChatLayout;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079ChatLayout;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
-import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
+import com.bl4ues.scpclassifieddirective.network.Scp079SpeechNetwork;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -86,7 +86,7 @@ public abstract class ChatScreenMixin {
         ChatComponent chat = minecraft.gui.getChat();
         if (addToRecentChat) chat.addRecentChat(normalized);
         chat.addMessage(Scp079ChatLayout.terminalText("079> " + normalized));
-        Scp079PlayableNetwork.requestSpeech(normalized);
+        Scp079SpeechNetwork.request(normalized);
         cir.setReturnValue(true);
     }
 

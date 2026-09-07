@@ -2,6 +2,7 @@
 
 uniform sampler2D Sampler0;
 uniform float Time;
+uniform float CameraTint;
 
 in vec2 texCoord;
 out vec4 fragColor;
@@ -65,6 +66,14 @@ void main() {
             signalUv + vec2(texel.x * 2.4, 0.0)).rgb
             + texture(Sampler0, signalUv - vec2(texel.x * 2.4, 0.0)).rgb;
     colour += max(horizontal - vec3(1.05), vec3(0.0)) * 0.030;
+
+    // SL-style surveillance feeds carry a restrained cool cast. CameraTint is
+    // driven to zero while the low-light sensor is in monochrome mode, keeping
+    // night vision genuinely black-and-white instead of blue-grey.
+    float coolAmount = clamp(CameraTint, 0.0, 1.0);
+    vec3 cool = colour * vec3(0.94, 0.99, 1.07)
+            + vec3(0.0, 0.003, 0.008);
+    colour = mix(colour, cool, coolAmount * 0.62);
 
     float vignette = 1.0 - smoothstep(0.42, 1.46, r2) * 0.38;
     colour *= vignette;

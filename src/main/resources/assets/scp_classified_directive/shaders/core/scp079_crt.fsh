@@ -3,6 +3,7 @@
 uniform sampler2D Sampler0;
 uniform float Time;
 uniform float CameraTint;
+uniform float TintOnly;
 
 in vec2 texCoord;
 out vec4 fragColor;
@@ -13,7 +14,25 @@ float hash21(vec2 p) {
     return fract(p.x * p.y);
 }
 
+vec3 applyCameraTint(vec3 colour) {
+    // Keep the clearly blue surveillance cast from the reference, but ease the
+    // previous pass back slightly now that it no longer has to fight HUD colours.
+    float coolAmount = clamp(CameraTint, 0.0, 1.0);
+    vec3 cool = colour * vec3(0.78, 0.95, 1.23)
+            + vec3(0.0, 0.010, 0.030);
+    return mix(colour, cool, coolAmount * 0.78);
+}
+
 void main() {
+    // This first pass runs before GUI rendering. Do nothing except colour-grade
+    // the world feed so recognition boxes, keycaps, icons and map UI retain the
+    // authored colours drawn afterwards.
+    if (TintOnly > 0.5) {
+        vec3 colour = texture(Sampler0, texCoord).rgb;
+        fragColor = vec4(max(applyCameraTint(colour), vec3(0.0)), 1.0);
+        return;
+    }
+
     vec2 p = texCoord * 2.0 - 1.0;
     float r2 = dot(p, p);
 
@@ -67,14 +86,10 @@ void main() {
             + texture(Sampler0, signalUv - vec2(texel.x * 2.4, 0.0)).rgb;
     colour += max(horizontal - vec3(1.05), vec3(0.0)) * 0.030;
 
-    // SL-style surveillance feeds carry an intentionally visible cool cast.
-    // Shader packs can otherwise swallow a subtle grade, so normal cameras use
-    // a stronger cyan-blue bias while low-light mode still drives CameraTint to
-    // zero and remains genuinely monochrome.
-    float coolAmount = clamp(CameraTint, 0.0, 1.0);
-    vec3 cool = colour * vec3(0.78, 0.95, 1.23)
-            + vec3(0.0, 0.010, 0.030);
-    colour = mix(colour, cool, coolAmount * 0.88);
+    // CameraTint is zero for this final monitor pass. The blue grade already
+    // happened before HUD rendering; keeping the call here makes the two shader
+    // modes share one colour formula without tinting interface elements.
+    colour = applyCameraTint(colour);
 
     float vignette = 1.0 - smoothstep(0.42, 1.46, r2) * 0.38;
     colour *= vignette;

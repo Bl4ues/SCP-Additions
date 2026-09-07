@@ -21,10 +21,15 @@ public abstract class Scp079RecognitionAnchorMixin {
     private static final double SCP_131_VISUAL_CENTER_Y = 0.30D;
     private static final double SCP_939_HEAD_CENTER_Y = 0.88D;
     private static final double SCP_939_HEAD_FORWARD = 0.78D;
-    // The settled player renderer translates the collapsed humanoid along its
-    // local body axis. 0.72 only reached the upper torso in the camera feed;
-    // 1.16 lands the recognition sample at the rendered head centre.
-    private static final double CORPSE_HEAD_FORWARD = 1.16D;
+    // PlayerCorpseRenderer collapses the 1.501-block humanoid model by -90deg,
+    // scales it to 0.9375, then translates -1.16 along the collapsed body axis.
+    // The rendered head centre therefore lands only ~0.48 block from the entity
+    // origin. The old 1.16 offset was measuring the translation itself and sent
+    // the tracker well beyond the head.
+    private static final double CORPSE_HEAD_FORWARD = 0.482D;
+    private static final float[] CORPSE_YAW_OFFSETS = {
+            -8.0F, 6.0F, -3.0F, 10.0F, -11.0F, 3.0F
+    };
     private static final float SCP_131_RECOGNITION_WIDTH = 0.58F;
     private static final float SCP_939_HEAD_RECOGNITION_WIDTH = 0.60F;
 
@@ -61,11 +66,7 @@ public abstract class Scp079RecognitionAnchorMixin {
         return entity.getZ() + scpclassifieddirective$forward(entity).z;
     }
 
-    /**
-     * The settled corpse is rendered after a -90 degree X rotation. In this
-     * renderer the head lands along the entity's horizontal look direction.
-     * Move only the recognition sample to that rendered head end of the body.
-     */
+    /** Match the final collapsed model axis, including its small pose yaw. */
     @Redirect(method = "captureRecognition",
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/world/entity/Entity;position()Lnet/minecraft/world/phys/Vec3;",
@@ -73,12 +74,16 @@ public abstract class Scp079RecognitionAnchorMixin {
             remap = false)
     private static Vec3 scpclassifieddirective$corpseHeadPosition(Entity entity) {
         Vec3 origin = entity.position();
-        if (!(entity instanceof PlayerCorpseEntity)) return origin;
-        Vec3 look = entity.getLookAngle();
-        double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
+        if (!(entity instanceof PlayerCorpseEntity corpse)) return origin;
+        int variant = Math.max(0, Math.min(CORPSE_YAW_OFFSETS.length - 1,
+                corpse.poseVariant()));
+        float renderedYaw = corpse.getYRot() - CORPSE_YAW_OFFSETS[variant];
+        Vec3 forward = Vec3.directionFromRotation(0.0F, renderedYaw);
+        double horizontal = Math.sqrt(forward.x * forward.x
+                + forward.z * forward.z);
         if (horizontal < 1.0E-5D) return origin;
-        return origin.add(look.x / horizontal * CORPSE_HEAD_FORWARD,
-                0.0D, look.z / horizontal * CORPSE_HEAD_FORWARD);
+        return origin.add(forward.x / horizontal * CORPSE_HEAD_FORWARD,
+                0.0D, forward.z / horizontal * CORPSE_HEAD_FORWARD);
     }
 
     @Redirect(method = "captureRecognition",

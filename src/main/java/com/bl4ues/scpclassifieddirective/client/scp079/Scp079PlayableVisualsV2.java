@@ -199,16 +199,6 @@ public final class Scp079PlayableVisualsV2 {
                         1.34F, Scp079UiTheme.TEXT);
             }
         }
-        int counterY = y + 62;
-        Scp079UiTheme.draw(graphics, minecraft.font,
-                "TOTAL LIFEFORMS: " + Scp079TrackingClientState.totalLifeforms(),
-                x, counterY, 1.23F, Scp079UiTheme.TEXT);
-        Scp079UiTheme.draw(graphics, minecraft.font,
-                "TARGETS: " + Scp079TrackingClientState.targets(),
-                x, counterY + 20, 1.23F, Scp079UiTheme.TEXT);
-        Scp079UiTheme.draw(graphics, minecraft.font,
-                "SCP SUBJECTS: " + Scp079TrackingClientState.scpSubjects(),
-                x, counterY + 40, 1.23F, Scp079UiTheme.TEXT);
 
         String key = mapKeyLabel(minecraft);
         drawRight(graphics, minecraft, "OPEN FACILITY MAP  [" + key + "]",

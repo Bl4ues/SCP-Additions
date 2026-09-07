@@ -285,10 +285,10 @@ public final class Scp079PlayableVisualsV2 {
         for (WorldTarget target : cachedTargets) {
             Vec3 anchor = anchor(target);
             boolean visible = target.kind == TargetKind.CAMERA
-                    || target.kind == TargetKind.DOOR
+                    || (target.kind == TargetKind.DOOR
                             ? visibleDoorFromCamera(minecraft, context.cameraPos,
                                     target.pos, anchor)
-                            : visibleFromCamera(minecraft, context.cameraPos, anchor);
+                            : visibleFromCamera(minecraft, context.cameraPos, anchor));
             if (!visible) continue;
             ScreenPoint point = project(anchor, context);
             if (point == null) continue;

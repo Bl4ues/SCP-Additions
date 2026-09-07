@@ -35,10 +35,10 @@ public final class InventoryPdaPlayerLayer extends
 
         poseStack.pushPose();
         // The device is already in the right hand on its first visible frame.
-        // Opening the inventory now mostly brings the left hand onto the bezel
-        // instead of launching the PDA upward from the player's waist.
+        // Opening the inventory brings it slightly down into a natural two-hand
+        // reading position while tipping the display upward toward the player.
         float startY = player.isCrouching() ? 0.20F : 0.14F;
-        float heldY = player.isCrouching() ? 0.15F : 0.09F;
+        float heldY = player.isCrouching() ? 0.18F : 0.12F;
         poseStack.translate(
                 lerp(0.14F, 0.0F, progress),
                 lerp(startY, heldY, progress),
@@ -46,7 +46,7 @@ public final class InventoryPdaPlayerLayer extends
         poseStack.mulPose(Axis.YP.rotationDegrees(
                 lerp(191.0F, 180.0F, progress)));
         poseStack.mulPose(Axis.XP.rotationDegrees(
-                lerp(13.0F, 15.0F, progress)));
+                lerp(-5.0F, -12.0F, progress)));
         poseStack.mulPose(Axis.ZP.rotationDegrees(
                 lerp(-78.0F, -90.0F, progress)));
         poseStack.scale(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);

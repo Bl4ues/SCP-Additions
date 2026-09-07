@@ -1,0 +1,18 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [64, 64],
+  "display": {
+    "thirdperson_righthand": {"rotation": [90, 0, 0], "translation": [0, -1.25, -15.75]},
+    "thirdperson_lefthand": {"rotation": [90, 0, 0], "translation": [0, -1.25, -15.75]},
+    "firstperson_righthand": {"rotation": [-44, 0, -60], "translation": [-15, -1, 9]},
+    "firstperson_lefthand": {"rotation": [-44, 0, -60], "translation": [-15, -1, 9]},
+    "ground": {"translation": [0, -17.5, 0]},
+    "gui": {"rotation": [-51, 46, 0], "translation": [0, -25.25, 0], "scale": [2.52, 2.52, 2.52]},
+    "head": {"translation": [0, -11.25, -7.25]},
+    "fixed": {"translation": [0, -14.75, 0]}
+  },
+  "textures": {
+    "particle": "scp_classified_directive:block/dome_camera"
+  }
+}

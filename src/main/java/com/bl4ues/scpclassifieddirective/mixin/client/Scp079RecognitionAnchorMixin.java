@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
+import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp131AEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp131BEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
@@ -13,13 +14,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 /**
  * Places SCP-079 recognition boxes on authored visual anatomy rather than the
  * generic vanilla eye point, which is inaccurate for non-humanoid GeckoLib
- * models such as SCP-131 and SCP-939.
+ * models and for the rotated persistent-player corpse renderer.
  */
 @Mixin(Scp079PlayableVisualsV2.class)
 public abstract class Scp079RecognitionAnchorMixin {
     private static final double SCP_131_VISUAL_CENTER_Y = 0.30D;
     private static final double SCP_939_HEAD_CENTER_Y = 0.88D;
     private static final double SCP_939_HEAD_FORWARD = 0.78D;
+    private static final double CORPSE_HEAD_BACKWARD = 0.72D;
     private static final float SCP_131_RECOGNITION_WIDTH = 0.58F;
     private static final float SCP_939_HEAD_RECOGNITION_WIDTH = 0.60F;
 
@@ -54,6 +56,27 @@ public abstract class Scp079RecognitionAnchorMixin {
             remap = false)
     private static double scpclassifieddirective$recognitionZ(Entity entity) {
         return entity.getZ() + scpclassifieddirective$forward(entity).z;
+    }
+
+    /**
+     * The settled corpse is rendered after a -90 degree X rotation. Its head is
+     * therefore behind the entity's horizontal look direction rather than above
+     * the vanilla eye point. Move only the recognition sample, not the entity or
+     * its collision box, to the rendered head end of the body.
+     */
+    @Redirect(method = "captureRecognition",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/Entity;position()Lnet/minecraft/world/phys/Vec3;",
+                    ordinal = 1),
+            remap = false)
+    private static Vec3 scpclassifieddirective$corpseHeadPosition(Entity entity) {
+        Vec3 origin = entity.position();
+        if (!(entity instanceof PlayerCorpseEntity)) return origin;
+        Vec3 look = entity.getLookAngle();
+        double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
+        if (horizontal < 1.0E-5D) return origin;
+        return origin.add(-look.x / horizontal * CORPSE_HEAD_BACKWARD,
+                0.0D, -look.z / horizontal * CORPSE_HEAD_BACKWARD);
     }
 
     @Redirect(method = "captureRecognition",

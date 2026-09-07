@@ -26,6 +26,48 @@ public final class Scp079SpeechSynthesizer {
     private static final double TWO_PI = Math.PI * 2.0D;
     private static final double BASE_PITCH_HZ = 91.0D;
 
+    // Keep the rule tables readable without relying on an illegal implicit
+    // import of constants from the nested enum. Java does not lift nested enum
+    // constants into the enclosing class namespace, because apparently even
+    // phonemes need paperwork.
+    private static final Phoneme AA = Phoneme.AA;
+    private static final Phoneme AE = Phoneme.AE;
+    private static final Phoneme AH = Phoneme.AH;
+    private static final Phoneme AO = Phoneme.AO;
+    private static final Phoneme AW = Phoneme.AW;
+    private static final Phoneme AY = Phoneme.AY;
+    private static final Phoneme EH = Phoneme.EH;
+    private static final Phoneme ER = Phoneme.ER;
+    private static final Phoneme EY = Phoneme.EY;
+    private static final Phoneme IH = Phoneme.IH;
+    private static final Phoneme IY = Phoneme.IY;
+    private static final Phoneme OW = Phoneme.OW;
+    private static final Phoneme OY = Phoneme.OY;
+    private static final Phoneme UH = Phoneme.UH;
+    private static final Phoneme UW = Phoneme.UW;
+    private static final Phoneme B = Phoneme.B;
+    private static final Phoneme D = Phoneme.D;
+    private static final Phoneme G = Phoneme.G;
+    private static final Phoneme P = Phoneme.P;
+    private static final Phoneme T = Phoneme.T;
+    private static final Phoneme K = Phoneme.K;
+    private static final Phoneme CH = Phoneme.CH;
+    private static final Phoneme JH = Phoneme.JH;
+    private static final Phoneme F = Phoneme.F;
+    private static final Phoneme V = Phoneme.V;
+    private static final Phoneme S = Phoneme.S;
+    private static final Phoneme Z = Phoneme.Z;
+    private static final Phoneme SH = Phoneme.SH;
+    private static final Phoneme TH = Phoneme.TH;
+    private static final Phoneme HH = Phoneme.HH;
+    private static final Phoneme M = Phoneme.M;
+    private static final Phoneme N = Phoneme.N;
+    private static final Phoneme NG = Phoneme.NG;
+    private static final Phoneme L = Phoneme.L;
+    private static final Phoneme R = Phoneme.R;
+    private static final Phoneme W = Phoneme.W;
+    private static final Phoneme Y = Phoneme.Y;
+
     private static final Map<String, Phoneme[]> WORDS = dictionary();
 
     private Scp079SpeechSynthesizer() {

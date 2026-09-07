@@ -241,8 +241,8 @@ public final class SpeakerBroadcastManager {
                     broadcast.sourcePos, state);
             double distance = microphone.distanceTo(capturedPosition);
             if (distance > IntercomModule.CAPTURE_RADIUS) continue;
-            float gain = Mth.clamp((float) (1.0D
-                    - distance / IntercomModule.CAPTURE_RADIUS), 0.0F, 1.0F);
+            float gain = intercomCaptureGain(distance,
+                    IntercomModule.CAPTURE_RADIUS);
             if (gain <= 0.001F) continue;
 
             for (FacilitySpeakerRegistry.SpeakerEndpoint endpoint :
@@ -253,6 +253,19 @@ public final class SpeakerBroadcastManager {
             }
         }
         return List.copyOf(result);
+    }
+
+    /**
+     * A microphone should sound close when the source is physically close, not
+     * like a binary five-block pickup zone. Squaring the remaining proximity
+     * keeps the center clear while making voices and ambient sounds decay
+     * decisively toward the capture boundary.
+     */
+    private static float intercomCaptureGain(double distance, double radius) {
+        if (radius <= 0.0D) return 0.0F;
+        float proximity = Mth.clamp((float) (1.0D - distance / radius),
+                0.0F, 1.0F);
+        return proximity * proximity;
     }
 
     public static void removeEndpoint(ServerLevel level, BlockPos pos) {

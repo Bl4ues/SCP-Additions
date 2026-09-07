@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import net.minecraft.world.Difficulty;
 
 import java.util.Locale;
 
@@ -23,6 +24,19 @@ public final class Scp079CameraTravelRules {
     public static double baseCost(FacilityRoomSnapshot current,
             FacilityRoomSnapshot target) {
         return BASE_COST * multiplier(current, target);
+    }
+
+    /** Mirrors Scp079ProcessingManager's authored difficulty cost scaling. */
+    public static double displayedCost(Difficulty difficulty,
+            FacilityRoomSnapshot current, FacilityRoomSnapshot target) {
+        double difficultyMultiplier = switch (difficulty == null
+                ? Difficulty.NORMAL : difficulty) {
+            case PEACEFUL -> 1.50D;
+            case EASY -> 1.25D;
+            case NORMAL -> 1.00D;
+            case HARD -> 0.80D;
+        };
+        return baseCost(current, target) * difficultyMultiplier;
     }
 
     public static boolean differentFloor(FacilityRoomSnapshot current,

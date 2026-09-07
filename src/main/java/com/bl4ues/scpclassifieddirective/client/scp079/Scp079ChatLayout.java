@@ -32,7 +32,6 @@ public final class Scp079ChatLayout {
     private static final int PANEL = 0xD6060D12;
     private static final int PANEL_EDGE = 0xC94D7180;
     private static final int PANEL_ACCENT = 0xE7AEE7FA;
-    private static final int SELECTION = 0x75618F9E;
     private static final int CURSOR = 0xF0C8F2FF;
     private static final float TEXT_SCALE = 1.04F;
 
@@ -100,23 +99,11 @@ public final class Scp079ChatLayout {
         Font font = minecraft.font;
         String value = input.getValue();
         int cursor = Mth.clamp(input.getCursorPosition(), 0, value.length());
-        int highlight = Mth.clamp(input.getHighlightPos(), 0, value.length());
         int textX = inputX();
         int available = Math.max(24, inputWidth(screenWidth) - 5);
         Window window = visibleWindow(font, value, cursor, available);
 
         int visibleCursor = Mth.clamp(cursor, window.start, window.end);
-        int visibleHighlight = Mth.clamp(highlight, window.start, window.end);
-        int selectionStart = Math.min(visibleCursor, visibleHighlight);
-        int selectionEnd = Math.max(visibleCursor, visibleHighlight);
-        if (selectionEnd > selectionStart) {
-            int sx = textX + width(font,
-                    value.substring(window.start, selectionStart));
-            int ex = textX + width(font,
-                    value.substring(window.start, selectionEnd));
-            graphics.fill(sx - 1, y + 4, ex + 1, bottom - 4, SELECTION);
-        }
-
         String shown = value.substring(window.start, window.end);
         Scp079UiTheme.draw(graphics, font, shown,
                 textX, y + 6, TEXT_SCALE, Scp079UiTheme.TEXT);

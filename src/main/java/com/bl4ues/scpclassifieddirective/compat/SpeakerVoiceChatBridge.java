@@ -32,6 +32,9 @@ public final class SpeakerVoiceChatBridge {
     private static final double SCP079_VOICE_OUTPUT_GAIN = 0.50D;
     private static final double INTERCOM_VOICE_OUTPUT_GAIN = 0.28D;
     private static final double VOICE_SAMPLE_RATE = 48_000.0D;
+    // Facility PA endpoints should remain local to their room/corridor rather
+    // than inheriting the much larger ordinary proximity-voice radius.
+    private static final float SPEAKER_OUTPUT_DISTANCE = 10.0F;
 
     private SpeakerVoiceChatBridge() {
     }
@@ -74,7 +77,8 @@ public final class SpeakerVoiceChatBridge {
                         .opusEncodedData(filtered)
                         .position(api.createPosition(source.position().x,
                                 source.position().y, source.position().z))
-                        .distance((float) api.getVoiceChatDistance())
+                        .distance(Math.min((float) api.getVoiceChatDistance(),
+                                SPEAKER_OUTPUT_DISTANCE))
                         .build();
             } catch (RuntimeException | LinkageError exception) {
                 ScpClassifiedDirectiveMod.LOGGER.error(

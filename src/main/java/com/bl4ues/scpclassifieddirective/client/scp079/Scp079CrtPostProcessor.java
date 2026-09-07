@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
@@ -42,12 +43,15 @@ public final class Scp079CrtPostProcessor {
      * Colour-grade only the camera feed before any SCP-079 HUD elements are
      * drawn. Night vision runs at HIGHEST priority, so HIGH deliberately follows
      * its sensor pass and smoothly removes the blue cast as monochrome takes over.
-     * Screens such as the Facility Map skip this pass entirely.
+     * The transparent ChatScreen is still part of a live camera feed and must not
+     * make the underlying sensor image lose its colour grade merely by opening it.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (!Scp079PlayableClient.cameraMode() || minecraft.screen != null) return;
+        boolean chatOverlay = minecraft.screen instanceof ChatScreen;
+        if (!Scp079PlayableClient.cameraMode()
+                || minecraft.screen != null && !chatOverlay) return;
         float tint = 1.0F - Scp079NightVisionPostProcessor.strength();
         tint = Math.max(0.0F, Math.min(1.0F, tint));
         if (tint <= 0.001F) return;
@@ -67,8 +71,8 @@ public final class Scp079CrtPostProcessor {
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
         if (!Scp079PlayableClient.active()) return;
         // The CRT is SCP-079's display surface, not merely a world-HUD effect.
-        // Keep the final pass over every GUI, including the Facility Map, while
-        // leaving CameraTint at zero so UI colours never inherit the camera feed.
+        // Keep the final pass over every GUI, including Chat and the Facility
+        // Map, while leaving CameraTint at zero so UI colours stay authored.
         apply(Minecraft.getInstance(), event.getGuiGraphics(), 0.0F, false);
     }
 
@@ -134,8 +138,6 @@ public final class Scp079CrtPostProcessor {
         Matrix4f identity = new Matrix4f();
         BufferBuilder buffer = Tesselator.getInstance().getBuilder();
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        // FBO textures use a bottom-left UV origin. The quad itself is clip-space,
-        // so no GUI matrix can leave unfiltered strips around a Screen.
         buffer.vertex(identity, -1.0F, -1.0F, 0.0F).uv(0.0F, 0.0F).endVertex();
         buffer.vertex(identity, 1.0F, -1.0F, 0.0F).uv(1.0F, 0.0F).endVertex();
         buffer.vertex(identity, 1.0F, 1.0F, 0.0F).uv(1.0F, 1.0F).endVertex();

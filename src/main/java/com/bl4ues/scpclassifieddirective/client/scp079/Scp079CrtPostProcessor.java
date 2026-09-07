@@ -38,20 +38,38 @@ public final class Scp079CrtPostProcessor {
         shader = value;
     }
 
+    /**
+     * Colour-grade only the camera feed before any SCP-079 HUD elements are
+     * drawn. Night vision runs at HIGHEST priority, so HIGH deliberately follows
+     * its sensor pass and smoothly removes the blue cast as monochrome takes over.
+     * Screens such as the Facility Map skip this pass entirely.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!Scp079PlayableClient.cameraMode() || minecraft.screen != null) return;
+        float tint = 1.0F - Scp079NightVisionPostProcessor.strength();
+        tint = Math.max(0.0F, Math.min(1.0F, tint));
+        if (tint <= 0.001F) return;
+        apply(minecraft, event.getGuiGraphics(), tint, true);
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderGui(RenderGuiEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (!Scp079PlayableClient.active() || minecraft.screen != null) return;
-        apply(minecraft, event.getGuiGraphics());
+        // The final CRT pass bends and ages the complete monitor image, but the
+        // colour grade has already been applied to the world feed only.
+        apply(minecraft, event.getGuiGraphics(), 0.0F, false);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRenderPost(ScreenEvent.Render.Post event) {
         if (!Scp079PlayableClient.active()) return;
         // The CRT is SCP-079's display surface, not merely a world-HUD effect.
-        // Keep the final pass over every GUI, including chat and pause/options,
-        // so opening a vanilla screen cannot momentarily reveal a flat display.
-        apply(Minecraft.getInstance(), event.getGuiGraphics());
+        // Keep the final pass over every GUI, including the Facility Map, while
+        // leaving CameraTint at zero so UI colours never inherit the camera feed.
+        apply(Minecraft.getInstance(), event.getGuiGraphics(), 0.0F, false);
     }
 
     public static double logicalX(double screenX, double screenY,
@@ -77,7 +95,8 @@ public final class Scp079CrtPostProcessor {
         };
     }
 
-    private static void apply(Minecraft minecraft, GuiGraphics graphics) {
+    private static void apply(Minecraft minecraft, GuiGraphics graphics,
+            float cameraTint, boolean tintOnly) {
         if (shader == null) return;
         RenderTarget main = minecraft.getMainRenderTarget();
         if (main == null || main.width <= 0 || main.height <= 0) return;
@@ -105,10 +124,11 @@ public final class Scp079CrtPostProcessor {
                     / 1_000_000_000.0F);
         }
         if (shader.getUniform("CameraTint") != null) {
-            float tint = Scp079PlayableClient.cameraMode()
-                    ? 1.0F - Scp079NightVisionPostProcessor.strength() : 0.0F;
             shader.getUniform("CameraTint").set(
-                    Math.max(0.0F, Math.min(1.0F, tint)));
+                    Math.max(0.0F, Math.min(1.0F, cameraTint)));
+        }
+        if (shader.getUniform("TintOnly") != null) {
+            shader.getUniform("TintOnly").set(tintOnly ? 1.0F : 0.0F);
         }
 
         Matrix4f identity = new Matrix4f();

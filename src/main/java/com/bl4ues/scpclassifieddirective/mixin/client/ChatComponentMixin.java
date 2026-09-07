@@ -11,6 +11,7 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import com.bl4ues.scpclassifieddirective.client.ClientModulePreferences;
 import com.bl4ues.scpclassifieddirective.client.FacilityChatLayout;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -56,6 +57,10 @@ public abstract class ChatComponentMixin {
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void scpClassifiedDirective$renderFacilityChat(GuiGraphics graphics,
             int tickCount, int mouseX, int mouseY, CallbackInfo ci) {
+        // SCP-079 owns a fixed terminal renderer regardless of the player's
+        // ordinary facility-chat preference. Never let this generic renderer
+        // cancel the same ChatComponent first merely because mixin order shifts.
+        if (Scp079PlayableClient.active()) return;
         if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
         ci.cancel();
         if (this.isChatHidden()) return;
@@ -252,6 +257,7 @@ public abstract class ChatComponentMixin {
     @Inject(method = "screenToChatY", at = @At("HEAD"), cancellable = true)
     private void scpClassifiedDirective$mapTopDownMouseY(double screenY,
             CallbackInfoReturnable<Double> cir) {
+        if (Scp079PlayableClient.active()) return;
         if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
 
         ChatComponent self = (ChatComponent) (Object) this;
@@ -279,6 +285,7 @@ public abstract class ChatComponentMixin {
             cancellable = true)
     private void scpClassifiedDirective$handleHeaderQueue(double mouseX, double mouseY,
             CallbackInfoReturnable<Boolean> cir) {
+        if (Scp079PlayableClient.active()) return;
         if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
         cir.setReturnValue(false);
 

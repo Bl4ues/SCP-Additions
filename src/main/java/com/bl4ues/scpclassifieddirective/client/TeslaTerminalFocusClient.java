@@ -39,11 +39,16 @@ public final class TeslaTerminalFocusClient {
     public static final double SCREEN_CENTER_Y = 5.98447D / 16.0D;
     public static final double SCREEN_CENTER_Z = 4.42612D / 16.0D;
     public static final double SCREEN_TILT_DEGREES = 22.5D;
-    public static final double SCREEN_WIDTH = 10.8D / 16.0D;
-    public static final double SCREEN_HEIGHT = SCREEN_WIDTH * 1080.0D / 1410.0D;
+    // Exact front-display element from tesla_terminal_block.json. The texture
+    // is intentionally stretched to this authored CRT face instead of forcing
+    // the old GUI aspect ratio and leaving large strips of the monitor exposed.
+    public static final double SCREEN_WIDTH = 11.2D / 16.0D;
+    public static final double SCREEN_HEIGHT = 10.7D / 16.0D;
     public static final double VIEW_HEIGHT_FRACTION = 0.72D;
 
-    private static final double FOCUS_DISTANCE = 0.62D;
+    // With the real 10.7px-high authored face and a 60 degree FOV, about 0.80
+    // blocks keeps the display near the Unity reference size.
+    private static final double FOCUS_DISTANCE = 0.80D;
     private static final long APPROACH_NANOS = 220_000_000L;
 
     private static BlockPos activePos;
@@ -180,16 +185,13 @@ public final class TeslaTerminalFocusClient {
         float yaw = startYaw + Mth.wrapDegrees(targetYaw - startYaw) * eased;
         float pitch = Mth.lerp(eased, startPitch, targetPitch);
 
-        // Camera.setup places a first-person camera at the camera entity's eye,
-        // not at its feet. Store the rig's base one eye-height lower so the
-        // requested camera coordinate really is the centre-normal point used by
-        // the projected input mapping. Synchronizing the old position prevents
-        // partial-tick interpolation from dragging this un-ticked helper entity
-        // toward its creation origin.
-        double rigY = camera.y - cameraRig.getEyeHeight();
-        cameraRig.setPos(camera.x, rigY, camera.z);
+        // Match the already-proven SCP-079 detached camera rig. Subtracting an
+        // Armor Stand eye height here puts the helper about 1.7 blocks below the
+        // requested camera point, which is what caused the view to jump away
+        // from the terminal in the recorded test.
+        cameraRig.setPos(camera.x, camera.y, camera.z);
         cameraRig.xOld = camera.x;
-        cameraRig.yOld = rigY;
+        cameraRig.yOld = camera.y;
         cameraRig.zOld = camera.z;
         cameraRig.setYRot(yaw);
         cameraRig.setXRot(pitch);

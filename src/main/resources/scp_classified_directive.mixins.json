@@ -119,6 +119,7 @@
     "client.Scp079FacilityMapWarpInputMixin",
     "client.Scp079LeaveRoleWarpInputMixin",
     "client.Scp079LocalHostAudioMixin",
+    "client.Scp079BootTimingMixin",
     "client.ContextPromptTargetAccessor",
     "client.ContextPromptStandardControlsMixin",
     "client.Scp079RecognitionAnchorMixin",

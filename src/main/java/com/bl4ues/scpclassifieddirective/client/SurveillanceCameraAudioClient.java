@@ -138,9 +138,11 @@ public final class SurveillanceCameraAudioClient {
         float pitch = minecraft.player.getXRot();
         OperatorAngles previous = LAST_OPERATOR_ANGLES.put(key,
                 new OperatorAngles(yaw, pitch));
-        if (previous == null) return false;
-        return Math.abs(Mth.wrapDegrees(yaw - previous.yaw)) > OPERATOR_MOTION_EPSILON
-                || Math.abs(pitch - previous.pitch) > OPERATOR_MOTION_EPSILON;
+        boolean rotating = previous != null
+                && (Math.abs(Mth.wrapDegrees(yaw - previous.yaw))
+                        > OPERATOR_MOTION_EPSILON
+                || Math.abs(pitch - previous.pitch) > OPERATOR_MOTION_EPSILON);
+        return rotating || Scp079PlayableClient.zoomServoActive();
     }
 
     private static void stop(Minecraft minecraft, CameraKey key) {

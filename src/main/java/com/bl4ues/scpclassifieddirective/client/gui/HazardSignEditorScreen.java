@@ -25,7 +25,7 @@ public final class HazardSignEditorScreen extends Screen {
     private static final int IMAGE_WIDTH = 640;
     private static final int IMAGE_HEIGHT = 1024;
     private static final ImageArea PICTOGRAM =
-            new ImageArea(96, 365, 448, 448);
+            new ImageArea(48, 317, 544, 544);
 
     private static final int PANEL_BACKGROUND = 0xF01B2024;
     private static final int PANEL_EDGE = 0xFF657078;

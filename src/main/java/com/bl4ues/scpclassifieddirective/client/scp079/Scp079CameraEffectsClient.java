@@ -42,9 +42,18 @@ public final class Scp079CameraEffectsClient {
         }
 
         if (mode != lastMode) {
-            startTransition();
-            if (mode == DisplayMode.MAP
-                    || mode == DisplayMode.LOCAL && lastMode == DisplayMode.CAMERA) {
+            // Local Host and the boot terminal are not surveillance feeds. Do
+            // not pretend they are camera switches on entry; the authored
+            // interference belongs to the hand-off after boot completes.
+            boolean initialLocal = lastMode == DisplayMode.INACTIVE
+                    && mode == DisplayMode.LOCAL;
+            if (mode != DisplayMode.BOOT && !initialLocal) {
+                startTransition();
+            }
+            if (lastMode != DisplayMode.BOOT
+                    && (mode == DisplayMode.MAP
+                    || mode == DisplayMode.LOCAL
+                    && lastMode == DisplayMode.CAMERA)) {
                 Scp079PlayableAudioClient.playDisplaySwitch();
             }
             lastMode = mode;
@@ -145,6 +154,9 @@ public final class Scp079CameraEffectsClient {
 
     private static DisplayMode mode(Minecraft minecraft) {
         if (!Scp079PlayableClient.active()) return DisplayMode.INACTIVE;
+        if (minecraft.screen instanceof Scp079BootSequenceScreen) {
+            return DisplayMode.BOOT;
+        }
         if (minecraft.screen instanceof Scp079FacilityMapScreen
                 || minecraft.screen instanceof Scp079LeaveRoleScreen) {
             return DisplayMode.MAP;
@@ -153,5 +165,5 @@ public final class Scp079CameraEffectsClient {
                 ? DisplayMode.CAMERA : DisplayMode.LOCAL;
     }
 
-    private enum DisplayMode { INACTIVE, LOCAL, MAP, CAMERA }
+    private enum DisplayMode { INACTIVE, LOCAL, BOOT, MAP, CAMERA }
 }

@@ -35,7 +35,7 @@ public final class HazardSignBlockEntityRenderer
     private static final float PANEL_WIDTH = PANEL_MAX_X - PANEL_MIN_X;
     private static final float PANEL_HEIGHT = PANEL_MAX_Y - PANEL_MIN_Y;
     private static final ImageArea PICTOGRAM =
-            new ImageArea(96.0F, 365.0F, 448.0F, 448.0F);
+            new ImageArea(48.0F, 317.0F, 544.0F, 544.0F);
 
     public HazardSignBlockEntityRenderer(
             BlockEntityRendererProvider.Context context) {

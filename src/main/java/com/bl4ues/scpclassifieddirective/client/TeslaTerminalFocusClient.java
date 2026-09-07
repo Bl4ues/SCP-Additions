@@ -173,7 +173,18 @@ public final class TeslaTerminalFocusClient {
         Vec3 camera = startPosition.lerp(target, eased);
         float yaw = startYaw + Mth.wrapDegrees(targetYaw - startYaw) * eased;
         float pitch = Mth.lerp(eased, startPitch, targetPitch);
-        cameraRig.setPos(camera.x, camera.y, camera.z);
+
+        // Camera.setup places a first-person camera at the camera entity's eye,
+        // not at its feet. Store the rig's base one eye-height lower so the
+        // requested camera coordinate really is the centre-normal point used by
+        // the projected input mapping. Synchronizing the old position prevents
+        // partial-tick interpolation from dragging this un-ticked helper entity
+        // toward its creation origin.
+        double rigY = camera.y - cameraRig.getEyeHeight();
+        cameraRig.setPos(camera.x, rigY, camera.z);
+        cameraRig.xOld = camera.x;
+        cameraRig.yOld = rigY;
+        cameraRig.zOld = camera.z;
         cameraRig.setYRot(yaw);
         cameraRig.setXRot(pitch);
         cameraRig.yRotO = yaw;

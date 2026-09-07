@@ -10,7 +10,12 @@ import net.minecraft.server.level.ServerPlayer;
 
 /** Spatial authority for devices exposed through the active surveillance room. */
 public final class Scp079RoomInteractionPolicy {
-    private static final int TARGET_BORDER = 1;
+    /**
+     * Facility doors and their controller-facing blocks commonly sit a couple of
+     * blocks outside the authored walkable floor. Keep those boundary devices in
+     * the room without opening interaction into the next room wholesale.
+     */
+    private static final int TARGET_BORDER = 3;
     private static final int CAMERA_BORDER = 4;
 
     private Scp079RoomInteractionPolicy() {
@@ -26,8 +31,9 @@ public final class Scp079RoomInteractionPolicy {
         // target. Wall-mounted/angled cameras can sit on a boundary shared by two
         // mapped rooms, making iteration order choose the wrong one. Instead,
         // accept any authored room that contains both the camera vicinity and the
-        // aimed device. The target allowance stays tight so doors on the border
-        // work without granting control of devices several blocks outside.
+        // aimed device. The target allowance is only the structural border around
+        // the mapped floor, so devices several blocks into a neighbouring room do
+        // not become controllable merely because their icon is visible.
         for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
             if (withinExpandedFloor(room, target, TARGET_BORDER)
                     && withinExpandedFloor(room, viewpoint, CAMERA_BORDER)) {

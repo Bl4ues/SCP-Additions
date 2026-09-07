@@ -149,6 +149,7 @@
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
 - Added a positional hacking sound at each door, Tesla Gate, SCP-012 box, or other facility device successfully manipulated by SCP-079;
 - Added a playable SCP-079 control mode with a local orbit around its physical computer and server-authoritative transfer to registered surveillance cameras while keeping the autonomous decision layer suspended for the duration of player control;
+- Playable SCP-079 now begins at a stripped-down **Local Host** view without camera-frame corners or the Auxiliary Power meter; the first surveillance-network access in each control session runs an animated EXITY terminal boot sequence with staged status/error text and audio cues, then uses the normal camera interference transition into a camera in the host room when one exists or falls back to the Facility Map otherwise;
 - Added an SCP-079 surveillance HUD and facility map built from persistent authored room floors, including floor selection, room/camera switching, AP and network state, lifeform counts, SCP tracking, target labels, low-light enhancement, scanline treatment, and interference during feed changes;
 - The SCP-079 facility map now marks the physical local host with a white **079** marker, visually dims rooms without surveillance cameras, and prevents those offline rooms from being selected;
 - Added map-topology-based **WASD** camera navigation with `GO TO` room labels and disabled `NO CAMERA` routes; connected camera switches cost 3 AP on Euclid and follow the existing difficulty cost scaling on Safe, Keter, and Thaumiel;
@@ -158,7 +159,7 @@
 - Added the Creative-only **Facility Mapping Tool** for defining persistent, irregular room floors and associating them with configured Core Room Floor Stations for surveillance and future CCTV systems;
 - Added the Creative-only **SCP Role Selector** placeholder in **Tools & Utility**; while SCP-079 is the only implemented playable role, right-clicking it assumes or releases SCP-079 through the nearest registered computer in the current dimension;
 - Added a functional **Surveillance Camera** placeholder in the Facility **Functional** section; placed cameras persist in the shared surveillance registry, inherit room membership from the mapped floor beneath them, and reserve the stable `surveillance_camera` registry ID for the future animated GeckoLib replacement;
-- Added the ceiling-mounted **Ceiling Camera** beside the Surveillance Camera in Facility **Functional**; it joins the same mapped-room surveillance network, supports full 360° pan with pitch from 50° upward to straight down, performs randomized idle dome scans, and mirrors playable or autonomous SCP-079 aiming through its physical lens;
+- Added the ceiling-mounted **Ceiling Camera** beside the Surveillance Camera in Facility **Functional**; it joins the same mapped-room surveillance network, supports full 360° pan with pitch from horizontal to straight down, performs randomized idle dome scans, and mirrors playable or autonomous SCP-079 aiming through its physical lens;
 - Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section; playable SCP-079 can use a dedicated rebindable shortcut to begin or stop room-wide broadcasts without aiming at the device;
 - Active Speakers play positional startup, shutdown, and continuous static audio, and optionally relay SCP-079's Simple Voice Chat microphone through a deliberately narrow-band, distorted radio filter without adding synthetic noise;
 - SCP-079 Speaker broadcasts now add a separate deterministic robotic filter chain on top of the shared PA/radio coloration, while physical Intercom sources retain the normal human voice filter path;
@@ -363,7 +364,7 @@
 
 - Added update-safe integrated defaults for SCP-914 recipes involving SCP: Classified Directive content, allowing new bundled transformations to appear in existing installations without resetting `914recipes.json` while keeping configured recipes and fragments authoritative;
 - Applied the same layered-default system to contextual interactions, automatically exposing new bundled block and entity interactions to existing installations while preserving explicit overrides;
-- Added explicit tombstone support through `"enabled": false`: matching SCP-914 recipe IDs and contextual interaction identities can suppress an integrated default without deleting or rewriting bundled data.
+- Added explicit tombstone support through `\"enabled\": false`: matching SCP-914 recipe IDs and contextual interaction identities can suppress an integrated default without deleting or rewriting bundled data.
 
 ## Accessibility
 

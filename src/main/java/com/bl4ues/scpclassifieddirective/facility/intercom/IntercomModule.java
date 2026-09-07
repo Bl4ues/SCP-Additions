@@ -115,17 +115,18 @@ public final class IntercomModule {
 
     /**
      * Centre of the authored red toggle. GeckoLib mirrors Blockbench X for this
-     * model, so the positive-X button becomes the low-X world anchor.
+     * model, so the positive-X button becomes the low-X world anchor. The raised
+     * revision moves the console and its controls eleven model pixels upward.
      */
     public static Vec3 buttonAnchor(BlockPos pos, BlockState state) {
         return localToWorld(pos, state,
-                0.1547D, 0.2000D, 0.3453D);
+                0.1547D, 0.8875D, 0.3453D);
     }
 
-    /** Approximate world centre of the authored gooseneck microphone head. */
+    /** Approximate world centre of the raised gooseneck microphone head. */
     public static Vec3 microphonePosition(BlockPos pos, BlockState state) {
         return localToWorld(pos, state,
-                0.775D, 1.055D, 0.735D);
+                0.775D, 1.7425D, 0.735D);
     }
 
     private static Vec3 localToWorld(BlockPos pos, BlockState state,
@@ -143,10 +144,11 @@ public final class IntercomModule {
     }
 
     public static final class IntercomBlock extends BaseEntityBlock {
-        // Exact rectangular body envelope from the authored main cube. The
-        // microphone and raised controls do not enlarge selection/collision.
+        // Combined envelope of the new support and the elevated rectangular
+        // console body. The gooseneck microphone and controls stay outside the
+        // collision/selection shape just as before.
         private static final VoxelShape BODY_NORTH = Block.box(
-                0.0D, 0.0D, 3.0D, 16.0D, 5.4D, 12.75D);
+                0.0D, 0.0D, 3.0D, 16.0D, 16.4D, 12.75D);
 
         private IntercomBlock() {
             super(BlockBehaviour.Properties.of()

@@ -3,6 +3,9 @@ package com.bl4ues.scpclassifieddirective.facility.surveillance;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.SurveillanceCameraClient;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
+import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -58,7 +61,9 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -267,6 +272,9 @@ public final class SurveillanceCameraPlaceholderModule {
         private static final float MANUAL_PITCH_SPEED = 4.5F;
         private static final float IDLE_YAW_SPEED = 1.15F;
         private static final float IDLE_PITCH_SPEED = 1.0F;
+        private static final float TRACKING_SYNC_EPSILON = 0.35F;
+        private static final Map<ServerLevel, RoomSnapshotCache> ROOM_SNAPSHOT_CACHE =
+                new WeakHashMap<>();
 
         private final AnimatableInstanceCache animationCache =
                 GeckoLibUtil.createInstanceCache(this);
@@ -291,42 +299,116 @@ public final class SurveillanceCameraPlaceholderModule {
             if (!(level instanceof ServerLevel server)) return;
             ServerPlayer controller = Scp079PlayableManager.controller(
                     server.getServer());
-            boolean activeControl = false;
+            FacilityCameraDefinition definition = controller == null ? null
+                    : FacilitySurveillanceRegistry.camera(
+                            server, cameraId(server, pos));
+
+            boolean operatorControl = false;
+            boolean directed = false;
             float wantedYaw = camera.targetYaw;
             float wantedPitch = camera.targetPitch;
 
-            if (controller != null && Scp079PlayableManager.isCameraMode(controller)
-                    && controller.level().dimension().equals(server.dimension())) {
-                FacilityCameraDefinition definition = FacilitySurveillanceRegistry.camera(
-                        server, cameraId(server, pos));
-                if (definition != null
-                        && controller.position().distanceToSqr(
-                        definition.eyePosition()) <= 0.36D) {
-                    activeControl = true;
+            if (controller != null && definition != null
+                    && Scp079PlayableManager.isCameraMode(controller)
+                    && controller.level().dimension().equals(server.dimension())
+                    && controller.position().distanceToSqr(
+                            definition.eyePosition()) <= 0.36D) {
+                operatorControl = true;
+                directed = true;
+                Direction facing = state.getValue(FACING);
+                wantedYaw = Mth.clamp(Mth.wrapDegrees(
+                                controller.getYRot() - facing.toYRot()),
+                        -MANUAL_YAW_LIMIT, MANUAL_YAW_LIMIT);
+                wantedPitch = Mth.clamp(controller.getXRot(),
+                        MANUAL_MIN_PITCH, MANUAL_MAX_PITCH);
+            } else if (controller != null && definition != null) {
+                ServerPlayer target = trackingTarget(server, definition,
+                        controller);
+                if (target != null) {
+                    directed = true;
+                    Vec3 delta = target.getEyePosition()
+                            .subtract(definition.eyePosition());
+                    double horizontal = Math.sqrt(delta.x * delta.x
+                            + delta.z * delta.z);
+                    float worldYaw = (float) Math.toDegrees(
+                            Math.atan2(-delta.x, delta.z));
+                    float renderedPitch = (float) -Math.toDegrees(
+                            Math.atan2(delta.y, horizontal));
                     Direction facing = state.getValue(FACING);
                     wantedYaw = Mth.clamp(Mth.wrapDegrees(
-                                    controller.getYRot() - facing.toYRot()),
+                                    worldYaw - facing.toYRot()),
                             -MANUAL_YAW_LIMIT, MANUAL_YAW_LIMIT);
-                    wantedPitch = Mth.clamp(controller.getXRot(),
+                    wantedPitch = Mth.clamp(renderedPitch
+                                    - SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH,
                             MANUAL_MIN_PITCH, MANUAL_MAX_PITCH);
                 }
             }
 
-            boolean changed = activeControl != camera.controlled;
-            if (activeControl) {
+            boolean changed = directed != camera.controlled;
+            if (directed) {
+                float epsilon = operatorControl ? 0.08F : TRACKING_SYNC_EPSILON;
                 changed |= Math.abs(Mth.wrapDegrees(
-                        wantedYaw - camera.targetYaw)) > 0.08F;
-                changed |= Math.abs(wantedPitch - camera.targetPitch) > 0.08F;
+                        wantedYaw - camera.targetYaw)) > epsilon;
+                changed |= Math.abs(wantedPitch - camera.targetPitch) > epsilon;
             }
             if (!changed) return;
 
-            camera.controlled = activeControl;
-            if (activeControl) {
+            camera.controlled = directed;
+            if (directed) {
                 camera.targetYaw = wantedYaw;
                 camera.targetPitch = wantedPitch;
             }
             camera.setChanged();
             server.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
+        }
+
+        private static ServerPlayer trackingTarget(ServerLevel level,
+                FacilityCameraDefinition camera, ServerPlayer controller) {
+            List<FacilityRoomSnapshot> rooms = roomSnapshots(level);
+            FacilityRoomSnapshot cameraRoom = roomForCamera(rooms, camera);
+            if (cameraRoom == null) return null;
+
+            ServerPlayer closest = null;
+            double closestDistance = Double.MAX_VALUE;
+            for (ServerPlayer player : level.players()) {
+                if (player == controller || !player.isAlive()
+                        || player.isSpectator()
+                        || !cameraRoom.containsColumn(player.blockPosition())) {
+                    continue;
+                }
+                double distance = player.position().distanceToSqr(
+                        camera.eyePosition());
+                if (distance < closestDistance) {
+                    closest = player;
+                    closestDistance = distance;
+                }
+            }
+            return closest;
+        }
+
+        private static List<FacilityRoomSnapshot> roomSnapshots(
+                ServerLevel level) {
+            long tick = level.getGameTime();
+            RoomSnapshotCache cached = ROOM_SNAPSHOT_CACHE.get(level);
+            if (cached != null && cached.tick == tick) return cached.rooms;
+            List<FacilityRoomSnapshot> rooms = FacilityMappingManager
+                    .roomSnapshots(level);
+            ROOM_SNAPSHOT_CACHE.put(level, new RoomSnapshotCache(tick, rooms));
+            return rooms;
+        }
+
+        private static FacilityRoomSnapshot roomForCamera(
+                List<FacilityRoomSnapshot> rooms,
+                FacilityCameraDefinition camera) {
+            BlockPos eye = BlockPos.containing(camera.eyePosition());
+            for (FacilityRoomSnapshot room : rooms) {
+                if (room.containsColumn(eye)) return room;
+            }
+            for (FacilityRoomSnapshot room : rooms) {
+                if (Scp079RoomInteractionPolicy.withinExpandedFloor(room,
+                        camera.anchorPos(), 1)) return room;
+            }
+            return null;
         }
 
         private static void clientTick(Level level, BlockPos pos,
@@ -464,6 +546,9 @@ public final class SurveillanceCameraPlaceholderModule {
         public AnimatableInstanceCache getAnimatableInstanceCache() {
             return animationCache;
         }
+
+        private record RoomSnapshotCache(long tick,
+                List<FacilityRoomSnapshot> rooms) { }
     }
 
     public static final class SurveillanceCameraItem extends BlockItem

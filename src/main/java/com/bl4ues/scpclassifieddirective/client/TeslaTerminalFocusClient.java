@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
@@ -132,6 +133,11 @@ public final class TeslaTerminalFocusClient {
         event.getInput().forwardImpulse = 0.0F;
         event.getInput().jumping = false;
         event.getInput().shiftKeyDown = false;
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void hideGameplayHud(RenderGuiOverlayEvent.Pre event) {
+        if (active()) event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

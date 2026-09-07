@@ -24,8 +24,10 @@ public final class Scp079RoomAbilityClient {
         if (minecraft.player == null || minecraft.screen != null) return;
 
         while (Scp079Keybinds.BLACKOUT.consumeClick()) {
-            Scp079RoomAbilityNetwork.request(
-                    Scp079RoomAbilityManager.Ability.BLACKOUT);
+            if (Scp079BlackoutAvailabilityClient.available()) {
+                Scp079RoomAbilityNetwork.request(
+                        Scp079RoomAbilityManager.Ability.BLACKOUT);
+            }
         }
         while (Scp079Keybinds.LOCKDOWN.consumeClick()) {
             Scp079RoomAbilityNetwork.request(

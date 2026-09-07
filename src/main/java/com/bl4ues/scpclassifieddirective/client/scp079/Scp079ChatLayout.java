@@ -34,6 +34,9 @@ public final class Scp079ChatLayout {
     private static final int PANEL_ACCENT = 0xE7AEE7FA;
     private static final int CURSOR = 0xF0C8F2FF;
     private static final float TEXT_SCALE = 1.04F;
+    // PF Videotext has substantial visual top padding. The normal mathematical
+    // baseline made the glyphs sit above the deliberately chunky block caret.
+    private static final int TEXT_Y_OFFSET = 10;
 
     private Scp079ChatLayout() {
     }
@@ -63,11 +66,16 @@ public final class Scp079ChatLayout {
         return panelWidth(screenWidth);
     }
 
+    /** Bottom edge used by vanilla's upward-growing command suggestion list. */
+    public static int suggestionAnchor(EditBox input) {
+        return Math.max(8, input.getY() - 4);
+    }
+
     public static int suggestionTop(EditBox input, int screenHeight,
             int suggestionLineLimit) {
         int lineHeight = 12;
         int listHeight = Math.max(1, suggestionLineLimit) * lineHeight + 4;
-        return Math.max(8, input.getY() - listHeight - 5);
+        return Math.max(8, suggestionAnchor(input) - listHeight);
     }
 
     public static void positionInput(EditBox input, int screenWidth,
@@ -94,7 +102,7 @@ public final class Scp079ChatLayout {
         graphics.fill(x, y, x + 2, bottom, PANEL_ACCENT);
 
         Scp079UiTheme.draw(graphics, minecraft.font, "079>",
-                x + 8, y + 6, TEXT_SCALE, Scp079UiTheme.ACCENT);
+                x + 8, y + TEXT_Y_OFFSET, TEXT_SCALE, Scp079UiTheme.ACCENT);
 
         Font font = minecraft.font;
         String value = input.getValue();
@@ -106,7 +114,7 @@ public final class Scp079ChatLayout {
         int visibleCursor = Mth.clamp(cursor, window.start, window.end);
         String shown = value.substring(window.start, window.end);
         Scp079UiTheme.draw(graphics, font, shown,
-                textX, y + 6, TEXT_SCALE, Scp079UiTheme.TEXT);
+                textX, y + TEXT_Y_OFFSET, TEXT_SCALE, Scp079UiTheme.TEXT);
 
         // Old terminals did not apologize with a delicate one-pixel caret.
         // A blunt block cursor makes the input look like a CRT terminal rather

@@ -20,6 +20,7 @@ import com.bl4ues.scpclassifieddirective.block.entity.Scp902BlockEntity;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp1176BlockEntity;
 import com.bl4ues.scpclassifieddirective.block.entity.SystemTerminalBlockEntity;
 import com.bl4ues.scpclassifieddirective.block.entity.TeslaGateBlockEntity;
+import com.bl4ues.scpclassifieddirective.block.entity.TeslaTerminalBlockEntity;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
 public class ScpClassifiedDirectiveModBlockEntities {
@@ -34,6 +35,7 @@ public class ScpClassifiedDirectiveModBlockEntities {
 	public static final RegistryObject<BlockEntityType<DecontaminationBlockEntity>> DECONTAMINATION = REGISTRY.register("decontamination", () -> BlockEntityType.Builder.of(DecontaminationBlockEntity::new,
 			ScpClassifiedDirectiveModBlocks.DECON_OPEN.get(), ScpClassifiedDirectiveModBlocks.DECON_CLOSED.get(), ScpClassifiedDirectiveModBlocks.DECON_OPEN_RELOAD.get()).build(null));
 	public static final RegistryObject<BlockEntityType<SystemTerminalBlockEntity>> SCP_079_SYSTEM_CONTROL = REGISTRY.register("scp_079_system_control", () -> BlockEntityType.Builder.of(SystemTerminalBlockEntity::new, ScpClassifiedDirectiveModBlocks.SCP_079_SYSTEM_CONTROL.get()).build(null));
+	public static final RegistryObject<BlockEntityType<TeslaTerminalBlockEntity>> TESLA_TERMINAL = REGISTRY.register("tesla_terminal", () -> BlockEntityType.Builder.of(TeslaTerminalBlockEntity::new, ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get()).build(null));
 	public static final RegistryObject<BlockEntityType<?>> SCP_294 = register("scp_294", ScpClassifiedDirectiveModBlocks.SCP_294, Scp294BlockEntity::new);
 	public static final RegistryObject<BlockEntityType<?>> SCP_294_OUT_OF_RANGE = register("scp_294_out_of_range", ScpClassifiedDirectiveModBlocks.SCP_294_OUT_OF_RANGE, Scp294OutOfRangeBlockEntity::new);
 	public static final RegistryObject<BlockEntityType<?>> SCP_294_STOCKING = register("scp_294_stocking", ScpClassifiedDirectiveModBlocks.SCP_294_STOCKING, Scp294StockingBlockEntity::new);

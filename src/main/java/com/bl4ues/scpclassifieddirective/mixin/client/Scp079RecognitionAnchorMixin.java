@@ -21,7 +21,10 @@ public abstract class Scp079RecognitionAnchorMixin {
     private static final double SCP_131_VISUAL_CENTER_Y = 0.30D;
     private static final double SCP_939_HEAD_CENTER_Y = 0.88D;
     private static final double SCP_939_HEAD_FORWARD = 0.78D;
-    private static final double CORPSE_HEAD_FORWARD = 0.72D;
+    // The settled player renderer translates the collapsed humanoid along its
+    // local body axis. 0.72 only reached the upper torso in the camera feed;
+    // 1.16 lands the recognition sample at the rendered head centre.
+    private static final double CORPSE_HEAD_FORWARD = 1.16D;
     private static final float SCP_131_RECOGNITION_WIDTH = 0.58F;
     private static final float SCP_939_HEAD_RECOGNITION_WIDTH = 0.60F;
 

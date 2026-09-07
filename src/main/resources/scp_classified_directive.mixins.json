@@ -92,6 +92,7 @@
     "client.EditGameRulesScreenMixin",
     "client.FontMixin",
     "client.DamageIndicatorParticleMixin",
+    "client.Scp079ChatComponentMixin",
     "client.ChatComponentMixin",
     "client.ChatScreenMixin",
     "client.CommandSuggestionsMixin",

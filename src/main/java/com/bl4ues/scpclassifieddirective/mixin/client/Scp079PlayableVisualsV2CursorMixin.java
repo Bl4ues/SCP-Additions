@@ -138,8 +138,11 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
                 blackoutAffordable);
         y += 19;
 
-        double lockdownCost = adjustedCost(minecraft,
-                Scp079RoomAbilityManager.LOCKDOWN_COST);
+        // Lockdown is intentionally an exact 100 AP action on every difficulty.
+        // The server already spends it through trySpendExact; do not apply the
+        // generic difficulty multiplier in the HUD and advertise an impossible
+        // 125 AP cost while the player's AP ceiling is 100.
+        double lockdownCost = Scp079RoomAbilityManager.LOCKDOWN_COST;
         boolean lockdownAffordable = Scp079PlayableClient.power() + 0.001D
                 >= lockdownCost;
         drawCommand(graphics, minecraft,

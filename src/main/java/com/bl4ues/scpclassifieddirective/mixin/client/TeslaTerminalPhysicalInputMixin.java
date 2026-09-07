@@ -5,16 +5,28 @@ import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalScreen;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Maps the normal Screen cursor onto the real CRT rectangle. The terminal image
  * is stretched onto the authored monitor face, whose aspect ratio differs from
- * the legacy 1410x1080 GUI. Projection now follows the camera's actual FOV and
- * physical focus distance so the visible controls and their hitboxes coincide.
+ * the legacy 1410x1080 GUI. Projection follows the focused camera's actual FOV
+ * and physical distance so visible controls and hitboxes share one coordinate
+ * system.
  */
 @Mixin(value = TeslaTerminalScreen.class, remap = false)
 public abstract class TeslaTerminalPhysicalInputMixin {
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    private void scpclassifieddirective$waitForStableFocus(double mouseX,
+            double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        if (button == 0 && TeslaTerminalFocusClient.active()
+                && !TeslaTerminalFocusClient.inputReady()) {
+            cir.setReturnValue(true);
+        }
+    }
+
     @Redirect(method = "mouseClicked",
             at = @At(value = "INVOKE",
                     target = "Lcom/bl4ues/scpclassifieddirective/client/gui/TeslaTerminalScreen;textureX(D)D"))

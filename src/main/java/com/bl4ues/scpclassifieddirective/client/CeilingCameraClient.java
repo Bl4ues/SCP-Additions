@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.client;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraViewGeometry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -78,8 +79,7 @@ public final class CeilingCameraClient {
                 AnimationState<CeilingCameraModule.CeilingCameraBlockEntity>
                         animationState) {
             super.setCustomAnimations(animatable, instanceId, animationState);
-            CoreGeoBone yaw = getAnimationProcessor().getBone("eye_yaw");
-            CoreGeoBone eye = getAnimationProcessor().getBone("eye");
+            CoreGeoBone dome = getAnimationProcessor().getBone("dome");
 
             float yawDegrees = animatable.visualYaw(animationState.getPartialTick());
             float pitchDegrees = animatable.visualPitch(
@@ -123,13 +123,14 @@ public final class CeilingCameraClient {
                 }
             }
 
-            if (yaw != null) {
-                yaw.setRotY(-yawDegrees * Mth.DEG_TO_RAD);
-            }
-            if (eye != null) {
-                // The authored eye already uses Minecraft's pitch convention:
-                // +90 is straight down, 0 is horizontal, negative looks up.
-                eye.setRotX(pitchDegrees * Mth.DEG_TO_RAD);
+            if (dome != null) {
+                // The original model authors the eye at +90 degrees under the
+                // dome. Rotate the complete dome assembly, never the eye alone:
+                // 90 world pitch = neutral/down, 40 = the 50-degree hard stop.
+                dome.setRotY(-yawDegrees * Mth.DEG_TO_RAD);
+                float relativePitch = pitchDegrees
+                        - CeilingCameraViewGeometry.DEFAULT_DOWN_PITCH;
+                dome.setRotX(relativePitch * Mth.DEG_TO_RAD);
             }
         }
 

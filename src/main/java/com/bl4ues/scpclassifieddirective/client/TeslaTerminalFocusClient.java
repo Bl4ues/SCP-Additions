@@ -39,15 +39,10 @@ public final class TeslaTerminalFocusClient {
     public static final double SCREEN_CENTER_Y = 5.98447D / 16.0D;
     public static final double SCREEN_CENTER_Z = 4.42612D / 16.0D;
     public static final double SCREEN_TILT_DEGREES = 22.5D;
-    // Exact front-display element from tesla_terminal_block.json. The texture
-    // is intentionally stretched to this authored CRT face instead of forcing
-    // the old GUI aspect ratio and leaving large strips of the monitor exposed.
     public static final double SCREEN_WIDTH = 11.2D / 16.0D;
     public static final double SCREEN_HEIGHT = 10.7D / 16.0D;
     public static final double VIEW_HEIGHT_FRACTION = 0.72D;
 
-    // With the real 10.7px-high authored face and a 60 degree FOV, about 0.80
-    // blocks keeps the display near the Unity reference size.
     private static final double FOCUS_DISTANCE = 0.80D;
     private static final long APPROACH_NANOS = 220_000_000L;
 
@@ -171,9 +166,9 @@ public final class TeslaTerminalFocusClient {
                 ? state.getValue(TeslaTerminalBlockBlock.FACING)
                 : Direction.NORTH;
         Frame frame = frame(activePos, facing);
-        Vec3 target = frame.center().add(
+        Vec3 targetEye = frame.center().add(
                 frame.outward().scale(FOCUS_DISTANCE));
-        Vec3 look = frame.center().subtract(target);
+        Vec3 look = frame.center().subtract(targetEye);
         double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
         float targetYaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
         float targetPitch = (float) -Math.toDegrees(
@@ -181,18 +176,23 @@ public final class TeslaTerminalFocusClient {
 
         float t = (float) approachProgress();
         float eased = t * t * (3.0F - 2.0F * t);
-        Vec3 camera = startPosition.lerp(target, eased);
+        Vec3 cameraEye = startPosition.lerp(targetEye, eased);
         float yaw = startYaw + Mth.wrapDegrees(targetYaw - startYaw) * eased;
         float pitch = Mth.lerp(eased, startPitch, targetPitch);
 
-        // Match the already-proven SCP-079 detached camera rig. Subtracting an
-        // Armor Stand eye height here puts the helper about 1.7 blocks below the
-        // requested camera point, which is what caused the view to jump away
-        // from the terminal in the recorded test.
-        cameraRig.setPos(camera.x, camera.y, camera.z);
-        cameraRig.xOld = camera.x;
-        cameraRig.yOld = camera.y;
-        cameraRig.zOld = camera.z;
+        // Minecraft renders from the camera entity's eye, not its feet. Keep the
+        // helper's base below the desired eye point, and seed every previous-pos
+        // field so the renderer never interpolates from the ArmorStand's spawn
+        // origin for a frame. That was the source of the repeated sky excursions.
+        double eyeOffset = cameraRig.getEyeY() - cameraRig.getY();
+        double rigY = cameraEye.y - eyeOffset;
+        cameraRig.xo = cameraEye.x;
+        cameraRig.yo = rigY;
+        cameraRig.zo = cameraEye.z;
+        cameraRig.xOld = cameraEye.x;
+        cameraRig.yOld = rigY;
+        cameraRig.zOld = cameraEye.z;
+        cameraRig.setPos(cameraEye.x, rigY, cameraEye.z);
         cameraRig.setYRot(yaw);
         cameraRig.setXRot(pitch);
         cameraRig.yRotO = yaw;

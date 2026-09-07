@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class Scp079CeilingCameraVisualMixin {
     @Redirect(method = "scanRoom",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase;is(Lnet/minecraft/world/level/block/Block;)Z"))
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;is(Lnet/minecraft/world/level/block/Block;)Z"))
     private static boolean scpclassifieddirective$includeCeilingCamera(
             BlockState state, Block expected) {
         return state.is(expected) || state.is(CeilingCameraModule.BLOCK.get());

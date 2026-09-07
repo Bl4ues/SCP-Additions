@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.TeslaGateStructure;
+import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp106Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp131AEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp131BEntity;
@@ -52,16 +53,21 @@ public final class Scp079PlayableVisualsV2 {
     // Mirrors the server-side room-edge interaction allowance so visible doors
     // never disappear merely because their structure sits outside the floor fill.
     private static final int ROOM_DEVICE_BORDER = 3;
+    private static final int ROOM_CAMERA_BORDER = 4;
     private static final int ADJACENT_ROOM_GAP = 2;
     private static final int ROOM_COLUMN_HEIGHT = 12;
     private static final int MAX_SCAN_BLOCKS = 280_000;
+    // Recognition intentionally updates like a low-rate security vision system
+    // instead of gluing perfectly smooth boxes to every rendered frame.
+    private static final long RECOGNITION_INTERVAL_NANOS = 85_000_000L;
 
     private static final List<RecognitionBox> RECOGNITION = new ArrayList<>();
     private static final List<InteractionPrompt> PROMPTS = new ArrayList<>();
     private static List<WorldTarget> cachedTargets = List.of();
     private static ProjectionContext projectionContext;
+    private static long lastRecognitionUpdateNanos;
     private static long lastTargetScanTick = Long.MIN_VALUE;
-    private static UUID lastTargetRoom;
+    private static BlockPos lastTargetViewpoint;
 
     private Scp079PlayableVisualsV2() { }
 
@@ -86,7 +92,6 @@ public final class Scp079PlayableVisualsV2 {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) return;
 
-        RECOGNITION.clear();
         Camera camera = event.getCamera();
         Vec3 cameraPos = camera.getPosition();
         Vec3 look = new Vec3(camera.getLookVector()).normalize();
@@ -95,16 +100,28 @@ public final class Scp079PlayableVisualsV2 {
         Matrix4f projection = new Matrix4f(event.getProjectionMatrix());
         int guiW = minecraft.getWindow().getGuiScaledWidth();
         int guiH = minecraft.getWindow().getGuiScaledHeight();
+        // Keep prompt projection current every frame even while recognition
+        // deliberately retains its previous low-FPS sample.
         projectionContext = new ProjectionContext(cameraPos, right, up, look,
                 projection, guiW, guiH);
 
+        long now = System.nanoTime();
+        if (lastRecognitionUpdateNanos != 0L
+                && now - lastRecognitionUpdateNanos
+                < RECOGNITION_INTERVAL_NANOS) {
+            return;
+        }
+        lastRecognitionUpdateNanos = now;
+        RECOGNITION.clear();
+
         for (Entity entity : minecraft.level.entitiesForRendering()) {
-            if (!(entity instanceof LivingEntity living) || !living.isAlive()
+            if (!(entity instanceof LivingEntity living)
+                    || (!(entity instanceof PlayerCorpseEntity) && !living.isAlive())
                     || entity == minecraft.player
                     || entity.position().distanceToSqr(cameraPos) > 42.0D * 42.0D) continue;
             int color;
             String label;
-            if (entity instanceof Player) {
+            if (entity instanceof Player || entity instanceof PlayerCorpseEntity) {
                 color = 0xFF49D7F5;
                 label = "HUMAN";
             } else {
@@ -113,33 +130,43 @@ public final class Scp079PlayableVisualsV2 {
                 color = 0xFFFF5147;
                 label = "SCP-" + String.format(Locale.ROOT, "%03d", number);
             }
+
+            // Keep these generic calls in one place: the authored recognition
+            // anchor mixin replaces them for non-humanoid SCP anatomy.
             Vec3 center = new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
+            if (entity instanceof PlayerCorpseEntity) {
+                // Corpse rendering collapses the player model around the entity
+                // origin, so the live humanoid eye height is no longer useful.
+                center = entity.position().add(0.0D, 0.30D, 0.0D);
+            }
             if (!visibleFromCamera(minecraft, cameraPos, center)) continue;
 
             double halfW = Mth.clamp(entity.getBbWidth() * 0.38D, 0.22D, 0.52D);
-            double halfH = Mth.clamp(entity.getBbHeight() * 0.19D, 0.27D, 0.48D);
-            ScreenPoint tl = project(center.add(right.scale(-halfW)).add(up.scale(halfH)), projectionContext);
-            ScreenPoint tr = project(center.add(right.scale(halfW)).add(up.scale(halfH)), projectionContext);
-            ScreenPoint bl = project(center.add(right.scale(-halfW)).add(up.scale(-halfH)), projectionContext);
-            ScreenPoint br = project(center.add(right.scale(halfW)).add(up.scale(-halfH)), projectionContext);
-            if (tl == null || tr == null || bl == null || br == null) continue;
-            int minX = Mth.floor(Math.min(Math.min(tl.x, tr.x), Math.min(bl.x, br.x)));
-            int maxX = Mth.ceil(Math.max(Math.max(tl.x, tr.x), Math.max(bl.x, br.x)));
-            int minY = Mth.floor(Math.min(Math.min(tl.y, tr.y), Math.min(bl.y, br.y)));
-            int maxY = Mth.ceil(Math.max(Math.max(tl.y, tr.y), Math.max(bl.y, br.y)));
+            double halfH = entity instanceof PlayerCorpseEntity
+                    ? 0.30D
+                    : Mth.clamp(entity.getBbHeight() * 0.19D, 0.27D, 0.48D);
+            ScreenPoint centerPoint = project(center, projectionContext);
+            ScreenPoint rightPoint = project(center.add(right.scale(halfW)),
+                    projectionContext);
+            ScreenPoint topPoint = project(center.add(up.scale(halfH)),
+                    projectionContext);
+            if (centerPoint == null || rightPoint == null || topPoint == null) continue;
+
+            float horizontalRadius = (float) Math.sqrt(
+                    distanceSqr(centerPoint, rightPoint));
+            float verticalRadius = (float) Math.sqrt(
+                    distanceSqr(centerPoint, topPoint));
+            int halfPixels = Mth.clamp(Mth.ceil(Math.max(
+                    horizontalRadius, verticalRadius)), 9, 84);
+            int centerX = Math.round(centerPoint.x);
+            int centerY = Math.round(centerPoint.y);
+            int minX = centerX - halfPixels;
+            int maxX = centerX + halfPixels;
+            int minY = centerY - halfPixels;
+            int maxY = centerY + halfPixels;
             if (maxX < 0 || minX > guiW || maxY < 0 || minY > guiH) continue;
-            int minimum = 18;
-            if (maxX - minX < minimum) {
-                int c = (minX + maxX) / 2;
-                minX = c - minimum / 2;
-                maxX = c + minimum / 2;
-            }
-            if (maxY - minY < minimum) {
-                int c = (minY + maxY) / 2;
-                minY = c - minimum / 2;
-                maxY = c + minimum / 2;
-            }
-            RECOGNITION.add(new RecognitionBox(minX, minY, maxX, maxY, label, color));
+            RECOGNITION.add(new RecognitionBox(minX, minY, maxX, maxY,
+                    label, color));
             if (RECOGNITION.size() >= 64) break;
         }
     }
@@ -270,8 +297,7 @@ public final class Scp079PlayableVisualsV2 {
         PROMPTS.clear();
         ProjectionContext context = projectionContext;
         if (context == null || minecraft.level == null) return;
-        FacilityRoomSnapshot room = roomAt(BlockPos.containing(context.cameraPos));
-        refreshTargetCache(minecraft, room);
+        refreshTargetCache(minecraft, BlockPos.containing(context.cameraPos));
         for (WorldTarget target : cachedTargets) {
             Vec3 anchor = anchor(target);
             boolean visible = target.kind == TargetKind.CAMERA
@@ -289,15 +315,35 @@ public final class Scp079PlayableVisualsV2 {
         }
     }
 
+    /**
+     * Mirrors Scp079RoomInteractionPolicy instead of choosing the first room at
+     * the camera block. A wall camera can legitimately sit in the expanded edge
+     * of two mapped rooms; all rooms sharing that viewpoint must expose their
+     * own boundary devices or the client can hide doors the server accepts.
+     */
     private static void refreshTargetCache(Minecraft minecraft,
-            FacilityRoomSnapshot current) {
+            BlockPos viewpoint) {
         long tick = minecraft.level.getGameTime();
-        UUID roomId = current == null ? null : current.id();
         if (tick - lastTargetScanTick < 10L
-                && java.util.Objects.equals(roomId, lastTargetRoom)) return;
+                && java.util.Objects.equals(viewpoint, lastTargetViewpoint)) return;
         lastTargetScanTick = tick;
-        lastTargetRoom = roomId;
-        if (current == null) {
+        lastTargetViewpoint = viewpoint == null ? null : viewpoint.immutable();
+        if (viewpoint == null) {
+            cachedTargets = List.of();
+            return;
+        }
+
+        List<FacilityRoomSnapshot> allRooms = FacilityMappingClientState.rooms(
+                Scp079PlayableClient.hostDimension());
+        List<FacilityRoomSnapshot> activeRooms = new ArrayList<>();
+        Set<UUID> activeIds = new HashSet<>();
+        for (FacilityRoomSnapshot room : allRooms) {
+            if (withinExpandedFloor(room, viewpoint, ROOM_CAMERA_BORDER)) {
+                activeRooms.add(room);
+                activeIds.add(room.id());
+            }
+        }
+        if (activeRooms.isEmpty()) {
             cachedTargets = List.of();
             return;
         }
@@ -305,12 +351,25 @@ public final class Scp079PlayableVisualsV2 {
         List<WorldTarget> result = new ArrayList<>();
         Set<Long> visited = new HashSet<>();
         int[] budget = new int[] {MAX_SCAN_BLOCKS};
-        scanRoom(minecraft, current, true, true, visited, result, budget);
-        for (FacilityRoomSnapshot candidate : FacilityMappingClientState.rooms(
-                Scp079PlayableClient.hostDimension())) {
-            if (candidate.id().equals(current.id()) || !adjacent(current, candidate)) continue;
-            scanRoom(minecraft, candidate, false, true, visited, result, budget);
+        for (FacilityRoomSnapshot room : activeRooms) {
+            scanRoom(minecraft, room, true, true, visited, result, budget);
             if (budget[0] <= 0) break;
+        }
+        if (budget[0] > 0) {
+            for (FacilityRoomSnapshot candidate : allRooms) {
+                if (activeIds.contains(candidate.id())) continue;
+                boolean neighboringCameraRoom = false;
+                for (FacilityRoomSnapshot activeRoom : activeRooms) {
+                    if (adjacent(activeRoom, candidate)) {
+                        neighboringCameraRoom = true;
+                        break;
+                    }
+                }
+                if (!neighboringCameraRoom) continue;
+                scanRoom(minecraft, candidate, false, true, visited, result,
+                        budget);
+                if (budget[0] <= 0) break;
+            }
         }
         cachedTargets = List.copyOf(result);
     }
@@ -364,6 +423,23 @@ public final class Scp079PlayableVisualsV2 {
                 int gapX = intervalGap(pa.minX(), pa.maxX(), pb.minX(), pb.maxX());
                 int gapZ = intervalGap(pa.minZ(), pa.maxZ(), pb.minZ(), pb.maxZ());
                 if (Math.max(gapX, gapZ) <= ADJACENT_ROOM_GAP) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean withinExpandedFloor(FacilityRoomSnapshot room,
+            BlockPos target, int border) {
+        if (room == null || target == null) return false;
+        int extra = Math.max(0, border);
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (target.getX() < patch.minX() - extra
+                    || target.getX() > patch.maxX() + extra
+                    || target.getZ() < patch.minZ() - extra
+                    || target.getZ() > patch.maxZ() + extra) continue;
+            if (target.getY() >= patch.y() - 1
+                    && target.getY() <= patch.y() + ROOM_COLUMN_HEIGHT) {
+                return true;
             }
         }
         return false;

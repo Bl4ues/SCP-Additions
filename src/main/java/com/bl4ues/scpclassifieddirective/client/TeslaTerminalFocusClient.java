@@ -21,6 +21,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
+import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -42,8 +43,9 @@ public final class TeslaTerminalFocusClient {
     public static final double SCREEN_WIDTH = 11.2D / 16.0D;
     public static final double SCREEN_HEIGHT = 10.7D / 16.0D;
     public static final double VIEW_HEIGHT_FRACTION = 0.72D;
+    public static final double FOCUS_DISTANCE = 0.76D;
 
-    private static final double FOCUS_DISTANCE = 0.80D;
+    private static final double TARGET_FOV = 60.0D;
     private static final long APPROACH_NANOS = 220_000_000L;
 
     private static BlockPos activePos;
@@ -55,6 +57,7 @@ public final class TeslaTerminalFocusClient {
     private static float startYaw;
     private static float startPitch;
     private static long approachStarted;
+    private static double currentFovDegrees = 70.0D;
 
     private TeslaTerminalFocusClient() { }
 
@@ -74,6 +77,7 @@ public final class TeslaTerminalFocusClient {
         startPosition = minecraft.gameRenderer.getMainCamera().getPosition();
         startYaw = minecraft.player.getYRot();
         startPitch = minecraft.player.getXRot();
+        currentFovDegrees = minecraft.options.fov().get();
         approachStarted = System.nanoTime();
         ensureRig(minecraft);
         updateCamera(minecraft);
@@ -114,6 +118,22 @@ public final class TeslaTerminalFocusClient {
                 SCREEN_TILT_DEGREES, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
+    /**
+     * Current physical CRT height in GUI-space as a fraction of the viewport.
+     * The input mapper uses the same camera distance and FOV that render the
+     * world instead of a guessed fullscreen rectangle.
+     */
+    public static double projectedHeightFraction() {
+        double halfFov = Math.toRadians(Mth.clamp(currentFovDegrees,
+                20.0D, 150.0D) * 0.5D);
+        double tangent = Math.tan(halfFov);
+        if (!Double.isFinite(tangent) || tangent <= 1.0E-6D) {
+            return VIEW_HEIGHT_FRACTION;
+        }
+        return Mth.clamp(SCREEN_HEIGHT / (2.0D * FOCUS_DISTANCE * tangent),
+                0.10D, 0.95D);
+    }
+
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.START || !active()) return;
@@ -145,11 +165,20 @@ public final class TeslaTerminalFocusClient {
         if (active()) event.setCanceled(true);
     }
 
+    /** The detached camera rig must not render the local player's body into the CRT. */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void hideLocalPlayer(RenderPlayerEvent.Pre event) {
+        if (active() && event.getEntity() == Minecraft.getInstance().player) {
+            event.setCanceled(true);
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void focusFov(ViewportEvent.ComputeFov event) {
         if (!active()) return;
         double t = approachProgress();
-        event.setFOV(Mth.lerp(t, event.getFOV(), 60.0D));
+        currentFovDegrees = Mth.lerp(t, event.getFOV(), TARGET_FOV);
+        event.setFOV(currentFovDegrees);
     }
 
     private static void updateCamera(Minecraft minecraft) {

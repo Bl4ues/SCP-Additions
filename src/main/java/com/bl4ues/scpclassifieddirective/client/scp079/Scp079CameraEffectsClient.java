@@ -1,8 +1,12 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.Scp079CameraTravelRules;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -18,6 +22,7 @@ import net.minecraftforge.fml.common.Mod;
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079CameraEffectsClient {
     private static final long INTERFERENCE_NANOS = 300_000_000L;
+    private static final int CROSS_FLOOR_DURATION_MULTIPLIER = 3;
     private static final long AUDIO_FADE_IN_NANOS = 105_000_000L;
     private static final long AUDIO_FADE_OUT_NANOS = 165_000_000L;
 
@@ -48,7 +53,7 @@ public final class Scp079CameraEffectsClient {
             boolean initialLocal = lastMode == DisplayMode.INACTIVE
                     && mode == DisplayMode.LOCAL;
             if (mode != DisplayMode.BOOT && !initialLocal) {
-                startTransition();
+                startTransition(INTERFERENCE_NANOS);
             }
             if (lastMode != DisplayMode.BOOT
                     && (mode == DisplayMode.MAP
@@ -63,7 +68,8 @@ public final class Scp079CameraEffectsClient {
             Vec3 current = Scp079PlayableClient.viewPosition();
             if (lastFeedPosition == null
                     || current.distanceToSqr(lastFeedPosition) > 0.25D) {
-                startTransition();
+                long duration = transitionDuration(lastFeedPosition, current);
+                startTransition(duration);
                 lastFeedPosition = current;
             }
         } else {
@@ -92,13 +98,29 @@ public final class Scp079CameraEffectsClient {
      * between colour and monochrome like a phone accessibility setting.
      */
     static void triggerSensorTransition() {
-        if (Scp079PlayableClient.cameraMode()) startTransition();
+        if (Scp079PlayableClient.cameraMode()) {
+            startTransition(INTERFERENCE_NANOS);
+        }
     }
 
-    private static void startTransition() {
+    private static long transitionDuration(Vec3 previous, Vec3 current) {
+        if (previous == null || current == null) return INTERFERENCE_NANOS;
+        FacilityRoomSnapshot from = FacilityMappingClientState.roomAt(
+                Scp079PlayableClient.hostDimension(),
+                BlockPos.containing(previous));
+        FacilityRoomSnapshot to = FacilityMappingClientState.roomAt(
+                Scp079PlayableClient.hostDimension(),
+                BlockPos.containing(current));
+        return Scp079CameraTravelRules.differentFloor(from, to)
+                ? INTERFERENCE_NANOS * CROSS_FLOOR_DURATION_MULTIPLIER
+                : INTERFERENCE_NANOS;
+    }
+
+    private static void startTransition(long durationNanos) {
         long now = System.nanoTime();
         interferenceStartedAt = now;
-        interferenceUntil = now + INTERFERENCE_NANOS;
+        interferenceUntil = now + Math.max(INTERFERENCE_NANOS,
+                durationNanos);
     }
 
     private static float smootherStep(float value) {

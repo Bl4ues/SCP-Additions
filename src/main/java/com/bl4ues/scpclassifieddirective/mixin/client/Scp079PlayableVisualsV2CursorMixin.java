@@ -31,6 +31,7 @@ import java.util.Map;
 public abstract class Scp079PlayableVisualsV2CursorMixin {
     /** Matches the server-authoritative CAMERA_SWITCH_COST in Scp079PlayableManager. */
     private static final double CAMERA_SWITCH_BASE_COST = 3.0D;
+    private static final int HUD_EDGE_INSET = 34;
 
     @Inject(method = "handleInventoryKey", at = @At("HEAD"),
             cancellable = true, remap = false)
@@ -85,7 +86,7 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
     private static void scpclassifieddirective$renderLocalCommandRows(
             GuiGraphics graphics, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
-        int right = minecraft.getWindow().getGuiScaledWidth() - 24;
+        int right = minecraft.getWindow().getGuiScaledWidth() - HUD_EDGE_INSET;
         String inventory = keyLabel(minecraft.options.keyInventory);
         int y = 23;
         if (Scp079PlayableClient.networkAvailable()) {
@@ -104,7 +105,7 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
     private static void scpclassifieddirective$renderCameraCommandRows(
             GuiGraphics graphics, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
-        int right = minecraft.getWindow().getGuiScaledWidth() - 24;
+        int right = minecraft.getWindow().getGuiScaledWidth() - HUD_EDGE_INSET;
         int y = 22;
         String inventory = keyLabel(minecraft.options.keyInventory);
 

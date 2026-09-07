@@ -2,9 +2,12 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraViewGeometry;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraViewGeometry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.Vec3;
@@ -89,9 +92,9 @@ public abstract class Scp079PlayableVisualMixin {
     }
 
     /**
-     * The surveillance viewpoint follows the authored pan/tilt pivot instead
-     * of rotating around a fixed point. The neutral camera is mounted fifteen
-     * degrees downward, and the eye moves on the same small arc as the lens.
+     * Surveillance feeds follow the same physical lens arc as their placed
+     * model. Wall cameras keep their authored fifteen-degree neutral tilt; dome
+     * cameras use their own spherical ceiling pivot and direct vanilla pitch.
      */
     @Inject(method = "updateFeedCamera", at = @At("HEAD"),
             cancellable = true, remap = false)
@@ -115,10 +118,18 @@ public abstract class Scp079PlayableVisualMixin {
             logicalPitch = frozenPitch;
         }
 
-        float renderedPitch = logicalPitch
-                + SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH;
-        Vec3 lens = SurveillanceCameraViewGeometry.lensFromBaseEye(
-                cameraPosition, baseYaw, basePitch, yaw, renderedPitch);
+        boolean ceiling = minecraft.level != null
+                && minecraft.level.getBlockState(
+                        BlockPos.containing(cameraPosition))
+                        .is(CeilingCameraModule.BLOCK.get());
+        float renderedPitch = ceiling
+                ? logicalPitch
+                : logicalPitch + SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH;
+        Vec3 lens = ceiling
+                ? CeilingCameraViewGeometry.lensFromBaseEye(cameraPosition,
+                        baseYaw, basePitch, yaw, renderedPitch)
+                : SurveillanceCameraViewGeometry.lensFromBaseEye(cameraPosition,
+                        baseYaw, basePitch, yaw, renderedPitch);
 
         cameraRig.setPos(lens.x, lens.y, lens.z);
         cameraRig.setYRot(yaw);

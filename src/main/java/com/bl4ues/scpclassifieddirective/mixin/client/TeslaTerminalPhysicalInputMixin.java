@@ -10,8 +10,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 /**
  * Maps the normal Screen cursor onto the real CRT rectangle. The terminal image
  * is stretched onto the authored monitor face, whose aspect ratio differs from
- * the legacy 1410x1080 GUI, so reusing the old fullscreen GUI rectangle makes
- * right-side controls miss their visible buttons.
+ * the legacy 1410x1080 GUI. Projection now follows the camera's actual FOV and
+ * physical focus distance so the visible controls and their hitboxes coincide.
  */
 @Mixin(value = TeslaTerminalScreen.class, remap = false)
 public abstract class TeslaTerminalPhysicalInputMixin {
@@ -26,7 +26,7 @@ public abstract class TeslaTerminalPhysicalInputMixin {
         double physicalAspect = TeslaTerminalFocusClient.SCREEN_WIDTH
                 / TeslaTerminalFocusClient.SCREEN_HEIGHT;
         double displayHeight = Math.min(
-                guiHeight * TeslaTerminalFocusClient.VIEW_HEIGHT_FRACTION,
+                guiHeight * TeslaTerminalFocusClient.projectedHeightFraction(),
                 guiWidth * 0.90D / physicalAspect);
         double displayWidth = displayHeight * physicalAspect;
         double left = (guiWidth - displayWidth) * 0.5D;
@@ -44,7 +44,7 @@ public abstract class TeslaTerminalPhysicalInputMixin {
         double physicalAspect = TeslaTerminalFocusClient.SCREEN_WIDTH
                 / TeslaTerminalFocusClient.SCREEN_HEIGHT;
         double displayHeight = Math.min(
-                guiHeight * TeslaTerminalFocusClient.VIEW_HEIGHT_FRACTION,
+                guiHeight * TeslaTerminalFocusClient.projectedHeightFraction(),
                 guiWidth * 0.90D / physicalAspect);
         double top = (guiHeight - displayHeight) * 0.5D;
         return (mouseY - top) / displayHeight * TeslaTerminalScreen.TEX_H;

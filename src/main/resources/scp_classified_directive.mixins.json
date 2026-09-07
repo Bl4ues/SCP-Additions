@@ -53,6 +53,7 @@
     "client.DeathScreenDimensionTransferMixin",
     "client.InventoryPdaScreenTransitionMixin",
     "client.InventoryPdaDocumentCloseAudioMixin",
+    "client.InventoryPdaDepthPreservationMixin",
     "client.ScpDeathScreenLiveFeedMixin",
     "client.ResponsiveScreenForgeHooksMixin",
     "client.ResponsiveScreenRenderEventMixin",

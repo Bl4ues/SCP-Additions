@@ -30,6 +30,11 @@ import java.util.Map;
  * "SCP-914 Containment Chamber" disappear completely. Render only those
  * suppressed labels again, wrapped on word boundaries with a small allowance
  * beyond the room outline.
+ *
+ * Keep this mixin free of helper/nested classes. Mixin 0.8.5 treats every class
+ * generated inside the configured mixin package as transformer-owned and will
+ * throw IllegalClassLoadError if the transformed target references one at
+ * runtime. Primitive arrays and vanilla collections avoid that loader trap.
  */
 @Mixin(value = Scp079FacilityMapScreen.class, remap = false)
 public abstract class Scp079FacilityMapRoomLabelMixin {
@@ -56,23 +61,21 @@ public abstract class Scp079FacilityMapRoomLabelMixin {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft == null) return;
         Screen screen = (Screen) (Object) this;
-        List<FloorData> floors = scpclassifieddirective$floors();
-        if (floors.isEmpty()) return;
-        int index = Math.max(0, Math.min(floorIndex, floors.size() - 1));
-        FloorData floor = floors.get(index);
-        Transform transform = scpclassifieddirective$transform(screen.width,
-                screen.height, floor, mapZoom, panX, panY);
+        List<FacilityRoomSnapshot> rooms = scpclassifieddirective$activeFloorRooms();
+        if (rooms.isEmpty()) return;
+        double[] transform = scpclassifieddirective$transform(screen.width,
+                screen.height, rooms, mapZoom, panX, panY);
         if (transform == null) return;
 
         Font font = minecraft.font;
-        for (FacilityRoomSnapshot room : floor.rooms) {
+        for (FacilityRoomSnapshot room : rooms) {
             if (room.name().isBlank()) continue;
-            Bounds roomBounds = Bounds.of(room);
+            int[] roomBounds = scpclassifieddirective$bounds(List.of(room));
             if (roomBounds == null) continue;
 
             String name = room.name().strip().toUpperCase(Locale.ROOT);
-            double roomWidth = (roomBounds.maxX - roomBounds.minX + 1)
-                    * transform.scale;
+            double roomWidth = (roomBounds[2] - roomBounds[0] + 1)
+                    * transform[2];
             int naturalWidth = Scp079UiTheme.scaledWidth(font, name,
                     LABEL_SCALE);
             // The normal renderer already drew this one. Do not duplicate it.
@@ -86,10 +89,10 @@ public abstract class Scp079FacilityMapRoomLabelMixin {
                     maxLineWidth);
             if (lines.isEmpty()) continue;
 
-            int centerX = transform.sx(
-                    (roomBounds.minX + roomBounds.maxX + 1) * 0.5D);
-            int centerY = transform.sy(
-                    (roomBounds.minZ + roomBounds.maxZ + 1) * 0.5D);
+            int centerX = scpclassifieddirective$sx(transform,
+                    (roomBounds[0] + roomBounds[2] + 1) * 0.5D);
+            int centerY = scpclassifieddirective$sy(transform,
+                    (roomBounds[1] + roomBounds[3] + 1) * 0.5D);
             int lineStep = Math.max(10,
                     Math.round(font.lineHeight * LABEL_SCALE) + LINE_GAP);
             float totalHeight = font.lineHeight * LABEL_SCALE
@@ -125,7 +128,7 @@ public abstract class Scp079FacilityMapRoomLabelMixin {
         return lines;
     }
 
-    private static List<FloorData> scpclassifieddirective$floors() {
+    private List<FacilityRoomSnapshot> scpclassifieddirective$activeFloorRooms() {
         ResourceLocation dimension = Scp079PlayableClient.hostDimension();
         Map<String, List<FacilityRoomSnapshot>> grouped = new LinkedHashMap<>();
         for (FacilityRoomSnapshot room
@@ -135,32 +138,33 @@ public abstract class Scp079FacilityMapRoomLabelMixin {
             grouped.computeIfAbsent(label, ignored -> new ArrayList<>())
                     .add(room);
         }
-        List<FloorData> result = new ArrayList<>();
-        for (Map.Entry<String, List<FacilityRoomSnapshot>> entry
-                : grouped.entrySet()) {
-            int y = entry.getValue().stream()
-                    .flatMap(room -> room.patches().stream())
-                    .mapToInt(FacilityFloorPatch::y).min().orElse(0);
-            result.add(new FloorData(entry.getKey(), y,
-                    List.copyOf(entry.getValue())));
-        }
-        result.sort(Comparator.comparingInt((FloorData floor) -> floor.y)
-                .reversed().thenComparing(floor -> floor.label,
-                        String.CASE_INSENSITIVE_ORDER));
-        return result;
+        if (grouped.isEmpty()) return List.of();
+
+        List<String> labels = new ArrayList<>(grouped.keySet());
+        labels.sort(Comparator
+                .comparingInt((String label) ->
+                        scpclassifieddirective$floorY(grouped.get(label)))
+                .reversed()
+                .thenComparing(String.CASE_INSENSITIVE_ORDER));
+        int index = Math.max(0, Math.min(floorIndex, labels.size() - 1));
+        return grouped.getOrDefault(labels.get(index), List.of());
     }
 
-    private static Transform scpclassifieddirective$transform(int width,
-            int height, FloorData floor, double zoom, double offsetX,
-            double offsetY) {
-        Bounds bounds = Bounds.of(floor.rooms);
+    private static int scpclassifieddirective$floorY(
+            List<FacilityRoomSnapshot> rooms) {
+        return rooms.stream().flatMap(room -> room.patches().stream())
+                .mapToInt(FacilityFloorPatch::y).min().orElse(0);
+    }
+
+    private static double[] scpclassifieddirective$transform(int width,
+            int height, List<FacilityRoomSnapshot> rooms, double zoom,
+            double offsetX, double offsetY) {
+        int[] bounds = scpclassifieddirective$bounds(rooms);
         if (bounds == null) return null;
         int availableW = Math.max(80, width - MAP_MARGIN_X * 2);
         int availableH = Math.max(80, height - MAP_TOP - MAP_BOTTOM);
-        double spanX = Math.max(1.0D,
-                bounds.maxX - bounds.minX + 1.0D);
-        double spanZ = Math.max(1.0D,
-                bounds.maxZ - bounds.minZ + 1.0D);
+        double spanX = Math.max(1.0D, bounds[2] - bounds[0] + 1.0D);
+        double spanZ = Math.max(1.0D, bounds[3] - bounds[1] + 1.0D);
         double baseScale = Math.min(availableW / spanX,
                 availableH / spanZ);
         baseScale = Math.min(18.0D, Math.max(1.5D, baseScale));
@@ -168,40 +172,37 @@ public abstract class Scp079FacilityMapRoomLabelMixin {
         double mapW = spanX * scale;
         double mapH = spanZ * scale;
         double originX = (width - mapW) * 0.5D
-                - bounds.minX * scale + offsetX;
+                - bounds[0] * scale + offsetX;
         double originY = MAP_TOP + (availableH - mapH) * 0.5D
-                - bounds.minZ * scale + offsetY;
-        return new Transform(originX, originY, scale);
+                - bounds[1] * scale + offsetY;
+        return new double[] {originX, originY, scale};
     }
 
-    private record FloorData(String label, int y,
-            List<FacilityRoomSnapshot> rooms) { }
-
-    private record Transform(double originX, double originY, double scale) {
-        int sx(double x) { return (int) Math.round(originX + x * scale); }
-        int sy(double z) { return (int) Math.round(originY + z * scale); }
-    }
-
-    private record Bounds(int minX, int minZ, int maxX, int maxZ) {
-        private static Bounds of(List<FacilityRoomSnapshot> rooms) {
-            int minX = Integer.MAX_VALUE;
-            int minZ = Integer.MAX_VALUE;
-            int maxX = Integer.MIN_VALUE;
-            int maxZ = Integer.MIN_VALUE;
-            for (FacilityRoomSnapshot room : rooms) {
-                for (FacilityFloorPatch patch : room.patches()) {
-                    minX = Math.min(minX, patch.minX());
-                    minZ = Math.min(minZ, patch.minZ());
-                    maxX = Math.max(maxX, patch.maxX());
-                    maxZ = Math.max(maxZ, patch.maxZ());
-                }
+    private static int[] scpclassifieddirective$bounds(
+            List<FacilityRoomSnapshot> rooms) {
+        int minX = Integer.MAX_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+        for (FacilityRoomSnapshot room : rooms) {
+            for (FacilityFloorPatch patch : room.patches()) {
+                minX = Math.min(minX, patch.minX());
+                minZ = Math.min(minZ, patch.minZ());
+                maxX = Math.max(maxX, patch.maxX());
+                maxZ = Math.max(maxZ, patch.maxZ());
             }
-            return minX == Integer.MAX_VALUE ? null
-                    : new Bounds(minX, minZ, maxX, maxZ);
         }
+        return minX == Integer.MAX_VALUE ? null
+                : new int[] {minX, minZ, maxX, maxZ};
+    }
 
-        private static Bounds of(FacilityRoomSnapshot room) {
-            return room == null ? null : of(List.of(room));
-        }
+    private static int scpclassifieddirective$sx(double[] transform,
+            double x) {
+        return (int) Math.round(transform[0] + x * transform[2]);
+    }
+
+    private static int scpclassifieddirective$sy(double[] transform,
+            double z) {
+        return (int) Math.round(transform[1] + z * transform[2]);
     }
 }

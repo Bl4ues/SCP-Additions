@@ -13,12 +13,10 @@ import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
- * Standard facility buttons/readers keep their hand prompt but no generic text,
- * while right-click remains owned by the blocks' native interaction path.
- *
- * This deliberately avoids @ModifyArgs. Mixin 0.8.5 can leave its generated
- * Args helper unavailable in this Forge 1.20.1 userdev runtime, crashing the
- * first client tick with NoClassDefFoundError.
+ * Standard facility buttons/readers keep their compact hand-only prompt while
+ * the contextual interaction path owns right-click. This lets the configured
+ * physical anchor remain usable from the same side/angle where its prompt is
+ * visible instead of falling back to Minecraft's direct block-hit requirement.
  */
 @Mixin(ContextPromptClient.class)
 public abstract class ContextPromptStandardControlsMixin {
@@ -44,18 +42,6 @@ public abstract class ContextPromptStandardControlsMixin {
         return accessor != null
                 && (!isNativeStandardControl(accessor)
                 && accessor.scpclassifieddirective$showName());
-    }
-
-    @Redirect(method = {"clientTick", "hasRightClickTarget"},
-            at = @At(value = "INVOKE",
-                    target = "Lcom/bl4ues/scpclassifieddirective/inventory/client/ContextPromptClient$ContextTarget;allowRightClick()Z"),
-            remap = false)
-    private static boolean scpclassifieddirective$preserveNativeRightClick(
-            @Coerce Object target) {
-        ContextPromptTargetAccessor accessor = accessor(target);
-        return accessor != null
-                && (!isNativeStandardControl(accessor)
-                && accessor.scpclassifieddirective$allowRightClick());
     }
 
     private static ContextPromptTargetAccessor accessor(Object target) {

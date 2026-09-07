@@ -25,10 +25,14 @@ import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.PickaxeItem;
@@ -45,6 +49,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 
+import com.bl4ues.scpclassifieddirective.block.entity.TeslaTerminalBlockEntity;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
 import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
@@ -59,7 +65,7 @@ import java.util.Map;
 
 import io.netty.buffer.Unpooled;
 
-public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedBlock {
+public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedBlock, EntityBlock {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 	public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 	private static final Map<Long, Long> TERMINAL_LOOP_NEXT_TICK = new HashMap<>();
@@ -92,6 +98,24 @@ public class TeslaTerminalBlockBlock extends Block implements SimpleWaterloggedB
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
 		return Shapes.block();
+	}
+
+	@Override
+	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+		return new TeslaTerminalBlockEntity(pos, state);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
+			BlockState state, BlockEntityType<T> type) {
+		if (level.isClientSide
+				|| type != ScpClassifiedDirectiveModBlockEntities.TESLA_TERMINAL.get()) {
+			return null;
+		}
+		return (world, pos, blockState, blockEntity) ->
+				TeslaTerminalBlockEntity.serverTick(world, pos, blockState,
+						(TeslaTerminalBlockEntity) blockEntity);
 	}
 
 	@Override

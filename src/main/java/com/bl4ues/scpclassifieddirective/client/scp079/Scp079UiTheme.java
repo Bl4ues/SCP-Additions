@@ -12,13 +12,18 @@ import net.minecraft.util.Mth;
 /** Shared visual language for every playable SCP-079 screen. */
 public final class Scp079UiTheme {
     public static final int FRAME_MARGIN = 11;
-    public static final int FRAME_CORNER = 25;
+    public static final int FRAME_CORNER = 32;
     public static final int FRAME_COLOR = 0xE6D9F7FF;
     public static final int TEXT = 0xFFE8F8FF;
     public static final int MUTED = 0xFF8BAAB6;
     public static final int ACCENT = 0xFFBDEEFF;
     public static final int DIM_ACCENT = 0xFF618999;
     public static final int OFFLINE = 0xFFD57D78;
+    private static final int FRAME_THICKNESS = 3;
+    // Power is pinned independently from frame tuning so Local Host, camera
+    // feeds and the Facility Map always land on the same authored anchor.
+    private static final int POWER_RIGHT_MARGIN = 16;
+    private static final int POWER_BOTTOM_MARGIN = 19;
     private static final float CONTROL_TEXT_OPTICAL_OFFSET = 4.0F;
 
     private Scp079UiTheme() {
@@ -31,7 +36,7 @@ public final class Scp079UiTheme {
     public static void renderFrame(GuiGraphics graphics, int width, int height) {
         int m = FRAME_MARGIN;
         int l = FRAME_CORNER;
-        int t = 2;
+        int t = FRAME_THICKNESS;
         int c = FRAME_COLOR;
         graphics.fill(m, m, m + l, m + t, c);
         graphics.fill(m, m, m + t, m + l, c);
@@ -86,8 +91,8 @@ public final class Scp079UiTheme {
         int height = minecraft.getWindow().getGuiScaledHeight();
         int barW = Math.min(260, Math.max(220, width / 4));
         int barH = 14;
-        int x = width - FRAME_MARGIN - barW - 5;
-        int y = height - FRAME_MARGIN - barH - 8;
+        int x = width - POWER_RIGHT_MARGIN - barW;
+        int y = height - POWER_BOTTOM_MARGIN - barH;
         float headerScale = 1.08F;
         boolean offline = Scp079PlayableClient.active()
                 && !Scp079PlayableClient.networkAvailable();

@@ -8,13 +8,9 @@ import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeomet
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -29,9 +25,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Camera/input session for physical computer screens. The first implementation
- * is the Tesla Gate terminal, but the rig is intentionally independent from its
- * menu logic so later monitors can use the same presentation pattern.
+ * Camera/input session for physical computer screens. The Tesla terminal is the
+ * first user, but the focus pose is deliberately independent from its menu
+ * state so later physical monitors can share the same presentation pattern.
+ *
+ * The camera is applied directly to Minecraft's real Camera after Camera.setup.
+ * Earlier revisions used a detached ArmorStand as the camera entity; because
+ * that helper was not part of the normal entity tick/interpolation pipeline its
+ * eye position could occasionally be sampled from competing old/current values,
+ * producing the wildly inconsistent "roller-coaster" motion seen in testing.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
@@ -46,13 +48,10 @@ public final class TeslaTerminalFocusClient {
     public static final double FOCUS_DISTANCE = 0.72D;
 
     private static final double TARGET_FOV = 60.0D;
-    private static final long APPROACH_NANOS = 220_000_000L;
-    private static final long RETURN_NANOS = 220_000_000L;
+    private static final long APPROACH_NANOS = 260_000_000L;
+    private static final long RETURN_NANOS = 260_000_000L;
 
     private static BlockPos activePos;
-    private static ArmorStand cameraRig;
-    private static ClientLevel rigLevel;
-    private static Entity previousCameraEntity;
     private static CameraType previousCameraType;
     private static Vec3 startPosition = Vec3.ZERO;
     private static float startYaw;
@@ -75,46 +74,40 @@ public final class TeslaTerminalFocusClient {
         if (minecraft.player == null || minecraft.level == null || pos == null) {
             return;
         }
-        if (activePos != null && activePos.equals(pos)
-                && cameraRig != null && rigLevel == minecraft.level
-                && !returning) {
-            return;
-        }
+        if (activePos != null && activePos.equals(pos) && !returning) return;
         if (active()) finishEnd(minecraft);
 
         activePos = pos.immutable();
-        previousCameraEntity = minecraft.getCameraEntity();
         previousCameraType = minecraft.options.getCameraType();
         startPosition = minecraft.gameRenderer.getMainCamera().getPosition();
-        startYaw = minecraft.player.getYRot();
-        startPitch = minecraft.player.getXRot();
+        startYaw = minecraft.gameRenderer.getMainCamera().getYRot();
+        startPitch = minecraft.gameRenderer.getMainCamera().getXRot();
         originalFovDegrees = minecraft.options.fov().get();
         currentFovDegrees = originalFovDegrees;
         approachStarted = System.nanoTime();
         returning = false;
         returnStarted = 0L;
-        ensureRig(minecraft);
-        updateApproachCamera(minecraft);
+        minecraft.options.setCameraType(CameraType.FIRST_PERSON);
     }
 
     /**
-     * Begins a symmetric return trip instead of snapping the view back to the
-     * player. Movement remains locked for these few frames and is released only
-     * after the detached camera reaches the original eye position again.
+     * Starts a symmetric return to the exact view from which the terminal was
+     * entered. Movement remains locked until the interpolation is complete.
      */
     public static void end() {
         Minecraft minecraft = Minecraft.getInstance();
         if (!active() || returning) return;
-        if (cameraRig == null || minecraft.level == null) {
+        Pose current = cameraPose();
+        if (current == null) {
             finishEnd(minecraft);
             return;
         }
 
         returning = true;
         returnStarted = System.nanoTime();
-        returnStartPosition = rigEyePosition();
-        returnStartYaw = cameraRig.getYRot();
-        returnStartPitch = cameraRig.getXRot();
+        returnStartPosition = current.position;
+        returnStartYaw = current.yaw;
+        returnStartPitch = current.pitch;
         returnStartFovDegrees = currentFovDegrees;
     }
 
@@ -126,6 +119,10 @@ public final class TeslaTerminalFocusClient {
         return pos != null && pos.equals(activePos);
     }
 
+    public static boolean inputReady() {
+        return active() && !returning && approachProgress() >= 0.985D;
+    }
+
     public static Frame frame(BlockPos pos, Direction facing) {
         return PhysicalBlockScreenGeometry.fromNorthFacing(pos, facing,
                 SCREEN_CENTER_X, SCREEN_CENTER_Y, SCREEN_CENTER_Z,
@@ -133,9 +130,8 @@ public final class TeslaTerminalFocusClient {
     }
 
     /**
-     * Current physical CRT height in GUI-space as a fraction of the viewport.
-     * The input mapper uses the same camera distance and FOV that render the
-     * world instead of a guessed fullscreen rectangle.
+     * Physical CRT height in GUI-space as a fraction of the viewport. The input
+     * mapper uses the same FOV and target distance as the actual focused view.
      */
     public static double projectedHeightFraction() {
         double halfFov = Math.toRadians(Mth.clamp(currentFovDegrees,
@@ -148,6 +144,43 @@ public final class TeslaTerminalFocusClient {
                 0.10D, 0.95D);
     }
 
+    /** Pose consumed by TeslaTerminalCameraMixin after vanilla Camera.setup. */
+    public static Pose cameraPose() {
+        if (!active()) return null;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.level == null) return null;
+
+        if (returning) {
+            float eased = smooth((float) returnProgress());
+            Vec3 position = returnStartPosition.lerp(startPosition, eased);
+            float yaw = returnStartYaw
+                    + Mth.wrapDegrees(startYaw - returnStartYaw) * eased;
+            float pitch = Mth.lerp(eased, returnStartPitch, startPitch);
+            return new Pose(position, yaw, pitch);
+        }
+
+        BlockState state = minecraft.level.getBlockState(activePos);
+        if (!state.is(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get())) {
+            return null;
+        }
+        Direction facing = state.hasProperty(TeslaTerminalBlockBlock.FACING)
+                ? state.getValue(TeslaTerminalBlockBlock.FACING)
+                : Direction.NORTH;
+        Frame frame = frame(activePos, facing);
+        Vec3 targetEye = frame.center().add(frame.outward().scale(FOCUS_DISTANCE));
+        Vec3 look = frame.center().subtract(targetEye);
+        double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
+        float targetYaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
+        float targetPitch = (float) -Math.toDegrees(
+                Math.atan2(look.y, horizontal));
+
+        float eased = smooth((float) approachProgress());
+        Vec3 position = startPosition.lerp(targetEye, eased);
+        float yaw = startYaw + Mth.wrapDegrees(targetYaw - startYaw) * eased;
+        float pitch = Mth.lerp(eased, startPitch, targetPitch);
+        return new Pose(position, yaw, pitch);
+    }
+
     @SubscribeEvent
     public static void onRenderTick(TickEvent.RenderTickEvent event) {
         if (event.phase != TickEvent.Phase.START || !active()) return;
@@ -157,8 +190,9 @@ public final class TeslaTerminalFocusClient {
             return;
         }
 
+        minecraft.options.setCameraType(CameraType.FIRST_PERSON);
         if (returning) {
-            updateReturnCamera(minecraft);
+            if (returnProgress() >= 1.0D) finishEnd(minecraft);
             return;
         }
 
@@ -166,7 +200,11 @@ public final class TeslaTerminalFocusClient {
             end();
             return;
         }
-        updateApproachCamera(minecraft);
+        BlockState state = minecraft.level.getBlockState(activePos);
+        if (!state.is(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get())) {
+            minecraft.player.closeContainer();
+            end();
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -188,7 +226,6 @@ public final class TeslaTerminalFocusClient {
         if (active()) event.setCanceled(true);
     }
 
-    /** The detached camera rig must not render the local player's body into the CRT. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void hideLocalPlayer(RenderPlayerEvent.Pre event) {
         if (active() && event.getEntity() == Minecraft.getInstance().player) {
@@ -210,81 +247,6 @@ public final class TeslaTerminalFocusClient {
         event.setFOV(currentFovDegrees);
     }
 
-    private static void updateApproachCamera(Minecraft minecraft) {
-        if (activePos == null || minecraft.level == null) return;
-        BlockState state = minecraft.level.getBlockState(activePos);
-        if (!state.is(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get())) {
-            if (minecraft.player != null) minecraft.player.closeContainer();
-            end();
-            return;
-        }
-        ensureRig(minecraft);
-        if (cameraRig == null) return;
-        Direction facing = state.hasProperty(TeslaTerminalBlockBlock.FACING)
-                ? state.getValue(TeslaTerminalBlockBlock.FACING)
-                : Direction.NORTH;
-        Frame frame = frame(activePos, facing);
-        Vec3 targetEye = frame.center().add(
-                frame.outward().scale(FOCUS_DISTANCE));
-        Vec3 look = frame.center().subtract(targetEye);
-        double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
-        float targetYaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
-        float targetPitch = (float) -Math.toDegrees(
-                Math.atan2(look.y, horizontal));
-
-        float eased = smooth((float) approachProgress());
-        Vec3 cameraEye = startPosition.lerp(targetEye, eased);
-        float yaw = startYaw + Mth.wrapDegrees(targetYaw - startYaw) * eased;
-        float pitch = Mth.lerp(eased, startPitch, targetPitch);
-        placeRig(minecraft, cameraEye, yaw, pitch);
-    }
-
-    private static void updateReturnCamera(Minecraft minecraft) {
-        if (cameraRig == null) {
-            finishEnd(minecraft);
-            return;
-        }
-        float progress = (float) returnProgress();
-        float eased = smooth(progress);
-        Vec3 cameraEye = returnStartPosition.lerp(startPosition, eased);
-        float yaw = returnStartYaw
-                + Mth.wrapDegrees(startYaw - returnStartYaw) * eased;
-        float pitch = Mth.lerp(eased, returnStartPitch, startPitch);
-        placeRig(minecraft, cameraEye, yaw, pitch);
-        if (progress >= 1.0F) finishEnd(minecraft);
-    }
-
-    private static void placeRig(Minecraft minecraft, Vec3 cameraEye,
-            float yaw, float pitch) {
-        if (cameraRig == null) return;
-        // Minecraft renders from the camera entity's eye, not its feet. Keep the
-        // helper's base below the desired eye point, and seed every previous-pos
-        // field so interpolation never gets a chance to invent a brief vacation
-        // in the upper atmosphere.
-        double eyeOffset = cameraRig.getEyeY() - cameraRig.getY();
-        double rigY = cameraEye.y - eyeOffset;
-        cameraRig.xo = cameraEye.x;
-        cameraRig.yo = rigY;
-        cameraRig.zo = cameraEye.z;
-        cameraRig.xOld = cameraEye.x;
-        cameraRig.yOld = rigY;
-        cameraRig.zOld = cameraEye.z;
-        cameraRig.setPos(cameraEye.x, rigY, cameraEye.z);
-        cameraRig.setYRot(yaw);
-        cameraRig.setXRot(pitch);
-        cameraRig.yRotO = yaw;
-        cameraRig.xRotO = pitch;
-        minecraft.options.setCameraType(CameraType.FIRST_PERSON);
-        if (minecraft.getCameraEntity() != cameraRig) {
-            minecraft.setCameraEntity(cameraRig);
-        }
-    }
-
-    private static Vec3 rigEyePosition() {
-        if (cameraRig == null) return startPosition;
-        return new Vec3(cameraRig.getX(), cameraRig.getEyeY(), cameraRig.getZ());
-    }
-
     private static float smooth(float value) {
         float t = Mth.clamp(value, 0.0F, 1.0F);
         return t * t * (3.0F - 2.0F * t);
@@ -304,21 +266,10 @@ public final class TeslaTerminalFocusClient {
 
     private static void finishEnd(Minecraft minecraft) {
         if (minecraft == null) minecraft = Minecraft.getInstance();
-        if (cameraRig != null && minecraft.getCameraEntity() == cameraRig) {
-            Entity restore = previousCameraEntity;
-            if (restore == null || restore.isRemoved()
-                    || restore.level() != minecraft.level) {
-                restore = minecraft.player;
-            }
-            if (restore != null) minecraft.setCameraEntity(restore);
-        }
         if (previousCameraType != null) {
             minecraft.options.setCameraType(previousCameraType);
         }
         activePos = null;
-        cameraRig = null;
-        rigLevel = null;
-        previousCameraEntity = null;
         previousCameraType = null;
         approachStarted = 0L;
         returnStarted = 0L;
@@ -326,14 +277,5 @@ public final class TeslaTerminalFocusClient {
         currentFovDegrees = originalFovDegrees;
     }
 
-    private static void ensureRig(Minecraft minecraft) {
-        if (minecraft.level == null) return;
-        if (cameraRig != null && rigLevel == minecraft.level) return;
-        ArmorStand rig = EntityType.ARMOR_STAND.create(minecraft.level);
-        if (rig == null) return;
-        rig.setInvisible(true);
-        rig.setNoGravity(true);
-        cameraRig = rig;
-        rigLevel = minecraft.level;
-    }
+    public record Pose(Vec3 position, float yaw, float pitch) { }
 }

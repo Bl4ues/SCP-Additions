@@ -58,6 +58,7 @@
     "client.InventoryPdaDocumentCloseAudioMixin",
     "client.InventoryPdaDepthPreservationMixin",
     "client.TeslaTerminalPhysicalInputMixin",
+    "client.TeslaTerminalCameraMixin",
     "client.ScpDeathScreenLiveFeedMixin",
     "client.ResponsiveScreenForgeHooksMixin",
     "client.ResponsiveScreenRenderEventMixin",

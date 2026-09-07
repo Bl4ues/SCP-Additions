@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
 /** Moves edge HUD text inward while keeping the Facility Map power anchor. */
-@Mixin(Scp079PlayableVisualsV2.class)
+@Mixin(value = Scp079PlayableVisualsV2.class, remap = false)
 public abstract class Scp079PlayableVisualLayoutMixin {
     @ModifyConstant(method = "renderLocalHud",
             constant = @Constant(intValue = 24), require = 1)

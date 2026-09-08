@@ -26,6 +26,7 @@
     "RoombaNoEntityPushMixin",
     "NativeMachineScrewdriverRulesMixin",
     "IntercomContextAvailabilityMixin",
+    "HackingDeviceContextDefaultsMixin",
     "ServerLevelIntercomSoundMixin",
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",

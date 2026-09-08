@@ -56,7 +56,7 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 			access = ContainerLevelAccess.create(world, pos);
 		}
 		if (pos != null) {
-			if (extraData.readableBytes() == 1) {
+			if (extraData.readableBytes() == 1) { // bound to item
 				byte hand = extraData.readByte();
 				ItemStack itemstack = hand == 0 ? this.entity.getMainHandItem() : this.entity.getOffhandItem();
 				this.boundItemMatcher = () -> itemstack == (hand == 0 ? this.entity.getMainHandItem() : this.entity.getOffhandItem());
@@ -64,15 +64,15 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 					this.internal = capability;
 					this.bound = true;
 				});
-			} else if (extraData.readableBytes() > 1) {
-				extraData.readByte();
+			} else if (extraData.readableBytes() > 1) { // bound to entity
+				extraData.readByte(); // drop padding
 				boundEntity = world.getEntity(extraData.readVarInt());
 				if (boundEntity != null)
 					boundEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, null).ifPresent(capability -> {
 						this.internal = capability;
 						this.bound = true;
 					});
-			} else {
+			} else { // might be bound to block
 				boundBlockEntity = this.world.getBlockEntity(pos);
 				if (boundBlockEntity != null)
 					boundBlockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, null).ifPresent(capability -> {
@@ -82,6 +82,8 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 			}
 		}
 		this.customSlots.put(0, this.addSlot(new SlotItemHandler(internal, 0, 142, 27) {
+			private final int slot = 0;
+
 			@Override
 			public void setChanged() {
 				super.setChanged();
@@ -107,9 +109,9 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 		}));
 		for (int si = 0; si < 3; ++si)
 			for (int sj = 0; sj < 9; ++sj)
-				this.addSlot(new Slot(inv, sj + (si + 1) * 9, 8 + sj * 18, 84 + si * 18));
+				this.addSlot(new Slot(inv, sj + (si + 1) * 9, 0 + 8 + sj * 18, 0 + 84 + si * 18));
 		for (int si = 0; si < 9; ++si)
-			this.addSlot(new Slot(inv, si, 8 + si * 18, 142));
+			this.addSlot(new Slot(inv, si, 0 + 8 + si * 18, 0 + 142));
 	}
 
 	@Override
@@ -128,7 +130,7 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 	@Override
 	public ItemStack quickMoveStack(Player playerIn, int index) {
 		ItemStack itemstack = ItemStack.EMPTY;
-		Slot slot = this.slots.get(index);
+		Slot slot = (Slot) this.slots.get(index);
 		if (slot != null && slot.hasItem()) {
 			ItemStack itemstack1 = slot.getItem();
 			itemstack = itemstack1.copy();
@@ -137,11 +139,12 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 					return ItemStack.EMPTY;
 				slot.onQuickCraft(itemstack1, itemstack);
 			} else if (!this.moveItemStackTo(itemstack1, 0, 1, false)) {
-				if (index < 28) {
-					if (!this.moveItemStackTo(itemstack1, 28, this.slots.size(), true))
+				if (index < 1 + 27) {
+					if (!this.moveItemStackTo(itemstack1, 1 + 27, this.slots.size(), true))
 						return ItemStack.EMPTY;
-				} else if (!this.moveItemStackTo(itemstack1, 1, 28, false)) {
-					return ItemStack.EMPTY;
+				} else {
+					if (!this.moveItemStackTo(itemstack1, 1, 1 + 27, false))
+						return ItemStack.EMPTY;
 				}
 				return ItemStack.EMPTY;
 			}
@@ -157,55 +160,87 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 	}
 
 	@Override
-	protected boolean moveItemStackTo(ItemStack stack, int start, int end, boolean reverse) {
-		boolean moved = false;
-		int i = reverse ? end - 1 : start;
-		if (stack.isStackable()) {
-			while (!stack.isEmpty() && (reverse ? i >= start : i < end)) {
-				Slot slot = this.slots.get(i);
-				ItemStack existing = slot.getItem();
-				if (slot.mayPlace(stack) && !existing.isEmpty() && ItemStack.isSameItemSameTags(stack, existing)) {
-					int combined = existing.getCount() + stack.getCount();
-					int maxSize = Math.min(slot.getMaxStackSize(), stack.getMaxStackSize());
-					if (combined <= maxSize) {
-						stack.setCount(0);
-						existing.setCount(combined);
-						slot.set(existing);
-						moved = true;
-					} else if (existing.getCount() < maxSize) {
-						stack.shrink(maxSize - existing.getCount());
-						existing.setCount(maxSize);
-						slot.set(existing);
-						moved = true;
-					}
-				}
-				i += reverse ? -1 : 1;
-			}
+	protected boolean moveItemStackTo(ItemStack p_38904_, int p_38905_, int p_38906_, boolean p_38907_) {
+		boolean flag = false;
+		int i = p_38905_;
+		if (p_38907_) {
+			i = p_38906_ - 1;
 		}
-		if (!stack.isEmpty()) {
-			i = reverse ? end - 1 : start;
-			while (reverse ? i >= start : i < end) {
-				Slot slot = this.slots.get(i);
-				if (slot.getItem().isEmpty() && slot.mayPlace(stack)) {
-					if (stack.getCount() > slot.getMaxStackSize())
-						slot.setByPlayer(stack.split(slot.getMaxStackSize()));
-					else
-						slot.setByPlayer(stack.split(stack.getCount()));
-					slot.setChanged();
-					moved = true;
+		if (p_38904_.isStackable()) {
+			while (!p_38904_.isEmpty()) {
+				if (p_38907_) {
+					if (i < p_38905_) {
+						break;
+					}
+				} else if (i >= p_38906_) {
 					break;
 				}
-				i += reverse ? -1 : 1;
+				Slot slot = this.slots.get(i);
+				ItemStack itemstack = slot.getItem();
+				if (slot.mayPlace(itemstack) && !itemstack.isEmpty() && ItemStack.isSameItemSameTags(p_38904_, itemstack)) {
+					int j = itemstack.getCount() + p_38904_.getCount();
+					int maxSize = Math.min(slot.getMaxStackSize(), p_38904_.getMaxStackSize());
+					if (j <= maxSize) {
+						p_38904_.setCount(0);
+						itemstack.setCount(j);
+						slot.set(itemstack);
+						flag = true;
+					} else if (itemstack.getCount() < maxSize) {
+						p_38904_.shrink(maxSize - itemstack.getCount());
+						itemstack.setCount(maxSize);
+						slot.set(itemstack);
+						flag = true;
+					}
+				}
+				if (p_38907_) {
+					--i;
+				} else {
+					++i;
+				}
 			}
 		}
-		return moved;
+		if (!p_38904_.isEmpty()) {
+			if (p_38907_) {
+				i = p_38906_ - 1;
+			} else {
+				i = p_38905_;
+			}
+			while (true) {
+				if (p_38907_) {
+					if (i < p_38905_) {
+						break;
+					}
+				} else if (i >= p_38906_) {
+					break;
+				}
+				Slot slot1 = this.slots.get(i);
+				ItemStack itemstack1 = slot1.getItem();
+				if (itemstack1.isEmpty() && slot1.mayPlace(p_38904_)) {
+					if (p_38904_.getCount() > slot1.getMaxStackSize()) {
+						slot1.setByPlayer(p_38904_.split(slot1.getMaxStackSize()));
+					} else {
+						slot1.setByPlayer(p_38904_.split(p_38904_.getCount()));
+					}
+					slot1.setChanged();
+					flag = true;
+					break;
+				}
+				if (p_38907_) {
+					--i;
+				} else {
+					++i;
+				}
+			}
+		}
+		return flag;
 	}
 
 	@Override
 	public void removed(Player playerIn) {
 		super.removed(playerIn);
 		// Physical payment belongs to the machine, not to the temporary keyboard
-		// screen. Leaving the typing view must not eject/refund the coin.
+		// screen. Leaving the typing view must not eject/refund the coin; otherwise
+		// the player cannot reopen the keyboard and effectively loses the payment.
 		if (!playerIn.level().isClientSide
 				&& !(boundBlockEntity instanceof Scp294BlockEntity)) {
 			ItemStack escrowedCurrency = internal.extractItem(
@@ -214,25 +249,28 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 		}
 		if (!bound && playerIn instanceof ServerPlayer serverPlayer) {
 			if (!serverPlayer.isAlive() || serverPlayer.hasDisconnected()) {
-				for (int j = 1; j < internal.getSlots(); ++j)
+				for (int j = 0; j < internal.getSlots(); ++j) {
+					if (j == 0)
+						continue;
 					playerIn.drop(internal.extractItem(j, internal.getStackInSlot(j).getCount(), false), false);
+				}
 			} else {
-				for (int i = 1; i < internal.getSlots(); ++i)
-					playerIn.getInventory().placeItemBackInInventory(
-							internal.extractItem(i, internal.getStackInSlot(i).getCount(), false));
+				for (int i = 0; i < internal.getSlots(); ++i) {
+					if (i == 0)
+						continue;
+					playerIn.getInventory().placeItemBackInInventory(internal.extractItem(i, internal.getStackInSlot(i).getCount(), false));
+				}
 			}
 		}
 	}
 
 	private void slotChanged(int slotid, int ctype, int meta) {
 		if (this.world != null && this.world.isClientSide()) {
-			ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
-					new Scp294GuiSlotMessage(slotid, x, y, z, ctype, meta));
+			ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(new Scp294GuiSlotMessage(slotid, x, y, z, ctype, meta));
 			Scp294GuiSlotMessage.handleSlotAction(entity, slotid, ctype, meta, x, y, z);
 		}
 	}
 
-	@Override
 	public Map<Integer, Slot> get() {
 		return customSlots;
 	}

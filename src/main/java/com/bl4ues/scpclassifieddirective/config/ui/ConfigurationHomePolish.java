@@ -92,9 +92,14 @@ public final class ConfigurationHomePolish {
             Button debug = find(screen, "Debug Tools");
             Button reload = find(screen, "Reload Snapshot");
             Button done = find(screen, "Done");
+
+            // Crosshair configuration now lives inside General & Modules. The
+            // old home-screen category must stay genuinely absent even though
+            // the underlying HomeScreen still creates its legacy button.
             if (crosshair != null) {
-                place(crosshair, l.infoX, toolY, l.infoWidth, l.rowHeight);
-                toolY += l.rowHeight + l.rowGap;
+                crosshair.visible = false;
+                crosshair.active = false;
+                crosshair.setX(-10_000);
             }
             if (accessibility != null) {
                 place(accessibility, l.infoX, toolY, l.infoWidth, l.rowHeight);

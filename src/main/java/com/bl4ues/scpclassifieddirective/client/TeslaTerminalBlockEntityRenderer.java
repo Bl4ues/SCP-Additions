@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.client;
 import com.bl4ues.scpclassifieddirective.block.TeslaTerminalBlockBlock;
 import com.bl4ues.scpclassifieddirective.block.entity.TeslaTerminalBlockEntity;
 import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalScreen;
+import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalVisualStateClient;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -66,10 +67,19 @@ public final class TeslaTerminalBlockEntityRenderer
             overlay = screen.physicalOverlayTexture();
             authenticated = screen.physicalAuthenticated();
         } else {
-            base = terminal.manualOverride() ? SCREEN_ON_OVERRIDE
-                    : terminal.teslaGatesEnabled() ? SCREEN_ON : SCREEN_OFF;
-            if (!terminal.auxiliaryPowerOnline()) {
-                overlay = SCREEN_AUXILIARY_OFFLINE;
+            TeslaTerminalVisualStateClient.DisplayView persisted =
+                    TeslaTerminalVisualStateClient.view(minecraft.level, pos,
+                            terminal);
+            if (persisted != null) {
+                base = persisted.base();
+                overlay = persisted.overlay();
+                authenticated = persisted.authenticated();
+            } else {
+                base = terminal.manualOverride() ? SCREEN_ON_OVERRIDE
+                        : terminal.teslaGatesEnabled() ? SCREEN_ON : SCREEN_OFF;
+                if (!terminal.auxiliaryPowerOnline()) {
+                    overlay = SCREEN_AUXILIARY_OFFLINE;
+                }
             }
         }
 

@@ -2,20 +2,24 @@ package com.bl4ues.scpclassifieddirective.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
+import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.FacilityDiagnosticsScreen;
 import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager.DiagnosticSnapshot;
 
 import java.util.function.Supplier;
 
-/** Opens the Foundation facility diagnostic screen. */
+/** Opens the Foundation facility diagnostic terminal interaction. */
 public record FacilityDiagnosticsPacket(int uncontainedScps,
         int activeTeslaGates, int registeredTeslaGates,
         boolean teslaOverride, int connectedDoors,
         boolean auxiliaryPowerOnline, int cachePurgeCooldownTicks,
-        boolean unusualNetworkActivity, BlockPos terminalPos) {
+        boolean unusualNetworkActivity, boolean analysisComplete,
+        BlockPos terminalPos) {
 
     public FacilityDiagnosticsPacket {
         cachePurgeCooldownTicks = Math.max(0, cachePurgeCooldownTicks);
@@ -25,11 +29,26 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
 
     public FacilityDiagnosticsPacket(DiagnosticSnapshot snapshot,
             BlockPos terminalPos) {
+        this(snapshot, terminalPos, false);
+    }
+
+    public FacilityDiagnosticsPacket(DiagnosticSnapshot snapshot,
+            BlockPos terminalPos, boolean analysisComplete) {
         this(snapshot.uncontainedScps(), snapshot.activeTeslaGates(),
                 snapshot.registeredTeslaGates(), snapshot.teslaOverride(),
                 snapshot.connectedDoors(), snapshot.auxiliaryPowerOnline(),
                 snapshot.cachePurgeCooldownTicks(),
-                snapshot.unusualNetworkActivity(), terminalPos);
+                snapshot.unusualNetworkActivity(), analysisComplete,
+                terminalPos);
+    }
+
+    public static void send(ServerPlayer player, DiagnosticSnapshot snapshot,
+            BlockPos terminalPos, boolean analysisComplete) {
+        if (player == null || snapshot == null || terminalPos == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new FacilityDiagnosticsPacket(snapshot, terminalPos,
+                        analysisComplete));
     }
 
     public static void encode(FacilityDiagnosticsPacket message,
@@ -42,6 +61,7 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
         buffer.writeBoolean(message.auxiliaryPowerOnline);
         buffer.writeVarInt(Math.max(0, message.cachePurgeCooldownTicks));
         buffer.writeBoolean(message.unusualNetworkActivity);
+        buffer.writeBoolean(message.analysisComplete);
         buffer.writeBlockPos(message.terminalPos);
     }
 
@@ -50,7 +70,8 @@ public record FacilityDiagnosticsPacket(int uncontainedScps,
                 buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readBoolean(), buffer.readVarInt(),
                 buffer.readBoolean(), buffer.readVarInt(),
-                buffer.readBoolean(), buffer.readBlockPos());
+                buffer.readBoolean(), buffer.readBoolean(),
+                buffer.readBlockPos());
     }
 
     public static void handle(FacilityDiagnosticsPacket message,

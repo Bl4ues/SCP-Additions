@@ -28,6 +28,8 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -44,7 +46,9 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import com.bl4ues.scpclassifieddirective.block.entity.SystemTerminalBlockEntity;
 import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
-import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
+import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager.DiagnosticSnapshot;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.bl4ues.scpclassifieddirective.network.FacilityDiagnosticsPacket;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -75,6 +79,19 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new SystemTerminalBlockEntity(pos, state);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level,
+            BlockState state, BlockEntityType<T> type) {
+        if (level.isClientSide
+                || type != ScpClassifiedDirectiveModBlockEntities
+                .SCP_079_SYSTEM_CONTROL.get()) {
+            return null;
+        }
+        return (BlockEntityTicker<T>) (BlockEntityTicker<SystemTerminalBlockEntity>)
+                SystemTerminalBlockEntity::serverTick;
     }
 
     @Override
@@ -109,9 +126,15 @@ public class SCP079SystemControlBlock extends BaseEntityBlock
             Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide && level instanceof ServerLevel
                 && player instanceof ServerPlayer serverPlayer) {
-            ScpEntityNetwork.openFacilityDiagnostics(serverPlayer,
-                    Scp079FacilityAccessManager.performDiagnosticScan(
-                            serverPlayer), pos);
+            DiagnosticSnapshot snapshot = Scp079FacilityAccessManager
+                    .currentDiagnosticSnapshot(serverPlayer);
+            boolean analyzed = false;
+            if (level.getBlockEntity(pos) instanceof SystemTerminalBlockEntity terminal) {
+                analyzed = terminal.analyzed();
+                terminal.updateSnapshot(snapshot, analyzed);
+            }
+            FacilityDiagnosticsPacket.send(serverPlayer, snapshot, pos,
+                    analyzed);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

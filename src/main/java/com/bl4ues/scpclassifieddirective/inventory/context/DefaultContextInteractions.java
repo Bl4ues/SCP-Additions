@@ -50,6 +50,26 @@ public final class DefaultContextInteractions {
               "visual":{"allowOffscreen":false,"scale":0.72}
             }
             """;
+    private static final String SCP294_COIN_RULE = """
+            {
+              "type":"block","id":"scp_classified_directive:scp_294","interactionId":"scp_294_coin",
+              "range":2.25,"priority":82,"useItem":"hand","icon":"hand",
+              "text":{"action":"Insert Coin","nameMode":"manual","name":"","showAction":true,"showName":false},
+              "anchor":{"position":[0.153125,0.971875,0.02],"rotateWith":"auto"},
+              "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
+              "visual":{"allowOffscreen":false,"scale":0.72}
+            }
+            """;
+    private static final String SCP294_KEYBOARD_RULE = """
+            {
+              "type":"block","id":"scp_classified_directive:scp_294","interactionId":"scp_294_keyboard",
+              "range":2.25,"priority":80,"useItem":"hand","icon":"hand",
+              "text":{"action":"Use Keyboard","nameMode":"manual","name":"","showAction":true,"showName":false},
+              "anchor":{"position":[0.59375,1.41875,-0.015],"rotateWith":"auto"},
+              "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
+              "visual":{"allowOffscreen":false,"scale":0.72}
+            }
+            """;
     private static final String INTERCOM_ON_RULE = """
             {
               "type":"block","id":"scp_classified_directive:intercom","interactionId":"turn_on_intercom",
@@ -161,6 +181,8 @@ public final class DefaultContextInteractions {
             boolean scp426 = false;
             boolean dial = false;
             boolean start = false;
+            boolean scp294Coin = false;
+            boolean scp294Keyboard = false;
             boolean intercomOn = false;
             boolean intercomOff = false;
             boolean hazardSignEdit = false;
@@ -188,6 +210,11 @@ public final class DefaultContextInteractions {
                     start |= "scp_914_start".equals(key);
                 }
                 if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:scp_294".equals(id)) {
+                    scp294Coin |= "scp_294_coin".equals(key);
+                    scp294Keyboard |= "scp_294_keyboard".equals(key);
+                }
+                if ("block".equalsIgnoreCase(type)
                         && "scp_classified_directive:intercom".equals(id)) {
                     intercomOn |= "turn_on_intercom".equals(key);
                     intercomOff |= "turn_off_intercom".equals(key);
@@ -203,6 +230,8 @@ public final class DefaultContextInteractions {
             appendIfMissing(interactions, scp426, SCP426_TAKE_RULE);
             appendIfMissing(interactions, dial, SCP914_DIAL_RULE);
             appendIfMissing(interactions, start, SCP914_START_RULE);
+            appendIfMissing(interactions, scp294Coin, SCP294_COIN_RULE);
+            appendIfMissing(interactions, scp294Keyboard, SCP294_KEYBOARD_RULE);
             appendIfMissing(interactions, intercomOn, INTERCOM_ON_RULE);
             appendIfMissing(interactions, intercomOff, INTERCOM_OFF_RULE);
             appendIfMissing(interactions, hazardSignEdit, HAZARD_SIGN_EDIT_RULE);

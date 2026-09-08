@@ -105,20 +105,23 @@ public final class KeycardReaderLevels {
         }
 
         Block targetBlock = normalBlock(requestedLevel, descriptor.side());
-        BlockState replacement = targetBlock.defaultBlockState();
+        return replacePreservingState(level, pos, current,
+                targetBlock.defaultBlockState());
+    }
 
-        if (current.hasProperty(HorizontalDirectionalBlock.FACING)
-                && replacement.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            replacement = replacement.setValue(HorizontalDirectionalBlock.FACING,
-                    current.getValue(HorizontalDirectionalBlock.FACING));
-        }
-        if (current.hasProperty(BlockStateProperties.WATERLOGGED)
-                && replacement.hasProperty(BlockStateProperties.WATERLOGGED)) {
-            replacement = replacement.setValue(BlockStateProperties.WATERLOGGED,
-                    current.getValue(BlockStateProperties.WATERLOGGED));
-        }
-
-        return level.setBlock(pos, replacement, Block.UPDATE_ALL);
+    /**
+     * Forces the current reader into its ordinary accepted/redstone state without
+     * manufacturing a fake keycard. Its existing accept block owns sounds,
+     * redstone output and the normal timed reset back to idle.
+     */
+    public static boolean activateAccepted(Level level, BlockPos pos) {
+        if (level == null || pos == null) return false;
+        BlockState current = level.getBlockState(pos);
+        ReaderDescriptor descriptor = describe(current);
+        if (descriptor == null) return false;
+        Block target = acceptedBlock(descriptor.level(), descriptor.side());
+        return replacePreservingState(level, pos, current,
+                target.defaultBlockState());
     }
 
     public static Block normalBlock(int level, Side side) {
@@ -143,6 +146,45 @@ public final class KeycardReaderLevels {
                     : ScpClassifiedDirectiveModBlocks.LV_6_RIGHT_READER.get();
             default -> throw new IllegalArgumentException("Reader level must be between 1 and 6");
         };
+    }
+
+    public static Block acceptedBlock(int level, Side side) {
+        return switch (level) {
+            case 1 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LEFT_READER_ACCEPT.get()
+                    : ScpClassifiedDirectiveModBlocks.RIGHT_READER_ACCEPT.get();
+            case 2 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_2_LEFT_READER_ACCEPT.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_2_RIGHT_READER_ACCEPT.get();
+            case 3 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_3_LEFT_READER_ACCEPT.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_3_RIGHT_READER_ACCEPT.get();
+            case 4 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_4_LEFT_READER_ACCEPT.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_4_RIGHT_READER_ACCEPT.get();
+            case 5 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_5_LEFT_READER_ACCEPT.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_5_RIGHT_READER_ACCEPT.get();
+            case 6 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_6_LEFT_READER_ACCEPT.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_6_RIGHT_READER_ACCEPT.get();
+            default -> throw new IllegalArgumentException("Reader level must be between 1 and 6");
+        };
+    }
+
+    private static boolean replacePreservingState(Level level, BlockPos pos,
+            BlockState current, BlockState replacement) {
+        if (current.hasProperty(HorizontalDirectionalBlock.FACING)
+                && replacement.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            replacement = replacement.setValue(HorizontalDirectionalBlock.FACING,
+                    current.getValue(HorizontalDirectionalBlock.FACING));
+        }
+        if (current.hasProperty(BlockStateProperties.WATERLOGGED)
+                && replacement.hasProperty(BlockStateProperties.WATERLOGGED)) {
+            replacement = replacement.setValue(BlockStateProperties.WATERLOGGED,
+                    current.getValue(BlockStateProperties.WATERLOGGED));
+        }
+        return level.setBlock(pos, replacement, Block.UPDATE_ALL);
     }
 
     private static boolean matches(Block block, RegistryObject<Block> normal,

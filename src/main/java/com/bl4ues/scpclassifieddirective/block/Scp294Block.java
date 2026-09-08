@@ -1,4 +1,3 @@
-
 package com.bl4ues.scpclassifieddirective.block;
 
 import net.minecraftforge.network.NetworkHooks;
@@ -7,6 +6,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -27,8 +27,6 @@ import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.Containers;
@@ -36,22 +34,38 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundSource;
 
-import com.bl4ues.scpclassifieddirective.world.inventory.Scp294GuiMenu;
 import com.bl4ues.scpclassifieddirective.procedures.Scp294restockProcedure;
 import com.bl4ues.scpclassifieddirective.procedures.Scp294BlockAddedProcedure;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp294BlockEntity;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
+import com.bl4ues.scpclassifieddirective.integration.PlayerCurrencyAccess;
 
 import java.util.List;
 import java.util.Collections;
 
-import io.netty.buffer.Unpooled;
-
 public class Scp294Block extends Block implements EntityBlock {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+
+	public static final String COIN_INTERACTION_KEY = "scp_294_coin";
+	public static final String KEYBOARD_INTERACTION_KEY = "scp_294_keyboard";
+
+	// Authored control centers in the NORTH-facing vanilla block model. The
+	// keyboard is the slanted 5..14 x 19.7..25.7 element; the payment panel is
+	// the compact assembly to its right from the viewer's perspective.
+	public static final double COIN_ANCHOR_X = 2.45D / 16.0D;
+	public static final double COIN_ANCHOR_Y = 15.55D / 16.0D;
+	public static final double COIN_ANCHOR_Z = 0.02D;
+	public static final double KEYBOARD_ANCHOR_X = 9.50D / 16.0D;
+	public static final double KEYBOARD_ANCHOR_Y = 22.70D / 16.0D;
+	public static final double KEYBOARD_ANCHOR_Z = -0.015D;
+
+	private static final double COIN_HIT_RADIUS_SQR = 0.34D * 0.34D;
+	private static final double KEYBOARD_HIT_RADIUS_SQR = 0.34D * 0.34D;
 
 	public Scp294Block() {
 		super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(40f).requiresCorrectToolForDrops().noOcclusion().isRedstoneConductor((bs, br, bp) -> false));
@@ -132,36 +146,78 @@ public class Scp294Block extends Block implements EntityBlock {
 	@Override
 	public void tick(BlockState blockstate, ServerLevel world, BlockPos pos, RandomSource random) {
 		super.tick(blockstate, world, pos, random);
-		int x = pos.getX();
-		int y = pos.getY();
-		int z = pos.getZ();
-		Scp294restockProcedure.execute(world, x, y, z);
+		Scp294restockProcedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
 		world.scheduleTick(pos, this, 20);
 	}
 
 	@Override
-	public InteractionResult use(BlockState blockstate, Level world, BlockPos pos, Player entity, InteractionHand hand, BlockHitResult hit) {
-		super.use(blockstate, world, pos, entity, hand, hit);
-		if (entity instanceof ServerPlayer player) {
-			NetworkHooks.openScreen(player, new MenuProvider() {
-				@Override
-				public Component getDisplayName() {
-					return Component.literal("SCP-294");
-				}
-
-				@Override
-				public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-					return new Scp294GuiMenu(id, inventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(pos));
-				}
-			}, pos);
+	public InteractionResult use(BlockState state, Level world, BlockPos pos,
+			Player player, InteractionHand hand, BlockHitResult hit) {
+		if (!(world.getBlockEntity(pos) instanceof Scp294BlockEntity machine)) {
+			return InteractionResult.PASS;
 		}
-		return InteractionResult.SUCCESS;
+
+		Direction facing = state.getValue(FACING);
+		Vec3 location = hit.getLocation();
+		if (location.distanceToSqr(coinAnchor(pos, facing)) <= COIN_HIT_RADIUS_SQR) {
+			if (world.isClientSide) return InteractionResult.SUCCESS;
+			return insertCoin(world, pos, player, machine)
+					? InteractionResult.CONSUME : InteractionResult.FAIL;
+		}
+
+		if (location.distanceToSqr(keyboardAnchor(pos, facing)) <= KEYBOARD_HIT_RADIUS_SQR) {
+			if (!machine.getItem(0).is(ScpClassifiedDirectiveModItems.COIN.get())) {
+				return InteractionResult.FAIL;
+			}
+			if (world.isClientSide) return InteractionResult.SUCCESS;
+			if (player instanceof ServerPlayer serverPlayer) {
+				NetworkHooks.openScreen(serverPlayer, machine, pos);
+				return InteractionResult.CONSUME;
+			}
+			return InteractionResult.FAIL;
+		}
+
+		// The machine itself is no longer a giant GUI button. Interaction belongs
+		// to the two authored controls above, just like SCP-914's dial/key.
+		return InteractionResult.PASS;
 	}
 
-	@Override
-	public MenuProvider getMenuProvider(BlockState state, Level worldIn, BlockPos pos) {
-		BlockEntity tileEntity = worldIn.getBlockEntity(pos);
-		return tileEntity instanceof MenuProvider menuProvider ? menuProvider : null;
+	private static boolean insertCoin(Level world, BlockPos pos, Player player,
+			Scp294BlockEntity machine) {
+		if (!machine.getItem(0).isEmpty()) return false;
+		ItemStack coin = PlayerCurrencyAccess.extractOne(player,
+				ScpClassifiedDirectiveModItems.COIN.get());
+		if (coin.isEmpty()) return false;
+
+		machine.setItem(0, coin);
+		machine.setChanged();
+		BlockState state = machine.getBlockState();
+		world.sendBlockUpdated(pos, state, state, 3);
+		world.playSound(null, pos, ScpClassifiedDirectiveModSounds.SCP294COINSLOT.get(),
+				SoundSource.NEUTRAL, 1.0F, 1.0F);
+		return true;
+	}
+
+	public static Vec3 coinAnchor(BlockPos pos, Direction facing) {
+		return localAnchor(pos, facing, COIN_ANCHOR_X, COIN_ANCHOR_Y,
+				COIN_ANCHOR_Z);
+	}
+
+	public static Vec3 keyboardAnchor(BlockPos pos, Direction facing) {
+		return localAnchor(pos, facing, KEYBOARD_ANCHOR_X, KEYBOARD_ANCHOR_Y,
+				KEYBOARD_ANCHOR_Z);
+	}
+
+	private static Vec3 localAnchor(BlockPos pos, Direction facing,
+			double x, double y, double z) {
+		Vec3 local = new Vec3(x - 0.5D, y - 0.5D, z - 0.5D);
+		Vec3 rotated = switch (facing) {
+			case SOUTH -> new Vec3(-local.x, local.y, -local.z);
+			case EAST -> new Vec3(-local.z, local.y, local.x);
+			case WEST -> new Vec3(local.z, local.y, -local.x);
+			default -> local;
+		};
+		return Vec3.atLowerCornerOf(pos).add(0.5D, 0.5D, 0.5D).add(rotated);
 	}
 
 	@Override
@@ -173,7 +229,7 @@ public class Scp294Block extends Block implements EntityBlock {
 	public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int eventID, int eventParam) {
 		super.triggerEvent(state, world, pos, eventID, eventParam);
 		BlockEntity blockEntity = world.getBlockEntity(pos);
-		return blockEntity == null ? false : blockEntity.triggerEvent(eventID, eventParam);
+		return blockEntity != null && blockEntity.triggerEvent(eventID, eventParam);
 	}
 
 	@Override
@@ -198,7 +254,6 @@ public class Scp294Block extends Block implements EntityBlock {
 		BlockEntity tileentity = world.getBlockEntity(pos);
 		if (tileentity instanceof Scp294BlockEntity be)
 			return AbstractContainerMenu.getRedstoneSignalFromContainer(be);
-		else
-			return 0;
+		return 0;
 	}
 }

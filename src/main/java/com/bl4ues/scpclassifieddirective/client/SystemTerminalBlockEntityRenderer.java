@@ -29,11 +29,9 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 /**
  * Composite renderer for the Facility Diagnostic Terminal.
  *
- * GeckoLib renders the authored computer first. The physical SCiPNET surface is
- * then drawn in ordinary block-entity coordinates, after GeckoLib has restored
- * the PoseStack. Keeping those coordinate spaces separate is important: a
- * GeoRenderLayer inherits GeckoLib's model translation/rotation and would apply
- * the already-world-aligned CRT frame a second time.
+ * GeckoLib owns the authored computer. The SCiPNET UI is painted afterward in
+ * normal block-entity coordinates onto the actual CRT. The monitor housing is
+ * therefore never faked by the interface: only the glass area receives UI.
  */
 public final class SystemTerminalBlockEntityRenderer
         implements BlockEntityRenderer<SystemTerminalBlockEntity> {
@@ -53,11 +51,18 @@ public final class SystemTerminalBlockEntityRenderer
     private static final ResourceLocation TERMINAL_CAPTION = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "scipnet_caption");
 
+    /*
+     * The old fullscreen GUI used partially transparent fills over SCREEN. On a
+     * physical CRT those translucent layers get washed out by the authored glass
+     * and, with shaders, can also be resorted. These are the same colors already
+     * composited into opaque display colors. The screen still looks identical,
+     * but its hierarchy remains legible in world-space rendering.
+     */
     private static final int SCREEN = 0xFF122532;
     private static final int HEADER = 0xFF1C3443;
-    private static final int PANEL = 0xE61A303E;
-    private static final int PANEL_ALT = 0xB5213A49;
-    private static final int LOG_PANEL = 0xB5142B38;
+    private static final int PANEL = 0xFF192F3D;
+    private static final int PANEL_ALT = 0xFF1D3442;
+    private static final int LOG_PANEL = 0xFF132936;
     private static final int STEEL_BLUE = 0xFF2A4353;
     private static final int FOUNDATION_RED = 0xFFB94145;
     private static final int OFF_WHITE = 0xFFE9EDEB;
@@ -67,16 +72,23 @@ public final class SystemTerminalBlockEntityRenderer
     private static final int DIM_BLUE = 0xFF415966;
     private static final int BUTTON = 0xFF233C4B;
     private static final int BUTTON_HOVER = 0xFF315365;
-    private static final int VALUE_BACK = 0x88122532;
-    private static final int SCANLINE = 0x12000000;
-    private static final int GRID = 0x08000000;
+    private static final int VALUE_BACK = 0xFF172C39;
+    private static final int SCANLINE = 0xFF11222E;
+    private static final int GRID = 0xFF112430;
+    private static final int FOOTER = 0xFF10222D;
 
-    private static final double BASE_EPSILON = 0.0018D;
-    private static final double PANEL_EPSILON = 0.0020D;
-    private static final double DETAIL_EPSILON = 0.0022D;
-    private static final double BORDER_EPSILON = 0.0024D;
-    private static final double LOGO_EPSILON = 0.0027D;
-    private static final double TEXT_EPSILON = 0.0031D;
+    /*
+     * The diagnostic screen is an authored zero-thickness plane. Keep the UI a
+     * fraction of a model pixel in front of it so the physical glass never wins
+     * the depth test, while the layers remain visually glued to the CRT.
+     */
+    private static final double BASE_EPSILON = 0.0060D;
+    private static final double GRID_EPSILON = 0.0062D;
+    private static final double PANEL_EPSILON = 0.0064D;
+    private static final double DETAIL_EPSILON = 0.0066D;
+    private static final double BORDER_EPSILON = 0.0068D;
+    private static final double LOGO_EPSILON = 0.0072D;
+    private static final double TEXT_EPSILON = 0.0078D;
 
     private final Font font;
     private final BodyRenderer bodyRenderer;
@@ -94,7 +106,7 @@ public final class SystemTerminalBlockEntityRenderer
         bodyRenderer.render(terminal, partialTick, poseStack, buffers,
                 packedLight, packedOverlay);
 
-        // Finish GeckoLib's translucent body/glow before painting the CRT.
+        // Finish the model/glow batches before the CRT writes depth over them.
         if (buffers instanceof MultiBufferSource.BufferSource source) {
             source.endBatch();
         }
@@ -110,9 +122,8 @@ public final class SystemTerminalBlockEntityRenderer
 
         renderCodeSurface(poseStack, buffers, frame, pos, view, active);
 
-        // The site seal is intentionally the only authored UI image. Everything
-        // else on the monitor is reconstructed from code-drawn primitives.
-        renderSubQuad(poseStack, buffers, frame, pos, TERMINAL_LOGO,
+        // The ARC-Site 48 seal is the only authored image in this interface.
+        renderCutoutSubQuad(poseStack, buffers, frame, pos, TERMINAL_LOGO,
                 11, 5, 42, 42, LOGO_EPSILON,
                 255, 255, 255, 255, true);
 
@@ -123,23 +134,26 @@ public final class SystemTerminalBlockEntityRenderer
     private void renderCodeSurface(PoseStack poseStack,
             MultiBufferSource buffers, Frame frame, BlockPos pos,
             DisplayView view, FacilityDiagnosticsScreen active) {
+        // CRT phosphor field.
         rect(poseStack, buffers, frame, pos, 0, 0,
                 FacilityDiagnosticsScreen.TEX_W,
                 FacilityDiagnosticsScreen.TEX_H, SCREEN, BASE_EPSILON);
 
-        // Subtle CRT scanlines and grid, matching the former code-rendered GUI.
+        // Fine scanlines and a barely visible engineering grid. These were both
+        // part of the original code-drawn GUI and are what make the blue field
+        // read as a terminal instead of a flat HUD pasted onto glass.
         for (int y = 1; y < FacilityDiagnosticsScreen.TEX_H; y += 4) {
             rect(poseStack, buffers, frame, pos, 0, y,
                     FacilityDiagnosticsScreen.TEX_W, 1,
-                    SCANLINE, PANEL_EPSILON);
+                    SCANLINE, GRID_EPSILON);
         }
         for (int x = 32; x < FacilityDiagnosticsScreen.TEX_W; x += 32) {
             rect(poseStack, buffers, frame, pos, x, 0, 1,
-                    FacilityDiagnosticsScreen.TEX_H, GRID, PANEL_EPSILON);
+                    FacilityDiagnosticsScreen.TEX_H, GRID, GRID_EPSILON);
         }
 
-        // Header. No simulated monitor bezel here: the real CRT housing already
-        // provides it in the GeckoLib model.
+        // Header. The old GUI's white/gray monitor bezel is deliberately absent;
+        // the actual GeckoLib monitor is the bezel now.
         rect(poseStack, buffers, frame, pos, 0, 0, 540, 52,
                 HEADER, PANEL_EPSILON);
         rect(poseStack, buffers, frame, pos, 0, 49, 540, 3,
@@ -149,18 +163,18 @@ public final class SystemTerminalBlockEntityRenderer
         border(poseStack, buffers, frame, pos, 454, 8, 64, 16,
                 DIM_BLUE, BORDER_EPSILON);
 
-        // Containment index.
+        // Containment Index.
         panel(poseStack, buffers, frame, pos, 14, 62, 204, 110);
         rowSurface(poseStack, buffers, frame, pos, 21, 87, 190, 52);
         rowSurface(poseStack, buffers, frame, pos, 21, 114, 190, 72);
 
-        // Facility telemetry.
+        // Facility Telemetry.
         panel(poseStack, buffers, frame, pos, 226, 62, 300, 110);
         rowSurface(poseStack, buffers, frame, pos, 233, 87, 286, 92);
         rowSurface(poseStack, buffers, frame, pos, 233, 110, 286, 66);
         rowSurface(poseStack, buffers, frame, pos, 233, 133, 286, 48);
 
-        // SCiPNET operations.
+        // SCiPNET Operations.
         rect(poseStack, buffers, frame, pos, 14, 182, 512, 92,
                 PANEL, PANEL_EPSILON);
         border(poseStack, buffers, frame, pos, 14, 182, 512, 92,
@@ -191,6 +205,13 @@ public final class SystemTerminalBlockEntityRenderer
         border(poseStack, buffers, frame, pos, 14, 284, 512, 88,
                 DIM_BLUE, BORDER_EPSILON);
         rect(poseStack, buffers, frame, pos, 22, 304, 496, 1,
+                DIM_BLUE, DETAIL_EPSILON);
+
+        // Footer band is intentionally restrained, keeping the hardware visible
+        // while separating session state from the log above it.
+        rect(poseStack, buffers, frame, pos, 0, 374, 540, 22,
+                FOOTER, PANEL_EPSILON);
+        rect(poseStack, buffers, frame, pos, 0, 374, 540, 1,
                 DIM_BLUE, DETAIL_EPSILON);
 
         flushWhite(buffers);
@@ -539,9 +560,9 @@ public final class SystemTerminalBlockEntityRenderer
     private static void rect(PoseStack poseStack, MultiBufferSource buffers,
             Frame frame, BlockPos pos, int x, int y, int width, int height,
             int color, double normalOffset) {
-        renderSubQuad(poseStack, buffers, frame, pos, WHITE_PIXEL,
+        renderCutoutSubQuad(poseStack, buffers, frame, pos, WHITE_PIXEL,
                 x, y, width, height, normalOffset,
-                red(color), green(color), blue(color), alpha(color), false);
+                red(color), green(color), blue(color), 255, false);
     }
 
     private static void border(PoseStack poseStack,
@@ -558,7 +579,7 @@ public final class SystemTerminalBlockEntityRenderer
                 1, height, color, normalOffset);
     }
 
-    private static void renderSubQuad(PoseStack poseStack,
+    private static void renderCutoutSubQuad(PoseStack poseStack,
             MultiBufferSource buffers, Frame frame, BlockPos pos,
             ResourceLocation texture, int x, int y, int width, int height,
             double normalOffset, int r, int g, int b, int a, boolean flush) {
@@ -568,16 +589,18 @@ public final class SystemTerminalBlockEntityRenderer
         double top = 0.5D - y / (double) FacilityDiagnosticsScreen.TEX_H;
         double bottom = 0.5D - (y + height)
                 / (double) FacilityDiagnosticsScreen.TEX_H;
-        renderQuad(poseStack, buffers, frame, pos, texture,
-                left, top, right, bottom, normalOffset, r, g, b, a, flush);
+        RenderType renderType = RenderType.entityCutoutNoCull(texture);
+        renderQuad(poseStack, buffers, frame, pos, renderType,
+                left, top, right, bottom, normalOffset, r, g, b, a);
+        if (flush && buffers instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch(renderType);
+        }
     }
 
     private static void renderQuad(PoseStack poseStack,
             MultiBufferSource buffers, Frame frame, BlockPos pos,
-            ResourceLocation texture, double left, double top, double right,
-            double bottom, double normalOffset, int r, int g, int b, int a,
-            boolean flush) {
-        RenderType renderType = RenderType.entityTranslucentEmissive(texture);
+            RenderType renderType, double left, double top, double right,
+            double bottom, double normalOffset, int r, int g, int b, int a) {
         VertexConsumer consumer = buffers.getBuffer(renderType);
         Vec3 topLeft = local(frame.point(left, top, normalOffset), pos);
         Vec3 topRight = local(frame.point(right, top, normalOffset), pos);
@@ -591,15 +614,11 @@ public final class SystemTerminalBlockEntityRenderer
                 r, g, b, a);
         vertex(consumer, poseStack, bottomLeft, 0.0F, 1.0F, normal,
                 r, g, b, a);
-
-        if (flush && buffers instanceof MultiBufferSource.BufferSource source) {
-            source.endBatch(renderType);
-        }
     }
 
     private static void flushWhite(MultiBufferSource buffers) {
         if (buffers instanceof MultiBufferSource.BufferSource source) {
-            source.endBatch(RenderType.entityTranslucentEmissive(WHITE_PIXEL));
+            source.endBatch(RenderType.entityCutoutNoCull(WHITE_PIXEL));
         }
     }
 
@@ -641,10 +660,6 @@ public final class SystemTerminalBlockEntityRenderer
 
     private static int blue(int color) {
         return color & 0xFF;
-    }
-
-    private static int alpha(int color) {
-        return color >>> 24 & 0xFF;
     }
 
     @Override

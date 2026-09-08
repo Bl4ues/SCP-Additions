@@ -28,6 +28,7 @@
     "IntercomContextAvailabilityMixin",
     "HackingDeviceContextDefaultsMixin",
     "HackingDeviceContextAvailabilityMixin",
+    "ObjectContainmentUnitHackInvoker",
     "ServerLevelIntercomSoundMixin",
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",

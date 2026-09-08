@@ -55,16 +55,17 @@ public final class Scp294PhysicalClient {
     private static final double FOCUS_WIDTH = 14.0D / 16.0D;
     private static final double FOCUS_HEIGHT = 12.0D / 16.0D;
 
-    // Tiny four-pixel-style readout on the payment panel. Keep this deliberately
-    // small and tucked against the authored surface; it is not a second GUI.
-    private static final double STATUS_CENTER_X = 3.15D / 16.0D;
-    private static final double STATUS_CENTER_Y = 24.60D / 16.0D;
-    private static final double STATUS_CENTER_Z = 0.0015D;
-    private static final double STATUS_WIDTH = 1.80D / 16.0D;
-    private static final double STATUS_HEIGHT = 0.28D / 16.0D;
-    private static final double STATUS_LEFT_INSET = 0.08D / 16.0D;
+    // Exact authored readout area measured from the SCP-294 model:
+    // X 2.15..3.15, Y 24.60..25.10, Z -0.12. The supplied Z is already
+    // offset from the model surface, so do not add another depth fudge here.
+    private static final double STATUS_CENTER_X = 2.65D / 16.0D;
+    private static final double STATUS_CENTER_Y = 24.85D / 16.0D;
+    private static final double STATUS_CENTER_Z = -0.12D / 16.0D;
+    private static final double STATUS_WIDTH = 1.00D / 16.0D;
+    private static final double STATUS_HEIGHT = 0.50D / 16.0D;
+    private static final double STATUS_PADDING_X = 0.06D / 16.0D;
+    private static final double STATUS_PADDING_Y = 0.04D / 16.0D;
     private static final int STATUS_TEXT = 0xFF071109;
-    private static final double STATUS_TEXT_EPSILON = 0.00035D;
     private static final ResourceLocation STATUS_FONT = ScpFonts.PF_VIDEOTEXT;
 
     // The dispensing opening is only painted into the authored model, so the
@@ -120,7 +121,7 @@ public final class Scp294PhysicalClient {
                 || Scp294Block.KEYBOARD_INTERACTION_KEY.equals(interactionKey);
     }
 
-    /** Draw only the visible face of the selected physical control. */
+    /** Draw only the authored physical control selected by Context Interaction. */
     public static void renderContextOutline(BlockPos pos, BlockState state,
             String interactionKey, PoseStack poseStack, Camera camera,
             MultiBufferSource buffers) {
@@ -141,11 +142,10 @@ public final class Scp294PhysicalClient {
             poseStack.translate(-0.5D, 0.0D, -0.5D);
 
             if (Scp294Block.COIN_INTERACTION_KEY.equals(interactionKey)) {
-                // Compact payment assembly only. The previous mask extended well
-                // below the physical box and made half the black column glow.
-                emitModelFrontPlane(consumer, poseStack.last(),
-                        1.20D, 20.75D, -0.02D,
-                        3.75D, 25.75D);
+                // Exact measured payment-panel bounds from the model.
+                emitModelBox(consumer, poseStack.last(),
+                        1.40D, 21.60D, -0.10D,
+                        3.90D, 25.60D, 0.00D);
             } else if (Scp294Block.KEYBOARD_INTERACTION_KEY.equals(interactionKey)) {
                 // The keyboard backing plate is tilted 22.5 degrees. Render only
                 // its visible front plane, not the full one-pixel-thick cuboid.
@@ -228,9 +228,9 @@ public final class Scp294PhysicalClient {
     }
 
     /**
-     * Left-anchored status rendering. Long orders shrink to the physical readout
-     * instead of being cropped; reserving cursor width keeps the text perfectly
-     * stationary while the underscore blinks.
+     * Left-anchored status rendering. Long orders shrink to the exact physical
+     * readout bounds; reserving cursor width keeps the text stationary while the
+     * underscore blinks. Padding is applied on every edge of the measured area.
      */
     private static void renderStatus(Font font, PoseStack poseStack,
             MultiBufferSource buffers, BlockPos pos, Direction facing,
@@ -246,16 +246,18 @@ public final class Scp294PhysicalClient {
                 style -> style.withFont(STATUS_FONT));
 
         double usableWidth = Math.max(0.001D,
-                frame.width() - STATUS_LEFT_INSET * 2.0D);
+                frame.width() - STATUS_PADDING_X * 2.0D);
+        double usableHeight = Math.max(0.001D,
+                frame.height() - STATUS_PADDING_Y * 2.0D);
         float measuredWidth = Math.max(1.0F, font.width(measuredText));
         float scaleByWidth = (float) (usableWidth / measuredWidth);
-        float scaleByHeight = (float) (frame.height() / 9.0D);
+        float scaleByHeight = (float) (usableHeight / 9.0D);
         float textScale = Math.max(0.0001F,
-                Math.min(scaleByWidth, scaleByHeight) * 0.90F);
+                Math.min(scaleByWidth, scaleByHeight));
 
-        double normalizedInset = STATUS_LEFT_INSET / frame.width();
+        double normalizedInset = STATUS_PADDING_X / frame.width();
         Vec3 topLeft = local(frame.point(-0.5D + normalizedInset,
-                0.5D, STATUS_TEXT_EPSILON), pos);
+                0.5D, 0.0D), pos);
         float logicalHeight = (float) (frame.height() / textScale);
         float y = Math.max(0.0F, (logicalHeight - 9.0F) * 0.5F);
 
@@ -335,6 +337,38 @@ public final class Scp294PhysicalClient {
                 minX, maxY, planeZ,
                 maxX, maxY, planeZ,
                 0, 0, -1);
+    }
+
+    private static void emitModelBox(VertexConsumer consumer,
+            PoseStack.Pose pose, double fromX, double fromY, double fromZ,
+            double toX, double toY, double toZ) {
+        float minX = (float) (Math.min(fromX, toX) * MODEL_UNIT);
+        float minY = (float) (Math.min(fromY, toY) * MODEL_UNIT);
+        float minZ = (float) (Math.min(fromZ, toZ) * MODEL_UNIT);
+        float maxX = (float) (Math.max(fromX, toX) * MODEL_UNIT);
+        float maxY = (float) (Math.max(fromY, toY) * MODEL_UNIT);
+        float maxZ = (float) (Math.max(fromZ, toZ) * MODEL_UNIT);
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
+
+        quad(consumer, matrix, normal,
+                maxX, minY, minZ, minX, minY, minZ,
+                minX, maxY, minZ, maxX, maxY, minZ, 0, 0, -1);
+        quad(consumer, matrix, normal,
+                minX, minY, maxZ, maxX, minY, maxZ,
+                maxX, maxY, maxZ, minX, maxY, maxZ, 0, 0, 1);
+        quad(consumer, matrix, normal,
+                minX, minY, minZ, minX, minY, maxZ,
+                minX, maxY, maxZ, minX, maxY, minZ, -1, 0, 0);
+        quad(consumer, matrix, normal,
+                maxX, minY, maxZ, maxX, minY, minZ,
+                maxX, maxY, minZ, maxX, maxY, maxZ, 1, 0, 0);
+        quad(consumer, matrix, normal,
+                minX, maxY, minZ, minX, maxY, maxZ,
+                maxX, maxY, maxZ, maxX, maxY, minZ, 0, 1, 0);
+        quad(consumer, matrix, normal,
+                minX, minY, maxZ, minX, minY, minZ,
+                maxX, minY, minZ, maxX, minY, maxZ, 0, -1, 0);
     }
 
     private static void texturedQuad(VertexConsumer consumer,

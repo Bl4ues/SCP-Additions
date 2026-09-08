@@ -16,7 +16,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-/** Placeholder item appearance backed by the real playable SCP selector UI. */
+/** Admin item backed by the playable SCP role selector UI. */
 public final class ScpRoleSelectorItem extends Item {
     public ScpRoleSelectorItem() {
         super(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
@@ -38,23 +38,23 @@ public final class ScpRoleSelectorItem extends Item {
 
     @Override
     public Component getName(ItemStack stack) {
-        return Component.literal("SCP Role Selector [Placeholder]");
+        return Component.literal("SCP Role Selector");
     }
 
     @Override
     public void appendHoverText(ItemStack stack, Level level,
             List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal(
-                "Temporary admin item appearance; playable role selection is functional.")
+                "Administrative tool for selecting and assuming playable SCP roles.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
                 "Right-click: open the Playable SCP Selector")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "SCP-079 currently requires a registered physical computer in this dimension.")
+                "Available roles may require their corresponding physical anomaly or infrastructure.")
                 .withStyle(ChatFormatting.DARK_GRAY));
         tooltip.add(Component.literal(
-                "While controlling SCP-079: sneak + right-click to reopen the selector.")
+                "Sneak + right-click while controlling a playable SCP to reopen the selector.")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

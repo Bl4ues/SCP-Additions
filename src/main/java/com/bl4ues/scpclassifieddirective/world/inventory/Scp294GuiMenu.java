@@ -22,6 +22,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.BlockPos;
 
+import com.bl4ues.scpclassifieddirective.block.entity.Scp294BlockEntity;
 import com.bl4ues.scpclassifieddirective.procedures.Scp294CoinSlotProcedure;
 import com.bl4ues.scpclassifieddirective.procedures.Scp294CoinSlot2Procedure;
 import com.bl4ues.scpclassifieddirective.network.Scp294GuiSlotMessage;
@@ -246,7 +247,11 @@ public class Scp294GuiMenu extends AbstractContainerMenu implements Supplier<Map
 	public void removed(Player playerIn) {
 		super.removed(playerIn);
 		Scp294CoinSlot2Procedure.execute(world);
-		if (!playerIn.level().isClientSide) {
+		// Physical payment belongs to the machine, not to the temporary keyboard
+		// screen. Leaving the typing view must not eject/refund the coin; otherwise
+		// the player cannot reopen the keyboard and effectively loses the payment.
+		if (!playerIn.level().isClientSide
+				&& !(boundBlockEntity instanceof Scp294BlockEntity)) {
 			ItemStack escrowedCurrency = internal.extractItem(
 					0, internal.getStackInSlot(0).getCount(), false);
 			PlayerCurrencyAccess.refund(playerIn, escrowedCurrency);

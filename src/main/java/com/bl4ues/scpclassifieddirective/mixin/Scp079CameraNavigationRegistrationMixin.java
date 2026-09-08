@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.mixin;
 
+import com.bl4ues.scpclassifieddirective.network.Scp079AdjacentCameraSwitchNetwork;
 import com.bl4ues.scpclassifieddirective.network.Scp079CameraNavigationNetwork;
 import com.bl4ues.scpclassifieddirective.network.Scp079InitialFeedNetwork;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
@@ -16,6 +17,7 @@ public abstract class Scp079CameraNavigationRegistrationMixin {
     private static void scpclassifieddirective$registerExtensions(
             CallbackInfo ci) {
         Scp079CameraNavigationNetwork.register();
+        Scp079AdjacentCameraSwitchNetwork.register();
         Scp079RoomAbilityNetwork.register();
         Scp079InitialFeedNetwork.register();
     }

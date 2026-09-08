@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.hacking;
 
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
+import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSoundFeedback;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork;
 import net.minecraft.core.BlockPos;
@@ -62,14 +63,18 @@ public final class HackingDeviceAttachmentManager {
         data.setDirty();
         if (!player.getAbilities().instabuild) held.shrink(1);
 
-        // broadcastAttachment also emits the filtered positional low-tech cue on
-        // every client in this dimension, so no unfiltered server duplicate plays.
         HackingDeviceNetwork.broadcastAttachment(level, pos, true);
-        HackingDeviceNetwork.focus(player, pos, true);
+        InventoryInteractionSoundFeedback.pickup(player);
+        HackingDeviceSessionManager.start(player, pos);
         return true;
     }
 
     public static boolean detach(ServerPlayer player, BlockPos pos) {
+        return detach(player, pos, true);
+    }
+
+    public static boolean detach(ServerPlayer player, BlockPos pos,
+            boolean playReturnCue) {
         if (player == null || pos == null
                 || !(player.level() instanceof ServerLevel level)) {
             return false;
@@ -80,11 +85,12 @@ public final class HackingDeviceAttachmentManager {
 
         ItemStack returned = new ItemStack(
                 ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
-        if (!player.getInventory().add(returned)) {
+        if (!player.getAbilities().instabuild
+                && !player.getInventory().add(returned)) {
             player.drop(returned, false);
         }
         HackingDeviceNetwork.broadcastAttachment(level, pos, false);
-        HackingDeviceNetwork.focus(player, pos, false);
+        if (playReturnCue) InventoryInteractionSoundFeedback.pickup(player);
         return true;
     }
 
@@ -107,6 +113,7 @@ public final class HackingDeviceAttachmentManager {
                     pos.getX() + 0.5D, pos.getY() + 0.5D,
                     pos.getZ() + 0.5D, stack));
             HackingDeviceNetwork.broadcastAttachment(level, pos, false);
+            HackingDeviceSessionManager.abortTarget(level, pos);
         }
         data.setDirty();
     }

@@ -55,7 +55,7 @@ public final class DefaultContextInteractions {
               "type":"block","id":"scp_classified_directive:scp_294","interactionId":"scp_294_coin",
               "range":2.25,"priority":82,"useItem":"hand","icon":"hand",
               "text":{"action":"Insert Coin","nameMode":"manual","name":"","showAction":true,"showName":false},
-              "anchor":{"position":[0.1546875,1.453125,-0.003],"rotateWith":"auto"},
+              "anchor":{"position":[0.165625,1.475,-0.003125],"rotateWith":"auto"},
               "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
               "visual":{"allowOffscreen":false,"scale":0.72}
             }
@@ -161,7 +161,7 @@ public final class DefaultContextInteractions {
                         continue;
                     }
                     if ("scp_294_coin".equals(key)) {
-                        setAnchor(object, 0.1546875D, 1.453125D, -0.003D);
+                        setAnchor(object, 0.165625D, 1.475D, -0.003125D);
                         continue;
                     }
                     if ("scp_294_keyboard".equals(key)) {

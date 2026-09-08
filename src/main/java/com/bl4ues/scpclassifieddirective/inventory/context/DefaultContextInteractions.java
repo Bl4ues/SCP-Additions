@@ -155,6 +155,14 @@ public final class DefaultContextInteractions {
                     continue;
                 }
                 if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:scp_294".equals(id)
+                        && key.isBlank()) {
+                    // The old generic Use/SCP-294 prompt is replaced by the
+                    // payment-panel and keyboard controls below.
+                    interactions.remove(i);
+                    continue;
+                }
+                if ("block".equalsIgnoreCase(type)
                         && ("scp_classified_directive:scp_902_closed".equals(id)
                         || "scp_classified_directive:scp_902_open".equals(id))) {
                     setAnchor(object, 0.418D, 0.052D, 0.5D);

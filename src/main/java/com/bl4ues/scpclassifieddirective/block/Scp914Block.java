@@ -41,6 +41,8 @@ import org.jetbrains.annotations.Nullable;
 /** Controller/render block for the rebuilt SCP-914 multiblock. */
 public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    private static final double CONTROL_USE_RANGE = 1.125D;
+    private static final double CONTROL_USE_RANGE_SQR = CONTROL_USE_RANGE * CONTROL_USE_RANGE;
     private static final double WIND_KEY_USE_RADIUS_SQR = 0.22D * 0.22D;
 
     public Scp914Block() {
@@ -87,9 +89,6 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level,
             BlockPos pos, CollisionContext context) {
-        // The controller is the front-center cell of the explicitly solid 3x3x3
-        // central machine core. Returning a full cube completes that core instead
-        // of leaving the origin as a thin front plate.
         return Shapes.block();
     }
 
@@ -117,8 +116,8 @@ public final class Scp914Block extends BaseEntityBlock implements EntityBlock {
             Player player, InteractionHand hand, BlockHitResult hit) {
         Vec3 windKey = Scp914Structure.windKeyAnchor(pos,
                 state.getValue(FACING));
-        if (hit.getLocation().distanceToSqr(windKey)
-                > WIND_KEY_USE_RADIUS_SQR) {
+        if (player.getEyePosition().distanceToSqr(windKey) > CONTROL_USE_RANGE_SQR
+                || hit.getLocation().distanceToSqr(windKey) > WIND_KEY_USE_RADIUS_SQR) {
             return InteractionResult.PASS;
         }
         if (!(level.getBlockEntity(pos) instanceof Scp914BlockEntity machine)) {

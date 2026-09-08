@@ -1,12 +1,14 @@
 package com.bl4ues.scpclassifieddirective.inventory.network;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
+import com.bl4ues.scpclassifieddirective.inventory.context.HackingDeviceContextDefaults;
 import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSoundFeedback;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.entity.AbstractScp131Entity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
+import com.bl4ues.scpclassifieddirective.hacking.HackingDeviceAttachmentManager;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents;
 import com.bl4ues.scpclassifieddirective.scp330.Scp330Hands;
 import net.minecraft.core.BlockPos;
@@ -186,6 +188,21 @@ public class ContextInteractPacket {
         if (hand == null) return;
         Vec3 anchor = rule.resolveBlockAnchor(pos, state);
         if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D) {
+            return;
+        }
+
+        if (HackingDeviceContextDefaults.ATTACH_KEY.equals(
+                rule.interactionKey())) {
+            if (HackingDeviceAttachmentManager.attach(player, pos, hand)) {
+                player.swing(hand, true);
+            }
+            return;
+        }
+        if (HackingDeviceContextDefaults.REMOVE_KEY.equals(
+                rule.interactionKey())) {
+            if (HackingDeviceAttachmentManager.detach(player, pos)) {
+                player.swing(InteractionHand.MAIN_HAND, true);
+            }
             return;
         }
 

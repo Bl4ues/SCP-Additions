@@ -23,6 +23,7 @@ import net.minecraft.core.BlockPos;
 
 import com.bl4ues.scpclassifieddirective.world.inventory.Scp294GuiMenu;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 
 import javax.annotation.Nullable;
 
@@ -109,7 +110,7 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 
 	@Override
 	public boolean canPlaceItem(int index, ItemStack stack) {
-		return true;
+		return index == 0 && stack.is(ScpClassifiedDirectiveModItems.COIN.get());
 	}
 
 	@Override

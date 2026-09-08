@@ -1,12 +1,8 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.facility.Scp079CameraTravelRules;
-import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
-import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -22,7 +18,6 @@ import net.minecraftforge.fml.common.Mod;
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079CameraEffectsClient {
     private static final long INTERFERENCE_NANOS = 300_000_000L;
-    private static final int CROSS_FLOOR_DURATION_MULTIPLIER = 3;
     private static final long AUDIO_FADE_IN_NANOS = 105_000_000L;
     private static final long AUDIO_FADE_OUT_NANOS = 165_000_000L;
 
@@ -68,8 +63,10 @@ public final class Scp079CameraEffectsClient {
             Vec3 current = Scp079PlayableClient.viewPosition();
             if (lastFeedPosition == null
                     || current.distanceToSqr(lastFeedPosition) > 0.25D) {
-                long duration = transitionDuration(lastFeedPosition, current);
-                startTransition(duration);
+                // Authored cross-floor/cross-zone waits are started before the
+                // state reaches us. Any remaining direct feed change uses only
+                // the short mask, including same-floor switches.
+                startTransition(INTERFERENCE_NANOS);
                 lastFeedPosition = current;
             }
         } else {
@@ -103,19 +100,6 @@ public final class Scp079CameraEffectsClient {
         }
     }
 
-    private static long transitionDuration(Vec3 previous, Vec3 current) {
-        if (previous == null || current == null) return INTERFERENCE_NANOS;
-        FacilityRoomSnapshot from = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(),
-                BlockPos.containing(previous));
-        FacilityRoomSnapshot to = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(),
-                BlockPos.containing(current));
-        return Scp079CameraTravelRules.differentFloor(from, to)
-                ? INTERFERENCE_NANOS * CROSS_FLOOR_DURATION_MULTIPLIER
-                : INTERFERENCE_NANOS;
-    }
-
     private static void startTransition(long durationNanos) {
         long now = System.nanoTime();
         interferenceStartedAt = now;
@@ -128,8 +112,13 @@ public final class Scp079CameraEffectsClient {
         return t * t * (3.0F - 2.0F * t);
     }
 
-    @SubscribeEvent(priority = EventPriority.NORMAL)
-    public static void onRenderGui(RenderGuiEvent.Pre event) {
+    /**
+     * Draw after the entire 079 HUD. The interference is a mask, not a handful
+     * of decorative scan lines: while a network hand-off is in progress no old
+     * or new feed/UI state should visibly leak through it.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onRenderGui(RenderGuiEvent.Post event) {
         if (!Scp079PlayableClient.active()) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
@@ -137,7 +126,8 @@ public final class Scp079CameraEffectsClient {
         int height = minecraft.getWindow().getGuiScaledHeight();
 
         float lowLight = Scp079NightVisionPostProcessor.strength();
-        if (Scp079PlayableClient.cameraMode() && lowLight > 0.04F) {
+        if (Scp079PlayableClient.cameraMode() && lowLight > 0.04F
+                && System.nanoTime() >= interferenceUntil) {
             int alpha = Mth.clamp(Math.round(lowLight * 255.0F), 0, 255);
             Scp079UiTheme.draw(event.getGuiGraphics(), minecraft.font,
                     "NIGHT-VISION MODE ACTIVE", 24, height - 50,
@@ -146,7 +136,7 @@ public final class Scp079CameraEffectsClient {
         renderInterference(event.getGuiGraphics(), width, height);
     }
 
-    @SubscribeEvent(priority = EventPriority.NORMAL)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRender(ScreenEvent.Render.Post event) {
         if (!Scp079PlayableClient.active()
                 || !(event.getScreen() instanceof Scp079FacilityMapScreen
@@ -158,20 +148,59 @@ public final class Scp079CameraEffectsClient {
     private static void renderInterference(GuiGraphics graphics,
             int width, int height) {
         long now = System.nanoTime();
-        if (now >= interferenceUntil) return;
+        if (now >= interferenceUntil || width <= 0 || height <= 0) return;
+
         long frame = now / 7_000_000L;
-        for (int i = 0; i < 14; i++) {
-            int y = Math.floorMod((int) (frame * 19L + i * 47L),
-                    Math.max(1, height));
-            int strip = 1 + Math.floorMod((int) (frame + i * 5L), 5);
-            int offset = Math.floorMod(
-                    (int) (frame * 11L + i * 31L), 91) - 45;
-            int color = i % 3 == 0 ? 0xA4C6F4FF
-                    : i % 3 == 1 ? 0x78182C38 : 0x624F96AC;
-            graphics.fill(Math.max(0, offset), y,
-                    Math.min(width, width + offset),
-                    Math.min(height, y + strip), color);
+        // Opaque carrier first. This is the part that actually masks the camera
+        // teleport; the animated noise below makes it read as video interference.
+        graphics.fill(0, 0, width, height, 0xFF061017);
+
+        for (int y = 0; y < height; y += 4) {
+            int hash = mix((int) (frame * 31L + y * 131L));
+            int luminance = 12 + (hash >>> 24 & 0x2F);
+            int red = Math.max(3, luminance / 3);
+            int green = Math.min(94, luminance + 7);
+            int blue = Math.min(118, luminance + 18);
+            int color = 0xFF000000 | red << 16 | green << 8 | blue;
+            graphics.fill(0, y, width, Math.min(height, y + 3), color);
         }
+
+        for (int i = 0; i < 34; i++) {
+            int hash = mix((int) (frame * 911L + i * 3571L));
+            int y = Math.floorMod(hash, height);
+            int strip = 1 + Math.floorMod(hash >>> 7, 7);
+            int x = Math.floorMod(hash >>> 13, Math.max(1, width));
+            int run = Math.max(10, Math.floorMod(hash >>> 19,
+                    Math.max(11, width / 2)));
+            int left = Math.max(0, x - run / 3);
+            int right = Math.min(width, left + run);
+            int color = switch (i % 4) {
+                case 0 -> 0xFFE7F7FF;
+                case 1 -> 0xFF76AFC4;
+                case 2 -> 0xFF172D38;
+                default -> 0xFF9BC5D3;
+            };
+            graphics.fill(left, y, right, Math.min(height, y + strip), color);
+        }
+
+        // A few displaced full-width tears keep long 0.8/1.5 s transfers from
+        // looking like a frozen loading screen.
+        for (int i = 0; i < 7; i++) {
+            int y = Math.floorMod((int) (frame * (23L + i * 4L) + i * 71L),
+                    height);
+            int h = 1 + Math.floorMod((int) (frame + i * 5L), 4);
+            graphics.fill(0, y, width, Math.min(height, y + h),
+                    i % 2 == 0 ? 0xFFD4EEF7 : 0xFF0A1D27);
+        }
+    }
+
+    private static int mix(int value) {
+        int x = value;
+        x ^= x >>> 16;
+        x *= 0x7FEB352D;
+        x ^= x >>> 15;
+        x *= 0x846CA68B;
+        return x ^ x >>> 16;
     }
 
     private static DisplayMode mode(Minecraft minecraft) {

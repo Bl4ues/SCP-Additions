@@ -22,6 +22,7 @@ public class ScpClassifiedDirectiveModItems {
 	public static final RegistryObject<Item> BUTTON_LOFF = block(ScpClassifiedDirectiveModBlocks.BUTTON_LOFF);
 	public static final RegistryObject<Item> TESLA_GATE = REGISTRY.register("tesla_gate", () -> new TeslaGateBlockItem(ScpClassifiedDirectiveModBlocks.TESLA_GATE.get()));
 	public static final RegistryObject<Item> TESLA_TERMINAL_OFF = block(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_OFF);
+	public static final RegistryObject<Item> HACKING_DEVICE = REGISTRY.register("hacking_device", HackingDeviceItem::new);
 	public static final RegistryObject<Item> SECURITY_CREDENTIALS = REGISTRY.register("security_credentials", () -> new SecurityCredentialsItem());
 	public static final RegistryObject<Item> DECON_OPEN = REGISTRY.register("decon_open", () -> new DecontaminationBlockItem(ScpClassifiedDirectiveModBlocks.DECON_OPEN.get()));
 	public static final RegistryObject<Item> SCP_079_SYSTEM_CONTROL = REGISTRY.register("scp_079_system_control", () -> new SystemTerminalItem(ScpClassifiedDirectiveModBlocks.SCP_079_SYSTEM_CONTROL.get()));

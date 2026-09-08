@@ -1,10 +1,15 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
+import com.bl4ues.scpclassifieddirective.block.TeslaGateStructure;
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import com.bl4ues.scpclassifieddirective.network.Scp079CameraNavigationNetwork.CameraNode;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,48 +27,60 @@ public final class Scp079InteractionScopeClient {
     private Scp079InteractionScopeClient() {
     }
 
-    public static boolean allow(String kind, BlockPos target) {
-        if (kind == null || target == null || !Scp079PlayableClient.cameraMode()) {
-            return false;
-        }
+    public static boolean allow(BlockPos target) {
+        if (target == null || !Scp079PlayableClient.cameraMode()) return false;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return false;
+
         List<FacilityRoomSnapshot> rooms = FacilityMappingClientState.rooms(
                 Scp079PlayableClient.hostDimension());
         FacilityRoomSnapshot current = currentRoom(rooms);
         if (current == null) return false;
 
-        if ("CAMERA".equals(kind)) {
-            FacilityRoomSnapshot targetRoom = cameraRoom(rooms, target);
-            return targetRoom != null
-                    && !current.id().equals(targetRoom.id())
-                    && adjacent(current, targetRoom);
+        FacilityRoomSnapshot targetCameraRoom = cameraRoom(rooms, target);
+        if (targetCameraRoom != null) {
+            return !current.id().equals(targetCameraRoom.id())
+                    && adjacent(current, targetCameraRoom);
         }
 
-        if (!"DOOR".equals(kind) && !"TESLA".equals(kind)) return false;
+        BlockState state = minecraft.level.getBlockState(target);
+        boolean door = FacilityModule.isFacilityDoor(state);
+        boolean tesla = TeslaGateStructure.isController(state);
+        if (!door && !tesla) return false;
+
         FacilityRoomSnapshot owner = owningRoom(rooms, target, current);
         return owner != null && current.id().equals(owner.id());
     }
 
     private static FacilityRoomSnapshot currentRoom(
             List<FacilityRoomSnapshot> rooms) {
-        BlockPos view = BlockPos.containing(Scp079PlayableClient.viewPosition());
-        for (FacilityRoomSnapshot room : rooms) {
-            if (room.containsColumn(view)) return room;
-        }
+        Vec3 viewPosition = Scp079PlayableClient.viewPosition();
 
+        // Prefer the topology node itself. A wall/ceiling camera can sit in the
+        // expanded border of multiple rooms, while its authored topology has one
+        // unambiguous owner. Using roomAt() first reintroduced the old boundary
+        // flicker whenever iteration order happened to choose the neighbour.
         CameraNode nearest = null;
         double nearestDistance = Double.MAX_VALUE;
         for (CameraNode node : Scp079CameraNetworkClientState.nodes()) {
-            double dx = node.x() - Scp079PlayableClient.viewPosition().x;
-            double dy = node.y() - Scp079PlayableClient.viewPosition().y;
-            double dz = node.z() - Scp079PlayableClient.viewPosition().z;
+            double dx = node.x() - viewPosition.x;
+            double dy = node.y() - viewPosition.y;
+            double dz = node.z() - viewPosition.z;
             double distance = dx * dx + dy * dy + dz * dz;
             if (distance < nearestDistance) {
                 nearestDistance = distance;
                 nearest = node;
             }
         }
-        if (nearest != null) return roomById(rooms, nearest.roomId());
+        if (nearest != null && nearestDistance <= 4.0D) {
+            FacilityRoomSnapshot topologyRoom = roomById(rooms, nearest.roomId());
+            if (topologyRoom != null) return topologyRoom;
+        }
 
+        BlockPos view = BlockPos.containing(viewPosition);
+        for (FacilityRoomSnapshot room : rooms) {
+            if (room.containsColumn(view)) return room;
+        }
         for (FacilityRoomSnapshot room : rooms) {
             if (withinExpandedFloor(room, view, 1)) return room;
         }

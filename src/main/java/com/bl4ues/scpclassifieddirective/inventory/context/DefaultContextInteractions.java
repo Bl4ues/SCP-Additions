@@ -55,7 +55,7 @@ public final class DefaultContextInteractions {
               "type":"block","id":"scp_classified_directive:scp_294","interactionId":"scp_294_coin",
               "range":2.25,"priority":82,"useItem":"hand","icon":"hand",
               "text":{"action":"Insert Coin","nameMode":"manual","name":"","showAction":true,"showName":false},
-              "anchor":{"position":[0.153125,0.971875,0.02],"rotateWith":"auto"},
+              "anchor":{"position":[0.153125,1.38125,-0.005],"rotateWith":"auto"},
               "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
               "visual":{"allowOffscreen":false,"scale":0.72}
             }
@@ -155,12 +155,19 @@ public final class DefaultContextInteractions {
                     continue;
                 }
                 if ("block".equalsIgnoreCase(type)
-                        && "scp_classified_directive:scp_294".equals(id)
-                        && key.isBlank()) {
-                    // The old generic Use/SCP-294 prompt is replaced by the
-                    // payment-panel and keyboard controls below.
-                    interactions.remove(i);
-                    continue;
+                        && "scp_classified_directive:scp_294".equals(id)) {
+                    if (key.isBlank()) {
+                        interactions.remove(i);
+                        continue;
+                    }
+                    if ("scp_294_coin".equals(key)) {
+                        setAnchor(object, 0.153125D, 1.38125D, -0.005D);
+                        continue;
+                    }
+                    if ("scp_294_keyboard".equals(key)) {
+                        setAnchor(object, 0.59375D, 1.41875D, -0.015D);
+                        continue;
+                    }
                 }
                 if ("block".equalsIgnoreCase(type)
                         && ("scp_classified_directive:scp_902_closed".equals(id)

@@ -3,7 +3,7 @@
     "textures": {
         "all": "scp_classified_directive:block/scp294",
         "particle": "scp_classified_directive:block/scp294",
-        "0": "scp_classified_directive:block/scp294_outofrange"
+        "0": "scp_classified_directive:block/scp294"
     },
     "render_type": "solid"
 }

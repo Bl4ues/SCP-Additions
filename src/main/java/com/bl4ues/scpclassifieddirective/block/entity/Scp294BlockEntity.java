@@ -34,6 +34,7 @@ import io.netty.buffer.Unpooled;
 public class Scp294BlockEntity extends RandomizableContainerBlockEntity implements WorldlyContainer {
 	private NonNullList<ItemStack> stacks = NonNullList.<ItemStack>withSize(1, ItemStack.EMPTY);
 	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
+	private long pouringUntilGameTime;
 
 	public Scp294BlockEntity(BlockPos position, BlockState state) {
 		super(ScpClassifiedDirectiveModBlockEntities.SCP_294.get(), position, state);
@@ -45,6 +46,7 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 		if (!this.tryLoadLootTable(compound))
 			this.stacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
 		ContainerHelper.loadAllItems(compound, this.stacks);
+		this.pouringUntilGameTime = compound.getLong("PouringUntilGameTime");
 	}
 
 	@Override
@@ -53,6 +55,7 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 		if (!this.trySaveLootTable(compound)) {
 			ContainerHelper.saveAllItems(compound, this.stacks);
 		}
+		compound.putLong("PouringUntilGameTime", this.pouringUntilGameTime);
 	}
 
 	@Override
@@ -63,6 +66,22 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 	@Override
 	public CompoundTag getUpdateTag() {
 		return this.saveWithFullMetadata();
+	}
+
+	public void startPouring(int ticks) {
+		if (this.level == null || ticks <= 0) {
+			return;
+		}
+		this.pouringUntilGameTime = this.level.getGameTime() + ticks;
+		this.setChanged();
+		if (!this.level.isClientSide()) {
+			BlockState state = this.getBlockState();
+			this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
+		}
+	}
+
+	public boolean isPouring() {
+		return this.level != null && this.level.getGameTime() < this.pouringUntilGameTime;
 	}
 
 	@Override

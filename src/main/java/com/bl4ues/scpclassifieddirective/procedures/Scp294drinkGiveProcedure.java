@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.block.entity.Scp294BlockEntity;
 import com.bl4ues.scpclassifieddirective.data.Scp294ActionExecutor;
 import com.bl4ues.scpclassifieddirective.data.Scp294DrinkManager;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
@@ -65,6 +66,12 @@ public class Scp294drinkGiveProcedure {
 			player.containerMenu.broadcastChanges();
 		}
 
+		int dispenseDelay = drink.giveResult() ? Math.max(0, drink.delayTicks()) : 0;
+		BlockEntity machineEntity = world.getBlockEntity(BlockPos.containing(x, y, z));
+		if (machineEntity instanceof Scp294BlockEntity machine && dispenseDelay > 0) {
+			machine.startPouring(dispenseDelay);
+		}
+
 		player.closeContainer();
 		playSound(world, x, y, z, drink.sound());
 		ListTag dispenseActions = Scp294DrinkManager.actionsToTag(drink.dispenseActions());
@@ -72,7 +79,8 @@ public class Scp294drinkGiveProcedure {
 
 		if (drink.giveResult()) {
 			ItemStack resultCopy = result.copy();
-			ScpClassifiedDirectiveMod.queueServerWork(drink.delayTicks(), () -> ItemHandlerHelper.giveItemToPlayer(player, resultCopy));
+			ScpClassifiedDirectiveMod.queueServerWork(dispenseDelay,
+					() -> ItemHandlerHelper.giveItemToPlayer(player, resultCopy));
 		}
 
 		ScpClassifiedDirectiveModVariables.WorldVariables.get(world).Scp294stock = ScpClassifiedDirectiveModVariables.WorldVariables.get(world).Scp294stock + 1;

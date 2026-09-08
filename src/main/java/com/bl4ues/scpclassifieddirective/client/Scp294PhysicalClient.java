@@ -1,28 +1,31 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.block.Scp294Block;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp294BlockEntity;
+import com.bl4ues.scpclassifieddirective.block.entity.Scp294OutOfRangeBlockEntity;
+import com.bl4ues.scpclassifieddirective.block.entity.Scp294StockingBlockEntity;
 import com.bl4ues.scpclassifieddirective.client.gui.Scp294GuiScreen;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlockEntities;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -31,30 +34,24 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Physical screen and controls for SCP-294. The vanilla block model remains
- * responsible for the vending-machine body; this renderer paints only the CRT
- * contents and exposes real model-space control surfaces to the immersive UI. */
+/**
+ * Physical controls for SCP-294. The vending-machine model owns the large
+ * decorative coffee display; only the tiny payment/status readout and temporary
+ * paper cup are drawn in world space.
+ */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class Scp294PhysicalClient {
-    public static final double FOCUS_DISTANCE = 1.30D;
+    /** Close framing around the upper control cluster, not the entire machine. */
+    public static final double FOCUS_DISTANCE = 0.90D;
 
     private static final double FOCUS_CENTER_X = 8.0D / 16.0D;
-    private static final double FOCUS_CENTER_Y = 18.6D / 16.0D;
+    private static final double FOCUS_CENTER_Y = 22.6D / 16.0D;
     private static final double FOCUS_CENTER_Z = 0.0D;
-    private static final double FOCUS_WIDTH = 16.0D / 16.0D;
-    private static final double FOCUS_HEIGHT = 23.0D / 16.0D;
+    private static final double FOCUS_WIDTH = 14.0D / 16.0D;
+    private static final double FOCUS_HEIGHT = 18.0D / 16.0D;
 
-    // The authored CRT housing occupies roughly x=5..14.1, y=23..30.6 and
-    // begins at z=1.7. Keep the live phosphor plane just in front of that face.
-    private static final double CRT_CENTER_X = 9.55D / 16.0D;
-    private static final double CRT_CENTER_Y = 26.72D / 16.0D;
-    private static final double CRT_CENTER_Z = 1.60D / 16.0D;
-    private static final double CRT_WIDTH = 8.30D / 16.0D;
-    private static final double CRT_HEIGHT = 6.35D / 16.0D;
-
-    // Physical input regions follow the keyboard and coin-panel geometry rather
-    // than the polygons from the removed fullscreen GUI.
+    // Keyboard and payment panel geometry from the authored SCP-294 model.
     private static final double KEYBOARD_CENTER_X = 9.50D / 16.0D;
     private static final double KEYBOARD_CENTER_Y = 13.80D / 16.0D;
     private static final double KEYBOARD_CENTER_Z = 0.035D / 16.0D;
@@ -67,37 +64,45 @@ public final class Scp294PhysicalClient {
     private static final double COIN_WIDTH = 4.10D / 16.0D;
     private static final double COIN_HEIGHT = 10.10D / 16.0D;
 
-    private static final ResourceLocation WHITE_PIXEL = new ResourceLocation(
-            ScpClassifiedDirectiveMod.MODID, "textures/screens/white_pixel.png");
-    private static final int CRT_BG = 0xFFD5DFDC;
-    private static final int CRT_SCANLINE = 0xFFC8D4D2;
-    private static final int CRT_TEXT = 0xFF101B20;
-    private static final int CRT_DIM = 0xFF52666A;
-    private static final int CRT_ACCENT = 0xFF304B50;
-    private static final int CRT_W = 256;
-    private static final int CRT_H = 192;
-    private static final double BASE_EPSILON = 0.0020D;
-    private static final double DETAIL_EPSILON = 0.0023D;
-    private static final double TEXT_EPSILON = 0.0027D;
+    // The small horizontal readout at the top of the payment panel. This is the
+    // machine's actual text display; the large coffee image above stays purely
+    // decorative, matching the real SCP-294 prop and Containment Breach layout.
+    private static final double STATUS_CENTER_X = 2.45D / 16.0D;
+    private static final double STATUS_CENTER_Y = 18.95D / 16.0D;
+    private static final double STATUS_CENTER_Z = -0.015D / 16.0D;
+    private static final double STATUS_WIDTH = 2.90D / 16.0D;
+    private static final double STATUS_HEIGHT = 0.82D / 16.0D;
+    private static final int STATUS_W = 112;
+    private static final int STATUS_H = 18;
+    private static final int STATUS_TEXT = 0xFF203426;
+    private static final double STATUS_TEXT_EPSILON = 0.0022D;
+
+    // Dispensing recess on the lower front. The empty paper cup is visible here
+    // only while the configured dispense delay is running.
+    private static final double CUP_CENTER_X = 11.50D / 16.0D;
+    private static final double CUP_CENTER_Y = 7.35D / 16.0D;
+    private static final double CUP_CENTER_Z = -0.04D / 16.0D;
+    private static final float CUP_SCALE = 0.20F;
 
     private Scp294PhysicalClient() { }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        BlockEntityType<Scp294BlockEntity> type = (BlockEntityType)
+        BlockEntityType<Scp294BlockEntity> normal = (BlockEntityType)
                 ScpClassifiedDirectiveModBlockEntities.SCP_294.get();
-        event.registerBlockEntityRenderer(type, Renderer::new);
+        BlockEntityType<Scp294OutOfRangeBlockEntity> outOfRange = (BlockEntityType)
+                ScpClassifiedDirectiveModBlockEntities.SCP_294_OUT_OF_RANGE.get();
+        BlockEntityType<Scp294StockingBlockEntity> stocking = (BlockEntityType)
+                ScpClassifiedDirectiveModBlockEntities.SCP_294_STOCKING.get();
+        event.registerBlockEntityRenderer(normal, Renderer::new);
+        event.registerBlockEntityRenderer(outOfRange, OutOfRangeRenderer::new);
+        event.registerBlockEntityRenderer(stocking, StockingRenderer::new);
     }
 
     public static Frame focusFrame(BlockPos pos, Direction facing) {
         return frame(pos, facing, FOCUS_CENTER_X, FOCUS_CENTER_Y,
                 FOCUS_CENTER_Z, FOCUS_WIDTH, FOCUS_HEIGHT);
-    }
-
-    public static Frame crtFrame(BlockPos pos, Direction facing) {
-        return frame(pos, facing, CRT_CENTER_X, CRT_CENTER_Y, CRT_CENTER_Z,
-                CRT_WIDTH, CRT_HEIGHT);
     }
 
     private static Frame keyboardFrame(BlockPos pos, Direction facing) {
@@ -110,6 +115,16 @@ public final class Scp294PhysicalClient {
                 COIN_CENTER_Z, COIN_WIDTH, COIN_HEIGHT);
     }
 
+    private static Frame statusFrame(BlockPos pos, Direction facing) {
+        return frame(pos, facing, STATUS_CENTER_X, STATUS_CENTER_Y,
+                STATUS_CENTER_Z, STATUS_WIDTH, STATUS_HEIGHT);
+    }
+
+    private static Frame cupFrame(BlockPos pos, Direction facing) {
+        return frame(pos, facing, CUP_CENTER_X, CUP_CENTER_Y,
+                CUP_CENTER_Z, 0.01D, 0.01D);
+    }
+
     private static Frame frame(BlockPos pos, Direction facing,
             double centerX, double centerY, double centerZ,
             double width, double height) {
@@ -117,7 +132,7 @@ public final class Scp294PhysicalClient {
                 centerX, centerY, centerZ, 0.0D, width, height);
     }
 
-    /** Resolve the actual piece of SCP-294 underneath the OS cursor. */
+    /** Resolve the actual control surface underneath the OS cursor. */
     public static Control controlAt(BlockPos pos, Direction facing,
             double mouseX, double mouseY, int viewportWidth, int viewportHeight) {
         if (pos == null || viewportWidth <= 0 || viewportHeight <= 0) {
@@ -143,7 +158,7 @@ public final class Scp294PhysicalClient {
 
         Control best = Control.NONE;
         double bestDistance = Double.POSITIVE_INFINITY;
-        double hit = hitDistance(origin, ray, crtFrame(pos, facing));
+        double hit = hitDistance(origin, ray, statusFrame(pos, facing));
         if (hit < bestDistance) {
             bestDistance = hit;
             best = Control.INPUT;
@@ -194,96 +209,137 @@ public final class Scp294PhysicalClient {
         }
 
         @Override
-        public void render(Scp294BlockEntity terminal, float partialTick,
+        public void render(Scp294BlockEntity machine, float partialTick,
                 PoseStack poseStack, MultiBufferSource buffers,
                 int packedLight, int packedOverlay) {
-            BlockState state = terminal.getBlockState();
-            if (!state.hasProperty(Scp294Block.FACING)) return;
-            Direction facing = state.getValue(Scp294Block.FACING);
-            BlockPos pos = terminal.getBlockPos();
-            Frame frame = crtFrame(pos, facing);
-
-            drawRect(poseStack, buffers, frame, pos, 0, 0, CRT_W, CRT_H,
-                    CRT_BG, BASE_EPSILON);
-            for (int y = 3; y < CRT_H; y += 6) {
-                drawRect(poseStack, buffers, frame, pos, 0, y, CRT_W, 1,
-                        CRT_SCANLINE, DETAIL_EPSILON);
-            }
-            flush(buffers);
-
+            Direction facing = facing(machine.getBlockState());
+            BlockPos pos = machine.getBlockPos();
             Scp294GuiScreen screen = activeScreen(pos);
-            boolean hasCoin = screen != null && screen.physicalHasCoinInserted();
-            String order = screen == null ? "" : screen.physicalOrder();
-            boolean typing = screen != null && screen.physicalInputFocused()
-                    && hasCoin;
-            renderText(poseStack, buffers, frame, pos, facing,
-                    hasCoin, order, typing);
-        }
 
-        private void renderText(PoseStack poseStack, MultiBufferSource buffers,
-                Frame frame, BlockPos pos, Direction facing, boolean hasCoin,
-                String order, boolean typing) {
-            Vec3 topLeft = local(frame.point(-0.5D, 0.5D, TEXT_EPSILON), pos);
-            float pixelScaleX = (float) (frame.width() / CRT_W);
-            float pixelScaleY = (float) (frame.height() / CRT_H);
-            float depthScale = Math.min(pixelScaleX, pixelScaleY);
-
-            poseStack.pushPose();
-            poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
-            poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
-            poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
-
-            draw(poseStack, buffers, Component.literal("SCP-294"),
-                    12, 12, CRT_ACCENT);
-            draw(poseStack, buffers, Component.literal(
-                    hasCoin ? "LIQUID REQUEST" : "PAYMENT REQUIRED"),
-                    12, 30, CRT_DIM);
-
-            String main;
-            if (!hasCoin) {
-                main = "INSERT COIN";
-            } else if (order.isBlank()) {
-                main = "ENTER LIQUID";
+            String status;
+            if (machine.isPouring()) {
+                status = "POURING";
+            } else if (screen != null) {
+                boolean hasCoin = screen.physicalHasCoinInserted();
+                String order = screen.physicalOrder();
+                if (!hasCoin) {
+                    status = "INSERT $0.50";
+                } else if (order.isBlank()) {
+                    status = "ENTER LIQUID";
+                } else {
+                    status = order;
+                    if (screen.physicalInputFocused()
+                            && (System.currentTimeMillis() / 400L) % 2L == 0L) {
+                        status += "_";
+                    }
+                }
+            } else if (machine.getItem(0).is(ScpClassifiedDirectiveModItems.COIN.get())) {
+                status = "ENTER LIQUID";
             } else {
-                main = trimToWidth(order, 220);
-            }
-            if (typing && (System.currentTimeMillis() / 400L) % 2L == 0L) {
-                main += "_";
+                status = "INSERT $0.50";
             }
 
-            poseStack.pushPose();
-            poseStack.translate(14.0F, 82.0F, 0.0F);
-            poseStack.scale(1.45F, 1.45F, 1.0F);
-            draw(poseStack, buffers, Component.literal(main), 0, 0, CRT_TEXT);
-            poseStack.popPose();
-
-            String hint = !hasCoin ? "ONE SCP-294 COIN"
-                    : order.isBlank() ? "TYPE REQUEST"
-                    : "PRESS KEYBOARD TO DISPENSE";
-            draw(poseStack, buffers, Component.literal(hint),
-                    14, 137, CRT_DIM);
-            poseStack.popPose();
-        }
-
-        private String trimToWidth(String text, int width) {
-            String value = text == null ? "" : text;
-            while (!value.isEmpty() && font.width(value) * 1.45F > width) {
-                value = value.substring(1);
+            renderStatus(font, poseStack, buffers, pos, facing, status);
+            if (machine.isPouring()) {
+                renderEmptyCup(machine, poseStack, buffers, pos, facing);
             }
-            return value;
-        }
-
-        private void draw(PoseStack poseStack, MultiBufferSource buffers,
-                Component text, float x, float y, int color) {
-            font.drawInBatch(text, x, y, color, false,
-                    poseStack.last().pose(), buffers, Font.DisplayMode.NORMAL,
-                    0, LightTexture.FULL_BRIGHT);
         }
 
         @Override
         public boolean shouldRenderOffScreen(Scp294BlockEntity blockEntity) {
             return true;
         }
+    }
+
+    private static final class OutOfRangeRenderer
+            implements BlockEntityRenderer<Scp294OutOfRangeBlockEntity> {
+        private final Font font;
+
+        private OutOfRangeRenderer(BlockEntityRendererProvider.Context context) {
+            this.font = context.getFont();
+        }
+
+        @Override
+        public void render(Scp294OutOfRangeBlockEntity machine, float partialTick,
+                PoseStack poseStack, MultiBufferSource buffers,
+                int packedLight, int packedOverlay) {
+            renderStatus(font, poseStack, buffers, machine.getBlockPos(),
+                    facing(machine.getBlockState()), "OUT OF RANGE");
+        }
+    }
+
+    private static final class StockingRenderer
+            implements BlockEntityRenderer<Scp294StockingBlockEntity> {
+        private final Font font;
+
+        private StockingRenderer(BlockEntityRendererProvider.Context context) {
+            this.font = context.getFont();
+        }
+
+        @Override
+        public void render(Scp294StockingBlockEntity machine, float partialTick,
+                PoseStack poseStack, MultiBufferSource buffers,
+                int packedLight, int packedOverlay) {
+            renderStatus(font, poseStack, buffers, machine.getBlockPos(),
+                    facing(machine.getBlockState()), "OUT OF ORDER");
+        }
+    }
+
+    private static Direction facing(BlockState state) {
+        return state.hasProperty(HorizontalDirectionalBlock.FACING)
+                ? state.getValue(HorizontalDirectionalBlock.FACING)
+                : Direction.NORTH;
+    }
+
+    private static void renderStatus(Font font, PoseStack poseStack,
+            MultiBufferSource buffers, BlockPos pos, Direction facing,
+            String rawStatus) {
+        Frame frame = statusFrame(pos, facing);
+        Vec3 topLeft = local(frame.point(-0.5D, 0.5D,
+                STATUS_TEXT_EPSILON), pos);
+        float pixelScaleX = (float) (frame.width() / STATUS_W);
+        float pixelScaleY = (float) (frame.height() / STATUS_H);
+        float depthScale = Math.min(pixelScaleX, pixelScaleY);
+        String status = fitToWidth(font, rawStatus == null ? "" : rawStatus,
+                STATUS_W - 6);
+
+        poseStack.pushPose();
+        poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
+        poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
+        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
+        float x = Math.max(3.0F, (STATUS_W - font.width(status)) * 0.5F);
+        float y = (STATUS_H - 9.0F) * 0.5F;
+        font.drawInBatch(Component.literal(status), x, y, STATUS_TEXT, false,
+                poseStack.last().pose(), buffers, Font.DisplayMode.NORMAL,
+                0, LightTexture.FULL_BRIGHT);
+        poseStack.popPose();
+    }
+
+    private static String fitToWidth(Font font, String raw, int width) {
+        String value = raw;
+        while (!value.isEmpty() && font.width(value) > width) {
+            value = value.substring(1);
+        }
+        return value;
+    }
+
+    private static void renderEmptyCup(Scp294BlockEntity machine,
+            PoseStack poseStack, MultiBufferSource buffers, BlockPos pos,
+            Direction facing) {
+        if (machine.getLevel() == null) return;
+        Frame anchor = cupFrame(pos, facing);
+        Vec3 center = local(anchor.center().add(anchor.outward().scale(0.006D)), pos);
+        ItemStack cup = new ItemStack(ScpClassifiedDirectiveModItems.EMPTY_CUP.get());
+
+        poseStack.pushPose();
+        poseStack.translate(center.x, center.y, center.z);
+        poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
+        poseStack.scale(CUP_SCALE, CUP_SCALE, CUP_SCALE);
+        Minecraft.getInstance().getItemRenderer().renderStatic(cup,
+                ItemDisplayContext.FIXED, LightTexture.FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY, poseStack, buffers,
+                machine.getLevel(), 0);
+        poseStack.popPose();
     }
 
     private static Scp294GuiScreen activeScreen(BlockPos pos) {
@@ -293,46 +349,6 @@ public final class Scp294PhysicalClient {
             return screen;
         }
         return null;
-    }
-
-    private static void drawRect(PoseStack poseStack,
-            MultiBufferSource buffers, Frame frame, BlockPos pos,
-            int x, int y, int width, int height, int color,
-            double normalOffset) {
-        double left = x / (double) CRT_W - 0.5D;
-        double right = (x + width) / (double) CRT_W - 0.5D;
-        double top = 0.5D - y / (double) CRT_H;
-        double bottom = 0.5D - (y + height) / (double) CRT_H;
-        RenderType type = RenderType.entityCutoutNoCull(WHITE_PIXEL);
-        VertexConsumer consumer = buffers.getBuffer(type);
-        Vec3 topLeft = local(frame.point(left, top, normalOffset), pos);
-        Vec3 topRight = local(frame.point(right, top, normalOffset), pos);
-        Vec3 bottomRight = local(frame.point(right, bottom, normalOffset), pos);
-        Vec3 bottomLeft = local(frame.point(left, bottom, normalOffset), pos);
-        Vec3 normal = frame.outward();
-        vertex(consumer, poseStack, topLeft, 0, 0, normal, color);
-        vertex(consumer, poseStack, topRight, 1, 0, normal, color);
-        vertex(consumer, poseStack, bottomRight, 1, 1, normal, color);
-        vertex(consumer, poseStack, bottomLeft, 0, 1, normal, color);
-    }
-
-    private static void vertex(VertexConsumer consumer, PoseStack poseStack,
-            Vec3 point, float u, float v, Vec3 normal, int color) {
-        consumer.vertex(poseStack.last().pose(), (float) point.x,
-                        (float) point.y, (float) point.z)
-                .color(red(color), green(color), blue(color), 255)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(LightTexture.FULL_BRIGHT)
-                .normal(poseStack.last().normal(), (float) normal.x,
-                        (float) normal.y, (float) normal.z)
-                .endVertex();
-    }
-
-    private static void flush(MultiBufferSource buffers) {
-        if (buffers instanceof MultiBufferSource.BufferSource source) {
-            source.endBatch(RenderType.entityCutoutNoCull(WHITE_PIXEL));
-        }
     }
 
     private static float textYaw(Direction facing) {
@@ -348,8 +364,4 @@ public final class Scp294PhysicalClient {
     private static Vec3 local(Vec3 world, BlockPos pos) {
         return world.subtract(pos.getX(), pos.getY(), pos.getZ());
     }
-
-    private static int red(int color) { return color >> 16 & 0xFF; }
-    private static int green(int color) { return color >> 8 & 0xFF; }
-    private static int blue(int color) { return color & 0xFF; }
 }

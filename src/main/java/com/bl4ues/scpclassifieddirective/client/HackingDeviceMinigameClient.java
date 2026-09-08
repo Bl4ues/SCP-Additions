@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.client;
 
+import com.bl4ues.scpclassifieddirective.client.gui.HackingDeviceScreen;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork;
 import net.minecraft.client.Minecraft;
@@ -207,6 +208,10 @@ public final class HackingDeviceMinigameClient {
         exitSent = true;
         HackingDeviceNetwork.exitSession(pos);
         HackingDeviceFocusClient.end();
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof HackingDeviceScreen) {
+            minecraft.setScreen(null);
+        }
     }
 
     public static void clear() {

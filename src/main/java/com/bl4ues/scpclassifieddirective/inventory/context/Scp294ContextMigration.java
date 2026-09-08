@@ -15,11 +15,13 @@ import net.minecraftforge.fml.common.Mod;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Removes legacy SCP-294 prompts and keeps its physical control anchors current. */
+/** Keeps the physical SCP-294 and SCP-914 context controls current. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class Scp294ContextMigration {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String SCP_294 = "scp_classified_directive:scp_294";
+    private static final String SCP_914 = "scp_classified_directive:scp_914";
+    private static final double PHYSICAL_CONTROL_RANGE = 1.125D;
 
     private Scp294ContextMigration() {
     }
@@ -46,24 +48,31 @@ public final class Scp294ContextMigration {
                 JsonElement element = interactions.get(i);
                 if (!element.isJsonObject()) continue;
                 JsonObject rule = element.getAsJsonObject();
-                if (!"block".equalsIgnoreCase(string(rule, "type"))
-                        || !SCP_294.equals(string(rule, "id"))) {
-                    continue;
-                }
+                if (!"block".equalsIgnoreCase(string(rule, "type"))) continue;
 
+                String id = string(rule, "id");
                 String key = string(rule, "interactionId");
                 if (key.isBlank()) key = string(rule, "interactionKey");
-                if (key.isBlank()) {
-                    interactions.remove(i);
-                    changed = true;
-                    continue;
-                }
-                if ("scp_294_coin".equals(key)) {
-                    // Center of the measured coin-panel box:
-                    // X 1.4..3.9, Y 21.6..25.6, Z -0.1..0.
-                    changed |= setAnchor(rule, 0.165625D, 1.475D, -0.003125D);
-                } else if ("scp_294_keyboard".equals(key)) {
-                    changed |= setAnchor(rule, 0.59375D, 1.41875D, -0.015D);
+
+                if (SCP_294.equals(id)) {
+                    if (key.isBlank()) {
+                        interactions.remove(i);
+                        changed = true;
+                        continue;
+                    }
+                    if ("scp_294_coin".equals(key)) {
+                        // Center of the measured coin-panel box:
+                        // X 1.4..3.9, Y 21.6..25.6, Z -0.1..0.
+                        changed |= setAnchor(rule, 0.165625D, 1.475D, -0.003125D);
+                        changed |= setRange(rule, PHYSICAL_CONTROL_RANGE);
+                    } else if ("scp_294_keyboard".equals(key)) {
+                        changed |= setAnchor(rule, 0.59375D, 1.41875D, -0.015D);
+                        changed |= setRange(rule, PHYSICAL_CONTROL_RANGE);
+                    }
+                } else if (SCP_914.equals(id)
+                        && ("scp_914_dial".equals(key)
+                        || "scp_914_start".equals(key))) {
+                    changed |= setRange(rule, PHYSICAL_CONTROL_RANGE);
                 }
             }
 
@@ -72,12 +81,26 @@ public final class Scp294ContextMigration {
                         GSON.toJson(root) + System.lineSeparator());
                 ContextInteractionRegistry.reloadFromDisk();
                 ScpClassifiedDirectiveMod.LOGGER.info(
-                        "Migrated SCP-294 physical context interactions");
+                        "Migrated close-range SCP-294/SCP-914 context interactions");
             }
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.warn(
-                    "Could not migrate SCP-294 context interactions", exception);
+                    "Could not migrate SCP-294/SCP-914 context interactions", exception);
         }
+    }
+
+    private static boolean setRange(JsonObject rule, double range) {
+        double current;
+        try {
+            current = rule.has("range") ? rule.get("range").getAsDouble() : Double.NaN;
+        } catch (Exception ignored) {
+            current = Double.NaN;
+        }
+        if (Double.isNaN(current) || Math.abs(current - range) > 1.0E-6D) {
+            rule.addProperty("range", range);
+            return true;
+        }
+        return false;
     }
 
     private static boolean setAnchor(JsonObject rule, double x, double y,

@@ -83,7 +83,13 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		super.init();
 		ClientNetwork.requestInventorySync();
 		lastAuxiliaryPowerOnline = menu.auxiliaryPowerOnline;
-		initializeDisplayState();
+		TeslaTerminalVisualStateClient.Snapshot persisted =
+				TeslaTerminalVisualStateClient.take(world, terminalPos());
+		if (persisted != null) {
+			restorePersistedState(persisted);
+		} else {
+			initializeDisplayState();
+		}
 		updateLayout();
 		TeslaTerminalFocusClient.begin(terminalPos());
 	}
@@ -224,6 +230,14 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 
 	@Override
 	public void removed() {
+		if (initializedDisplayState) {
+			TeslaTerminalVisualStateClient.store(world, terminalPos(),
+					new TeslaTerminalVisualStateClient.Snapshot(
+							visualState, pendingAction, visualTimer,
+							authenticated, displayedTeslaGatesEnabled,
+							displayedManualOverride,
+							lastAuxiliaryPowerOnline));
+		}
 		if (TeslaTerminalFocusClient.activeFor(terminalPos())) {
 			TeslaTerminalFocusClient.end();
 		}
@@ -399,6 +413,17 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		initializedDisplayState = true;
 	}
 
+	private void restorePersistedState(TeslaTerminalVisualStateClient.Snapshot state) {
+		visualState = state.visualState();
+		pendingAction = state.pendingAction();
+		visualTimer = Math.max(0, state.visualTimer());
+		authenticated = state.authenticated();
+		displayedTeslaGatesEnabled = state.displayedTeslaGatesEnabled();
+		displayedManualOverride = state.displayedManualOverride();
+		lastAuxiliaryPowerOnline = state.lastAuxiliaryPowerOnline();
+		initializedDisplayState = true;
+	}
+
 	private boolean hasCredentialsItem() {
 		return menu.initialHasSecurityCredentials
 				|| TeslaTerminalController.hasSecurityCredentials(entity);
@@ -453,7 +478,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		return (mouseY - this.topPos) / guiScale;
 	}
 
-	private enum VisualState {
+	enum VisualState {
 		MAIN,
 		CREDENTIAL_PROMPT,
 		INVALID_CREDENTIALS,
@@ -465,7 +490,7 @@ public class TeslaTerminalScreen extends AbstractContainerScreen<TeslaTerminalMe
 		OVERRIDE_ENGAGED
 	}
 
-	private enum PendingAction {
+	enum PendingAction {
 		NONE,
 		ENABLE_GATES,
 		DISABLE_GATES,

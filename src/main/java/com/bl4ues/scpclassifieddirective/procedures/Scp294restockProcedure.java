@@ -58,6 +58,7 @@ public class Scp294restockProcedure {
 							_be.load(_bnbt);
 						} catch (Exception ignored) {
 						}
+					}
 				}
 			}
 			{

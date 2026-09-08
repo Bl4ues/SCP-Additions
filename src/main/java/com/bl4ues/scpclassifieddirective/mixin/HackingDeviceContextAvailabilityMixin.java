@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Makes the attach/remove pickup rules reflect the persistent device state. */
+/** Hides the reader's ordinary controls while a temporary hack session owns it. */
 @Mixin(value = ContextInteractionRegistry.Rule.class, remap = false)
 public abstract class HackingDeviceContextAvailabilityMixin {
     @Shadow @Final private Block block;
@@ -44,21 +44,13 @@ public abstract class HackingDeviceContextAvailabilityMixin {
             cir.setReturnValue(!attached);
             return;
         }
-        if (HackingDeviceContextDefaults.REMOVE_KEY.equals(interactionKey)) {
-            cir.setReturnValue(attached);
-            return;
-        }
         if (!attached) return;
 
-        // Once seated on a normal reader, the device physically owns that reader
-        // surface. Card and Screwdriver prompts stay hidden until it is removed.
         if (KeycardReaderLevels.describe(state) != null) {
             cir.setReturnValue(false);
             return;
         }
 
-        // On an OCU only the reader-side operations are blocked. The separate lid
-        // control remains usable because it is a different physical piece.
         if (state.is(ObjectContainmentUnitModule.UNIT.get())
                 && ("open_object_containment_unit".equals(interactionKey)
                 || "configure_object_containment_unit".equals(interactionKey))) {

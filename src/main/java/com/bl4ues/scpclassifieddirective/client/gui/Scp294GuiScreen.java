@@ -12,8 +12,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
 /**
- * Keyboard-input controller for SCP-294. The physical Context Interaction on
- * the keyboard opens this screen only after payment; nothing is drawn in 2D.
+ * Keyboard-input controller for SCP-294. The server only opens this screen after
+ * payment, so the client session can accept text without depending on a possibly
+ * delayed slot sync. Nothing is drawn in 2D.
  */
 public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
     private String order = "";
@@ -36,9 +37,8 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY,
             float partialTicks) {
-        // Deliberately no 2D GUI or mouse controls. The player is physically at
-        // the keyboard; typed characters are rendered on the machine's small
-        // payment/status display by Scp294PhysicalClient.
+        // Deliberately no 2D GUI or mouse controls. Typed characters are drawn
+        // on the machine's physical payment/status display.
     }
 
     @Override
@@ -60,7 +60,7 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        if (!TeslaTerminalFocusClient.inputReady() || !hasCoinInserted()) {
+        if (!TeslaTerminalFocusClient.inputReady()) {
             return true;
         }
         inputFocused = true;
@@ -72,12 +72,13 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
     @Override
     public boolean keyPressed(int key, int scanCode, int modifiers) {
-        if (key == 256 || minecraft != null
-                && minecraft.options.keyInventory.matches(key, scanCode)) {
+        // E is the inventory key by default, but here it is also a perfectly
+        // ordinary letter in the physical keyboard. Only ESC/right-click exit.
+        if (key == 256) {
             closeMachine();
             return true;
         }
-        if (!TeslaTerminalFocusClient.inputReady() || !hasCoinInserted()) {
+        if (!TeslaTerminalFocusClient.inputReady()) {
             return true;
         }
         if (key == 257 || key == 335) {
@@ -109,8 +110,8 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
     private void sendDrinkRequest() {
         ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
                 new Scp294GuiButtonMessage(0, menu.x, menu.y, menu.z, order));
-        // A valid order is closed authoritatively by the server. An OUT OF RANGE
-        // request deliberately keeps this session open so the user can correct it.
+        // Valid orders close authoritatively on the server. OUT OF RANGE keeps
+        // this session open so the player can edit the request without paying again.
     }
 
     private void closeMachine() {

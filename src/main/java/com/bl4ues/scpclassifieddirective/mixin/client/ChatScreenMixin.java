@@ -22,17 +22,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Relocates chat for facility UI and gives playable SCP-079 its own terminal. */
 @Mixin(ChatScreen.class)
 public abstract class ChatScreenMixin {
+    private static final int VANILLA_EDITABLE_TEXT = 0xE0E0E0;
+    private static final int VANILLA_UNEDITABLE_TEXT = 0x707070;
+
     @Shadow protected EditBox input;
 
     @Inject(method = "init", at = @At("TAIL"))
     private void scpClassifiedDirective$positionFacilityInput(CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
         if (Scp079PlayableClient.active()) {
+            scpClassifiedDirective$setVanillaInputTextHidden(true);
             Scp079ChatLayout.positionInput(this.input,
                     minecraft.getWindow().getGuiScaledWidth(),
                     minecraft.getWindow().getGuiScaledHeight());
             return;
         }
+        scpClassifiedDirective$setVanillaInputTextHidden(false);
         if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
         ChatComponent chat = minecraft.gui.getChat();
         FacilityChatLayout.beginOpenAnimation();
@@ -48,11 +53,16 @@ public abstract class ChatScreenMixin {
             int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
         if (Scp079PlayableClient.active()) {
+            // The redirect below is authoritative. Transparent native text is a
+            // second line of defence for renderer replacements/injections from
+            // other mods that invoke the EditBox through a different call site.
+            scpClassifiedDirective$setVanillaInputTextHidden(true);
             Scp079ChatLayout.positionInput(this.input,
                     minecraft.getWindow().getGuiScaledWidth(),
                     minecraft.getWindow().getGuiScaledHeight());
             return;
         }
+        scpClassifiedDirective$setVanillaInputTextHidden(false);
         if (!ClientModulePreferences.facilityChatInterfaceEnabled()) return;
         ChatComponent chat = minecraft.gui.getChat();
         this.input.setX(FacilityChatLayout.inputX());
@@ -122,5 +132,12 @@ public abstract class ChatScreenMixin {
         }
         FacilityChatLayout.drawInputFrame(graphics,
                 Minecraft.getInstance().gui.getChat(), this.input);
+    }
+
+    private void scpClassifiedDirective$setVanillaInputTextHidden(boolean hidden) {
+        if (this.input == null) return;
+        this.input.setTextColor(hidden ? 0x00000000 : VANILLA_EDITABLE_TEXT);
+        this.input.setTextColorUneditable(hidden
+                ? 0x00000000 : VANILLA_UNEDITABLE_TEXT);
     }
 }

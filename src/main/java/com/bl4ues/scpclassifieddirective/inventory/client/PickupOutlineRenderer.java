@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
+import com.bl4ues.scpclassifieddirective.client.Scp294PhysicalClient;
 import com.bl4ues.scpclassifieddirective.client.Scp914InteractionClient;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.mixin.client.LevelRendererEntityTargetAccessor;
@@ -105,6 +106,14 @@ public final class PickupOutlineRenderer {
             OUTLINE_BUFFER.setColor(255, 255, 255, 255);
             if (pickup != null && pickup.isAlive()) {
                 renderEntityMask(minecraft, pickup, poseStack, camera);
+            } else if (context != null && context.isBlock()
+                    && Scp294PhysicalClient.isContextControl(
+                    context.interactionKey())) {
+                Scp294PhysicalClient.renderContextOutline(
+                        context.blockPos(),
+                        minecraft.level.getBlockState(context.blockPos()),
+                        context.interactionKey(), poseStack, camera,
+                        OUTLINE_BUFFER);
             } else if (context != null && context.isScp914Control()) {
                 renderScp914ControlMask(minecraft, context, poseStack, camera);
             } else if (context != null && context.isElevatorButton()) {

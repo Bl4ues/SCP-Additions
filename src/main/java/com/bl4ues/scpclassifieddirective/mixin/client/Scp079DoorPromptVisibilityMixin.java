@@ -19,10 +19,9 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Keeps SCP-079 door prompts attached to the authored two-block-tall door
- * visual instead of ray-testing only the low controller block. This matters
- * for cameras mounted above a doorway, where the low ray can cross the wall
- * header even though the door itself is plainly visible.
+ * Keeps SCP-079 door prompts attached to the visible middle/upper door surface.
+ * Ceiling cameras look down from a steep angle, so a controller-height anchor
+ * can leave the viewport while most of the actual door is still plainly visible.
  */
 @Mixin(value = Scp079PlayableVisualsV2.class, remap = false)
 public abstract class Scp079DoorPromptVisibilityMixin {
@@ -30,7 +29,7 @@ public abstract class Scp079DoorPromptVisibilityMixin {
             constant = @Constant(doubleValue = 0.22D), require = 1)
     private static double scpclassifieddirective$centerDoorPrompt(
             double original) {
-        return 0.50D;
+        return 0.90D;
     }
 
     @Inject(method = "visibleDoorFromCamera", at = @At("HEAD"),
@@ -57,9 +56,10 @@ public abstract class Scp079DoorPromptVisibilityMixin {
         Vec3[] samples = new Vec3[] {
                 target,
                 center.add(0.0D, 0.50D, 0.0D),
-                center.add(0.0D, 0.88D, 0.0D),
-                center.add(0.0D, 0.50D, 0.0D).add(side),
-                center.add(0.0D, 0.50D, 0.0D).subtract(side)
+                center.add(0.0D, 0.90D, 0.0D),
+                center.add(0.0D, 1.28D, 0.0D),
+                center.add(0.0D, 0.90D, 0.0D).add(side),
+                center.add(0.0D, 0.90D, 0.0D).subtract(side)
         };
 
         for (Vec3 sample : samples) {

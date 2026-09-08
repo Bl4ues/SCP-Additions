@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.block.SCP079SystemControlBlock;
 import com.bl4ues.scpclassifieddirective.block.TeslaTerminalBlockBlock;
 import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalScreen;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry;
@@ -25,15 +26,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Camera/input session for physical computer screens. The Tesla terminal is the
- * first user, but the focus pose is deliberately independent from its menu
- * state so later physical monitors can share the same presentation pattern.
- *
- * The camera is applied directly to Minecraft's real Camera after Camera.setup.
- * Earlier revisions used a detached ArmorStand as the camera entity; because
- * that helper was not part of the normal entity tick/interpolation pipeline its
- * eye position could occasionally be sampled from competing old/current values,
- * producing the wildly inconsistent "roller-coaster" motion seen in testing.
+ * Camera/input session for physical computer screens. Both facility terminals
+ * use Minecraft's real Camera after vanilla setup, avoiding detached-entity
+ * interpolation and preserving the stable symmetric approach/return behavior.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
@@ -44,14 +39,28 @@ public final class TeslaTerminalFocusClient {
     public static final double SCREEN_TILT_DEGREES = 22.5D;
     public static final double SCREEN_WIDTH = 11.2D / 16.0D;
     public static final double SCREEN_HEIGHT = 10.7D / 16.0D;
+
+    // Authored diagnostic CRT plane. Its monitor bone is yawed 12.5 degrees,
+    // and the GeckoLib model's X axis is mirrored into Minecraft block space.
+    public static final double DIAGNOSTIC_SCREEN_CENTER_X =
+            2.902130788109321D / 16.0D;
+    public static final double DIAGNOSTIC_SCREEN_CENTER_Y = 6.25D / 16.0D;
+    public static final double DIAGNOSTIC_SCREEN_CENTER_Z =
+            9.105966868662493D / 16.0D;
+    public static final double DIAGNOSTIC_SCREEN_YAW_DEGREES = 12.5D;
+    public static final double DIAGNOSTIC_SCREEN_WIDTH = 7.5D / 16.0D;
+    public static final double DIAGNOSTIC_SCREEN_HEIGHT = 5.5D / 16.0D;
+
     public static final double VIEW_HEIGHT_FRACTION = 0.72D;
     public static final double FOCUS_DISTANCE = 0.72D;
+    public static final double DIAGNOSTIC_FOCUS_DISTANCE = 0.42D;
 
     private static final double TARGET_FOV = 60.0D;
     private static final long APPROACH_NANOS = 260_000_000L;
     private static final long RETURN_NANOS = 260_000_000L;
 
     private static BlockPos activePos;
+    private static FocusKind activeKind;
     private static CameraType previousCameraType;
     private static Vec3 startPosition = Vec3.ZERO;
     private static float startYaw;
@@ -70,14 +79,27 @@ public final class TeslaTerminalFocusClient {
     private TeslaTerminalFocusClient() { }
 
     public static void begin(BlockPos pos) {
+        begin(pos, FocusKind.TESLA);
+    }
+
+    public static void beginDiagnostic(BlockPos pos) {
+        begin(pos, FocusKind.DIAGNOSTIC);
+    }
+
+    private static void begin(BlockPos pos, FocusKind kind) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.level == null || pos == null) {
+        if (minecraft.player == null || minecraft.level == null || pos == null
+                || kind == null) {
             return;
         }
-        if (activePos != null && activePos.equals(pos) && !returning) return;
+        if (activePos != null && activePos.equals(pos) && activeKind == kind
+                && !returning) {
+            return;
+        }
         if (active()) finishEnd(minecraft);
 
         activePos = pos.immutable();
+        activeKind = kind;
         previousCameraType = minecraft.options.getCameraType();
         startPosition = minecraft.gameRenderer.getMainCamera().getPosition();
         startYaw = minecraft.gameRenderer.getMainCamera().getYRot();
@@ -112,11 +134,15 @@ public final class TeslaTerminalFocusClient {
     }
 
     public static boolean active() {
-        return activePos != null;
+        return activePos != null && activeKind != null;
     }
 
     public static boolean activeFor(BlockPos pos) {
         return pos != null && pos.equals(activePos);
+    }
+
+    public static boolean diagnosticActiveFor(BlockPos pos) {
+        return activeKind == FocusKind.DIAGNOSTIC && activeFor(pos);
     }
 
     public static boolean inputReady() {
@@ -129,18 +155,29 @@ public final class TeslaTerminalFocusClient {
                 SCREEN_TILT_DEGREES, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
+    public static Frame diagnosticFrame(BlockPos pos, Direction facing) {
+        return PhysicalBlockScreenGeometry.fromNorthFacing(pos, facing,
+                DIAGNOSTIC_SCREEN_CENTER_X, DIAGNOSTIC_SCREEN_CENTER_Y,
+                DIAGNOSTIC_SCREEN_CENTER_Z, DIAGNOSTIC_SCREEN_YAW_DEGREES,
+                0.0D, DIAGNOSTIC_SCREEN_WIDTH, DIAGNOSTIC_SCREEN_HEIGHT);
+    }
+
     /**
-     * Physical CRT height in GUI-space as a fraction of the viewport. The input
-     * mapper uses the same FOV and target distance as the actual focused view.
+     * Physical CRT height in GUI-space as a fraction of the viewport. Input
+     * mapping uses the same FOV and target distance as the actual focused view.
      */
     public static double projectedHeightFraction() {
+        double height = activeKind == FocusKind.DIAGNOSTIC
+                ? DIAGNOSTIC_SCREEN_HEIGHT : SCREEN_HEIGHT;
+        double distance = activeKind == FocusKind.DIAGNOSTIC
+                ? DIAGNOSTIC_FOCUS_DISTANCE : FOCUS_DISTANCE;
         double halfFov = Math.toRadians(Mth.clamp(currentFovDegrees,
                 20.0D, 150.0D) * 0.5D);
         double tangent = Math.tan(halfFov);
         if (!Double.isFinite(tangent) || tangent <= 1.0E-6D) {
             return VIEW_HEIGHT_FRACTION;
         }
-        return Mth.clamp(SCREEN_HEIGHT / (2.0D * FOCUS_DISTANCE * tangent),
+        return Mth.clamp(height / (2.0D * distance * tangent),
                 0.10D, 0.95D);
     }
 
@@ -159,15 +196,11 @@ public final class TeslaTerminalFocusClient {
             return new Pose(position, yaw, pitch);
         }
 
-        BlockState state = minecraft.level.getBlockState(activePos);
-        if (!state.is(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get())) {
-            return null;
-        }
-        Direction facing = state.hasProperty(TeslaTerminalBlockBlock.FACING)
-                ? state.getValue(TeslaTerminalBlockBlock.FACING)
-                : Direction.NORTH;
-        Frame frame = frame(activePos, facing);
-        Vec3 targetEye = frame.center().add(frame.outward().scale(FOCUS_DISTANCE));
+        FocusTarget target = focusTarget(minecraft);
+        if (target == null) return null;
+        Frame frame = target.frame();
+        Vec3 targetEye = frame.center().add(frame.outward()
+                .scale(target.distance()));
         Vec3 look = frame.center().subtract(targetEye);
         double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
         float targetYaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
@@ -179,6 +212,29 @@ public final class TeslaTerminalFocusClient {
         float yaw = startYaw + Mth.wrapDegrees(targetYaw - startYaw) * eased;
         float pitch = Mth.lerp(eased, startPitch, targetPitch);
         return new Pose(position, yaw, pitch);
+    }
+
+    private static FocusTarget focusTarget(Minecraft minecraft) {
+        BlockState state = minecraft.level.getBlockState(activePos);
+        if (activeKind == FocusKind.DIAGNOSTIC) {
+            if (!state.is(ScpClassifiedDirectiveModBlocks
+                    .SCP_079_SYSTEM_CONTROL.get())) {
+                return null;
+            }
+            Direction facing = state.hasProperty(SCP079SystemControlBlock.FACING)
+                    ? state.getValue(SCP079SystemControlBlock.FACING)
+                    : Direction.NORTH;
+            return new FocusTarget(diagnosticFrame(activePos, facing),
+                    DIAGNOSTIC_FOCUS_DISTANCE);
+        }
+
+        if (!state.is(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get())) {
+            return null;
+        }
+        Direction facing = state.hasProperty(TeslaTerminalBlockBlock.FACING)
+                ? state.getValue(TeslaTerminalBlockBlock.FACING)
+                : Direction.NORTH;
+        return new FocusTarget(frame(activePos, facing), FOCUS_DISTANCE);
     }
 
     @SubscribeEvent
@@ -196,13 +252,21 @@ public final class TeslaTerminalFocusClient {
             return;
         }
 
-        if (!(minecraft.screen instanceof TeslaTerminalScreen)) {
+        boolean correctScreen = activeKind == FocusKind.DIAGNOSTIC
+                ? minecraft.screen instanceof FacilityDiagnosticsScreen screen
+                        && screen.isFor(activePos)
+                : minecraft.screen instanceof TeslaTerminalScreen;
+        if (!correctScreen) {
             end();
             return;
         }
-        BlockState state = minecraft.level.getBlockState(activePos);
-        if (!state.is(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get())) {
-            minecraft.player.closeContainer();
+
+        if (focusTarget(minecraft) == null) {
+            if (activeKind == FocusKind.DIAGNOSTIC) {
+                minecraft.setScreen(null);
+            } else {
+                minecraft.player.closeContainer();
+            }
             end();
         }
     }
@@ -270,12 +334,20 @@ public final class TeslaTerminalFocusClient {
             minecraft.options.setCameraType(previousCameraType);
         }
         activePos = null;
+        activeKind = null;
         previousCameraType = null;
         approachStarted = 0L;
         returnStarted = 0L;
         returning = false;
         currentFovDegrees = originalFovDegrees;
     }
+
+    private enum FocusKind {
+        TESLA,
+        DIAGNOSTIC
+    }
+
+    private record FocusTarget(Frame frame, double distance) { }
 
     public record Pose(Vec3 position, float yaw, float pitch) { }
 }

@@ -3,7 +3,7 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079InteractionScopeClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
-import com.bl4ues.scpclassifieddirective.network.Scp079CameraNavigationNetwork;
+import com.bl4ues.scpclassifieddirective.network.Scp079AdjacentCameraSwitchNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
@@ -56,6 +56,6 @@ public abstract class Scp079InteractionScopeMixin {
                     target = "Lcom/bl4ues/scpclassifieddirective/network/Scp079PlayableNetwork;requestRoom(Ljava/util/UUID;)V"))
     private static void scpclassifieddirective$requestAdjacentCameraOnly(
             UUID roomId) {
-        Scp079CameraNavigationNetwork.requestAdjacentRoom(roomId);
+        Scp079AdjacentCameraSwitchNetwork.request(roomId);
     }
 }

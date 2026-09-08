@@ -1,4 +1,3 @@
-
 package com.bl4ues.scpclassifieddirective.block;
 
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -42,6 +41,7 @@ import java.util.Collections;
 
 public class Scp294StockingBlock extends Block implements EntityBlock {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+	private static final int RESTOCK_TICKS = 90 * 60 * 20;
 
 	public Scp294StockingBlock() {
 		super(BlockBehaviour.Properties.of().sound(SoundType.METAL).strength(40f).requiresCorrectToolForDrops().noOcclusion().isRedstoneConductor((bs, br, bp) -> false));
@@ -120,17 +120,16 @@ public class Scp294StockingBlock extends Block implements EntityBlock {
 	@Override
 	public void onPlace(BlockState blockstate, Level world, BlockPos pos, BlockState oldState, boolean moving) {
 		super.onPlace(blockstate, world, pos, oldState, moving);
-		world.scheduleTick(pos, this, 20);
+		// The article states that SCP-294 becomes responsive again after roughly
+		// ninety minutes. A vanilla scheduled block tick survives chunk unloads and
+		// avoids the old implementation queuing a new delayed job every second.
+		world.scheduleTick(pos, this, RESTOCK_TICKS);
 	}
 
 	@Override
 	public void tick(BlockState blockstate, ServerLevel world, BlockPos pos, RandomSource random) {
 		super.tick(blockstate, world, pos, random);
-		int x = pos.getX();
-		int y = pos.getY();
-		int z = pos.getZ();
-		Scp294restock2Procedure.execute(world, x, y, z);
-		world.scheduleTick(pos, this, 20);
+		Scp294restock2Procedure.execute(world, pos.getX(), pos.getY(), pos.getZ());
 	}
 
 	@Override
@@ -148,7 +147,7 @@ public class Scp294StockingBlock extends Block implements EntityBlock {
 	public boolean triggerEvent(BlockState state, Level world, BlockPos pos, int eventID, int eventParam) {
 		super.triggerEvent(state, world, pos, eventID, eventParam);
 		BlockEntity blockEntity = world.getBlockEntity(pos);
-		return blockEntity == null ? false : blockEntity.triggerEvent(eventID, eventParam);
+		return blockEntity != null && blockEntity.triggerEvent(eventID, eventParam);
 	}
 
 	@Override
@@ -173,7 +172,6 @@ public class Scp294StockingBlock extends Block implements EntityBlock {
 		BlockEntity tileentity = world.getBlockEntity(pos);
 		if (tileentity instanceof Scp294StockingBlockEntity be)
 			return AbstractContainerMenu.getRedstoneSignalFromContainer(be);
-		else
-			return 0;
+		return 0;
 	}
 }

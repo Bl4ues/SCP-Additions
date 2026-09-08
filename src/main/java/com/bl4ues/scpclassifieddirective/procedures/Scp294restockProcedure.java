@@ -24,7 +24,7 @@ import java.util.List;
 
 public class Scp294restockProcedure {
 	public static void execute(LevelAccessor world, double x, double y, double z) {
-		if (ScpClassifiedDirectiveModVariables.WorldVariables.get(world).Scp294stock == 50) {
+		if (ScpClassifiedDirectiveModVariables.WorldVariables.get(world).Scp294stock >= 50) {
 			if (world instanceof Level _level) {
 				if (!_level.isClientSide()) {
 					_level.playSound(null, BlockPos.containing(x, y, z), ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("scp_classified_directive:scp294off")), SoundSource.NEUTRAL, 1, 1);
@@ -58,7 +58,6 @@ public class Scp294restockProcedure {
 							_be.load(_bnbt);
 						} catch (Exception ignored) {
 						}
-					}
 				}
 			}
 			{
@@ -69,8 +68,9 @@ public class Scp294restockProcedure {
 						_player.closeContainer();
 				}
 			}
-			ScpClassifiedDirectiveModVariables.WorldVariables.get(world).Scp294stock = 0;
-			ScpClassifiedDirectiveModVariables.WorldVariables.get(world).syncData(world);
+			// Keep the exhausted count until the stocking state finishes. The
+			// original article describes the machine becoming unresponsive after
+			// roughly fifty uses, not instantly refilling its internal counter.
 		}
 	}
 }

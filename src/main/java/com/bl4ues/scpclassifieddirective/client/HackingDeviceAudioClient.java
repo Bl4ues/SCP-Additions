@@ -6,26 +6,26 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
-/** Client-only low-tech playback for the device's borrowed SCP-079 cues. */
+/** Client-only low-tech playback for the device's borrowed SCP-079 interface cues. */
 public final class HackingDeviceAudioClient {
-    private static final ResourceLocation ATTACH_CUE = new ResourceLocation(
+    private static final ResourceLocation LOW_CUE = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "scp079_1");
-    private static final ResourceLocation DETACH_CUE = new ResourceLocation(
+    private static final ResourceLocation HIGH_CUE = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "scp079_2");
 
     private HackingDeviceAudioClient() {
     }
 
-    public static void playAttachmentCue(BlockPos pos, boolean attached) {
+    public static void playInterfaceCue(BlockPos pos, boolean high) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || pos == null) return;
-        ResourceLocation cue = attached ? ATTACH_CUE : DETACH_CUE;
+        ResourceLocation cue = high ? HIGH_CUE : LOW_CUE;
         minecraft.getSoundManager().play(new Scp079SpeakerCueSoundInstance(
                 cue,
                 pos.getX() + 0.5D,
                 pos.getY() + 0.5D,
                 pos.getZ() + 0.5D,
-                0.62F,
-                1.0F));
+                0.42F,
+                high ? 0.82F : 0.72F));
     }
 }

@@ -65,13 +65,14 @@ public class ScpClassifiedDirectiveModTabs {
 
     public static List<ItemStack> accessSecurityStacks() {
         return List.of(
-                new ItemStack(ScpClassifiedDirectiveModItems.SECURITY_CREDENTIALS.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_1_KEYCARD.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_2_KEYCARD.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_3_KEYCARD.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_4_KEYCARD.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_5_KEYCARD.get()),
-                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_6_KEYCARD.get()));
+                new ItemStack(ScpClassifiedDirectiveModItems.LEVEL_6_KEYCARD.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.HACKING_DEVICE.get()),
+                new ItemStack(ScpClassifiedDirectiveModItems.SECURITY_CREDENTIALS.get()));
     }
 
     public static List<ItemStack> equipmentStacks() {

@@ -64,6 +64,8 @@ public class Scp294Block extends Block implements EntityBlock {
 	public static final double KEYBOARD_ANCHOR_Y = 22.70D / 16.0D;
 	public static final double KEYBOARD_ANCHOR_Z = -0.015D;
 
+	private static final double CONTROL_USE_RANGE = 1.125D;
+	private static final double CONTROL_USE_RANGE_SQR = CONTROL_USE_RANGE * CONTROL_USE_RANGE;
 	private static final double COIN_HIT_RADIUS_SQR = 0.26D * 0.26D;
 	private static final double KEYBOARD_HIT_RADIUS_SQR = 0.34D * 0.34D;
 
@@ -159,13 +161,21 @@ public class Scp294Block extends Block implements EntityBlock {
 
 		Direction facing = state.getValue(FACING);
 		Vec3 location = hit.getLocation();
-		if (location.distanceToSqr(coinAnchor(pos, facing)) <= COIN_HIT_RADIUS_SQR) {
+		Vec3 coinAnchor = coinAnchor(pos, facing);
+		if (location.distanceToSqr(coinAnchor) <= COIN_HIT_RADIUS_SQR) {
+			if (player.getEyePosition().distanceToSqr(coinAnchor) > CONTROL_USE_RANGE_SQR) {
+				return InteractionResult.PASS;
+			}
 			if (world.isClientSide) return InteractionResult.SUCCESS;
 			return insertCoin(world, pos, player, machine)
 					? InteractionResult.CONSUME : InteractionResult.FAIL;
 		}
 
-		if (location.distanceToSqr(keyboardAnchor(pos, facing)) <= KEYBOARD_HIT_RADIUS_SQR) {
+		Vec3 keyboardAnchor = keyboardAnchor(pos, facing);
+		if (location.distanceToSqr(keyboardAnchor) <= KEYBOARD_HIT_RADIUS_SQR) {
+			if (player.getEyePosition().distanceToSqr(keyboardAnchor) > CONTROL_USE_RANGE_SQR) {
+				return InteractionResult.PASS;
+			}
 			if (!machine.getItem(0).is(ScpClassifiedDirectiveModItems.COIN.get())) {
 				return InteractionResult.FAIL;
 			}

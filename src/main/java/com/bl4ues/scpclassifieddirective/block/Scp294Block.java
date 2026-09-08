@@ -55,10 +55,10 @@ public class Scp294Block extends Block implements EntityBlock {
 	public static final String KEYBOARD_INTERACTION_KEY = "scp_294_keyboard";
 
 	// Authored control centers in the NORTH-facing vanilla block model. The
-	// keyboard is the slanted 5..14 x 19.7..25.7 element; the payment panel is
-	// the 10..13 x 15..19.7 assembly to its right from the viewer's perspective.
-	public static final double COIN_ANCHOR_X = 11.50D / 16.0D;
-	public static final double COIN_ANCHOR_Y = 17.35D / 16.0D;
+	// keyboard is the slanted 5..14 x 19.7..25.7 element. The payment panel is
+	// texture-authored on the viewer-right black column, hence the mirrored X.
+	public static final double COIN_ANCHOR_X = 2.45D / 16.0D;
+	public static final double COIN_ANCHOR_Y = 22.10D / 16.0D;
 	public static final double COIN_ANCHOR_Z = -0.005D;
 	public static final double KEYBOARD_ANCHOR_X = 9.50D / 16.0D;
 	public static final double KEYBOARD_ANCHOR_Y = 22.70D / 16.0D;

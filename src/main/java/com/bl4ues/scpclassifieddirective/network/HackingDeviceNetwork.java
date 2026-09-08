@@ -1,8 +1,10 @@
 package com.bl4ues.scpclassifieddirective.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.client.HackingDeviceAudioClient;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceClientState;
+import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient;
+import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
+import com.bl4ues.scpclassifieddirective.hacking.HackingDeviceSessionManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -17,8 +19,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
-/** Synchronizes attached Hacking Devices and placement/removal focus cues. */
+/** Synchronizes physical attachment plus the server-authoritative hacking session. */
 public final class HackingDeviceNetwork {
+    public enum ResultKind {
+        ROUND_OK,
+        DENIED,
+        LOCKED,
+        SUCCESS
+    }
+
     private static boolean registered;
 
     private HackingDeviceNetwork() {
@@ -33,8 +42,18 @@ public final class HackingDeviceNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(AttachmentSnapshot.class,
                 AttachmentSnapshot::encode, AttachmentSnapshot::decode,
                 AttachmentSnapshot::handle);
-        ScpClassifiedDirectiveMod.addNetworkMessage(FocusCue.class,
-                FocusCue::encode, FocusCue::decode, FocusCue::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(StartSession.class,
+                StartSession::encode, StartSession::decode,
+                StartSession::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(SessionResult.class,
+                SessionResult::encode, SessionResult::decode,
+                SessionResult::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(SubmitCandidate.class,
+                SubmitCandidate::encode, SubmitCandidate::decode,
+                SubmitCandidate::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(ExitSession.class,
+                ExitSession::encode, ExitSession::decode,
+                ExitSession::handle);
     }
 
     public static void broadcastAttachment(ServerLevel level, BlockPos pos,
@@ -55,12 +74,34 @@ public final class HackingDeviceNetwork {
                         ? List.of() : List.copyOf(positions)));
     }
 
-    public static void focus(ServerPlayer player, BlockPos pos,
-            boolean attached) {
-        if (player == null || pos == null) return;
+    public static void startSession(ServerPlayer player, BlockPos pos,
+            int accessLevel, int round, int failures,
+            HackingDevicePuzzle puzzle) {
+        if (player == null || pos == null || puzzle == null) return;
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
-                new FocusCue(pos, attached));
+                new StartSession(pos, accessLevel, round, failures, puzzle));
+    }
+
+    public static void sessionResult(ServerPlayer player, BlockPos pos,
+            ResultKind result, int round, int failures,
+            HackingDevicePuzzle puzzle) {
+        if (player == null || pos == null || result == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new SessionResult(pos, result, round, failures, puzzle));
+    }
+
+    public static void submitCandidate(BlockPos pos, int candidateIndex) {
+        if (pos == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                new SubmitCandidate(pos, candidateIndex));
+    }
+
+    public static void exitSession(BlockPos pos) {
+        if (pos == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                new ExitSession(pos));
     }
 
     public record AttachmentUpdate(BlockPos pos, boolean attached) {
@@ -79,12 +120,8 @@ public final class HackingDeviceNetwork {
                 Supplier<NetworkEvent.Context> contextSupplier) {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                    () -> () -> {
-                        HackingDeviceClientState.update(message.pos,
-                                message.attached);
-                        HackingDeviceAudioClient.playAttachmentCue(message.pos,
-                                message.attached);
-                    }));
+                    () -> () -> HackingDeviceClientState.update(message.pos,
+                            message.attached)));
             context.setPacketHandled(true);
         }
     }
@@ -113,22 +150,113 @@ public final class HackingDeviceNetwork {
         }
     }
 
-    public record FocusCue(BlockPos pos, boolean attached) {
-        private static void encode(FocusCue message, FriendlyByteBuf buffer) {
+    public record StartSession(BlockPos pos, int accessLevel, int round,
+            int failures, HackingDevicePuzzle puzzle) {
+        private static void encode(StartSession message,
+                FriendlyByteBuf buffer) {
             buffer.writeBlockPos(message.pos);
-            buffer.writeBoolean(message.attached);
+            buffer.writeVarInt(message.accessLevel);
+            buffer.writeVarInt(message.round);
+            buffer.writeVarInt(message.failures);
+            message.puzzle.encode(buffer);
         }
 
-        private static FocusCue decode(FriendlyByteBuf buffer) {
-            return new FocusCue(buffer.readBlockPos(), buffer.readBoolean());
+        private static StartSession decode(FriendlyByteBuf buffer) {
+            return new StartSession(buffer.readBlockPos(), buffer.readVarInt(),
+                    buffer.readVarInt(), buffer.readVarInt(),
+                    HackingDevicePuzzle.decode(buffer));
         }
 
-        private static void handle(FocusCue message,
+        private static void handle(StartSession message,
                 Supplier<NetworkEvent.Context> contextSupplier) {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                    () -> () -> com.bl4ues.scpclassifieddirective.client.HackingDeviceFocusClient
-                            .onServerCue(message.pos, message.attached)));
+                    () -> () -> {
+                        HackingDeviceMinigameClient.start(message.pos,
+                                message.accessLevel, message.round,
+                                message.failures, message.puzzle);
+                        com.bl4ues.scpclassifieddirective.client.HackingDeviceFocusClient
+                                .beginSession(message.pos);
+                    }));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SessionResult(BlockPos pos, ResultKind result, int round,
+            int failures, HackingDevicePuzzle puzzle) {
+        private static void encode(SessionResult message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.pos);
+            buffer.writeEnum(message.result);
+            buffer.writeVarInt(message.round);
+            buffer.writeVarInt(message.failures);
+            buffer.writeBoolean(message.puzzle != null);
+            if (message.puzzle != null) message.puzzle.encode(buffer);
+        }
+
+        private static SessionResult decode(FriendlyByteBuf buffer) {
+            BlockPos pos = buffer.readBlockPos();
+            ResultKind result = buffer.readEnum(ResultKind.class);
+            int round = buffer.readVarInt();
+            int failures = buffer.readVarInt();
+            HackingDevicePuzzle puzzle = buffer.readBoolean()
+                    ? HackingDevicePuzzle.decode(buffer) : null;
+            return new SessionResult(pos, result, round, failures, puzzle);
+        }
+
+        private static void handle(SessionResult message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> {
+                        if (message.pos.equals(HackingDeviceMinigameClient.pos())) {
+                            HackingDeviceMinigameClient.onResult(message.result,
+                                    message.round, message.failures,
+                                    message.puzzle);
+                        }
+                    }));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SubmitCandidate(BlockPos pos, int candidateIndex) {
+        private static void encode(SubmitCandidate message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.pos);
+            buffer.writeByte(message.candidateIndex);
+        }
+
+        private static SubmitCandidate decode(FriendlyByteBuf buffer) {
+            return new SubmitCandidate(buffer.readBlockPos(),
+                    buffer.readUnsignedByte());
+        }
+
+        private static void handle(SubmitCandidate message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            ServerPlayer sender = context.getSender();
+            context.enqueueWork(() -> HackingDeviceSessionManager.submit(sender,
+                    message.pos, message.candidateIndex));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record ExitSession(BlockPos pos) {
+        private static void encode(ExitSession message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.pos);
+        }
+
+        private static ExitSession decode(FriendlyByteBuf buffer) {
+            return new ExitSession(buffer.readBlockPos());
+        }
+
+        private static void handle(ExitSession message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            ServerPlayer sender = context.getSender();
+            context.enqueueWork(() -> HackingDeviceSessionManager.exit(sender,
+                    message.pos));
             context.setPacketHandled(true);
         }
     }

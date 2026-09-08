@@ -23,12 +23,12 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.Set;
+
 /** Renders the handheld model physically seated on Keycard Readers and OCUs. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceAttachedRenderer {
-    private static final ItemStack DEVICE_STACK =
-            new ItemStack(ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
     private static final float LOGICAL_WIDTH = 256.0F;
     private static final float LOGICAL_HEIGHT = 154.0F;
     private static final float SCREEN_SCALE = (float)
@@ -51,8 +51,9 @@ public final class HackingDeviceAttachedRenderer {
         Vec3 camera = event.getCamera().getPosition();
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
+        Set<BlockPos> visibleDevices = HackingDeviceClientState.snapshot();
 
-        for (BlockPos pos : HackingDeviceClientState.snapshot()) {
+        for (BlockPos pos : visibleDevices) {
             if (!minecraft.level.hasChunkAt(pos)
                     || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
                 continue;
@@ -67,7 +68,7 @@ public final class HackingDeviceAttachedRenderer {
         // Body passes must be complete before the small emissive screen overlay.
         buffers.endBatch();
 
-        for (BlockPos pos : HackingDeviceClientState.snapshot()) {
+        for (BlockPos pos : visibleDevices) {
             if (!minecraft.level.hasChunkAt(pos)
                     || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
                 continue;
@@ -90,7 +91,9 @@ public final class HackingDeviceAttachedRenderer {
         poseStack.mulPose(Axis.YP.rotationDegrees(
                 HackingDeviceAttachmentGeometry.modelYaw(attachment.facing())));
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
-        minecraft.getItemRenderer().renderStatic(DEVICE_STACK,
+        ItemStack deviceStack = new ItemStack(
+                ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
+        minecraft.getItemRenderer().renderStatic(deviceStack,
                 ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
                 poseStack, buffers, minecraft.level, 0);
         poseStack.popPose();
@@ -112,7 +115,7 @@ public final class HackingDeviceAttachedRenderer {
                 -LOGICAL_HEIGHT * 0.5F, 0.0F);
 
         Font font = minecraft.font;
-        // An opaque code-black panel is drawn independently of the model texture.
+        // Opaque background independent of the handheld texture and PBR pass.
         String blank = "                                                ";
         for (int y = 0; y < (int) LOGICAL_HEIGHT; y += 9) {
             font.drawInBatch(blank, 0.0F, y, 0x00000000, false,

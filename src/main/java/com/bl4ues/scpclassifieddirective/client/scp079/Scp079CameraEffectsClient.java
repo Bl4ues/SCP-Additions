@@ -1,8 +1,10 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -20,6 +22,17 @@ public final class Scp079CameraEffectsClient {
     private static final long INTERFERENCE_NANOS = 300_000_000L;
     private static final long AUDIO_FADE_IN_NANOS = 105_000_000L;
     private static final long AUDIO_FADE_OUT_NANOS = 165_000_000L;
+    private static final long CRT_FRAME_NANOS = 92_000_000L;
+    private static final int CRT_FRAME_COUNT = 5;
+    private static final int CRT_TEXTURE_WIDTH = 640;
+    private static final int CRT_TEXTURE_HEIGHT = 360;
+    private static final ResourceLocation[] CRT_STATIC = new ResourceLocation[] {
+            resource("textures/screens/crt_static_1.png"),
+            resource("textures/screens/crt_static_2.png"),
+            resource("textures/screens/crt_static_3.png"),
+            resource("textures/screens/crt_static_4.png"),
+            resource("textures/screens/crt_static_5.png")
+    };
 
     private static Vec3 lastFeedPosition;
     private static DisplayMode lastMode = DisplayMode.INACTIVE;
@@ -100,7 +113,7 @@ public final class Scp079CameraEffectsClient {
         }
     }
 
-    private static void startTransition(long durationNanos) {
+    static void startTransition(long durationNanos) {
         long now = System.nanoTime();
         interferenceStartedAt = now;
         interferenceUntil = now + Math.max(INTERFERENCE_NANOS,
@@ -134,15 +147,51 @@ public final class Scp079CameraEffectsClient {
                     1.08F, (alpha << 24) | 0x0079DDF3);
         }
         renderInterference(event.getGuiGraphics(), width, height);
+        renderCrtStatic(event.getGuiGraphics(), width, height);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRender(ScreenEvent.Render.Post event) {
         if (!Scp079PlayableClient.active()
                 || !(event.getScreen() instanceof Scp079FacilityMapScreen
-                || event.getScreen() instanceof Scp079LeaveRoleScreen)) return;
+                || event.getScreen() instanceof Scp079LeaveRoleScreen
+                || event.getScreen() instanceof Scp079BootSequenceScreen)) return;
         renderInterference(event.getGuiGraphics(),
                 event.getScreen().width, event.getScreen().height);
+        renderCrtStatic(event.getGuiGraphics(),
+                event.getScreen().width, event.getScreen().height);
+    }
+
+    private static void renderCrtStatic(GuiGraphics graphics,
+            int width, int height) {
+        if (width <= 0 || height <= 0 || !Scp079PlayableClient.active()) return;
+        long now = System.nanoTime();
+        float transition = transitionEnvelope();
+
+        // At rest the authored alpha-static remains intentionally faint. The
+        // two slow oscillations avoid a mechanical opacity pulse while keeping
+        // the effect in the requested ~20-30% range. During feed hand-offs the
+        // same texture becomes much more visible without ever turning opaque.
+        double slow = Math.sin(now / 740_000_000.0D);
+        double drift = Math.sin(now / 1_930_000_000.0D + 1.27D);
+        float idleAlpha = Mth.clamp((float) (0.25D + slow * 0.032D
+                + drift * 0.018D), 0.20F, 0.30F);
+        float transitionAlpha = Mth.clamp(0.70F + (float) slow * 0.06F,
+                0.62F, 0.78F);
+        float alpha = Mth.lerp(transition, idleAlpha, transitionAlpha);
+
+        long frameDuration = transition > 0.05F
+                ? Math.max(38_000_000L, CRT_FRAME_NANOS / 2L)
+                : CRT_FRAME_NANOS;
+        int frame = (int) Math.floorMod(now / frameDuration, CRT_FRAME_COUNT);
+
+        RenderSystem.enableBlend();
+        graphics.setColor(1.0F, 1.0F, 1.0F, alpha);
+        graphics.blit(CRT_STATIC[frame], 0, 0, width, height,
+                0.0F, 0.0F, CRT_TEXTURE_WIDTH, CRT_TEXTURE_HEIGHT,
+                CRT_TEXTURE_WIDTH, CRT_TEXTURE_HEIGHT);
+        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
     }
 
     private static void renderInterference(GuiGraphics graphics,
@@ -214,6 +263,10 @@ public final class Scp079CameraEffectsClient {
         }
         return Scp079PlayableClient.cameraMode()
                 ? DisplayMode.CAMERA : DisplayMode.LOCAL;
+    }
+
+    private static ResourceLocation resource(String path) {
+        return new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path);
     }
 
     private enum DisplayMode { INACTIVE, LOCAL, BOOT, MAP, CAMERA }

@@ -1,14 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin.client;
 
-import com.bl4ues.scpclassifieddirective.block.TeslaTerminalBlockBlock;
 import com.bl4ues.scpclassifieddirective.client.TeslaTerminalFocusClient;
 import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalScreen;
-import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
-import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,11 +9,10 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Maps the normal Screen cursor onto the actual 3D CRT plane. Earlier versions
- * approximated the physical monitor as a centered 2D rectangle; that looked
- * close enough but its hitboxes drifted away from the rendered buttons. This
- * version ray-casts the cursor through the focused camera and intersects the
- * authored tilted screen itself, so visual pixels and input share one surface.
+ * Maps the normal Screen cursor onto the physical CRT. Once terminal focus is
+ * complete the camera is centered on, and perpendicular to, the authored CRT
+ * plane. Using that exact projected rectangle is both simpler and more robust
+ * than reconstructing a second world-space ray from camera basis vectors.
  */
 @Mixin(value = TeslaTerminalScreen.class, remap = false)
 public abstract class TeslaTerminalPhysicalInputMixin {
@@ -43,8 +35,8 @@ public abstract class TeslaTerminalPhysicalInputMixin {
                     target = "Lcom/bl4ues/scpclassifieddirective/client/gui/TeslaTerminalScreen;textureX(D)D"))
     private double scpclassifieddirective$physicalTextureX(
             TeslaTerminalScreen screen, double mouseX) {
-        return scpclassifieddirective$physicalCoordinates(screen, mouseX,
-                scpclassifieddirective$mouseY)[0];
+        return scpclassifieddirective$physicalCoordinates(screen,
+                mouseX, scpclassifieddirective$mouseY)[0];
     }
 
     @Redirect(method = "mouseClicked",
@@ -58,64 +50,35 @@ public abstract class TeslaTerminalPhysicalInputMixin {
 
     private double[] scpclassifieddirective$physicalCoordinates(
             TeslaTerminalScreen screen, double mouseX, double mouseY) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null) {
-            return new double[] {-1.0E6D, -1.0E6D};
-        }
+        double viewportWidth = Math.max(1.0D, screen.width);
+        double viewportHeight = Math.max(1.0D, screen.height);
 
-        BlockState state = minecraft.level.getBlockState(screen.terminalPos());
-        Direction facing = state.hasProperty(TeslaTerminalBlockBlock.FACING)
-                ? state.getValue(TeslaTerminalBlockBlock.FACING)
-                : Direction.NORTH;
-        Frame frame = TeslaTerminalFocusClient.frame(screen.terminalPos(), facing);
-        Camera camera = minecraft.gameRenderer.getMainCamera();
-        Vec3 origin = camera.getPosition();
-        Vec3 forward = new Vec3(camera.getLookVector()).normalize();
-        Vec3 right = new Vec3(camera.getLeftVector()).scale(-1.0D).normalize();
-        Vec3 up = new Vec3(camera.getUpVector()).normalize();
+        // Focus camera ends exactly on the screen normal and looks at the CRT
+        // centre. Project the real authored screen dimensions using the same
+        // FOV/distance used by TeslaTerminalFocusClient, rather than the old
+        // 1410x1080 aspect approximation.
+        double projectedHeight = viewportHeight
+                * TeslaTerminalFocusClient.projectedHeightFraction();
+        double physicalAspect = TeslaTerminalFocusClient.SCREEN_WIDTH
+                / TeslaTerminalFocusClient.SCREEN_HEIGHT;
+        double projectedWidth = projectedHeight * physicalAspect;
+        double left = (viewportWidth - projectedWidth) * 0.5D;
+        double top = (viewportHeight - projectedHeight) * 0.5D;
 
-        double guiWidth = Math.max(1.0D,
-                minecraft.getWindow().getGuiScaledWidth());
-        double guiHeight = Math.max(1.0D,
-                minecraft.getWindow().getGuiScaledHeight());
-        double ndcX = mouseX / guiWidth * 2.0D - 1.0D;
-        double ndcY = 1.0D - mouseY / guiHeight * 2.0D;
-        double aspect = minecraft.getWindow().getScreenWidth()
-                / (double) Math.max(1, minecraft.getWindow().getScreenHeight());
-        double tangent = Math.tan(Math.toRadians(60.0D * 0.5D));
-
-        Vec3 ray = forward
-                .add(right.scale(ndcX * tangent * aspect))
-                .add(up.scale(ndcY * tangent))
-                .normalize();
-        double denominator = ray.dot(frame.outward());
-        if (Math.abs(denominator) <= 1.0E-7D) {
-            return new double[] {-1.0E6D, -1.0E6D};
-        }
-        double distance = frame.center().subtract(origin)
-                .dot(frame.outward()) / denominator;
-        if (!Double.isFinite(distance) || distance <= 0.0D) {
-            return new double[] {-1.0E6D, -1.0E6D};
-        }
-
-        Vec3 local = origin.add(ray.scale(distance)).subtract(frame.center());
-        double u = 0.5D + local.dot(frame.right()) / frame.width();
-        double v = 0.5D - local.dot(frame.up()) / frame.height();
+        double u = (mouseX - left) / Math.max(1.0E-6D, projectedWidth);
+        double v = (mouseY - top) / Math.max(1.0E-6D, projectedHeight);
         return new double[] {
                 u * TeslaTerminalScreen.TEX_W,
                 v * TeslaTerminalScreen.TEX_H
         };
     }
 
-    /**
-     * Empty CRT space must not sound like a successful control press. Valid
-     * controls still call playSelect() after their real pixel hitbox is reached.
-     */
+    /** Empty CRT space should not sound like a successful control press. */
     @Redirect(method = "mouseClicked",
             at = @At(value = "INVOKE",
                     target = "Lcom/bl4ues/scpclassifieddirective/client/gui/TeslaTerminalScreen;playRandomClick()V"))
     private void scpclassifieddirective$onlySoundValidControls(
             TeslaTerminalScreen screen) {
-        // Intentionally empty. Valid controls still emit playSelect().
+        // Valid controls still emit playSelect().
     }
 }

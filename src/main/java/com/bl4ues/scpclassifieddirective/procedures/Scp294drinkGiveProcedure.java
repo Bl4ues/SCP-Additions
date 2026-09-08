@@ -4,7 +4,6 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
@@ -15,14 +14,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Property;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp294BlockEntity;
 import com.bl4ues.scpclassifieddirective.data.Scp294ActionExecutor;
 import com.bl4ues.scpclassifieddirective.data.Scp294DrinkManager;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.bl4ues.scpclassifieddirective.integration.PlayerCurrencyAccess;
 import com.bl4ues.scpclassifieddirective.network.ScpClassifiedDirectiveModVariables;
@@ -31,6 +27,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class Scp294drinkGiveProcedure {
+	private static final int OUT_OF_RANGE_TICKS = 20;
+
 	public static void execute(LevelAccessor world, double x, double y, double z, Entity entity, String input) {
 		if (!(entity instanceof Player player)) {
 			return;
@@ -46,8 +44,10 @@ public class Scp294drinkGiveProcedure {
 
 		Scp294DrinkManager.MatchResult match = Scp294DrinkManager.findByInput(input);
 		if (!match.found()) {
-			player.closeContainer();
-			showOutOfRangeScreen(world, x, y, z);
+			BlockEntity blockEntity = world.getBlockEntity(BlockPos.containing(x, y, z));
+			if (blockEntity instanceof Scp294BlockEntity machine) {
+				machine.showOutOfRange(OUT_OF_RANGE_TICKS);
+			}
 			playSound(world, x, y, z, new ResourceLocation("scp_classified_directive:scp294outofrange"));
 			return;
 		}
@@ -110,43 +110,6 @@ public class Scp294drinkGiveProcedure {
 			}
 		}
 		return null;
-	}
-
-	private static void showOutOfRangeScreen(LevelAccessor world, double x, double y, double z) {
-		BlockPos pos = BlockPos.containing(x, y, z);
-		BlockState oldState = world.getBlockState(pos);
-		BlockState newState = copyProperties(oldState, ScpClassifiedDirectiveModBlocks.SCP_294_OUT_OF_RANGE.get().defaultBlockState());
-		BlockEntity blockEntity = world.getBlockEntity(pos);
-		CompoundTag blockEntityTag = null;
-		if (blockEntity != null) {
-			blockEntityTag = blockEntity.saveWithFullMetadata();
-			blockEntity.setRemoved();
-		}
-		world.setBlock(pos, newState, 3);
-		if (blockEntityTag != null) {
-			BlockEntity newBlockEntity = world.getBlockEntity(pos);
-			if (newBlockEntity != null) {
-				try {
-					newBlockEntity.load(blockEntityTag);
-				} catch (Exception ignored) {
-				}
-			}
-		}
-	}
-
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	private static BlockState copyProperties(BlockState from, BlockState to) {
-		BlockState result = to;
-		for (Map.Entry<Property<?>, Comparable<?>> entry : from.getValues().entrySet()) {
-			Property property = result.getBlock().getStateDefinition().getProperty(entry.getKey().getName());
-			if (property != null) {
-				try {
-					result = result.setValue((Property) property, (Comparable) entry.getValue());
-				} catch (Exception ignored) {
-				}
-			}
-		}
-		return result;
 	}
 
 	private static void playSound(LevelAccessor world, double x, double y, double z, ResourceLocation sound) {

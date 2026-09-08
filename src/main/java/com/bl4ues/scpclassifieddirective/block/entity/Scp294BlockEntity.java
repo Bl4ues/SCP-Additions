@@ -35,6 +35,7 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 	private NonNullList<ItemStack> stacks = NonNullList.<ItemStack>withSize(1, ItemStack.EMPTY);
 	private final LazyOptional<? extends IItemHandler>[] handlers = SidedInvWrapper.create(this, Direction.values());
 	private long pouringUntilGameTime;
+	private long outOfRangeUntilGameTime;
 
 	public Scp294BlockEntity(BlockPos position, BlockState state) {
 		super(ScpClassifiedDirectiveModBlockEntities.SCP_294.get(), position, state);
@@ -47,6 +48,7 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 			this.stacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
 		ContainerHelper.loadAllItems(compound, this.stacks);
 		this.pouringUntilGameTime = compound.getLong("PouringUntilGameTime");
+		this.outOfRangeUntilGameTime = compound.getLong("OutOfRangeUntilGameTime");
 	}
 
 	@Override
@@ -56,6 +58,7 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 			ContainerHelper.saveAllItems(compound, this.stacks);
 		}
 		compound.putLong("PouringUntilGameTime", this.pouringUntilGameTime);
+		compound.putLong("OutOfRangeUntilGameTime", this.outOfRangeUntilGameTime);
 	}
 
 	@Override
@@ -73,15 +76,31 @@ public class Scp294BlockEntity extends RandomizableContainerBlockEntity implemen
 			return;
 		}
 		this.pouringUntilGameTime = this.level.getGameTime() + ticks;
-		this.setChanged();
-		if (!this.level.isClientSide()) {
-			BlockState state = this.getBlockState();
-			this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
-		}
+		syncState();
 	}
 
 	public boolean isPouring() {
 		return this.level != null && this.level.getGameTime() < this.pouringUntilGameTime;
+	}
+
+	public void showOutOfRange(int ticks) {
+		if (this.level == null || ticks <= 0) {
+			return;
+		}
+		this.outOfRangeUntilGameTime = this.level.getGameTime() + ticks;
+		syncState();
+	}
+
+	public boolean isOutOfRange() {
+		return this.level != null && this.level.getGameTime() < this.outOfRangeUntilGameTime;
+	}
+
+	private void syncState() {
+		this.setChanged();
+		if (this.level != null && !this.level.isClientSide()) {
+			BlockState state = this.getBlockState();
+			this.level.sendBlockUpdated(this.worldPosition, state, state, 3);
+		}
 	}
 
 	@Override

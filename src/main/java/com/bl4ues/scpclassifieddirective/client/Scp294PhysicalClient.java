@@ -2,8 +2,6 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp294BlockEntity;
-import com.bl4ues.scpclassifieddirective.block.entity.Scp294OutOfRangeBlockEntity;
-import com.bl4ues.scpclassifieddirective.block.entity.Scp294StockingBlockEntity;
 import com.bl4ues.scpclassifieddirective.client.gui.Scp294GuiScreen;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
@@ -25,7 +23,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -91,13 +88,7 @@ public final class Scp294PhysicalClient {
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         BlockEntityType<Scp294BlockEntity> normal = (BlockEntityType)
                 ScpClassifiedDirectiveModBlockEntities.SCP_294.get();
-        BlockEntityType<Scp294OutOfRangeBlockEntity> outOfRange = (BlockEntityType)
-                ScpClassifiedDirectiveModBlockEntities.SCP_294_OUT_OF_RANGE.get();
-        BlockEntityType<Scp294StockingBlockEntity> stocking = (BlockEntityType)
-                ScpClassifiedDirectiveModBlockEntities.SCP_294_STOCKING.get();
         event.registerBlockEntityRenderer(normal, Renderer::new);
-        event.registerBlockEntityRenderer(outOfRange, OutOfRangeRenderer::new);
-        event.registerBlockEntityRenderer(stocking, StockingRenderer::new);
     }
 
     public static Frame focusFrame(BlockPos pos, Direction facing) {
@@ -219,13 +210,15 @@ public final class Scp294PhysicalClient {
             String status;
             if (machine.isPouring()) {
                 status = "POURING";
+            } else if (machine.isOutOfRange()) {
+                status = "OUT OF RANGE";
             } else if (screen != null) {
                 boolean hasCoin = screen.physicalHasCoinInserted();
                 String order = screen.physicalOrder();
                 if (!hasCoin) {
                     status = "INSERT $0.50";
                 } else if (order.isBlank()) {
-                    status = "ENTER LIQUID";
+                    status = "ENTER ORDER";
                 } else {
                     status = order;
                     if (screen.physicalInputFocused()
@@ -234,7 +227,7 @@ public final class Scp294PhysicalClient {
                     }
                 }
             } else if (machine.getItem(0).is(ScpClassifiedDirectiveModItems.COIN.get())) {
-                status = "ENTER LIQUID";
+                status = "ENTER ORDER";
             } else {
                 status = "INSERT $0.50";
             }
@@ -248,40 +241,6 @@ public final class Scp294PhysicalClient {
         @Override
         public boolean shouldRenderOffScreen(Scp294BlockEntity blockEntity) {
             return true;
-        }
-    }
-
-    private static final class OutOfRangeRenderer
-            implements BlockEntityRenderer<Scp294OutOfRangeBlockEntity> {
-        private final Font font;
-
-        private OutOfRangeRenderer(BlockEntityRendererProvider.Context context) {
-            this.font = context.getFont();
-        }
-
-        @Override
-        public void render(Scp294OutOfRangeBlockEntity machine, float partialTick,
-                PoseStack poseStack, MultiBufferSource buffers,
-                int packedLight, int packedOverlay) {
-            renderStatus(font, poseStack, buffers, machine.getBlockPos(),
-                    facing(machine.getBlockState()), "OUT OF RANGE");
-        }
-    }
-
-    private static final class StockingRenderer
-            implements BlockEntityRenderer<Scp294StockingBlockEntity> {
-        private final Font font;
-
-        private StockingRenderer(BlockEntityRendererProvider.Context context) {
-            this.font = context.getFont();
-        }
-
-        @Override
-        public void render(Scp294StockingBlockEntity machine, float partialTick,
-                PoseStack poseStack, MultiBufferSource buffers,
-                int packedLight, int packedOverlay) {
-            renderStatus(font, poseStack, buffers, machine.getBlockPos(),
-                    facing(machine.getBlockState()), "OUT OF ORDER");
         }
     }
 

@@ -11,6 +11,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.BlockPos;
 
 import com.bl4ues.scpclassifieddirective.procedures.Scp294drinkGiveProcedure;
+import com.bl4ues.scpclassifieddirective.world.inventory.Scp294GuiMenu;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 
 import java.util.function.Supplier;
@@ -25,7 +26,7 @@ public class Scp294GuiButtonMessage {
 		this.x = buffer.readInt();
 		this.y = buffer.readInt();
 		this.z = buffer.readInt();
-		this.input = buffer.readUtf(32767);
+		this.input = buffer.readUtf(80);
 	}
 
 	public Scp294GuiButtonMessage(int buttonID, int x, int y, int z, String input) {
@@ -41,7 +42,9 @@ public class Scp294GuiButtonMessage {
 		buffer.writeInt(message.x);
 		buffer.writeInt(message.y);
 		buffer.writeInt(message.z);
-		buffer.writeUtf(message.input == null ? "" : message.input, 32767);
+		String safe = message.input == null ? "" : message.input;
+		if (safe.length() > 80) safe = safe.substring(0, 80);
+		buffer.writeUtf(safe, 80);
 	}
 
 	public static void handler(Scp294GuiButtonMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
@@ -57,12 +60,21 @@ public class Scp294GuiButtonMessage {
 
 	public static void handleButtonAction(Player entity, int buttonID, int x, int y, int z, String input) {
 		Level world = entity.level();
-		if (!world.hasChunkAt(new BlockPos(x, y, z)))
+		BlockPos pos = new BlockPos(x, y, z);
+		if (!world.hasChunkAt(pos)) return;
+
+		// A physical click is only an intention. The server accepts it while the
+		// sender really owns the SCP-294 menu for this exact machine.
+		if (!(entity.containerMenu instanceof Scp294GuiMenu menu)
+				|| menu.x != x || menu.y != y || menu.z != z) {
 			return;
-		if (buttonID == 0) {
-			Scp294drinkGiveProcedure.execute(world, x, y, z, entity, input);
 		}
-		if (buttonID == 1) {
+
+		if (buttonID == 0) {
+			String safe = input == null ? "" : input;
+			if (safe.length() > 80) safe = safe.substring(0, 80);
+			Scp294drinkGiveProcedure.execute(world, x, y, z, entity, safe);
+		} else if (buttonID == 1) {
 			Scp294drinkGiveProcedure.insertCoinFromInventory(entity);
 		}
 	}

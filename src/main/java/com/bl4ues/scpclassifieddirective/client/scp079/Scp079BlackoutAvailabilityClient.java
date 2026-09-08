@@ -52,6 +52,17 @@ public final class Scp079BlackoutAvailabilityClient {
         return Scp079PlayableClient.cameraMode() && available;
     }
 
+    /**
+     * The server remains authoritative, but once the operator sends Blackout we
+     * can immediately gray the command instead of waiting up to a second for the
+     * next room scan to notice that the lamps were forced off.
+     */
+    public static void markRequested() {
+        if (!Scp079PlayableClient.cameraMode()) return;
+        available = false;
+        completedAt = Long.MIN_VALUE;
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;

@@ -14,7 +14,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Physical placement/removal interaction for Keycard Readers and OCUs. */
+/** Physical attachment interaction for Keycard Readers and OCUs. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class HackingDeviceEvents {
     private HackingDeviceEvents() {
@@ -32,10 +32,10 @@ public final class HackingDeviceEvents {
             return;
         }
 
+        // An attached device owns the reader surface for the duration of the
+        // minigame. It is removed only when its owning session exits.
         if (HackingDeviceAttachmentManager.isAttached(level, event.getPos())) {
-            if (HackingDeviceAttachmentManager.detach(player, event.getPos())) {
-                consume(event);
-            }
+            consume(event);
             return;
         }
 
@@ -55,7 +55,16 @@ public final class HackingDeviceEvents {
     @SubscribeEvent
     public static void onChangedDimension(
             PlayerEvent.PlayerChangedDimensionEvent event) {
+        HackingDeviceSessionManager.abort(event.getEntity() instanceof ServerPlayer sp
+                ? sp : null);
         sync(event.getEntity());
+    }
+
+    @SubscribeEvent
+    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            HackingDeviceSessionManager.abort(player);
+        }
     }
 
     @SubscribeEvent

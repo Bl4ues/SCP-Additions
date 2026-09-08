@@ -1,30 +1,23 @@
 package com.bl4ues.scpclassifieddirective.client.gui;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.block.Scp294Block;
-import com.bl4ues.scpclassifieddirective.client.Scp294PhysicalClient;
-import com.bl4ues.scpclassifieddirective.client.Scp294PhysicalClient.Control;
 import com.bl4ues.scpclassifieddirective.client.TeslaTerminalFocusClient;
 import com.bl4ues.scpclassifieddirective.network.Scp294GuiButtonMessage;
 import com.bl4ues.scpclassifieddirective.world.inventory.Scp294GuiMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Input controller for SCP-294's physical console. Nothing is drawn in 2D: the
- * CRT is rendered on the block itself and clicks are ray-tested against the
- * authored CRT, keyboard and coin panel.
+ * Keyboard-input controller for SCP-294. The physical Context Interaction on
+ * the keyboard opens this screen only after payment; nothing is drawn in 2D.
  */
 public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
     private String order = "";
     private boolean inputFocused;
-    private Control hoveredControl = Control.NONE;
 
     public Scp294GuiScreen(Scp294GuiMenu container, Inventory inventory,
             Component text) {
@@ -36,23 +29,16 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
     @Override
     protected void init() {
         super.init();
+        inputFocused = true;
         TeslaTerminalFocusClient.beginScp294(terminalPos());
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY,
             float partialTicks) {
-        if (!TeslaTerminalFocusClient.inputReady()) {
-            hoveredControl = Control.NONE;
-            return;
-        }
-        BlockState state = menu.world.getBlockState(terminalPos());
-        Direction facing = state.hasProperty(Scp294Block.FACING)
-                ? state.getValue(Scp294Block.FACING) : Direction.NORTH;
-        hoveredControl = Scp294PhysicalClient.controlAt(terminalPos(), facing,
-                mouseX, mouseY, width, height);
-        // Deliberately no 2D GUI. The ordinary Screen cursor remains available
-        // while the real vending machine occupies the entire interaction view.
+        // Deliberately no 2D GUI or mouse controls. The player is physically at
+        // the keyboard; typed characters are rendered on the machine's small
+        // payment/status display by Scp294PhysicalClient.
     }
 
     @Override
@@ -68,33 +54,6 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 1) {
             closeMachine();
-            return true;
-        }
-        if (button != 0 || !TeslaTerminalFocusClient.inputReady()) {
-            return true;
-        }
-
-        BlockState state = menu.world.getBlockState(terminalPos());
-        Direction facing = state.hasProperty(Scp294Block.FACING)
-                ? state.getValue(Scp294Block.FACING) : Direction.NORTH;
-        Control control = Scp294PhysicalClient.controlAt(terminalPos(), facing,
-                mouseX, mouseY, width, height);
-
-        if (control == Control.COIN) {
-            ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
-                    new Scp294GuiButtonMessage(1, menu.x, menu.y, menu.z, ""));
-            inputFocused = true;
-            return true;
-        }
-        if (control == Control.INPUT) {
-            if (hasCoinInserted()) inputFocused = true;
-            return true;
-        }
-        if (control == Control.ENTER) {
-            if (hasCoinInserted() && !order.isBlank()) {
-                sendDrinkRequestAndClose();
-            }
-            return true;
         }
         return true;
     }
@@ -122,7 +81,7 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
             return true;
         }
         if (key == 257 || key == 335) {
-            if (!order.isBlank()) sendDrinkRequestAndClose();
+            if (!order.isBlank()) sendDrinkRequest();
             return true;
         }
         if (key == 259 && !order.isEmpty()) {
@@ -147,10 +106,11 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
         return character >= 32 && character != 127;
     }
 
-    private void sendDrinkRequestAndClose() {
+    private void sendDrinkRequest() {
         ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
                 new Scp294GuiButtonMessage(0, menu.x, menu.y, menu.z, order));
-        closeMachine();
+        // A valid order is closed authoritatively by the server. An OUT OF RANGE
+        // request deliberately keeps this session open so the user can correct it.
     }
 
     private void closeMachine() {
@@ -161,7 +121,6 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
     @Override
     public void removed() {
-        hoveredControl = Control.NONE;
         if (TeslaTerminalFocusClient.scp294ActiveFor(terminalPos())) {
             TeslaTerminalFocusClient.end();
         }
@@ -186,10 +145,6 @@ public class Scp294GuiScreen extends AbstractContainerScreen<Scp294GuiMenu> {
 
     public boolean physicalInputFocused() {
         return inputFocused;
-    }
-
-    public Control hoveredControl() {
-        return hoveredControl;
     }
 
     private boolean hasCoinInserted() {

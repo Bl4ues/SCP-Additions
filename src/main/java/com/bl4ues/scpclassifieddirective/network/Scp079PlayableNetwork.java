@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
+import com.bl4ues.scpclassifieddirective.facility.Scp079SignalInterruptionManager;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilityCameraDefinition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -46,6 +47,9 @@ public final class Scp079PlayableNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(ToggleSpeakerRequest.class,
                 ToggleSpeakerRequest::encode, ToggleSpeakerRequest::decode,
                 ToggleSpeakerRequest::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(SignalInterruption.class,
+                SignalInterruption::encode, SignalInterruption::decode,
+                SignalInterruption::handle);
         ScpClassifiedDirectiveMod.addNetworkMessage(TrackingState.class,
                 TrackingState::encode, TrackingState::decode,
                 TrackingState::handle);
@@ -69,6 +73,14 @@ public final class Scp079PlayableNetwork {
         if (player == null) return;
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player), State.inactive());
+    }
+
+    public static void sendSignalInterruption(ServerPlayer player, int kind,
+            int durationTicks) {
+        if (player == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new SignalInterruption(kind, Math.max(1, durationTicks)));
     }
 
     public static void sendTracking(ServerPlayer player, int totalLifeforms,
@@ -204,6 +216,30 @@ public final class Scp079PlayableNetwork {
         }
     }
 
+    /** Modal signal-loss state used by cameras, EMP effects and host destruction. */
+    public record SignalInterruption(int kind, int durationTicks) {
+        private static void encode(SignalInterruption message,
+                FriendlyByteBuf buffer) {
+            buffer.writeVarInt(message.kind);
+            buffer.writeVarInt(message.durationTicks);
+        }
+
+        private static SignalInterruption decode(FriendlyByteBuf buffer) {
+            return new SignalInterruption(buffer.readVarInt(),
+                    Math.max(1, buffer.readVarInt()));
+        }
+
+        private static void handle(SignalInterruption message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraEffectsClient
+                            .beginSignalInterruption(message.kind,
+                                    message.durationTicks)));
+            context.setPacketHandled(true);
+        }
+    }
+
     public record TrackerEntry(ResourceLocation dimension, UUID roomId,
             double x, double z, float yaw, int scpNumber) {
         private static void write(FriendlyByteBuf buffer, TrackerEntry entry) {
@@ -270,7 +306,8 @@ public final class Scp079PlayableNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player != null && Scp079PlayableManager.isController(player)) {
+                if (player != null && Scp079PlayableManager.isController(player)
+                        && !Scp079SignalInterruptionManager.controlsBlocked(player)) {
                     Scp079PlayableManager.release(player);
                 }
             });
@@ -289,7 +326,8 @@ public final class Scp079PlayableNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player != null) {
+                if (player != null
+                        && !Scp079SignalInterruptionManager.controlsBlocked(player)) {
                     Scp079PlayableManager.switchToRoom(player, message.roomId);
                 }
             });
@@ -308,7 +346,8 @@ public final class Scp079PlayableNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player != null && Scp079PlayableManager.isController(player)) {
+                if (player != null && Scp079PlayableManager.isController(player)
+                        && !Scp079SignalInterruptionManager.controlsBlocked(player)) {
                     Scp079PlayableManager.returnToHost(player);
                 }
             });
@@ -333,7 +372,8 @@ public final class Scp079PlayableNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player != null) {
+                if (player != null
+                        && !Scp079SignalInterruptionManager.controlsBlocked(player)) {
                     Scp079PlayableManager.performAction(player,
                             message.action, message.aimedPos);
                 }
@@ -353,7 +393,10 @@ public final class Scp079PlayableNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
-                if (player != null) Scp079PlayableManager.toggleSpeaker(player);
+                if (player != null
+                        && !Scp079SignalInterruptionManager.controlsBlocked(player)) {
+                    Scp079PlayableManager.toggleSpeaker(player);
+                }
             });
             context.setPacketHandled(true);
         }

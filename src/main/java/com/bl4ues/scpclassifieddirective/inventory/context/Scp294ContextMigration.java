@@ -15,7 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Removes the old whole-machine SCP-294 prompt from existing installations. */
+/** Removes legacy SCP-294 prompts and keeps its physical control anchors current. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class Scp294ContextMigration {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -50,14 +50,18 @@ public final class Scp294ContextMigration {
                         || !SCP_294.equals(string(rule, "id"))) {
                     continue;
                 }
-                // The historical rule had no interaction ID and treated the
-                // complete vending machine as one generic "Use SCP-294" target.
-                // Keyed user rules remain untouched.
+
                 String key = string(rule, "interactionId");
                 if (key.isBlank()) key = string(rule, "interactionKey");
                 if (key.isBlank()) {
                     interactions.remove(i);
                     changed = true;
+                    continue;
+                }
+                if ("scp_294_coin".equals(key)) {
+                    changed |= setAnchor(rule, 0.153125D, 1.38125D, -0.005D);
+                } else if ("scp_294_keyboard".equals(key)) {
+                    changed |= setAnchor(rule, 0.59375D, 1.41875D, -0.015D);
                 }
             }
 
@@ -66,11 +70,46 @@ public final class Scp294ContextMigration {
                         GSON.toJson(root) + System.lineSeparator());
                 ContextInteractionRegistry.reloadFromDisk();
                 ScpClassifiedDirectiveMod.LOGGER.info(
-                        "Migrated legacy whole-machine SCP-294 context prompt");
+                        "Migrated SCP-294 physical context interactions");
             }
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.warn(
-                    "Could not migrate legacy SCP-294 context prompt", exception);
+                    "Could not migrate SCP-294 context interactions", exception);
+        }
+    }
+
+    private static boolean setAnchor(JsonObject rule, double x, double y,
+            double z) {
+        JsonObject anchor = rule.has("anchor") && rule.get("anchor").isJsonObject()
+                ? rule.getAsJsonObject("anchor") : new JsonObject();
+        boolean changed = !rule.has("anchor") || !rule.get("anchor").isJsonObject();
+        rule.add("anchor", anchor);
+
+        JsonArray old = anchor.has("position") && anchor.get("position").isJsonArray()
+                ? anchor.getAsJsonArray("position") : null;
+        if (old == null || old.size() != 3
+                || Math.abs(number(old, 0) - x) > 1.0E-6D
+                || Math.abs(number(old, 1) - y) > 1.0E-6D
+                || Math.abs(number(old, 2) - z) > 1.0E-6D) {
+            JsonArray position = new JsonArray();
+            position.add(x);
+            position.add(y);
+            position.add(z);
+            anchor.add("position", position);
+            changed = true;
+        }
+        if (!"auto".equalsIgnoreCase(string(anchor, "rotateWith"))) {
+            anchor.addProperty("rotateWith", "auto");
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static double number(JsonArray array, int index) {
+        try {
+            return array.get(index).getAsDouble();
+        } catch (Exception ignored) {
+            return Double.NaN;
         }
     }
 

@@ -16,16 +16,17 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Holds a camera hand-off on the current feed while the authored interference
- * plays. The server remains authoritative and spends AP immediately; only the
- * local surveillance feed waits for the network-travel interval to complete.
+ * Holds cross-floor/cross-zone camera hand-offs behind authored interference.
+ * Same-floor switches remain immediate, but still begin the short masking burst
+ * before the authoritative camera state is applied so the feed never visibly
+ * snaps from one viewpoint to another.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class Scp079CameraTravelDelayClient {
-    private static final long SAME_FLOOR_NANOS = 500_000_000L;
-    private static final long CROSS_FLOOR_NANOS = 1_000_000_000L;
-    private static final long CROSS_ZONE_NANOS = 2_000_000_000L;
+    private static final long SAME_FLOOR_MASK_NANOS = 300_000_000L;
+    private static final long CROSS_FLOOR_NANOS = 800_000_000L;
+    private static final long CROSS_ZONE_NANOS = 1_500_000_000L;
     private static final long ARRIVAL_SUPPRESSION_NANOS = 350_000_000L;
 
     private static Scp079PlayableNetwork.State pendingState;
@@ -51,6 +52,22 @@ public final class Scp079CameraTravelDelayClient {
             return false;
         }
 
+        FacilityRoomSnapshot from = FacilityMappingClientState.roomAt(
+                Scp079PlayableClient.hostDimension(), BlockPos.containing(current));
+        FacilityRoomSnapshot to = FacilityMappingClientState.roomAt(
+                state.dimension(), BlockPos.containing(target));
+        int tier = Scp079CameraTravelRules.multiplier(from, to);
+
+        // Same-floor movement has no authored wait. Begin the interference now,
+        // then let receive() apply the new camera immediately underneath it.
+        if (tier <= 1) {
+            clearPending();
+            suppressAutomaticUntil = 0L;
+            Scp079CameraEffectsClientInvoker.scpclassifieddirective$startTransition(
+                    SAME_FLOOR_MASK_NANOS);
+            return false;
+        }
+
         long now = System.nanoTime();
         if (pendingState != null
                 && pendingState.cameraId().equals(state.cameraId())) {
@@ -59,14 +76,7 @@ public final class Scp079CameraTravelDelayClient {
             return true;
         }
 
-        FacilityRoomSnapshot from = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(), BlockPos.containing(current));
-        FacilityRoomSnapshot to = FacilityMappingClientState.roomAt(
-                state.dimension(), BlockPos.containing(target));
-        int tier = Scp079CameraTravelRules.multiplier(from, to);
-        long duration = tier >= 3 ? CROSS_ZONE_NANOS
-                : tier == 2 ? CROSS_FLOOR_NANOS : SAME_FLOOR_NANOS;
-
+        long duration = tier >= 3 ? CROSS_ZONE_NANOS : CROSS_FLOOR_NANOS;
         pendingState = state;
         arrivalAt = now + duration;
         suppressAutomaticUntil = 0L;
@@ -101,9 +111,8 @@ public final class Scp079CameraTravelDelayClient {
         bypass = true;
         try {
             Scp079PlayableClient.receive(state);
-            // receive() owns a legacy 260 ms local glitch timer. The authored
-            // travel effect has already completed, so do not append another
-            // mini-transition after arrival.
+            // The timed static already hid the hand-off. Remove the legacy local
+            // 260 ms line-glitch so it cannot leak out after the mask disappears.
             Scp079PlayableClientTravelAccessor
                     .scpclassifieddirective$setInterferenceUntil(now);
         } finally {

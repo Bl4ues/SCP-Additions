@@ -2,7 +2,9 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.SCP079SystemControlBlock;
+import com.bl4ues.scpclassifieddirective.block.Scp294Block;
 import com.bl4ues.scpclassifieddirective.block.TeslaTerminalBlockBlock;
+import com.bl4ues.scpclassifieddirective.client.gui.Scp294GuiScreen;
 import com.bl4ues.scpclassifieddirective.client.gui.TeslaTerminalScreen;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
@@ -26,9 +28,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Camera/input session for physical computer screens. Both facility terminals
- * use Minecraft's real Camera after vanilla setup, avoiding detached-entity
- * interpolation and preserving the stable symmetric approach/return behavior.
+ * Camera/input session for physical computer screens. Facility terminals and
+ * SCP-294 use Minecraft's real Camera after vanilla setup, avoiding detached
+ * entity interpolation and preserving the stable symmetric approach/return.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
@@ -40,8 +42,6 @@ public final class TeslaTerminalFocusClient {
     public static final double SCREEN_WIDTH = 11.2D / 16.0D;
     public static final double SCREEN_HEIGHT = 10.7D / 16.0D;
 
-    // Authored diagnostic CRT plane. Its monitor bone is yawed 12.5 degrees,
-    // and the GeckoLib model's X axis is mirrored into Minecraft block space.
     public static final double DIAGNOSTIC_SCREEN_CENTER_X =
             2.902130788109321D / 16.0D;
     public static final double DIAGNOSTIC_SCREEN_CENTER_Y = 6.25D / 16.0D;
@@ -86,6 +86,10 @@ public final class TeslaTerminalFocusClient {
         begin(pos, FocusKind.DIAGNOSTIC);
     }
 
+    public static void beginScp294(BlockPos pos) {
+        begin(pos, FocusKind.SCP294);
+    }
+
     private static void begin(BlockPos pos, FocusKind kind) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null || pos == null
@@ -112,10 +116,6 @@ public final class TeslaTerminalFocusClient {
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
     }
 
-    /**
-     * Starts a symmetric return to the exact view from which the terminal was
-     * entered. Movement remains locked until the interpolation is complete.
-     */
     public static void end() {
         Minecraft minecraft = Minecraft.getInstance();
         if (!active() || returning) return;
@@ -145,8 +145,16 @@ public final class TeslaTerminalFocusClient {
         return activeKind == FocusKind.DIAGNOSTIC && activeFor(pos);
     }
 
+    public static boolean scp294ActiveFor(BlockPos pos) {
+        return activeKind == FocusKind.SCP294 && activeFor(pos);
+    }
+
     public static boolean inputReady() {
         return active() && !returning && approachProgress() >= 0.985D;
+    }
+
+    public static double currentFovDegrees() {
+        return currentFovDegrees;
     }
 
     public static Frame frame(BlockPos pos, Direction facing) {
@@ -162,10 +170,6 @@ public final class TeslaTerminalFocusClient {
                 0.0D, DIAGNOSTIC_SCREEN_WIDTH, DIAGNOSTIC_SCREEN_HEIGHT);
     }
 
-    /**
-     * Physical CRT height in GUI-space as a fraction of the viewport. Input
-     * mapping uses the same FOV and target distance as the actual focused view.
-     */
     public static double projectedHeightFraction() {
         double height = activeKind == FocusKind.DIAGNOSTIC
                 ? DIAGNOSTIC_SCREEN_HEIGHT : SCREEN_HEIGHT;
@@ -181,7 +185,6 @@ public final class TeslaTerminalFocusClient {
                 0.10D, 0.95D);
     }
 
-    /** Pose consumed by TeslaTerminalCameraMixin after vanilla Camera.setup. */
     public static Pose cameraPose() {
         if (!active()) return null;
         Minecraft minecraft = Minecraft.getInstance();
@@ -227,6 +230,15 @@ public final class TeslaTerminalFocusClient {
             return new FocusTarget(diagnosticFrame(activePos, facing),
                     DIAGNOSTIC_FOCUS_DISTANCE);
         }
+        if (activeKind == FocusKind.SCP294) {
+            if (!state.is(ScpClassifiedDirectiveModBlocks.SCP_294.get())) {
+                return null;
+            }
+            Direction facing = state.hasProperty(Scp294Block.FACING)
+                    ? state.getValue(Scp294Block.FACING) : Direction.NORTH;
+            return new FocusTarget(Scp294PhysicalClient.focusFrame(activePos,
+                    facing), Scp294PhysicalClient.FOCUS_DISTANCE);
+        }
 
         if (!state.is(ScpClassifiedDirectiveModBlocks.TESLA_TERMINAL_BLOCK.get())) {
             return null;
@@ -252,10 +264,14 @@ public final class TeslaTerminalFocusClient {
             return;
         }
 
-        boolean correctScreen = activeKind == FocusKind.DIAGNOSTIC
-                ? minecraft.screen instanceof FacilityDiagnosticsScreen screen
-                        && screen.isFor(activePos)
-                : minecraft.screen instanceof TeslaTerminalScreen;
+        boolean correctScreen = switch (activeKind) {
+            case DIAGNOSTIC -> minecraft.screen instanceof FacilityDiagnosticsScreen screen
+                    && screen.isFor(activePos);
+            case SCP294 -> minecraft.screen instanceof Scp294GuiScreen screen
+                    && screen.isFor(activePos);
+            case TESLA -> minecraft.screen instanceof TeslaTerminalScreen screen
+                    && screen.isFor(activePos);
+        };
         if (!correctScreen) {
             end();
             return;
@@ -344,7 +360,8 @@ public final class TeslaTerminalFocusClient {
 
     private enum FocusKind {
         TESLA,
-        DIAGNOSTIC
+        DIAGNOSTIC,
+        SCP294
     }
 
     private record FocusTarget(Frame frame, double distance) { }

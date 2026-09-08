@@ -9,6 +9,7 @@ import com.bl4ues.scpclassifieddirective.client.ClientModulePreferences;
 import com.bl4ues.scpclassifieddirective.client.FacilityChatLayout;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079ChatLayout;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079TerminalChatHistoryClient;
 import com.bl4ues.scpclassifieddirective.network.Scp079SpeechNetwork;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -71,7 +72,7 @@ public abstract class ChatScreenMixin {
 
     /**
      * Non-command input from playable SCP-079 is speech, not global text chat.
-     * Keep a local terminal echo/history entry and send only the authoritative
+     * Store it in the dedicated terminal history and send only the authoritative
      * speech request to the server. Slash commands retain vanilla handling.
      */
     @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
@@ -83,11 +84,26 @@ public abstract class ChatScreenMixin {
         if (normalized.isBlank() || normalized.startsWith("/")) return;
 
         Minecraft minecraft = Minecraft.getInstance();
-        ChatComponent chat = minecraft.gui.getChat();
-        if (addToRecentChat) chat.addRecentChat(normalized);
-        chat.addMessage(Scp079ChatLayout.terminalText("079> " + normalized));
+        if (addToRecentChat) minecraft.gui.getChat().addRecentChat(normalized);
+        Scp079TerminalChatHistoryClient.record(
+                Scp079ChatLayout.terminalText("079> " + normalized));
         Scp079SpeechNetwork.request(normalized);
         cir.setReturnValue(true);
+    }
+
+    /**
+     * Keep EditBox only as an input engine. Rendering it underneath the terminal
+     * panel produced the tiny duplicate modern-font text visible behind SCP-079.
+     */
+    @Redirect(method = "render",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/components/EditBox;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"),
+            require = 0)
+    private void scpClassifiedDirective$hideVanilla079Input(EditBox input,
+            GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (!Scp079PlayableClient.active()) {
+            input.render(graphics, mouseX, mouseY, partialTick);
+        }
     }
 
     @Redirect(method = "render",
@@ -97,8 +113,6 @@ public abstract class ChatScreenMixin {
     private void scpClassifiedDirective$renderFacilityInputFrame(GuiGraphics graphics,
             int left, int top, int right, int bottom, int color) {
         if (Scp079PlayableClient.active()) {
-            // The vanilla field remains an invisible input engine underneath the
-            // terminal panel painted at render tail.
             graphics.fill(left, top, right, bottom, 0x00000000);
             return;
         }

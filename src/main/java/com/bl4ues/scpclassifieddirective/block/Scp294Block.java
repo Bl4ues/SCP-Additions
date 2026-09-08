@@ -56,15 +56,15 @@ public class Scp294Block extends Block implements EntityBlock {
 
 	// Authored control centers in the NORTH-facing vanilla block model. The
 	// keyboard is the slanted 5..14 x 19.7..25.7 element; the payment panel is
-	// the compact assembly to its right from the viewer's perspective.
-	public static final double COIN_ANCHOR_X = 2.45D / 16.0D;
-	public static final double COIN_ANCHOR_Y = 15.55D / 16.0D;
-	public static final double COIN_ANCHOR_Z = 0.02D;
+	// the 10..13 x 15..19.7 assembly to its right from the viewer's perspective.
+	public static final double COIN_ANCHOR_X = 11.50D / 16.0D;
+	public static final double COIN_ANCHOR_Y = 17.35D / 16.0D;
+	public static final double COIN_ANCHOR_Z = -0.005D;
 	public static final double KEYBOARD_ANCHOR_X = 9.50D / 16.0D;
 	public static final double KEYBOARD_ANCHOR_Y = 22.70D / 16.0D;
 	public static final double KEYBOARD_ANCHOR_Z = -0.015D;
 
-	private static final double COIN_HIT_RADIUS_SQR = 0.34D * 0.34D;
+	private static final double COIN_HIT_RADIUS_SQR = 0.30D * 0.30D;
 	private static final double KEYBOARD_HIT_RADIUS_SQR = 0.34D * 0.34D;
 
 	public Scp294Block() {
@@ -177,16 +177,13 @@ public class Scp294Block extends Block implements EntityBlock {
 			return InteractionResult.FAIL;
 		}
 
-		// The machine itself is no longer a giant GUI button. Interaction belongs
-		// to the two authored controls above, just like SCP-914's dial/key.
 		return InteractionResult.PASS;
 	}
 
 	private static boolean insertCoin(Level world, BlockPos pos, Player player,
 			Scp294BlockEntity machine) {
 		if (!machine.getItem(0).isEmpty()) return false;
-		ItemStack coin = PlayerCurrencyAccess.extractOne(player,
-				ScpClassifiedDirectiveModItems.COIN.get());
+		ItemStack coin = extractCoin(player);
 		if (coin.isEmpty()) return false;
 
 		machine.setItem(0, coin);
@@ -196,6 +193,29 @@ public class Scp294Block extends Block implements EntityBlock {
 		world.playSound(null, pos, ScpClassifiedDirectiveModSounds.SCP294COINSLOT.get(),
 				SoundSource.NEUTRAL, 1.0F, 1.0F);
 		return true;
+	}
+
+	/**
+	 * SCP-294 accepts the mod coin from either inventory backend. The custom SCP
+	 * inventory remains preferred when enabled, but vanilla inventory is also
+	 * checked so Creative/testing and players who keep currency there still work.
+	 */
+	private static ItemStack extractCoin(Player player) {
+		ItemStack coin = PlayerCurrencyAccess.extractOne(player,
+				ScpClassifiedDirectiveModItems.COIN.get());
+		if (!coin.isEmpty() || !PlayerCurrencyAccess.usesCustomInventory()) {
+			return coin;
+		}
+
+		for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+			ItemStack stack = player.getInventory().getItem(slot);
+			if (!stack.isEmpty() && stack.is(ScpClassifiedDirectiveModItems.COIN.get())) {
+				ItemStack extracted = stack.split(1);
+				player.getInventory().setChanged();
+				return extracted;
+			}
+		}
+		return ItemStack.EMPTY;
 	}
 
 	public static Vec3 coinAnchor(BlockPos pos, Direction facing) {

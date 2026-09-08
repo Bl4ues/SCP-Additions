@@ -129,16 +129,18 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
         FacilityRoomSnapshot activeRoom = FacilityMappingClientState.roomAt(
                 Scp079PlayableClient.hostDimension(),
                 BlockPos.containing(Scp079PlayableClient.viewPosition()));
-        if (Scp079BlackoutAvailabilityClient.available()) {
+        if (Scp079BlackoutAvailabilityClient.supported()) {
             double blackoutCost = adjustedCost(minecraft,
                     Scp079RoomAbilityManager.blackoutBaseCost(activeRoom));
+            boolean blackoutUsable = Scp079BlackoutAvailabilityClient.available();
             boolean blackoutAffordable = Scp079PlayableClient.power() + 0.001D
                     >= blackoutCost;
+            boolean blackoutEnabled = blackoutUsable && blackoutAffordable;
             drawCommand(graphics, minecraft,
                     "BLACKOUT (" + formatCost(blackoutCost) + ")",
                     keyLabel(Scp079Keybinds.BLACKOUT), right, y, 1.04F,
-                    blackoutAffordable ? Scp079UiTheme.TEXT : 0xFF526873,
-                    blackoutAffordable);
+                    blackoutEnabled ? Scp079UiTheme.TEXT : 0xFF526873,
+                    blackoutEnabled);
             y += 19;
         }
 

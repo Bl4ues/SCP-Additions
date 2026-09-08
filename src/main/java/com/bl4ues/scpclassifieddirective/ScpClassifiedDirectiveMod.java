@@ -121,6 +121,7 @@ public class ScpClassifiedDirectiveMod {
         com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork.register();
         com.bl4ues.scpclassifieddirective.network.Scp079SpeechNetwork.register();
         com.bl4ues.scpclassifieddirective.network.ScpRoleSelectorNetwork.register();
+        com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork.register();
         com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork.register();
     }
 

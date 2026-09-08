@@ -1,7 +1,6 @@
 package com.bl4ues.scpclassifieddirective.hacking;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,7 +13,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Physical attachment interaction for Keycard Readers and OCUs. */
+/** Session cleanup and reader-surface protection for the Hacking Device. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID)
 public final class HackingDeviceEvents {
     private HackingDeviceEvents() {
@@ -22,9 +21,8 @@ public final class HackingDeviceEvents {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRightClick(PlayerInteractEvent.RightClickBlock event) {
-        if (event.getHand() != InteractionHand.MAIN_HAND) return;
-        if (!(event.getLevel() instanceof ServerLevel level)
-                || !(event.getEntity() instanceof ServerPlayer player)) {
+        if (event.getHand() != InteractionHand.MAIN_HAND
+                || !(event.getLevel() instanceof ServerLevel level)) {
             return;
         }
         if (!HackingDeviceAttachmentManager.isCompatibleTarget(
@@ -32,17 +30,10 @@ public final class HackingDeviceEvents {
             return;
         }
 
-        // An attached device owns the reader surface for the duration of the
-        // minigame. It is removed only when its owning session exits.
+        // Placement is deliberately owned by the Context Interaction prompt so
+        // its authored range/highlight is authoritative. While attached, block
+        // ordinary reader clicks until the session itself detaches the device.
         if (HackingDeviceAttachmentManager.isAttached(level, event.getPos())) {
-            consume(event);
-            return;
-        }
-
-        InteractionHand deviceHand = findDeviceHand(player);
-        if (deviceHand != null
-                && HackingDeviceAttachmentManager.attach(player,
-                        event.getPos(), deviceHand)) {
             consume(event);
         }
     }
@@ -55,8 +46,9 @@ public final class HackingDeviceEvents {
     @SubscribeEvent
     public static void onChangedDimension(
             PlayerEvent.PlayerChangedDimensionEvent event) {
-        HackingDeviceSessionManager.abort(event.getEntity() instanceof ServerPlayer sp
-                ? sp : null);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            HackingDeviceSessionManager.abort(player);
+        }
         sync(event.getEntity());
     }
 
@@ -75,18 +67,6 @@ public final class HackingDeviceEvents {
             return;
         }
         HackingDeviceAttachmentManager.validate(level);
-    }
-
-    private static InteractionHand findDeviceHand(ServerPlayer player) {
-        if (player.getMainHandItem().is(
-                ScpClassifiedDirectiveModItems.HACKING_DEVICE.get())) {
-            return InteractionHand.MAIN_HAND;
-        }
-        if (player.getOffhandItem().is(
-                ScpClassifiedDirectiveModItems.HACKING_DEVICE.get())) {
-            return InteractionHand.OFF_HAND;
-        }
-        return null;
     }
 
     private static void sync(net.minecraft.world.entity.player.Player player) {

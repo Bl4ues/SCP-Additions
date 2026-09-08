@@ -15,10 +15,14 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Low-light and display-switch effects composited before the curved CRT pass. */
+/** Low-light, CRT, hand-off and signal-loss effects for playable SCP-079. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079CameraEffectsClient {
+    public static final int SIGNAL_TEMPORARY = 0;
+    public static final int SIGNAL_CAMERA_DISABLED = 1;
+    public static final int SIGNAL_HOST_DESTROYED = 2;
+
     private static final long INTERFERENCE_NANOS = 300_000_000L;
     private static final long AUDIO_FADE_IN_NANOS = 105_000_000L;
     private static final long AUDIO_FADE_OUT_NANOS = 165_000_000L;
@@ -26,6 +30,8 @@ public final class Scp079CameraEffectsClient {
     private static final int CRT_FRAME_COUNT = 5;
     private static final int CRT_TEXTURE_WIDTH = 640;
     private static final int CRT_TEXTURE_HEIGHT = 360;
+    private static final ResourceLocation NO_SIGNAL = resource(
+            "textures/screens/nosignal.png");
     private static final ResourceLocation[] CRT_STATIC = new ResourceLocation[] {
             resource("textures/screens/crt_static_1.png"),
             resource("textures/screens/crt_static_2.png"),
@@ -38,6 +44,9 @@ public final class Scp079CameraEffectsClient {
     private static DisplayMode lastMode = DisplayMode.INACTIVE;
     private static long interferenceStartedAt;
     private static long interferenceUntil;
+    private static long signalStartedAt;
+    private static long signalUntil;
+    private static int signalKind = -1;
 
     private Scp079CameraEffectsClient() { }
 
@@ -45,6 +54,29 @@ public final class Scp079CameraEffectsClient {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
+        long now = System.nanoTime();
+
+        if (signalKind >= 0 && now >= signalUntil) {
+            int completed = signalKind;
+            signalKind = -1;
+            signalStartedAt = 0L;
+            signalUntil = 0L;
+            if (completed == SIGNAL_CAMERA_DISABLED
+                    && Scp079PlayableClient.active()
+                    && Scp079PlayableClient.networkAvailable()) {
+                Scp079FacilityMapScreen.open();
+            }
+        }
+
+        if (signalEffectActive()) {
+            // A dead/no-signal display is a modal hardware state. Do not allow
+            // map, leave-role or inventory screens to become an alternate input
+            // path under the visual mask.
+            if (minecraft.screen != null && Scp079PlayableClient.active()) {
+                minecraft.setScreen(null);
+            }
+        }
+
         DisplayMode mode = mode(minecraft);
         if (mode == DisplayMode.INACTIVE) {
             lastMode = DisplayMode.INACTIVE;
@@ -87,11 +119,48 @@ public final class Scp079CameraEffectsClient {
         }
     }
 
+    /** Called by the server-authoritative interruption packet. */
+    public static void beginSignalInterruption(int kind, int durationTicks) {
+        if (kind < SIGNAL_TEMPORARY || kind > SIGNAL_HOST_DESTROYED) return;
+        long now = System.nanoTime();
+        long duration = Math.max(1, durationTicks) * 50_000_000L;
+        signalKind = kind;
+        signalStartedAt = now;
+        signalUntil = now + duration;
+        interferenceStartedAt = 0L;
+        interferenceUntil = 0L;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != null && Scp079PlayableClient.active()) {
+            minecraft.setScreen(null);
+        }
+    }
+
+    public static boolean controlsBlocked() {
+        return signalEffectActive();
+    }
+
+    public static boolean signalEffectActive() {
+        return signalKind >= 0 && System.nanoTime() < signalUntil;
+    }
+
+    public static boolean hostFailureActive() {
+        return signalKind == SIGNAL_HOST_DESTROYED && signalEffectActive();
+    }
+
     public static float transitionEnvelope() {
+        long now = System.nanoTime();
+        if (signalEffectActive()) {
+            float fadeIn = smootherStep(Mth.clamp(
+                    (now - signalStartedAt) / (float) AUDIO_FADE_IN_NANOS,
+                    0.0F, 1.0F));
+            float fadeOut = smootherStep(Mth.clamp(
+                    (signalUntil - now) / (float) AUDIO_FADE_OUT_NANOS,
+                    0.0F, 1.0F));
+            return Mth.clamp(fadeIn * fadeOut, 0.0F, 1.0F);
+        }
         if (!Scp079PlayableClient.active() || interferenceStartedAt <= 0L) {
             return 0.0F;
         }
-        long now = System.nanoTime();
         if (now >= interferenceUntil) return 0.0F;
         float fadeIn = smootherStep(Mth.clamp(
                 (now - interferenceStartedAt) / (float) AUDIO_FADE_IN_NANOS,
@@ -114,6 +183,7 @@ public final class Scp079CameraEffectsClient {
     }
 
     static void startTransition(long durationNanos) {
+        if (signalEffectActive()) return;
         long now = System.nanoTime();
         interferenceStartedAt = now;
         interferenceUntil = now + Math.max(INTERFERENCE_NANOS,
@@ -125,59 +195,76 @@ public final class Scp079CameraEffectsClient {
         return t * t * (3.0F - 2.0F * t);
     }
 
-    /**
-     * Draw after the entire 079 HUD. The interference is a mask, not a handful
-     * of decorative scan lines: while a network hand-off is in progress no old
-     * or new feed/UI state should visibly leak through it.
-     */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderGui(RenderGuiEvent.Post event) {
-        if (!Scp079PlayableClient.active()) return;
+        if (!Scp079PlayableClient.active() && !signalEffectActive()) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
 
         float lowLight = Scp079NightVisionPostProcessor.strength();
-        if (Scp079PlayableClient.cameraMode() && lowLight > 0.04F
-                && System.nanoTime() >= interferenceUntil) {
+        if (!signalEffectActive() && Scp079PlayableClient.cameraMode()
+                && lowLight > 0.04F && System.nanoTime() >= interferenceUntil) {
             int alpha = Mth.clamp(Math.round(lowLight * 255.0F), 0, 255);
             Scp079UiTheme.draw(event.getGuiGraphics(), minecraft.font,
                     "NIGHT-VISION MODE ACTIVE", 24, height - 50,
                     1.08F, (alpha << 24) | 0x0079DDF3);
         }
-        renderInterference(event.getGuiGraphics(), width, height);
-        renderCrtStatic(event.getGuiGraphics(), width, height);
+        renderComposite(event.getGuiGraphics(), width, height);
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onScreenRender(ScreenEvent.Render.Post event) {
-        if (!Scp079PlayableClient.active()
-                || !(event.getScreen() instanceof Scp079FacilityMapScreen
+        boolean authored079Screen = event.getScreen() instanceof Scp079FacilityMapScreen
                 || event.getScreen() instanceof Scp079LeaveRoleScreen
-                || event.getScreen() instanceof Scp079BootSequenceScreen)) return;
-        renderInterference(event.getGuiGraphics(),
+                || event.getScreen() instanceof Scp079BootSequenceScreen;
+        if ((!Scp079PlayableClient.active() && !signalEffectActive())
+                || (!authored079Screen && !signalEffectActive())) return;
+        renderComposite(event.getGuiGraphics(),
                 event.getScreen().width, event.getScreen().height);
-        renderCrtStatic(event.getGuiGraphics(),
-                event.getScreen().width, event.getScreen().height);
+    }
+
+    private static void renderComposite(GuiGraphics graphics,
+            int width, int height) {
+        if (signalEffectActive()) {
+            renderNoSignal(graphics, width, height);
+            renderSignalNoise(graphics, width, height);
+        } else {
+            renderInterference(graphics, width, height);
+        }
+        renderCrtStatic(graphics, width, height);
+    }
+
+    private static void renderNoSignal(GuiGraphics graphics,
+            int width, int height) {
+        if (width <= 0 || height <= 0) return;
+        RenderSystem.enableBlend();
+        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        graphics.blit(NO_SIGNAL, 0, 0, width, height,
+                0.0F, 0.0F, CRT_TEXTURE_WIDTH, CRT_TEXTURE_HEIGHT,
+                CRT_TEXTURE_WIDTH, CRT_TEXTURE_HEIGHT);
+        RenderSystem.disableBlend();
     }
 
     private static void renderCrtStatic(GuiGraphics graphics,
             int width, int height) {
-        if (width <= 0 || height <= 0 || !Scp079PlayableClient.active()) return;
+        if (width <= 0 || height <= 0
+                || (!Scp079PlayableClient.active() && !signalEffectActive())) return;
         long now = System.nanoTime();
         float transition = transitionEnvelope();
 
         // At rest the authored alpha-static remains intentionally faint. The
         // two slow oscillations avoid a mechanical opacity pulse while keeping
-        // the effect in the requested ~20-30% range. During feed hand-offs the
-        // same texture becomes much more visible without ever turning opaque.
+        // the effect in the requested ~20-30% range. During feed hand-offs or
+        // signal loss it becomes much more visible, but never fully opaque.
         double slow = Math.sin(now / 740_000_000.0D);
         double drift = Math.sin(now / 1_930_000_000.0D + 1.27D);
         float idleAlpha = Mth.clamp((float) (0.25D + slow * 0.032D
                 + drift * 0.018D), 0.20F, 0.30F);
-        float transitionAlpha = Mth.clamp(0.70F + (float) slow * 0.06F,
-                0.62F, 0.78F);
+        float transitionAlpha = signalEffectActive()
+                ? Mth.clamp(0.82F + (float) slow * 0.055F, 0.74F, 0.88F)
+                : Mth.clamp(0.70F + (float) slow * 0.06F, 0.62F, 0.78F);
         float alpha = Mth.lerp(transition, idleAlpha, transitionAlpha);
 
         long frameDuration = transition > 0.05F
@@ -191,6 +278,37 @@ public final class Scp079CameraEffectsClient {
                 0.0F, 0.0F, CRT_TEXTURE_WIDTH, CRT_TEXTURE_HEIGHT,
                 CRT_TEXTURE_WIDTH, CRT_TEXTURE_HEIGHT);
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.disableBlend();
+    }
+
+    private static void renderSignalNoise(GuiGraphics graphics,
+            int width, int height) {
+        if (width <= 0 || height <= 0) return;
+        long frame = System.nanoTime() / 8_000_000L;
+        RenderSystem.enableBlend();
+        for (int i = 0; i < 26; i++) {
+            int hash = mix((int) (frame * 811L + i * 4093L));
+            int y = Math.floorMod(hash, height);
+            int strip = 1 + Math.floorMod(hash >>> 7, 5);
+            int x = Math.floorMod(hash >>> 12, Math.max(1, width));
+            int run = Math.max(12, Math.floorMod(hash >>> 18,
+                    Math.max(13, width / 2)));
+            int left = Math.max(0, x - run / 4);
+            int right = Math.min(width, left + run);
+            int color = switch (i % 4) {
+                case 0 -> 0xB8E7F7FF;
+                case 1 -> 0xA276AFC4;
+                case 2 -> 0x96172D38;
+                default -> 0xA89BC5D3;
+            };
+            graphics.fill(left, y, right, Math.min(height, y + strip), color);
+        }
+        for (int i = 0; i < 6; i++) {
+            int y = Math.floorMod((int) (frame * (19L + i * 5L) + i * 83L),
+                    height);
+            graphics.fill(0, y, width, Math.min(height, y + 2),
+                    i % 2 == 0 ? 0xA8D4EEF7 : 0x9A0A1D27);
+        }
         RenderSystem.disableBlend();
     }
 
@@ -232,8 +350,6 @@ public final class Scp079CameraEffectsClient {
             graphics.fill(left, y, right, Math.min(height, y + strip), color);
         }
 
-        // A few displaced full-width tears keep long 0.8/1.5 s transfers from
-        // looking like a frozen loading screen.
         for (int i = 0; i < 7; i++) {
             int y = Math.floorMod((int) (frame * (23L + i * 4L) + i * 71L),
                     height);

@@ -26,7 +26,6 @@ import net.minecraftforge.fml.common.Mod;
         value = Dist.CLIENT)
 public final class HackingDeviceFocusClient {
     private static final long APPROACH_NANOS = 260_000_000L;
-    private static final long REMOVE_HOLD_NANOS = 150_000_000L;
     private static final long RETURN_NANOS = 260_000_000L;
     private static final double TARGET_FOV = 50.0D;
 
@@ -38,7 +37,6 @@ public final class HackingDeviceFocusClient {
     private static double originalFov = 70.0D;
     private static double currentFov = 70.0D;
     private static long approachStarted;
-    private static boolean oneShot;
     private static boolean returning;
     private static long returnStarted;
     private static Vec3 returnStartPosition = Vec3.ZERO;
@@ -49,18 +47,16 @@ public final class HackingDeviceFocusClient {
     private HackingDeviceFocusClient() {
     }
 
-    public static void onServerCue(BlockPos pos, boolean attached) {
+    public static void beginSession(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null || pos == null) {
             return;
         }
-        begin(pos, !attached);
-        if (attached) {
-            minecraft.setScreen(new HackingDeviceScreen(pos));
-        }
+        begin(pos);
+        minecraft.setScreen(new HackingDeviceScreen(pos));
     }
 
-    private static void begin(BlockPos pos, boolean removalOneShot) {
+    private static void begin(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (active()) forceClear();
         activePos = pos.immutable();
@@ -71,7 +67,6 @@ public final class HackingDeviceFocusClient {
         originalFov = minecraft.options.fov().get();
         currentFov = originalFov;
         approachStarted = System.nanoTime();
-        oneShot = removalOneShot;
         returning = false;
         returnStarted = 0L;
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
@@ -82,7 +77,6 @@ public final class HackingDeviceFocusClient {
     }
 
     public static void end() {
-        Minecraft minecraft = Minecraft.getInstance();
         if (!active() || returning) return;
         Pose current = cameraPose();
         if (current == null) {
@@ -144,22 +138,13 @@ public final class HackingDeviceFocusClient {
             return;
         }
         if (attachment(minecraft) == null) {
-            if (minecraft.screen instanceof HackingDeviceScreen) {
-                minecraft.setScreen(null);
-            }
-            end();
-            return;
-        }
-
-        if (oneShot) {
-            long elapsed = System.nanoTime() - approachStarted;
-            if (elapsed >= APPROACH_NANOS + REMOVE_HOLD_NANOS) end();
+            HackingDeviceMinigameClient.requestExit();
             return;
         }
 
         if (!(minecraft.screen instanceof HackingDeviceScreen screen)
                 || !screen.isFor(activePos)) {
-            end();
+            HackingDeviceMinigameClient.requestExit();
         }
     }
 
@@ -218,10 +203,10 @@ public final class HackingDeviceFocusClient {
         activePos = null;
         previousCameraType = null;
         approachStarted = 0L;
-        oneShot = false;
         returning = false;
         returnStarted = 0L;
         currentFov = originalFov;
+        HackingDeviceMinigameClient.clear();
     }
 
     private static float smooth(float value) {

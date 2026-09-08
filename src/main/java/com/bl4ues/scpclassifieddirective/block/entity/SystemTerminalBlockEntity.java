@@ -91,7 +91,13 @@ public final class SystemTerminalBlockEntity extends BlockEntity
                 .isAuxiliaryPowerOnline(level);
         int cooldown = Scp079FacilityAccessManager
                 .cachePurgeCooldownTicks(level.getServer());
-        terminal.updateLiveState(auxiliary, cooldown);
+        // Discovery reaches 100 only when the remote SCP-079 session has been
+        // learned, and remains there until an explicit cache purge. Mirroring
+        // that bit keeps the persistent CRT advisory alive even after the
+        // technician walks away from the terminal.
+        boolean unusual = Scp079FacilityAccessManager
+                .discoveryProgress(level.getServer()) >= 100.0F;
+        terminal.updateLiveState(auxiliary, cooldown, unusual);
     }
 
     public void updateSnapshot(DiagnosticSnapshot snapshot,
@@ -121,17 +127,20 @@ public final class SystemTerminalBlockEntity extends BlockEntity
         syncChanged();
     }
 
-    private void updateLiveState(boolean auxiliary, int cooldownTicks) {
+    private void updateLiveState(boolean auxiliary, int cooldownTicks,
+            boolean unusual) {
         long end = cooldownEnd(cooldownTicks);
         boolean nextAnalyzed = cooldownTicks > 0 ? false : analyzed;
         if (auxiliaryPowerOnline == auxiliary
                 && cachePurgeEndGameTime == end
-                && analyzed == nextAnalyzed) {
+                && analyzed == nextAnalyzed
+                && unusualNetworkActivity == unusual) {
             return;
         }
         auxiliaryPowerOnline = auxiliary;
         cachePurgeEndGameTime = end;
         analyzed = nextAnalyzed;
+        unusualNetworkActivity = unusual;
         syncChanged();
     }
 

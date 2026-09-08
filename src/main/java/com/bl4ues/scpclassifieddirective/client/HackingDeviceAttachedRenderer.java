@@ -3,16 +3,20 @@ package com.bl4ues.scpclassifieddirective.client;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
+import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,6 +26,8 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 
 import java.util.Set;
 
@@ -34,7 +40,9 @@ public final class HackingDeviceAttachedRenderer {
     private static final float SCREEN_SCALE = (float)
             (HackingDeviceAttachmentGeometry.SCREEN_WIDTH / LOGICAL_WIDTH);
     private static final int GREEN = 0xFF55FF79;
-    private static final int BLACK = 0xFF000000;
+    private static final double SCREEN_EPSILON = 0.0015D;
+    private static final ResourceLocation SCREEN_MASK = new ResourceLocation(
+            "minecraft", "textures/block/white_concrete.png");
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -65,7 +73,7 @@ public final class HackingDeviceAttachedRenderer {
             renderDevice(minecraft, poseStack, buffers, camera, pos,
                     attachment);
         }
-        // Body passes must be complete before the small emissive screen overlay.
+        // Body/PBR passes finish before any world-space screen layer.
         buffers.endBatch();
 
         for (BlockPos pos : visibleDevices) {
@@ -102,8 +110,16 @@ public final class HackingDeviceAttachedRenderer {
     private static void renderScreen(Minecraft minecraft, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers, Vec3 camera,
             Attachment attachment) {
-        Vec3 center = attachment.screen().center().subtract(camera)
-                .add(attachment.screen().outward().scale(0.0015D));
+        Frame frame = attachment.screen();
+        RenderType panelType = RenderType.entityCutoutNoCull(SCREEN_MASK);
+        VertexConsumer panel = buffers.getBuffer(panelType);
+        emitBlackPanel(panel, poseStack.last(), frame, camera);
+        // Explicitly flush the opaque/cutout panel before emissive text. This
+        // keeps shaders from reordering a coplanar-looking text/background pair.
+        buffers.endBatch(panelType);
+
+        Vec3 center = frame.center().subtract(camera)
+                .add(frame.outward().scale(SCREEN_EPSILON * 2.0D));
         poseStack.pushPose();
         poseStack.translate(center.x, center.y, center.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(
@@ -115,15 +131,6 @@ public final class HackingDeviceAttachedRenderer {
                 -LOGICAL_HEIGHT * 0.5F, 0.0F);
 
         Font font = minecraft.font;
-        // Opaque background independent of the handheld texture and PBR pass.
-        String blank = "                                                ";
-        for (int y = 0; y < (int) LOGICAL_HEIGHT; y += 9) {
-            font.drawInBatch(blank, 0.0F, y, 0x00000000, false,
-                    poseStack.last().pose(), buffers,
-                    Font.DisplayMode.POLYGON_OFFSET, BLACK,
-                    LightTexture.FULL_BRIGHT);
-        }
-
         String title = "Hacking Device";
         String message = "This device is not implemented yet";
         float titleX = (LOGICAL_WIDTH - font.width(title)) * 0.5F;
@@ -137,6 +144,38 @@ public final class HackingDeviceAttachedRenderer {
                 Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
         poseStack.popPose();
+    }
+
+    private static void emitBlackPanel(VertexConsumer consumer,
+            PoseStack.Pose pose, Frame frame, Vec3 camera) {
+        Vec3 offset = frame.outward().scale(SCREEN_EPSILON);
+        Vec3 topLeft = frame.point(-0.5D, 0.5D, 0.0D)
+                .add(offset).subtract(camera);
+        Vec3 topRight = frame.point(0.5D, 0.5D, 0.0D)
+                .add(offset).subtract(camera);
+        Vec3 bottomRight = frame.point(0.5D, -0.5D, 0.0D)
+                .add(offset).subtract(camera);
+        Vec3 bottomLeft = frame.point(-0.5D, -0.5D, 0.0D)
+                .add(offset).subtract(camera);
+        Vec3 normalVector = frame.outward();
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
+        vertex(consumer, matrix, normal, topLeft, 0.0F, 0.0F, normalVector);
+        vertex(consumer, matrix, normal, topRight, 1.0F, 0.0F, normalVector);
+        vertex(consumer, matrix, normal, bottomRight, 1.0F, 1.0F, normalVector);
+        vertex(consumer, matrix, normal, bottomLeft, 0.0F, 1.0F, normalVector);
+    }
+
+    private static void vertex(VertexConsumer consumer, Matrix4f matrix,
+            Matrix3f normal, Vec3 point, float u, float v, Vec3 normalVector) {
+        consumer.vertex(matrix, (float) point.x, (float) point.y, (float) point.z)
+                .color(0, 0, 0, 255)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(LightTexture.FULL_BRIGHT)
+                .normal(normal, (float) normalVector.x,
+                        (float) normalVector.y, (float) normalVector.z)
+                .endVertex();
     }
 
     @SubscribeEvent

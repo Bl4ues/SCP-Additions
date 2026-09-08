@@ -27,6 +27,7 @@
     "NativeMachineScrewdriverRulesMixin",
     "IntercomContextAvailabilityMixin",
     "HackingDeviceContextDefaultsMixin",
+    "HackingDeviceContextAvailabilityMixin",
     "ServerLevelIntercomSoundMixin",
     "CoreRoomElevatorManagerFixMixin",
     "MobTargetPerceptionMixin",

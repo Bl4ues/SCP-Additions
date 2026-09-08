@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.client.HackingDeviceAudioClient;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceClientState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -78,8 +79,12 @@ public final class HackingDeviceNetwork {
                 Supplier<NetworkEvent.Context> contextSupplier) {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                    () -> () -> HackingDeviceClientState.update(
-                            message.pos, message.attached)));
+                    () -> () -> {
+                        HackingDeviceClientState.update(message.pos,
+                                message.attached);
+                        HackingDeviceAudioClient.playAttachmentCue(message.pos,
+                                message.attached);
+                    }));
             context.setPacketHandled(true);
         }
     }

@@ -16,6 +16,7 @@ public final class DefaultContextInteractions {
     private static final String EMERGENCY_FALLBACK = """
             {"_comment":"Bundled context interaction defaults were unavailable.","interactions":[],"examples":[]}
             """;
+    private static final double PHYSICAL_CONTROL_RANGE = 1.125D;
 
     private static final String CORPSE_SEARCH_RULE = rule(
             "entity", "scp_classified_directive:player_corpse", "search_body",
@@ -33,7 +34,7 @@ public final class DefaultContextInteractions {
     private static final String SCP914_DIAL_RULE = """
             {
               "type":"block","id":"scp_classified_directive:scp_914","interactionId":"scp_914_dial",
-              "range":2.25,"priority":65,"useItem":"hand","icon":"hand",
+              "range":1.125,"priority":65,"useItem":"hand","icon":"hand",
               "text":{"action":"","nameMode":"manual","name":"","showAction":false,"showName":false},
               "anchor":{"position":[0.5,1.2525,-0.015625],"rotateWith":"auto"},
               "input":{"allowE":false,"allowRightClick":false},"click":{"face":"front"},
@@ -43,7 +44,7 @@ public final class DefaultContextInteractions {
     private static final String SCP914_START_RULE = """
             {
               "type":"block","id":"scp_classified_directive:scp_914","interactionId":"scp_914_start",
-              "range":2.25,"priority":70,"useItem":"hand","icon":"hand",
+              "range":1.125,"priority":70,"useItem":"hand","icon":"hand",
               "text":{"action":"Start","nameMode":"manual","name":"","showAction":true,"showName":false},
               "anchor":{"position":[0.5,0.90625,-0.0671875],"rotateWith":"auto"},
               "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
@@ -53,7 +54,7 @@ public final class DefaultContextInteractions {
     private static final String SCP294_COIN_RULE = """
             {
               "type":"block","id":"scp_classified_directive:scp_294","interactionId":"scp_294_coin",
-              "range":2.25,"priority":82,"useItem":"hand","icon":"hand",
+              "range":1.125,"priority":82,"useItem":"hand","icon":"hand",
               "text":{"action":"Insert Coin","nameMode":"manual","name":"","showAction":true,"showName":false},
               "anchor":{"position":[0.165625,1.475,-0.003125],"rotateWith":"auto"},
               "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
@@ -63,7 +64,7 @@ public final class DefaultContextInteractions {
     private static final String SCP294_KEYBOARD_RULE = """
             {
               "type":"block","id":"scp_classified_directive:scp_294","interactionId":"scp_294_keyboard",
-              "range":2.25,"priority":80,"useItem":"hand","icon":"hand",
+              "range":1.125,"priority":80,"useItem":"hand","icon":"hand",
               "text":{"action":"Use Keyboard","nameMode":"manual","name":"","showAction":true,"showName":false},
               "anchor":{"position":[0.59375,1.41875,-0.015],"rotateWith":"auto"},
               "input":{"allowE":true,"allowRightClick":true},"click":{"face":"front"},
@@ -155,6 +156,13 @@ public final class DefaultContextInteractions {
                     continue;
                 }
                 if ("block".equalsIgnoreCase(type)
+                        && "scp_classified_directive:scp_914".equals(id)
+                        && ("scp_914_dial".equals(key)
+                        || "scp_914_start".equals(key))) {
+                    object.addProperty("range", PHYSICAL_CONTROL_RANGE);
+                    continue;
+                }
+                if ("block".equalsIgnoreCase(type)
                         && "scp_classified_directive:scp_294".equals(id)) {
                     if (key.isBlank()) {
                         interactions.remove(i);
@@ -162,10 +170,12 @@ public final class DefaultContextInteractions {
                     }
                     if ("scp_294_coin".equals(key)) {
                         setAnchor(object, 0.165625D, 1.475D, -0.003125D);
+                        object.addProperty("range", PHYSICAL_CONTROL_RANGE);
                         continue;
                     }
                     if ("scp_294_keyboard".equals(key)) {
                         setAnchor(object, 0.59375D, 1.41875D, -0.015D);
+                        object.addProperty("range", PHYSICAL_CONTROL_RANGE);
                         continue;
                     }
                 }

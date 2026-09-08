@@ -1,10 +1,14 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
+import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -35,6 +39,8 @@ public final class Scp079SignalInterruptionManager {
 
     private static final Map<UUID, Interruption> INTERRUPTIONS =
             new ConcurrentHashMap<>();
+    private static final Map<UUID, ResourceKey<Level>> HOST_DIMENSIONS =
+            new ConcurrentHashMap<>();
 
     private Scp079SignalInterruptionManager() { }
 
@@ -63,9 +69,11 @@ public final class Scp079SignalInterruptionManager {
             int durationTicks) {
         if (player == null || player.server == null
                 || !Scp079PlayableManager.isController(player)) return false;
+        int duration = Math.max(1, durationTicks);
         int now = player.server.getTickCount();
         INTERRUPTIONS.put(player.getUUID(), new Interruption(kind,
-                now + Math.max(1, durationTicks)));
+                now + duration));
+        Scp079PlayableNetwork.sendSignalInterruption(player, kind, duration);
         return true;
     }
 
@@ -75,18 +83,35 @@ public final class Scp079SignalInterruptionManager {
         MinecraftServer server = event.getServer();
         ServerPlayer controller = Scp079PlayableManager.controller(server);
 
-        // Detect destruction before Scp079PlayableManager's normal END-tick
-        // cleanup releases the role. The pending fatal transition deliberately
-        // survives that release for its full two-second no-signal sequence.
-        if (controller != null && !INTERRUPTIONS.containsKey(controller.getUUID())) {
+        if (controller == null) {
+            HOST_DIMENSIONS.clear();
+        } else {
+            UUID controllerId = controller.getUUID();
             BlockPos host = Scp079PlayableManager.hostPosition(controller);
-            if (host != null) {
-                ServerLevel level = controller.server.getLevel(
-                        dimensionForHost(controller, host));
-                if (level != null && !is079Host(level.getBlockState(host))) {
-                    INTERRUPTIONS.put(controller.getUUID(), new Interruption(
-                            KIND_HOST_DESTROYED,
-                            server.getTickCount() + HOST_FAILURE_TICKS));
+            ResourceKey<Level> hostDimension = HOST_DIMENSIONS.get(controllerId);
+
+            if (host != null && hostDimension == null) {
+                for (ServerLevel level : server.getAllLevels()) {
+                    if (is079Host(level.getBlockState(host))) {
+                        hostDimension = level.dimension();
+                        HOST_DIMENSIONS.put(controllerId, hostDimension);
+                        break;
+                    }
+                }
+            }
+
+            // Detect destruction before Scp079PlayableManager's normal END-tick
+            // cleanup releases the role. The pending fatal transition deliberately
+            // survives that release for its full two-second no-signal sequence.
+            if (host != null && hostDimension != null
+                    && !INTERRUPTIONS.containsKey(controllerId)) {
+                ServerLevel hostLevel = server.getLevel(hostDimension);
+                if (hostLevel == null || !is079Host(hostLevel.getBlockState(host))) {
+                    Interruption failure = new Interruption(KIND_HOST_DESTROYED,
+                            server.getTickCount() + HOST_FAILURE_TICKS);
+                    INTERRUPTIONS.put(controllerId, failure);
+                    Scp079PlayableNetwork.sendSignalInterruption(controller,
+                            KIND_HOST_DESTROYED, HOST_FAILURE_TICKS);
                 }
             }
         }
@@ -111,39 +136,27 @@ public final class Scp079SignalInterruptionManager {
                 // takes over naturally.
                 player.setInvulnerable(false);
                 player.kill();
+                HOST_DIMENSIONS.remove(playerId);
             }
         }
     }
 
-    /*
-     * The host dimension is exposed indirectly by the controller's current
-     * physical level when local and by the host block itself when remote. The
-     * manager already validates the host on its own server tick, so scanning all
-     * loaded dimensions here keeps this coordinator decoupled from Session.
-     */
-    private static net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>
-            dimensionForHost(ServerPlayer player, BlockPos host) {
-        for (ServerLevel level : player.server.getAllLevels()) {
-            if (is079Host(level.getBlockState(host))) return level.dimension();
-        }
-        return player.level().dimension();
-    }
-
     private static boolean is079Host(BlockState state) {
-        return state != null && (state.is(com.bl4ues.scpclassifieddirective.init
-                .ScpClassifiedDirectiveModBlocks.SCP_079ON.get())
-                || state.is(com.bl4ues.scpclassifieddirective.init
-                .ScpClassifiedDirectiveModBlocks.SCP_079OFF.get()));
+        return state != null && (state.is(ScpClassifiedDirectiveModBlocks.SCP_079ON.get())
+                || state.is(ScpClassifiedDirectiveModBlocks.SCP_079OFF.get()));
     }
 
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        INTERRUPTIONS.remove(event.getEntity().getUUID());
+        UUID id = event.getEntity().getUUID();
+        INTERRUPTIONS.remove(id);
+        HOST_DIMENSIONS.remove(id);
     }
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         INTERRUPTIONS.clear();
+        HOST_DIMENSIONS.clear();
     }
 
     private record Interruption(int kind, int endTick) { }

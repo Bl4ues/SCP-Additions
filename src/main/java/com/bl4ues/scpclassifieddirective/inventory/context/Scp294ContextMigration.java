@@ -59,7 +59,9 @@ public final class Scp294ContextMigration {
                     continue;
                 }
                 if ("scp_294_coin".equals(key)) {
-                    changed |= setAnchor(rule, 0.1546875D, 1.453125D, -0.003D);
+                    // Center of the measured coin-panel box:
+                    // X 1.4..3.9, Y 21.6..25.6, Z -0.1..0.
+                    changed |= setAnchor(rule, 0.165625D, 1.475D, -0.003125D);
                 } else if ("scp_294_keyboard".equals(key)) {
                     changed |= setAnchor(rule, 0.59375D, 1.41875D, -0.015D);
                 }

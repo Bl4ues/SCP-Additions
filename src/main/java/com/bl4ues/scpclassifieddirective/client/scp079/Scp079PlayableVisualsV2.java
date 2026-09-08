@@ -9,6 +9,7 @@ import com.bl4ues.scpclassifieddirective.entity.Scp131BEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp173Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.Scp079DoorControlPolicy;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
@@ -260,7 +261,8 @@ public final class Scp079PlayableVisualsV2 {
             if (attack) {
                 Scp079PlayableNetwork.requestAction(
                         Scp079PlayableManager.ManualAction.PRIMARY, prompt.pos);
-            } else if (use) {
+            } else if (use && !Scp079DoorControlPolicy.hasKeycardReader(
+                    minecraft.level, prompt.pos)) {
                 Scp079PlayableNetwork.requestAction(
                         Scp079PlayableManager.ManualAction.LOCK, prompt.pos);
             }
@@ -480,7 +482,9 @@ public final class Scp079PlayableVisualsV2 {
             int ty = y + 2;
             Scp079UiTheme.draw(graphics, minecraft.font, primary,
                     tx, ty, 1.17F, Scp079UiTheme.TEXT);
-            if (prompt.kind == TargetKind.DOOR) {
+            if (prompt.kind == TargetKind.DOOR
+                    && !Scp079DoorControlPolicy.hasKeycardReader(
+                            minecraft.level, prompt.pos)) {
                 Scp079UiTheme.draw(graphics, minecraft.font,
                         "LOCK  [RMB]  " + cost(12.0D, minecraft),
                         tx, ty + 18, 1.13F, Scp079UiTheme.TEXT);

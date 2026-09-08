@@ -73,12 +73,17 @@ public final class TeslaTerminalBlockEntityRenderer
             }
         }
 
-        renderQuad(poseStack, buffers, frame, pos, base, BASE_EPSILON);
+        // These textures live in different translucent RenderTypes. BufferSource
+        // is free to flush those batches in an order unrelated to submission,
+        // which let the base CRT repaint over credential/warning popups. Flush
+        // each physical layer when it is authored so the old GUI's explicit
+        // base -> overlay composition order survives in world-space rendering.
+        renderQuad(poseStack, buffers, frame, pos, base, BASE_EPSILON, true);
         renderPermissionText(poseStack, buffers, frame, pos, facing,
                 authenticated);
         if (overlay != null) {
             renderQuad(poseStack, buffers, frame, pos, overlay,
-                    OVERLAY_EPSILON);
+                    OVERLAY_EPSILON, true);
         }
     }
 
@@ -123,9 +128,9 @@ public final class TeslaTerminalBlockEntityRenderer
 
     private static void renderQuad(PoseStack poseStack,
             MultiBufferSource buffers, Frame frame, BlockPos pos,
-            ResourceLocation texture, double normalOffset) {
-        VertexConsumer consumer = buffers.getBuffer(
-                RenderType.entityTranslucentEmissive(texture));
+            ResourceLocation texture, double normalOffset, boolean flush) {
+        RenderType renderType = RenderType.entityTranslucentEmissive(texture);
+        VertexConsumer consumer = buffers.getBuffer(renderType);
         Vec3 topLeft = local(frame.point(-0.5D, 0.5D, normalOffset), pos);
         Vec3 topRight = local(frame.point(0.5D, 0.5D, normalOffset), pos);
         Vec3 bottomRight = local(frame.point(0.5D, -0.5D, normalOffset), pos);
@@ -136,6 +141,10 @@ public final class TeslaTerminalBlockEntityRenderer
         vertex(consumer, poseStack, topRight, 1.0F, 0.0F, normal);
         vertex(consumer, poseStack, bottomRight, 1.0F, 1.0F, normal);
         vertex(consumer, poseStack, bottomLeft, 0.0F, 1.0F, normal);
+
+        if (flush && buffers instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch(renderType);
+        }
     }
 
     private static void vertex(VertexConsumer consumer, PoseStack poseStack,

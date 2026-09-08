@@ -42,8 +42,7 @@ public abstract class Scp079InteractionScopeMixin {
         List<Object> filtered = new ArrayList<>(cachedTargets.size());
         for (Object raw : cachedTargets) {
             if (!(raw instanceof Scp079WorldTargetAccessor target)) continue;
-            Object kind = target.scpclassifieddirective$kind();
-            if (Scp079InteractionScopeClient.allow(String.valueOf(kind),
+            if (Scp079InteractionScopeClient.allow(
                     target.scpclassifieddirective$pos())) {
                 filtered.add(raw);
             }

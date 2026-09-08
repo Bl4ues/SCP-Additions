@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "scp_classified_directive:scp_1576"
+    "scp_classified_directive:scp_1576",
+    "scp_classified_directive:hacking_device"
   ]
 }

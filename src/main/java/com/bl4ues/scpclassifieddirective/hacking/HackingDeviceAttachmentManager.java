@@ -2,14 +2,12 @@ package com.bl4ues.scpclassifieddirective.hacking;
 
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
-import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -64,9 +62,8 @@ public final class HackingDeviceAttachmentManager {
         data.setDirty();
         if (!player.getAbilities().instabuild) held.shrink(1);
 
-        level.playSound(null, pos,
-                ScpClassifiedDirectiveModSounds.SCP079_1.get(),
-                SoundSource.BLOCKS, 0.62F, 1.0F);
+        // broadcastAttachment also emits the filtered positional low-tech cue on
+        // every client in this dimension, so no unfiltered server duplicate plays.
         HackingDeviceNetwork.broadcastAttachment(level, pos, true);
         HackingDeviceNetwork.focus(player, pos, true);
         return true;
@@ -86,9 +83,6 @@ public final class HackingDeviceAttachmentManager {
         if (!player.getInventory().add(returned)) {
             player.drop(returned, false);
         }
-        level.playSound(null, pos,
-                ScpClassifiedDirectiveModSounds.SCP079_2.get(),
-                SoundSource.BLOCKS, 0.62F, 1.0F);
         HackingDeviceNetwork.broadcastAttachment(level, pos, false);
         HackingDeviceNetwork.focus(player, pos, false);
         return true;

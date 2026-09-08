@@ -64,7 +64,7 @@ public abstract class Scp079FacilityMapTravelPromptMixin {
         border(graphics, x, TOP, width, HEIGHT, 0xFF557F91);
 
         int keyX = x + width - KEY_WIDTH - 7;
-        int keyY = TOP + 4;
+        int keyY = TOP + 3;
         int keyH = HEIGHT - 8;
         graphics.fill(keyX, keyY, keyX + KEY_WIDTH, keyY + keyH,
                 0xE8D9EDF2);

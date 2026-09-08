@@ -5,12 +5,12 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
-/** Gives dynamic terminal overlays enough depth separation for shader pipelines. */
+/** Gives dynamic terminal overlays clear physical separation from the base CRT. */
 @Mixin(value = TeslaTerminalBlockEntityRenderer.class, remap = false)
 public abstract class TeslaTerminalOverlayDepthMixin {
     @ModifyConstant(method = "render",
             constant = @Constant(doubleValue = 0.0030D), remap = false)
     private double scpclassifieddirective$separateOverlay(double original) {
-        return 0.0080D;
+        return 0.0140D;
     }
 }

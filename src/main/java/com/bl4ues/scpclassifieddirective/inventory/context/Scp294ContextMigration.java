@@ -59,7 +59,7 @@ public final class Scp294ContextMigration {
                     continue;
                 }
                 if ("scp_294_coin".equals(key)) {
-                    changed |= setAnchor(rule, 0.153125D, 1.38125D, -0.005D);
+                    changed |= setAnchor(rule, 0.1546875D, 1.453125D, -0.003D);
                 } else if ("scp_294_keyboard".equals(key)) {
                     changed |= setAnchor(rule, 0.59375D, 1.41875D, -0.015D);
                 }

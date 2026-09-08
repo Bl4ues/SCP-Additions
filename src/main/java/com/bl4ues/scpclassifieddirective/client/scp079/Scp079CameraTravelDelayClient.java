@@ -27,7 +27,8 @@ public final class Scp079CameraTravelDelayClient {
     private static final long SAME_FLOOR_MASK_NANOS = 300_000_000L;
     private static final long CROSS_FLOOR_NANOS = 800_000_000L;
     private static final long CROSS_ZONE_NANOS = 1_500_000_000L;
-    private static final long ARRIVAL_SUPPRESSION_NANOS = 350_000_000L;
+    private static final long POST_ARRIVAL_MASK_NANOS = 380_000_000L;
+    private static final long ARRIVAL_SUPPRESSION_NANOS = 380_000_000L;
 
     private static Scp079PlayableNetwork.State pendingState;
     private static long arrivalAt;
@@ -80,8 +81,13 @@ public final class Scp079CameraTravelDelayClient {
         pendingState = state;
         arrivalAt = now + duration;
         suppressAutomaticUntil = 0L;
+
+        // Keep the opaque carrier alive after the authoritative camera arrives.
+        // Previously the hand-off and mask expired at the same instant, so one
+        // render could expose the old feed and the next the new feed. The extra
+        // tail guarantees both sides of the teleport remain hidden by static.
         Scp079CameraEffectsClientInvoker.scpclassifieddirective$startTransition(
-                duration);
+                duration + POST_ARRIVAL_MASK_NANOS);
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof Scp079FacilityMapScreen) {
@@ -112,7 +118,7 @@ public final class Scp079CameraTravelDelayClient {
         try {
             Scp079PlayableClient.receive(state);
             // The timed static already hid the hand-off. Remove the legacy local
-            // 260 ms line-glitch so it cannot leak out after the mask disappears.
+            // line-glitch so it cannot leak out after the mask disappears.
             Scp079PlayableClientTravelAccessor
                     .scpclassifieddirective$setInterferenceUntil(now);
         } finally {

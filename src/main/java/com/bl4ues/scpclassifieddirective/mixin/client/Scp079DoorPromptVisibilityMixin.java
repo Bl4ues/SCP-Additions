@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -63,9 +64,24 @@ public abstract class Scp079DoorPromptVisibilityMixin {
         };
 
         for (Vec3 sample : samples) {
-            BlockHitResult hit = minecraft.level.clip(new ClipContext(camera,
-                    sample, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE,
-                    minecraft.player));
+            BlockHitResult hit = clip(minecraft, camera, sample);
+
+            // When a Ceiling Camera tilts toward the horizon, its optical point
+            // travels through the dome's own block volume. VISUAL raycasts then
+            // immediately hit the camera housing and falsely hide every device
+            // in an otherwise unobstructed room. Step the ray beyond only that
+            // near self-hit, then perform the normal obstruction test.
+            if (hit.getType() == HitResult.Type.BLOCK
+                    && minecraft.level.getBlockState(hit.getBlockPos())
+                            .is(CeilingCameraModule.BLOCK.get())
+                    && camera.distanceToSqr(hit.getLocation()) <= 0.80D * 0.80D) {
+                Vec3 toward = sample.subtract(camera);
+                if (toward.lengthSqr() > 1.0E-6D) {
+                    Vec3 restart = camera.add(toward.normalize().scale(0.55D));
+                    hit = clip(minecraft, restart, sample);
+                }
+            }
+
             if (hit.getType() != HitResult.Type.BLOCK
                     || camera.distanceToSqr(hit.getLocation()) + 0.35D
                             >= camera.distanceToSqr(sample)) {
@@ -93,5 +109,12 @@ public abstract class Scp079DoorPromptVisibilityMixin {
             }
         }
         cir.setReturnValue(false);
+    }
+
+    private static BlockHitResult clip(Minecraft minecraft, Vec3 from,
+            Vec3 to) {
+        return minecraft.level.clip(new ClipContext(from, to,
+                ClipContext.Block.VISUAL, ClipContext.Fluid.NONE,
+                minecraft.player));
     }
 }

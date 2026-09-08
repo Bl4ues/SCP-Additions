@@ -198,13 +198,6 @@ public class ContextInteractPacket {
             }
             return;
         }
-        if (HackingDeviceContextDefaults.REMOVE_KEY.equals(
-                rule.interactionKey())) {
-            if (HackingDeviceAttachmentManager.detach(player, pos)) {
-                player.swing(InteractionHand.MAIN_HAND, true);
-            }
-            return;
-        }
 
         if (state.getBlock() instanceof CoreRoomElevatorModule.StationBlock station
                 && rule.interactionKey().startsWith("elevator_station_")

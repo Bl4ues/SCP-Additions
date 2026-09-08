@@ -84,15 +84,25 @@ public final class SystemTerminalBlockEntityRenderer
                         1.0F, 1.0F, 1.0F, 1.0F);
             }
         });
+
+        // GeoBlockRenderer itself owns the BlockEntityRenderer#render bridge.
+        // Rendering the CRT as a GeckoLib layer avoids declaring another typed
+        // render method with the same erased signature while still composing the
+        // physical screen after the authored model and glow layer.
+        addRenderLayer(new GeoRenderLayer<>(this) {
+            @Override
+            public void render(PoseStack poseStack,
+                    SystemTerminalBlockEntity animatable,
+                    BakedGeoModel bakedModel, RenderType renderType,
+                    MultiBufferSource bufferSource, VertexConsumer buffer,
+                    float partialTick, int packedLight, int packedOverlay) {
+                renderPhysicalScreen(animatable, poseStack, bufferSource);
+            }
+        });
     }
 
-    @Override
-    public void render(SystemTerminalBlockEntity terminal, float partialTick,
-            PoseStack poseStack, MultiBufferSource buffers, int packedLight,
-            int packedOverlay) {
-        super.render(terminal, partialTick, poseStack, buffers, packedLight,
-                packedOverlay);
-
+    private void renderPhysicalScreen(SystemTerminalBlockEntity terminal,
+            PoseStack poseStack, MultiBufferSource buffers) {
         // GeckoLib's translucent body/glow passes must land before the CRT. If
         // left queued, a later glowmask flush can repaint over the interface.
         if (buffers instanceof MultiBufferSource.BufferSource source) {

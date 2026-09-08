@@ -32,6 +32,7 @@ public final class Scp079PlayableAudioClient {
 
     private static FeedLoopSound feedStatic;
     private static FeedLoopSound feedTransition;
+    private static FeedLoopSound failureBeep;
 
     private Scp079PlayableAudioClient() {
     }
@@ -40,27 +41,54 @@ public final class Scp079PlayableAudioClient {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
-        if (!Scp079PlayableClient.active()) {
+        boolean active = Scp079PlayableClient.active();
+        boolean signalEffect = Scp079CameraEffectsClient.signalEffectActive();
+
+        if (!active && !signalEffect) {
             stop(minecraft, feedStatic);
             stop(minecraft, feedTransition);
+            stop(minecraft, failureBeep);
             feedStatic = null;
             feedTransition = null;
+            failureBeep = null;
             return;
         }
 
-        if (feedStatic == null
-                || !minecraft.getSoundManager().isActive(feedStatic)) {
+        if (active) {
+            if (feedStatic == null
+                    || !minecraft.getSoundManager().isActive(feedStatic)) {
+                stop(minecraft, feedStatic);
+                feedStatic = new FeedLoopSound("feed_static",
+                        Scp079PlayableAudioClient::staticVolume);
+                minecraft.getSoundManager().play(feedStatic);
+            }
+        } else {
             stop(minecraft, feedStatic);
-            feedStatic = new FeedLoopSound("feed_static",
-                    Scp079PlayableAudioClient::staticVolume);
-            minecraft.getSoundManager().play(feedStatic);
+            feedStatic = null;
         }
+
         if (feedTransition == null
                 || !minecraft.getSoundManager().isActive(feedTransition)) {
             stop(minecraft, feedTransition);
             feedTransition = new FeedLoopSound("feed_transition",
                     Scp079CameraEffectsClient::transitionEnvelope);
             minecraft.getSoundManager().play(feedTransition);
+        }
+
+        if (Scp079CameraEffectsClient.hostFailureActive()) {
+            if (failureBeep == null
+                    || !minecraft.getSoundManager().isActive(failureBeep)) {
+                stop(minecraft, failureBeep);
+                // 079select_1 is a short electronic tone already shipped by
+                // the mod. Looping it gives the destroyed-host transition its
+                // continuous terminal warning without inventing a new asset.
+                failureBeep = new FeedLoopSound("079select_1", () -> 0.34F,
+                        0.72F);
+                minecraft.getSoundManager().play(failureBeep);
+            }
+        } else {
+            stop(minecraft, failureBeep);
+            failureBeep = null;
         }
     }
 
@@ -174,12 +202,17 @@ public final class Scp079PlayableAudioClient {
         private final Supplier<Float> volumeSupplier;
 
         private FeedLoopSound(String path, Supplier<Float> volumeSupplier) {
+            this(path, volumeSupplier, 1.0F);
+        }
+
+        private FeedLoopSound(String path, Supplier<Float> volumeSupplier,
+                float pitch) {
             this(new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path),
-                    volumeSupplier);
+                    volumeSupplier, pitch);
         }
 
         private FeedLoopSound(ResourceLocation id,
-                Supplier<Float> volumeSupplier) {
+                Supplier<Float> volumeSupplier, float pitch) {
             super(SoundEvent.createVariableRangeEvent(id), SoundSource.MASTER,
                     RandomSource.create());
             this.volumeSupplier = volumeSupplier;
@@ -193,7 +226,7 @@ public final class Scp079PlayableAudioClient {
             this.delay = 0;
             this.relative = true;
             this.attenuation = SoundInstance.Attenuation.NONE;
-            this.pitch = 1.0F;
+            this.pitch = Mth.clamp(pitch, 0.05F, 2.0F);
             this.volume = requestedVolume();
         }
 
@@ -205,7 +238,9 @@ public final class Scp079PlayableAudioClient {
 
         @Override
         public void tick() {
-            if (!Scp079PlayableClient.active()) {
+            boolean audioContext = Scp079PlayableClient.active()
+                    || Scp079CameraEffectsClient.signalEffectActive();
+            if (!audioContext) {
                 stop();
                 return;
             }

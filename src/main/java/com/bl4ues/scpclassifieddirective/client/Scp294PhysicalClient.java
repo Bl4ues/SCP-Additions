@@ -65,17 +65,17 @@ public final class Scp294PhysicalClient {
     private static final double STATUS_HEIGHT = 0.50D / 16.0D;
     private static final double STATUS_PADDING_X = 0.06D / 16.0D;
     private static final double STATUS_PADDING_Y = 0.04D / 16.0D;
+    private static final String STATUS_SCALE_REFERENCE = "INSERT $0.50";
     private static final int STATUS_TEXT = 0xFF071109;
     private static final ResourceLocation STATUS_FONT = ScpFonts.PF_VIDEOTEXT;
 
-    // The dispensing opening is only painted into the authored model, so the
-    // temporary cup is rendered as its own upright cutout exactly on that slot
-    // instead of using item transforms that push it forward/down unpredictably.
+    // Exact authored cup area measured from the model and empty-cup texture:
+    // X 10.0..13.0, Y 10.9..13.9, Z 0.9. Keep the sprite upright in this box.
     private static final double CUP_CENTER_X = 11.50D / 16.0D;
-    private static final double CUP_CENTER_Y = 7.45D / 16.0D;
-    private static final double CUP_CENTER_Z = -0.0010D;
-    private static final double CUP_WIDTH = 2.10D / 16.0D;
-    private static final double CUP_HEIGHT = 2.90D / 16.0D;
+    private static final double CUP_CENTER_Y = 12.40D / 16.0D;
+    private static final double CUP_CENTER_Z = 0.90D / 16.0D;
+    private static final double CUP_WIDTH = 3.00D / 16.0D;
+    private static final double CUP_HEIGHT = 3.00D / 16.0D;
     private static final double CUP_EPSILON = 0.00045D;
     private static final ResourceLocation CUP_TEXTURE = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "textures/item/emptycup.png");
@@ -228,9 +228,9 @@ public final class Scp294PhysicalClient {
     }
 
     /**
-     * Left-anchored status rendering. Long orders shrink to the exact physical
-     * readout bounds; reserving cursor width keeps the text stationary while the
-     * underscore blinks. Padding is applied on every edge of the measured area.
+     * Left-anchored status rendering. Short text never grows beyond the authored
+     * reference size used by INSERT $0.50; longer orders may shrink further to
+     * remain inside the exact readout bounds. Cursor width is always reserved.
      */
     private static void renderStatus(Font font, PoseStack poseStack,
             MultiBufferSource buffers, BlockPos pos, Direction facing,
@@ -244,16 +244,21 @@ public final class Scp294PhysicalClient {
                 style -> style.withFont(STATUS_FONT));
         Component display = Component.literal(visible).withStyle(
                 style -> style.withFont(STATUS_FONT));
+        Component referenceText = Component.literal(STATUS_SCALE_REFERENCE).withStyle(
+                style -> style.withFont(STATUS_FONT));
 
         double usableWidth = Math.max(0.001D,
                 frame.width() - STATUS_PADDING_X * 2.0D);
         double usableHeight = Math.max(0.001D,
                 frame.height() - STATUS_PADDING_Y * 2.0D);
         float measuredWidth = Math.max(1.0F, font.width(measuredText));
+        float referenceWidth = Math.max(1.0F, font.width(referenceText));
         float scaleByWidth = (float) (usableWidth / measuredWidth);
         float scaleByHeight = (float) (usableHeight / 9.0D);
+        float referenceScale = Math.min((float) (usableWidth / referenceWidth),
+                scaleByHeight);
         float textScale = Math.max(0.0001F,
-                Math.min(scaleByWidth, scaleByHeight));
+                Math.min(Math.min(scaleByWidth, scaleByHeight), referenceScale));
 
         double normalizedInset = STATUS_PADDING_X / frame.width();
         Vec3 topLeft = local(frame.point(-0.5D + normalizedInset,

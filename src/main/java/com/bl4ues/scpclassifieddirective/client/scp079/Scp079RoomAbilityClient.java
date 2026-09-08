@@ -13,8 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class Scp079RoomAbilityClient {
-    private Scp079RoomAbilityClient() {
-    }
+    private Scp079RoomAbilityClient() { }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -27,6 +26,7 @@ public final class Scp079RoomAbilityClient {
             if (Scp079BlackoutAvailabilityClient.available()) {
                 Scp079RoomAbilityNetwork.request(
                         Scp079RoomAbilityManager.Ability.BLACKOUT);
+                Scp079BlackoutAvailabilityClient.markRequested();
             }
         }
         while (Scp079Keybinds.LOCKDOWN.consumeClick()) {

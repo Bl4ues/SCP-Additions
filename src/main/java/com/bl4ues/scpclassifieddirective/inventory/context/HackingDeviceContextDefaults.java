@@ -8,10 +8,10 @@ import com.google.gson.JsonParser;
 
 import java.util.Set;
 
-/** Adds update-safe pickup-style prompts without rewriting user context configs. */
+/** Adds the temporary Hacking Device Attach prompt without rewriting user configs. */
 public final class HackingDeviceContextDefaults {
     public static final String ATTACH_KEY = "attach_hacking_device";
-    public static final String REMOVE_KEY = "remove_hacking_device";
+    private static final String LEGACY_REMOVE_KEY = "remove_hacking_device";
 
     private static final Set<String> READER_IDS = Set.of(
             "right_reader", "lv_2_right_reader", "lv_3_right_reader",
@@ -31,6 +31,7 @@ public final class HackingDeviceContextDefaults {
                     ? root.getAsJsonArray("interactions") : new JsonArray();
             root.add("interactions", interactions);
 
+            removeLegacySeparateRemoveRules(interactions);
             for (JsonElement element : interactions) {
                 if (!element.isJsonObject()) continue;
                 JsonObject rule = element.getAsJsonObject();
@@ -41,43 +42,46 @@ public final class HackingDeviceContextDefaults {
                 }
                 String path = id.substring(id.indexOf(':') + 1);
                 if (!READER_IDS.contains(path)) continue;
-                appendReaderVariants(rule);
+                appendReaderVariant(rule);
             }
 
-            appendOcuRuleIfMissing(interactions, ATTACH_KEY, true);
-            appendOcuRuleIfMissing(interactions, REMOVE_KEY, false);
+            appendOcuRuleIfMissing(interactions);
             return root.toString();
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.error(
-                    "Failed to append integrated Hacking Device context prompts",
+                    "Failed to append integrated Hacking Device context prompt",
                     exception);
             return raw;
         }
     }
 
-    private static void appendReaderVariants(JsonObject rule) {
+    private static void appendReaderVariant(JsonObject rule) {
         JsonArray variants = rule.has("variants")
                 && rule.get("variants").isJsonArray()
                 ? rule.getAsJsonArray("variants") : new JsonArray();
         rule.add("variants", variants);
-        if (!hasVariant(variants, ATTACH_KEY)) {
-            variants.add(variant(ATTACH_KEY, "Attach", true, 96));
+        for (int index = variants.size() - 1; index >= 0; index--) {
+            JsonElement element = variants.get(index);
+            if (element.isJsonObject()
+                    && LEGACY_REMOVE_KEY.equals(text(element.getAsJsonObject(),
+                    "interactionId"))) {
+                variants.remove(index);
+            }
         }
-        if (!hasVariant(variants, REMOVE_KEY)) {
-            variants.add(variant(REMOVE_KEY, "Remove", false, 100));
+        if (!hasVariant(variants, ATTACH_KEY)) {
+            variants.add(attachVariant());
         }
     }
 
-    private static JsonObject variant(String key, String action,
-            boolean requiresDevice, int priority) {
+    private static JsonObject attachVariant() {
         JsonObject variant = new JsonObject();
-        variant.addProperty("interactionId", key);
-        variant.addProperty("priority", priority);
+        variant.addProperty("interactionId", ATTACH_KEY);
+        variant.addProperty("priority", 100);
         variant.addProperty("useItem", "hand");
         variant.addProperty("icon", "pickup");
 
         JsonObject text = new JsonObject();
-        text.addProperty("action", action);
+        text.addProperty("action", "Attach");
         text.addProperty("nameMode", "manual");
         text.addProperty("name", "Hacking Device");
         text.addProperty("showAction", true);
@@ -87,23 +91,20 @@ public final class HackingDeviceContextDefaults {
         JsonObject input = new JsonObject();
         input.addProperty("allowE", true);
         input.addProperty("allowRightClick", true);
-        if (requiresDevice) {
-            input.addProperty("requiredItem",
-                    ScpClassifiedDirectiveMod.MODID + ":hacking_device");
-        }
+        input.addProperty("requiredItem",
+                ScpClassifiedDirectiveMod.MODID + ":hacking_device");
         variant.add("input", input);
         return variant;
     }
 
-    private static void appendOcuRuleIfMissing(JsonArray interactions,
-            String key, boolean requiresDevice) {
+    private static void appendOcuRuleIfMissing(JsonArray interactions) {
         String ocuId = ScpClassifiedDirectiveMod.MODID
                 + ":object_containment_unit";
         for (JsonElement element : interactions) {
             if (!element.isJsonObject()) continue;
             JsonObject object = element.getAsJsonObject();
             if (ocuId.equals(text(object, "id"))
-                    && key.equals(text(object, "interactionId"))) {
+                    && ATTACH_KEY.equals(text(object, "interactionId"))) {
                 return;
             }
         }
@@ -111,14 +112,14 @@ public final class HackingDeviceContextDefaults {
         JsonObject rule = new JsonObject();
         rule.addProperty("type", "block");
         rule.addProperty("id", ocuId);
-        rule.addProperty("interactionId", key);
+        rule.addProperty("interactionId", ATTACH_KEY);
         rule.addProperty("range", 1.75D);
-        rule.addProperty("priority", requiresDevice ? 96 : 100);
+        rule.addProperty("priority", 100);
         rule.addProperty("useItem", "hand");
         rule.addProperty("icon", "pickup");
 
         JsonObject text = new JsonObject();
-        text.addProperty("action", requiresDevice ? "Attach" : "Remove");
+        text.addProperty("action", "Attach");
         text.addProperty("nameMode", "manual");
         text.addProperty("name", "Hacking Device");
         text.addProperty("showAction", true);
@@ -137,10 +138,8 @@ public final class HackingDeviceContextDefaults {
         JsonObject input = new JsonObject();
         input.addProperty("allowE", true);
         input.addProperty("allowRightClick", true);
-        if (requiresDevice) {
-            input.addProperty("requiredItem",
-                    ScpClassifiedDirectiveMod.MODID + ":hacking_device");
-        }
+        input.addProperty("requiredItem",
+                ScpClassifiedDirectiveMod.MODID + ":hacking_device");
         rule.add("input", input);
 
         JsonObject click = new JsonObject();
@@ -152,6 +151,17 @@ public final class HackingDeviceContextDefaults {
         visual.addProperty("scale", 0.82D);
         rule.add("visual", visual);
         interactions.add(rule);
+    }
+
+    private static void removeLegacySeparateRemoveRules(JsonArray interactions) {
+        for (int index = interactions.size() - 1; index >= 0; index--) {
+            JsonElement element = interactions.get(index);
+            if (element.isJsonObject()
+                    && LEGACY_REMOVE_KEY.equals(text(element.getAsJsonObject(),
+                    "interactionId"))) {
+                interactions.remove(index);
+            }
+        }
     }
 
     private static boolean hasVariant(JsonArray variants, String key) {

@@ -49,34 +49,33 @@ import java.util.Locale;
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class Scp294PhysicalClient {
     /** Close framing around the upper console rather than the full 2-block body. */
-    public static final double FOCUS_DISTANCE = 0.80D;
+    public static final double FOCUS_DISTANCE = 0.72D;
 
     private static final double FOCUS_CENTER_X = 8.0D / 16.0D;
-    private static final double FOCUS_CENTER_Y = 24.50D / 16.0D;
+    private static final double FOCUS_CENTER_Y = 26.0D / 16.0D;
     private static final double FOCUS_CENTER_Z = 0.0D;
     private static final double FOCUS_WIDTH = 14.0D / 16.0D;
-    private static final double FOCUS_HEIGHT = 13.5D / 16.0D;
+    private static final double FOCUS_HEIGHT = 12.0D / 16.0D;
 
-    // Tiny horizontal readout at the top of the payment panel. Its job is only
-    // old-vending-machine status/order text; the large CRT stays decorative.
+    // Tiny horizontal readout at the top of the payment panel. The panel lives
+    // on the viewer-right black column of the authored NORTH-facing model.
     private static final double STATUS_CENTER_X = 2.45D / 16.0D;
-    private static final double STATUS_CENTER_Y = 21.15D / 16.0D;
-    private static final double STATUS_CENTER_Z = -0.022D;
-    private static final double STATUS_WIDTH = 2.75D / 16.0D;
-    private static final double STATUS_HEIGHT = 0.62D / 16.0D;
-    private static final int STATUS_W = 156;
-    private static final int STATUS_H = 24;
-    private static final int STATUS_TEXT = 0xFF07100A;
-    private static final double STATUS_TEXT_EPSILON = 0.0025D;
-    private static final ResourceLocation STATUS_FONT = new ResourceLocation(
-            ScpClassifiedDirectiveMod.MODID, "anonymous_pro");
+    private static final double STATUS_CENTER_Y = 24.05D / 16.0D;
+    private static final double STATUS_CENTER_Z = -0.012D;
+    private static final double STATUS_WIDTH = 2.25D / 16.0D;
+    private static final double STATUS_HEIGHT = 0.50D / 16.0D;
+    private static final int STATUS_W = 128;
+    private static final int STATUS_H = 18;
+    private static final int STATUS_TEXT = 0xFF071109;
+    private static final double STATUS_TEXT_EPSILON = 0.0015D;
+    private static final ResourceLocation STATUS_FONT = ScpFonts.PF_VIDEOTEXT;
 
-    // Dispensing recess on the lower front. The empty paper cup is visible here
-    // only while the configured dispense delay is running.
+    // Dispensing recess on the lower front. Keep the temporary empty cup inside
+    // the cubby, not floating in front of the machine.
     private static final double CUP_CENTER_X = 11.50D / 16.0D;
-    private static final double CUP_CENTER_Y = 7.35D / 16.0D;
-    private static final double CUP_CENTER_Z = -0.04D / 16.0D;
-    private static final float CUP_SCALE = 0.20F;
+    private static final double CUP_CENTER_Y = 10.10D / 16.0D;
+    private static final double CUP_CENTER_Z = 2.10D / 16.0D;
+    private static final float CUP_SCALE = 0.16F;
 
     private static final double MODEL_UNIT = 1.0D / 16.0D;
     private static final ResourceLocation OUTLINE_MASK_TEXTURE =
@@ -119,11 +118,7 @@ public final class Scp294PhysicalClient {
                 || Scp294Block.KEYBOARD_INTERACTION_KEY.equals(interactionKey);
     }
 
-    /**
-     * Draw only the selected authored control into the shared prompt outline
-     * mask. Re-rendering the entire baked SCP-294 model would make the whole
-     * vending machine flash, defeating the physical-control interaction.
-     */
+    /** Draw only the visible face of the selected physical control. */
     public static void renderContextOutline(BlockPos pos, BlockState state,
             String interactionKey, PoseStack poseStack, Camera camera,
             MultiBufferSource buffers) {
@@ -144,13 +139,15 @@ public final class Scp294PhysicalClient {
             poseStack.translate(-0.5D, 0.0D, -0.5D);
 
             if (Scp294Block.COIN_INTERACTION_KEY.equals(interactionKey)) {
-                // Payment/display assembly on the viewer's right side.
-                emitModelCube(consumer, poseStack.last(),
-                        0.55D, 13.15D, -0.05D,
-                        4.45D, 20.15D, 2.30D);
+                // Viewer-right payment panel. Only its front surface enters the
+                // outline mask, preventing a thick cuboid silhouette.
+                emitModelFrontPlane(consumer, poseStack.last(),
+                        0.75D, 19.0D, -0.03D,
+                        4.15D, 25.15D);
             } else if (Scp294Block.KEYBOARD_INTERACTION_KEY.equals(interactionKey)) {
-                // Exact large keyboard backing plate from scp294.json. The keys
-                // share its 22.5 degree X tilt, so this silhouette hugs them.
+                // The keyboard backing plate is tilted 22.5 degrees. Render only
+                // its visible front plane, not the full one-pixel-thick cuboid,
+                // so the outline cannot continue backwards behind the CRT.
                 poseStack.pushPose();
                 try {
                     double pivotX = 8.0D * MODEL_UNIT;
@@ -159,9 +156,9 @@ public final class Scp294PhysicalClient {
                     poseStack.translate(pivotX, pivotY, pivotZ);
                     poseStack.mulPose(Axis.XP.rotationDegrees(22.5F));
                     poseStack.translate(-pivotX, -pivotY, -pivotZ);
-                    emitModelCube(consumer, poseStack.last(),
-                            5.0D, 19.70D, 1.0D,
-                            14.0D, 25.70D, 2.0D);
+                    emitModelFrontPlane(consumer, poseStack.last(),
+                            5.0D, 19.70D, 0.96D,
+                            14.0D, 25.70D);
                 } finally {
                     poseStack.popPose();
                 }
@@ -238,7 +235,7 @@ public final class Scp294PhysicalClient {
         float depthScale = Math.min(pixelScaleX, pixelScaleY);
         String status = fitToWidth(font,
                 rawStatus == null ? "" : rawStatus.toUpperCase(Locale.ROOT),
-                STATUS_W - 8);
+                STATUS_W - 6);
         Component display = Component.literal(status).withStyle(
                 style -> style.withFont(STATUS_FONT));
 
@@ -246,7 +243,7 @@ public final class Scp294PhysicalClient {
         poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
         poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
-        float x = Math.max(4.0F, (STATUS_W - font.width(display)) * 0.5F);
+        float x = Math.max(3.0F, (STATUS_W - font.width(display)) * 0.5F);
         float y = (STATUS_H - 9.0F) * 0.5F - 0.5F;
         font.drawInBatch(display, x, y, STATUS_TEXT, false,
                 poseStack.last().pose(), buffers, Font.DisplayMode.POLYGON_OFFSET,
@@ -268,7 +265,7 @@ public final class Scp294PhysicalClient {
             Direction facing) {
         if (machine.getLevel() == null) return;
         Frame anchor = cupFrame(pos, facing);
-        Vec3 center = local(anchor.center().add(anchor.outward().scale(0.006D)), pos);
+        Vec3 center = local(anchor.center(), pos);
         ItemStack cup = new ItemStack(ScpClassifiedDirectiveModItems.EMPTY_CUP.get());
 
         poseStack.pushPose();
@@ -314,30 +311,22 @@ public final class Scp294PhysicalClient {
         }
     }
 
-    private static void emitModelCube(VertexConsumer consumer,
-            PoseStack.Pose pose, double fromX, double fromY, double fromZ,
-            double toX, double toY, double toZ) {
+    private static void emitModelFrontPlane(VertexConsumer consumer,
+            PoseStack.Pose pose, double fromX, double fromY, double z,
+            double toX, double toY) {
         float minX = (float) (Math.min(fromX, toX) * MODEL_UNIT);
         float minY = (float) (Math.min(fromY, toY) * MODEL_UNIT);
-        float minZ = (float) (Math.min(fromZ, toZ) * MODEL_UNIT);
         float maxX = (float) (Math.max(fromX, toX) * MODEL_UNIT);
         float maxY = (float) (Math.max(fromY, toY) * MODEL_UNIT);
-        float maxZ = (float) (Math.max(fromZ, toZ) * MODEL_UNIT);
+        float planeZ = (float) (z * MODEL_UNIT);
         Matrix4f matrix = pose.pose();
         Matrix3f normal = pose.normal();
-
-        quad(consumer, matrix, normal, minX, minY, minZ, minX, minY, maxZ,
-                minX, maxY, maxZ, minX, maxY, minZ, -1, 0, 0);
-        quad(consumer, matrix, normal, maxX, minY, maxZ, maxX, minY, minZ,
-                maxX, maxY, minZ, maxX, maxY, maxZ, 1, 0, 0);
-        quad(consumer, matrix, normal, maxX, minY, minZ, minX, minY, minZ,
-                minX, maxY, minZ, maxX, maxY, minZ, 0, 0, -1);
-        quad(consumer, matrix, normal, minX, minY, maxZ, maxX, minY, maxZ,
-                maxX, maxY, maxZ, minX, maxY, maxZ, 0, 0, 1);
-        quad(consumer, matrix, normal, minX, maxY, minZ, minX, maxY, maxZ,
-                maxX, maxY, maxZ, maxX, maxY, minZ, 0, 1, 0);
-        quad(consumer, matrix, normal, minX, minY, maxZ, minX, minY, minZ,
-                maxX, minY, minZ, maxX, minY, maxZ, 0, -1, 0);
+        quad(consumer, matrix, normal,
+                maxX, minY, planeZ,
+                minX, minY, planeZ,
+                minX, maxY, planeZ,
+                maxX, maxY, planeZ,
+                0, 0, -1);
     }
 
     private static void quad(VertexConsumer consumer, Matrix4f matrix,

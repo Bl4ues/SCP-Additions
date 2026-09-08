@@ -24,8 +24,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -57,25 +55,29 @@ public final class Scp294PhysicalClient {
     private static final double FOCUS_WIDTH = 14.0D / 16.0D;
     private static final double FOCUS_HEIGHT = 12.0D / 16.0D;
 
-    // Tiny horizontal readout at the top of the payment panel. The panel lives
-    // on the viewer-right black column of the authored NORTH-facing model.
-    private static final double STATUS_CENTER_X = 2.45D / 16.0D;
-    private static final double STATUS_CENTER_Y = 24.05D / 16.0D;
-    private static final double STATUS_CENTER_Z = -0.012D;
-    private static final double STATUS_WIDTH = 2.25D / 16.0D;
-    private static final double STATUS_HEIGHT = 0.50D / 16.0D;
-    private static final int STATUS_W = 128;
-    private static final int STATUS_H = 18;
+    // Tiny four-pixel-style readout on the payment panel. Keep this deliberately
+    // small and tucked against the authored surface; it is not a second GUI.
+    private static final double STATUS_CENTER_X = 3.15D / 16.0D;
+    private static final double STATUS_CENTER_Y = 24.60D / 16.0D;
+    private static final double STATUS_CENTER_Z = 0.0015D;
+    private static final double STATUS_WIDTH = 1.80D / 16.0D;
+    private static final double STATUS_HEIGHT = 0.28D / 16.0D;
+    private static final double STATUS_LEFT_INSET = 0.08D / 16.0D;
     private static final int STATUS_TEXT = 0xFF071109;
-    private static final double STATUS_TEXT_EPSILON = 0.0015D;
+    private static final double STATUS_TEXT_EPSILON = 0.00035D;
     private static final ResourceLocation STATUS_FONT = ScpFonts.PF_VIDEOTEXT;
 
-    // Dispensing recess on the lower front. Keep the temporary empty cup inside
-    // the cubby, not floating in front of the machine.
+    // The dispensing opening is only painted into the authored model, so the
+    // temporary cup is rendered as its own upright cutout exactly on that slot
+    // instead of using item transforms that push it forward/down unpredictably.
     private static final double CUP_CENTER_X = 11.50D / 16.0D;
-    private static final double CUP_CENTER_Y = 10.10D / 16.0D;
-    private static final double CUP_CENTER_Z = 2.10D / 16.0D;
-    private static final float CUP_SCALE = 0.16F;
+    private static final double CUP_CENTER_Y = 7.45D / 16.0D;
+    private static final double CUP_CENTER_Z = -0.0010D;
+    private static final double CUP_WIDTH = 2.10D / 16.0D;
+    private static final double CUP_HEIGHT = 2.90D / 16.0D;
+    private static final double CUP_EPSILON = 0.00045D;
+    private static final ResourceLocation CUP_TEXTURE = new ResourceLocation(
+            ScpClassifiedDirectiveMod.MODID, "textures/item/emptycup.png");
 
     private static final double MODEL_UNIT = 1.0D / 16.0D;
     private static final ResourceLocation OUTLINE_MASK_TEXTURE =
@@ -103,7 +105,7 @@ public final class Scp294PhysicalClient {
 
     private static Frame cupFrame(BlockPos pos, Direction facing) {
         return frame(pos, facing, CUP_CENTER_X, CUP_CENTER_Y,
-                CUP_CENTER_Z, 0.01D, 0.01D);
+                CUP_CENTER_Z, CUP_WIDTH, CUP_HEIGHT);
     }
 
     private static Frame frame(BlockPos pos, Direction facing,
@@ -139,15 +141,14 @@ public final class Scp294PhysicalClient {
             poseStack.translate(-0.5D, 0.0D, -0.5D);
 
             if (Scp294Block.COIN_INTERACTION_KEY.equals(interactionKey)) {
-                // Viewer-right payment panel. Only its front surface enters the
-                // outline mask, preventing a thick cuboid silhouette.
+                // Compact payment assembly only. The previous mask extended well
+                // below the physical box and made half the black column glow.
                 emitModelFrontPlane(consumer, poseStack.last(),
-                        0.75D, 19.0D, -0.03D,
-                        4.15D, 25.15D);
+                        1.20D, 20.75D, -0.02D,
+                        3.75D, 25.75D);
             } else if (Scp294Block.KEYBOARD_INTERACTION_KEY.equals(interactionKey)) {
                 // The keyboard backing plate is tilted 22.5 degrees. Render only
-                // its visible front plane, not the full one-pixel-thick cuboid,
-                // so the outline cannot continue backwards behind the CRT.
+                // its visible front plane, not the full one-pixel-thick cuboid.
                 poseStack.pushPose();
                 try {
                     double pivotX = 8.0D * MODEL_UNIT;
@@ -185,6 +186,8 @@ public final class Scp294PhysicalClient {
             Scp294GuiScreen screen = activeScreen(pos);
 
             String status;
+            boolean reserveCursor = false;
+            boolean cursorVisible = false;
             if (machine.isPouring()) {
                 status = "POURING";
             } else if (machine.isOutOfRange()) {
@@ -195,10 +198,9 @@ public final class Scp294PhysicalClient {
                     status = "ENTER ORDER";
                 } else {
                     status = order;
-                    if (screen.physicalInputFocused()
-                            && (System.currentTimeMillis() / 400L) % 2L == 0L) {
-                        status += "_";
-                    }
+                    reserveCursor = screen.physicalInputFocused();
+                    cursorVisible = reserveCursor
+                            && (System.currentTimeMillis() / 400L) % 2L == 0L;
                 }
             } else if (machine.getItem(0).is(ScpClassifiedDirectiveModItems.COIN.get())) {
                 status = "ENTER ORDER";
@@ -206,9 +208,10 @@ public final class Scp294PhysicalClient {
                 status = "INSERT $0.50";
             }
 
-            renderStatus(font, poseStack, buffers, pos, facing, status);
+            renderStatus(font, poseStack, buffers, pos, facing, status,
+                    reserveCursor, cursorVisible);
             if (machine.isPouring()) {
-                renderEmptyCup(machine, poseStack, buffers, pos, facing);
+                renderEmptyCup(poseStack, buffers, pos, facing);
             }
         }
 
@@ -224,59 +227,64 @@ public final class Scp294PhysicalClient {
                 : Direction.NORTH;
     }
 
+    /**
+     * Left-anchored status rendering. Long orders shrink to the physical readout
+     * instead of being cropped; reserving cursor width keeps the text perfectly
+     * stationary while the underscore blinks.
+     */
     private static void renderStatus(Font font, PoseStack poseStack,
             MultiBufferSource buffers, BlockPos pos, Direction facing,
-            String rawStatus) {
+            String rawStatus, boolean reserveCursor, boolean cursorVisible) {
         Frame frame = statusFrame(pos, facing);
-        Vec3 topLeft = local(frame.point(-0.5D, 0.5D,
-                STATUS_TEXT_EPSILON), pos);
-        float pixelScaleX = (float) (frame.width() / STATUS_W);
-        float pixelScaleY = (float) (frame.height() / STATUS_H);
-        float depthScale = Math.min(pixelScaleX, pixelScaleY);
-        String status = fitToWidth(font,
-                rawStatus == null ? "" : rawStatus.toUpperCase(Locale.ROOT),
-                STATUS_W - 6);
-        Component display = Component.literal(status).withStyle(
+        String status = rawStatus == null ? ""
+                : rawStatus.toUpperCase(Locale.ROOT);
+        String measured = status + (reserveCursor ? "_" : "");
+        String visible = status + (cursorVisible ? "_" : "");
+        Component measuredText = Component.literal(measured).withStyle(
                 style -> style.withFont(STATUS_FONT));
+        Component display = Component.literal(visible).withStyle(
+                style -> style.withFont(STATUS_FONT));
+
+        double usableWidth = Math.max(0.001D,
+                frame.width() - STATUS_LEFT_INSET * 2.0D);
+        float measuredWidth = Math.max(1.0F, font.width(measuredText));
+        float scaleByWidth = (float) (usableWidth / measuredWidth);
+        float scaleByHeight = (float) (frame.height() / 9.0D);
+        float textScale = Math.max(0.0001F,
+                Math.min(scaleByWidth, scaleByHeight) * 0.90F);
+
+        double normalizedInset = STATUS_LEFT_INSET / frame.width();
+        Vec3 topLeft = local(frame.point(-0.5D + normalizedInset,
+                0.5D, STATUS_TEXT_EPSILON), pos);
+        float logicalHeight = (float) (frame.height() / textScale);
+        float y = Math.max(0.0F, (logicalHeight - 9.0F) * 0.5F);
 
         poseStack.pushPose();
         poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
-        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
-        float x = Math.max(3.0F, (STATUS_W - font.width(display)) * 0.5F);
-        float y = (STATUS_H - 9.0F) * 0.5F - 0.5F;
-        font.drawInBatch(display, x, y, STATUS_TEXT, false,
+        poseStack.scale(textScale, -textScale, textScale);
+        font.drawInBatch(display, 0.0F, y, STATUS_TEXT, false,
                 poseStack.last().pose(), buffers, Font.DisplayMode.POLYGON_OFFSET,
                 0, LightTexture.FULL_BRIGHT);
         poseStack.popPose();
     }
 
-    private static String fitToWidth(Font font, String raw, int width) {
-        String value = raw;
-        while (!value.isEmpty() && font.width(Component.literal(value)
-                .withStyle(style -> style.withFont(STATUS_FONT))) > width) {
-            value = value.substring(1);
-        }
-        return value;
-    }
+    private static void renderEmptyCup(PoseStack poseStack,
+            MultiBufferSource buffers, BlockPos pos, Direction facing) {
+        Frame frame = cupFrame(pos, facing);
+        Vec3 topLeft = local(frame.point(-0.5D, 0.5D, CUP_EPSILON), pos);
+        Vec3 topRight = local(frame.point(0.5D, 0.5D, CUP_EPSILON), pos);
+        Vec3 bottomRight = local(frame.point(0.5D, -0.5D, CUP_EPSILON), pos);
+        Vec3 bottomLeft = local(frame.point(-0.5D, -0.5D, CUP_EPSILON), pos);
+        VertexConsumer consumer = buffers.getBuffer(
+                RenderType.entityCutoutNoCull(CUP_TEXTURE));
+        Matrix4f matrix = poseStack.last().pose();
+        Matrix3f normal = poseStack.last().normal();
+        Vec3 outward = frame.outward();
 
-    private static void renderEmptyCup(Scp294BlockEntity machine,
-            PoseStack poseStack, MultiBufferSource buffers, BlockPos pos,
-            Direction facing) {
-        if (machine.getLevel() == null) return;
-        Frame anchor = cupFrame(pos, facing);
-        Vec3 center = local(anchor.center(), pos);
-        ItemStack cup = new ItemStack(ScpClassifiedDirectiveModItems.EMPTY_CUP.get());
-
-        poseStack.pushPose();
-        poseStack.translate(center.x, center.y, center.z);
-        poseStack.mulPose(Axis.YP.rotationDegrees(textYaw(facing)));
-        poseStack.scale(CUP_SCALE, CUP_SCALE, CUP_SCALE);
-        Minecraft.getInstance().getItemRenderer().renderStatic(cup,
-                ItemDisplayContext.FIXED, LightTexture.FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY, poseStack, buffers,
-                machine.getLevel(), 0);
-        poseStack.popPose();
+        texturedQuad(consumer, matrix, normal,
+                topLeft, topRight, bottomRight, bottomLeft,
+                (float) outward.x, (float) outward.y, (float) outward.z);
     }
 
     private static Scp294GuiScreen activeScreen(BlockPos pos) {
@@ -327,6 +335,23 @@ public final class Scp294PhysicalClient {
                 minX, maxY, planeZ,
                 maxX, maxY, planeZ,
                 0, 0, -1);
+    }
+
+    private static void texturedQuad(VertexConsumer consumer,
+            Matrix4f matrix, Matrix3f normal, Vec3 topLeft, Vec3 topRight,
+            Vec3 bottomRight, Vec3 bottomLeft, float nx, float ny, float nz) {
+        vertex(consumer, matrix, normal,
+                (float) topLeft.x, (float) topLeft.y, (float) topLeft.z,
+                0, 0, nx, ny, nz);
+        vertex(consumer, matrix, normal,
+                (float) topRight.x, (float) topRight.y, (float) topRight.z,
+                1, 0, nx, ny, nz);
+        vertex(consumer, matrix, normal,
+                (float) bottomRight.x, (float) bottomRight.y, (float) bottomRight.z,
+                1, 1, nx, ny, nz);
+        vertex(consumer, matrix, normal,
+                (float) bottomLeft.x, (float) bottomLeft.y, (float) bottomLeft.z,
+                0, 1, nx, ny, nz);
     }
 
     private static void quad(VertexConsumer consumer, Matrix4f matrix,

@@ -12,6 +12,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.cache.object.GeoCube;
@@ -23,17 +24,21 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 /**
  * GeckoLib renderer for the Hacking Device.
  *
- * Both the attached-session UI and the hand-held passage timer are painted from
- * the live GeckoLib pose of the authored `screen` bone. This deliberately avoids
- * rebuilding the tiny CRT plane from hand-maintained model coordinates: the
- * renderer uses the actual baked 2.5 x 1.5 zero-thickness cube and inherits the
- * body's 180-degree rotation plus the screen cube's -22.5-degree rotation.
+ * The authored `screen` bone is the source of truth for both screen cases. For a
+ * reader-attached device we capture the exact logical-screen matrix while Gecko
+ * walks that bone and let the world renderer paint characters only after the
+ * model batch has been flushed. For a held cooldown we can paint immediately,
+ * but still split the model and font passes explicitly. This prevents the CRT
+ * text from losing a depth/order fight with the zero-thickness screen under
+ * shaders.
  */
 public final class HackingDeviceItemRenderer
         extends GeoItemRenderer<HackingDeviceItem> {
     /** Slightly in front of the authored flat screen to avoid z-fighting. */
     private static final double SCREEN_TEXT_OFFSET = 0.0078D;
     private static final ThreadLocal<BlockPos> ATTACHED_TARGET =
+            new ThreadLocal<>();
+    private static final ThreadLocal<Matrix4f> ATTACHED_SCREEN_TRANSFORM =
             new ThreadLocal<>();
 
     private ItemStack renderedStack = ItemStack.EMPTY;
@@ -49,7 +54,7 @@ public final class HackingDeviceItemRenderer
                     VertexConsumer buffer, float partialTick, int packedLight,
                     int packedOverlay) {
                 if ("screen".equals(bone.getName())) {
-                    renderPhysicalScreen(poseStack, bone, renderType,
+                    captureOrRenderPhysicalScreen(poseStack, bone, renderType,
                             bufferSource);
                 }
             }
@@ -58,11 +63,24 @@ public final class HackingDeviceItemRenderer
 
     /** Marks an ItemDisplayContext.NONE render as the device attached to a reader. */
     public static void beginAttachedRender(BlockPos pos) {
+        ATTACHED_SCREEN_TRANSFORM.remove();
         if (pos != null) ATTACHED_TARGET.set(pos.immutable());
+    }
+
+    /**
+     * Returns the exact matrix of the authored screen plane captured during the
+     * most recent attached render on this thread. The caller owns the returned
+     * copy and may safely use it after GeckoLib has finished the body pass.
+     */
+    public static Matrix4f takeAttachedScreenTransform() {
+        Matrix4f transform = ATTACHED_SCREEN_TRANSFORM.get();
+        ATTACHED_SCREEN_TRANSFORM.remove();
+        return transform == null ? null : new Matrix4f(transform);
     }
 
     public static void endAttachedRender() {
         ATTACHED_TARGET.remove();
+        ATTACHED_SCREEN_TRANSFORM.remove();
     }
 
     @Override
@@ -80,7 +98,7 @@ public final class HackingDeviceItemRenderer
         }
     }
 
-    private void renderPhysicalScreen(PoseStack poseStack, GeoBone bone,
+    private void captureOrRenderPhysicalScreen(PoseStack poseStack, GeoBone bone,
             RenderType originalRenderType, MultiBufferSource bufferSource) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null
@@ -99,11 +117,9 @@ public final class HackingDeviceItemRenderer
         if (!attached && !heldCooldown) return;
 
         /*
-         * The screen bone contains exactly the authored flat CRT cube. Its NORTH
-         * quad is the visible face (raw model z=-1.05). GeckoLib has already
-         * applied the parent bone transforms when renderForBone is called; apply
-         * only this cube's own pivot/rotation, exactly as GeoRenderer does while
-         * drawing the cube itself.
+         * renderForBone is invoked after GeckoLib has applied the `screen` bone
+         * transform and submitted that bone's cube. Apply only the cube's own
+         * pivot/rotation, then use the NORTH quad itself as the logical screen.
          */
         GeoCube screenCube = bone.getCubes().get(0);
         GeoQuad screenQuad = null;
@@ -138,17 +154,21 @@ public final class HackingDeviceItemRenderer
         poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
 
         if (attached) {
-            HackingDeviceAttachedRenderer.renderAttachedScreenText(attachedPos,
-                    minecraft.font, poseStack, buffers);
+            // Store the complete final model-view transform. Drawing is deferred
+            // until HackingDeviceAttachedRenderer has flushed the Gecko body.
+            ATTACHED_SCREEN_TRANSFORM.set(
+                    new Matrix4f(poseStack.last().pose()));
         } else {
+            // The screen cube has already been submitted to the model buffer.
+            // Finish it before emitting font vertices so shaders cannot reorder
+            // the coplanar-ish passes and hide the cooldown characters.
+            buffers.endBatch();
             HackingDeviceScreenTextClient.renderItemCooldown(renderedStack,
                     minecraft.font, poseStack, buffers);
+            buffers.endBatch();
+            bufferSource.getBuffer(originalRenderType);
         }
         poseStack.popPose();
-
-        // Font rendering selects its own buffers. Restore the model's buffer as
-        // required by GeoRenderLayer before GeckoLib continues recursion.
-        bufferSource.getBuffer(originalRenderType);
     }
 
     /** Mirrors GeckoLib's cube-pivot transform without depending on internal util APIs. */

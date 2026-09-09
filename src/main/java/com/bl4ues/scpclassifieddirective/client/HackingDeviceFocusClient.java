@@ -43,6 +43,8 @@ public final class HackingDeviceFocusClient {
     private static float returnStartYaw;
     private static float returnStartPitch;
     private static double returnStartFov;
+    /* Locked once per session so an animation cannot flip the camera side mid-flight. */
+    private static double cameraNormalSign;
 
     private HackingDeviceFocusClient() {
     }
@@ -69,6 +71,7 @@ public final class HackingDeviceFocusClient {
         approachStarted = System.nanoTime();
         returning = false;
         returnStarted = 0L;
+        cameraNormalSign = 0.0D;
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
     }
 
@@ -108,14 +111,22 @@ public final class HackingDeviceFocusClient {
         Attachment attachment = attachment(minecraft);
         if (attachment == null) return null;
         double seating = HackingDeviceClientState.seatingOffset(activePos);
+        Vec3 authoredOutward = attachment.screen().outward().normalize();
         Vec3 center = attachment.screen().center().add(
-                attachment.screen().outward().scale(seating));
+                authoredOutward.scale(seating));
 
-        // The camera lives on the visible CRT normal itself. Because the frame's
-        // normal includes the authored screen tilt, this naturally puts the eye
-        // above the display and square to its glass instead of aiming horizontally
-        // through the bulky head of the device.
-        Vec3 targetEye = center.add(attachment.screen().outward()
+        /*
+         * The authored normal is the primary source of truth. As a final guard
+         * against another handedness regression, lock the camera to whichever
+         * side of the plane the player was already standing on when the session
+         * began. This can never place the eye behind the device/inside the reader.
+         */
+        if (cameraNormalSign == 0.0D) {
+            double side = startPosition.subtract(center).dot(authoredOutward);
+            cameraNormalSign = side >= 0.0D ? 1.0D : -1.0D;
+        }
+        Vec3 cameraNormal = authoredOutward.scale(cameraNormalSign);
+        Vec3 targetEye = center.add(cameraNormal
                 .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE));
         Vec3 look = center.subtract(targetEye);
         double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
@@ -212,6 +223,7 @@ public final class HackingDeviceFocusClient {
         approachStarted = 0L;
         returning = false;
         returnStarted = 0L;
+        cameraNormalSign = 0.0D;
         currentFov = originalFov;
         HackingDeviceMinigameClient.clear();
     }

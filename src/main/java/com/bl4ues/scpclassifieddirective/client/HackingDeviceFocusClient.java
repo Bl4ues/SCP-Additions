@@ -28,6 +28,9 @@ public final class HackingDeviceFocusClient {
     private static final long APPROACH_NANOS = 1_450_000_000L;
     private static final long RETURN_NANOS = 650_000_000L;
     private static final double TARGET_FOV = 52.0D;
+    /* Small framing correction requested after the physical attachment was aligned. */
+    private static final double CAMERA_DOWN = 0.020D;
+    private static final double LOOK_DOWN = 0.035D;
 
     private static BlockPos activePos;
     private static CameraType previousCameraType;
@@ -116,10 +119,9 @@ public final class HackingDeviceFocusClient {
                 authoredOutward.scale(seating));
 
         /*
-         * The authored normal is the primary source of truth. As a final guard
-         * against another handedness regression, lock the camera to whichever
-         * side of the plane the player was already standing on when the session
-         * began. This can never place the eye behind the device/inside the reader.
+         * Keep the camera on the player's original side of the physical CRT.
+         * This prevents a handedness regression from moving it through the
+         * device or reader during the seating animation.
          */
         if (cameraNormalSign == 0.0D) {
             double side = startPosition.subtract(center).dot(authoredOutward);
@@ -127,8 +129,15 @@ public final class HackingDeviceFocusClient {
         }
         Vec3 cameraNormal = authoredOutward.scale(cameraNormalSign);
         Vec3 targetEye = center.add(cameraNormal
-                .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE));
-        Vec3 look = center.subtract(targetEye);
+                .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE))
+                .add(0.0D, -CAMERA_DOWN, 0.0D);
+        /*
+         * The CRT is inclined. Aim a little below its geometric centre so the
+         * final view is pitched directly down onto the face instead of grazing
+         * the upper bezel after lowering the eye.
+         */
+        Vec3 lookTarget = center.add(0.0D, -LOOK_DOWN, 0.0D);
+        Vec3 look = lookTarget.subtract(targetEye);
         double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
         float targetYaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
         float targetPitch = (float) -Math.toDegrees(

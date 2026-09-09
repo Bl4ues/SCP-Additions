@@ -130,13 +130,13 @@ public final class HackingDeviceItemRenderer
         if (screenQuad == null || screenQuad.vertices().length < 4) return;
 
         GeoVertex[] vertices = screenQuad.vertices();
-        Vector3f topLeft = vertices[0].position();
-        Vector3f topRight = vertices[1].position();
-        Vector3f bottomLeft = vertices[3].position();
+        Vector3f northTopLeft = vertices[0].position();
+        Vector3f northTopRight = vertices[1].position();
+        Vector3f northBottomLeft = vertices[3].position();
         Vector3f northNormal = screenQuad.normal();
 
-        float width = distance(topLeft, topRight);
-        float height = distance(topLeft, bottomLeft);
+        float width = distance(northTopLeft, northTopRight);
+        float height = distance(northTopLeft, northBottomLeft);
         if (width <= 0.00001F || height <= 0.00001F) return;
 
         float pixelScaleX = width / HackingDeviceScreenTextClient.LOGICAL_WIDTH;
@@ -147,17 +147,18 @@ public final class HackingDeviceItemRenderer
         applyCubeTransform(poseStack, screenCube);
 
         /*
-         * The approved operation camera sees the opposite side of the authored
-         * NORTH face. Offsetting text along NORTH therefore buried every glyph
-         * behind the opaque zero-thickness CRT plane. Move it toward the actual
-         * visible side instead. The same fix applies to the five-second timer in
-         * hand because both are drawn from this exact screen cube.
+         * The operator views the SOUTH side of this zero-thickness plane. The
+         * NORTH normal therefore points into the CRT from the player's view.
+         * Put the glyphs on the opposite side and start at NORTH's top-right,
+         * flipping logical X. This changes both the depth side and the winding,
+         * so characters face the operator instead of being hidden/mirrored on
+         * the back of the screen. Logical Y remains top-to-bottom.
          */
         poseStack.translate(
-                topLeft.x() - northNormal.x() * SCREEN_TEXT_OFFSET,
-                topLeft.y() - northNormal.y() * SCREEN_TEXT_OFFSET,
-                topLeft.z() - northNormal.z() * SCREEN_TEXT_OFFSET);
-        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
+                northTopRight.x() - northNormal.x() * SCREEN_TEXT_OFFSET,
+                northTopRight.y() - northNormal.y() * SCREEN_TEXT_OFFSET,
+                northTopRight.z() - northNormal.z() * SCREEN_TEXT_OFFSET);
+        poseStack.scale(-pixelScaleX, -pixelScaleY, depthScale);
 
         if (attached) {
             ATTACHED_SCREEN_TRANSFORM.set(

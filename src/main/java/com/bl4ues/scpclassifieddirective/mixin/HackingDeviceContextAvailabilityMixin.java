@@ -5,10 +5,12 @@ import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDeviceAttachmentManager;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpclassifieddirective.inventory.context.HackingDeviceContextDefaults;
+import com.bl4ues.scpclassifieddirective.item.HackingDeviceItem;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -41,7 +43,7 @@ public abstract class HackingDeviceContextAvailabilityMixin {
                 && HackingDeviceAttachmentManager.isAttached(serverLevel, pos);
 
         if (HackingDeviceContextDefaults.ATTACH_KEY.equals(interactionKey)) {
-            cir.setReturnValue(!attached);
+            cir.setReturnValue(!attached && hasReadyDevice(player, level));
             return;
         }
         if (!attached) return;
@@ -56,5 +58,17 @@ public abstract class HackingDeviceContextAvailabilityMixin {
                 || "configure_object_containment_unit".equals(interactionKey))) {
             cir.setReturnValue(false);
         }
+    }
+
+    private static boolean hasReadyDevice(Player player, Level level) {
+        if (player == null) return false;
+        ItemStack main = player.getMainHandItem();
+        if (main.getItem() instanceof HackingDeviceItem
+                && HackingDeviceItem.isReady(main, level)) {
+            return true;
+        }
+        ItemStack off = player.getOffhandItem();
+        return off.getItem() instanceof HackingDeviceItem
+                && HackingDeviceItem.isReady(off, level);
     }
 }

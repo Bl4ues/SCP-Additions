@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient.Phase;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
+import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -36,10 +37,13 @@ import java.util.Set;
 public final class HackingDeviceAttachedRenderer {
     private static final float LOGICAL_WIDTH =
             HackingDeviceScreenTextClient.LOGICAL_WIDTH;
+    private static final float LOGICAL_HEIGHT =
+            HackingDeviceScreenTextClient.LOGICAL_HEIGHT;
     private static final int GREEN = HackingDeviceScreenTextClient.GREEN;
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
+    private static final double TEXT_EPSILON = 0.0080D;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -70,6 +74,18 @@ public final class HackingDeviceAttachedRenderer {
             if (attachment != null) {
                 Matrix4f screenTransform = renderDevice(minecraft, poseStack,
                         buffers, camera, pos, attachment);
+
+                /*
+                 * The live Gecko capture is preferred because it follows the
+                 * authored screen bone exactly. If a shader/renderer wrapper
+                 * prevents that GeoRenderLayer callback from producing a matrix,
+                 * fall back to the same physical frame used by the approved
+                 * operation camera instead of silently drawing nothing.
+                 */
+                if (screenTransform == null) {
+                    screenTransform = fallbackScreenTransform(poseStack, camera,
+                            pos, attachment);
+                }
                 if (screenTransform != null) {
                     pendingScreens.add(new PendingScreen(pos, screenTransform));
                 }
@@ -77,10 +93,9 @@ public final class HackingDeviceAttachedRenderer {
         }
 
         /*
-         * The screen matrix above was captured from the real Gecko `screen` bone,
-         * but the characters are intentionally emitted only now. This is the same
-         * pass separation used by the Diagnostic Terminal: body/glass first,
-         * explicit flush, then the physical CRT content. It matters under shaders.
+         * Finish the opaque Gecko body/glass before asking the font renderer for
+         * its own text render type. This mirrors the Diagnostic Terminal's pass
+         * separation and avoids carrying an item RenderType into the CRT pass.
          */
         buffers.endBatch();
         for (PendingScreen pending : pendingScreens) {
@@ -133,7 +148,60 @@ public final class HackingDeviceAttachedRenderer {
         return screenTransform;
     }
 
-    /** Draws characters using the exact screen matrix captured by GeckoLib. */
+    /**
+     * Shader-safe fallback using the already-approved physical operation frame.
+     * The font's logical origin is the visible top-left of the CRT and logical Y
+     * runs downward. Flipping RIGHT together with the normal preserves readable
+     * winding if the camera ever ends up on the opposite side.
+     */
+    private static Matrix4f fallbackScreenTransform(PoseStack poseStack,
+            Vec3 camera, BlockPos pos, Attachment attachment) {
+        if (attachment == null) return null;
+
+        double seating = HackingDeviceClientState.seatingOffset(pos);
+        Frame frame = attachment.screen();
+        Vec3 center = frame.center()
+                .add(attachment.mountOutward().scale(seating));
+        Vec3 up = frame.up().normalize();
+        Vec3 right = frame.right().normalize();
+        Vec3 normal = frame.outward().normalize();
+
+        if (camera.subtract(center).dot(normal) < 0.0D) {
+            normal = normal.scale(-1.0D);
+            right = right.scale(-1.0D);
+        }
+
+        Vec3 topLeft = center
+                .add(right.scale(-frame.width() * 0.5D))
+                .add(up.scale(frame.height() * 0.5D))
+                .add(normal.scale(TEXT_EPSILON))
+                .subtract(camera);
+
+        Matrix4f basis = new Matrix4f().identity();
+        basis.m00((float) right.x);
+        basis.m01((float) right.y);
+        basis.m02((float) right.z);
+        basis.m10((float) up.x);
+        basis.m11((float) up.y);
+        basis.m12((float) up.z);
+        basis.m20((float) normal.x);
+        basis.m21((float) normal.y);
+        basis.m22((float) normal.z);
+
+        float pixelScaleX = (float) (frame.width() / LOGICAL_WIDTH);
+        float pixelScaleY = (float) (frame.height() / LOGICAL_HEIGHT);
+        float depthScale = Math.min(pixelScaleX, pixelScaleY);
+
+        poseStack.pushPose();
+        poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
+        poseStack.mulPoseMatrix(basis);
+        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
+        Matrix4f transform = new Matrix4f(poseStack.last().pose());
+        poseStack.popPose();
+        return transform;
+    }
+
+    /** Draws characters using the physical screen transform resolved above. */
     public static void renderAttachedScreenText(BlockPos pos, Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
         if (HackingDeviceMinigameClient.active()
@@ -303,7 +371,7 @@ public final class HackingDeviceAttachedRenderer {
         float x = (LOGICAL_WIDTH - font.width(sequence)) * 0.5F;
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.NORMAL, 0,
+                Font.DisplayMode.SEE_THROUGH, 0,
                 LightTexture.FULL_BRIGHT);
     }
 
@@ -313,7 +381,7 @@ public final class HackingDeviceAttachedRenderer {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.NORMAL, 0,
+                Font.DisplayMode.SEE_THROUGH, 0,
                 LightTexture.FULL_BRIGHT);
     }
 

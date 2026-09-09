@@ -24,9 +24,6 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 public final class HackingDeviceItemRenderer
         extends GeoItemRenderer<HackingDeviceItem> {
     private static final double SCREEN_TEXT_OFFSET = 0.04D / 16.0D;
-    private static final float SCREEN_SCALE = (float)
-            (HackingDeviceAttachmentGeometry.SCREEN_WIDTH
-                    / HackingDeviceScreenTextClient.LOGICAL_WIDTH);
 
     private ItemStack renderedStack = ItemStack.EMPTY;
     private ItemDisplayContext renderedContext = ItemDisplayContext.NONE;
@@ -74,29 +71,35 @@ public final class HackingDeviceItemRenderer
 
         Frame frame = HackingDeviceAttachmentGeometry.localScreenFrame();
         Vec3 right = frame.right().normalize();
-        Vec3 down = frame.up().scale(-1.0D).normalize();
+        Vec3 up = frame.up().normalize();
         Vec3 normal = frame.outward().normalize();
-        Vec3 center = frame.center().add(normal.scale(SCREEN_TEXT_OFFSET));
+        Vec3 topLeft = frame.point(-0.5D, 0.5D, SCREEN_TEXT_OFFSET);
 
         Matrix4f physicalScreen = new Matrix4f().identity();
+        // Keep the basis right-handed. Logical screen Y is made downward by the
+        // negative Y scale below instead of reflecting the basis itself.
         physicalScreen.m00((float) right.x);
         physicalScreen.m01((float) right.y);
         physicalScreen.m02((float) right.z);
-        physicalScreen.m10((float) down.x);
-        physicalScreen.m11((float) down.y);
-        physicalScreen.m12((float) down.z);
+        physicalScreen.m10((float) up.x);
+        physicalScreen.m11((float) up.y);
+        physicalScreen.m12((float) up.z);
         physicalScreen.m20((float) normal.x);
         physicalScreen.m21((float) normal.y);
         physicalScreen.m22((float) normal.z);
-        physicalScreen.m30((float) center.x);
-        physicalScreen.m31((float) center.y);
-        physicalScreen.m32((float) center.z);
+        physicalScreen.m30((float) topLeft.x);
+        physicalScreen.m31((float) topLeft.y);
+        physicalScreen.m32((float) topLeft.z);
+
+        float pixelScaleX = (float) (frame.width()
+                / HackingDeviceScreenTextClient.LOGICAL_WIDTH);
+        float pixelScaleY = (float) (frame.height()
+                / HackingDeviceScreenTextClient.LOGICAL_HEIGHT);
+        float depthScale = Math.min(pixelScaleX, pixelScaleY);
 
         poseStack.pushPose();
         poseStack.mulPoseMatrix(physicalScreen);
-        poseStack.scale(SCREEN_SCALE, SCREEN_SCALE, SCREEN_SCALE);
-        poseStack.translate(-HackingDeviceScreenTextClient.LOGICAL_WIDTH * 0.5F,
-                -HackingDeviceScreenTextClient.LOGICAL_HEIGHT * 0.5F, 0.0F);
+        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
         HackingDeviceScreenTextClient.renderItemCooldown(renderedStack,
                 minecraft.font, poseStack, buffers);
         poseStack.popPose();

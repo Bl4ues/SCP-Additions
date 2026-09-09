@@ -175,7 +175,14 @@ public final class HackingDeviceItemRenderer
         ScreenFace face = bestFacing != null ? bestFacing : bestAny;
         if (face == null) return null;
 
-        Vector3f right = new Vector3f(face.topRight()).sub(face.topLeft());
+        /*
+         * The authored screen is mirrored on X by the model's 180-degree body
+         * rotation. The previous transform followed the baked vertex order and
+         * therefore displayed every glyph backwards. Logical X now starts at
+         * the rendered top-right corner and advances toward top-left; Y is left
+         * untouched, so this is strictly a horizontal correction.
+         */
+        Vector3f right = new Vector3f(face.topLeft()).sub(face.topRight());
         Vector3f down = new Vector3f(face.bottomLeft()).sub(face.topLeft());
         float width = right.length();
         float height = down.length();
@@ -195,7 +202,7 @@ public final class HackingDeviceItemRenderer
         float pixelScaleY = height
                 / HackingDeviceScreenTextClient.LOGICAL_HEIGHT;
         float depthScale = Math.min(pixelScaleX, pixelScaleY);
-        Vector3f origin = new Vector3f(face.topLeft()).fma(
+        Vector3f origin = new Vector3f(face.topRight()).fma(
                 (float) SCREEN_TEXT_OFFSET, visibleNormal);
 
         Matrix4f result = new Matrix4f().identity();

@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(value = HackingDeviceAttachedRenderer.class, remap = false)
 public abstract class HackingDeviceScreenTransformMixin {
-    private static final double TEXT_EPSILON = 0.00075D;
+    private static final double TEXT_EPSILON = 0.0015D;
     private static final float SCALE = (float)
             (HackingDeviceAttachmentGeometry.SCREEN_WIDTH
                     / HackingDeviceScreenTextClient.LOGICAL_WIDTH);
@@ -40,7 +40,7 @@ public abstract class HackingDeviceScreenTransformMixin {
             Attachment attachment, CallbackInfo ci) {
         ci.cancel();
         if (minecraft == null || minecraft.font == null || pos == null
-                || attachment == null) {
+                || attachment == null || camera == null) {
             return;
         }
 
@@ -51,12 +51,26 @@ public abstract class HackingDeviceScreenTransformMixin {
                 source.right(), source.up(), source.outward(),
                 source.width(), source.height());
 
-        Vec3 origin = frame.center()
-                .add(frame.outward().scale(TEXT_EPSILON))
-                .subtract(camera);
-        Vec3 right = frame.right().normalize();
+        /*
+         * The focus camera deliberately locks itself to the side of the CRT the
+         * player was already standing on. The previous text pass always used the
+         * authored +OUTWARD side, so whenever the camera selected the opposite
+         * face the glyphs were rendered behind the zero-thickness black plane and
+         * vanished (or appeared detached from the device at grazing angles).
+         *
+         * Choose the visible normal from the actual render camera every frame.
+         * Flip screen-right with it so text remains readable instead of mirrored.
+         */
+        Vec3 authoredOutward = frame.outward().normalize();
+        double side = camera.subtract(frame.center()).dot(authoredOutward);
+        double faceSign = side >= 0.0D ? 1.0D : -1.0D;
+        Vec3 visibleOutward = authoredOutward.scale(faceSign);
+        Vec3 right = frame.right().normalize().scale(faceSign);
         Vec3 down = frame.up().normalize().scale(-1.0D);
-        Vec3 outward = frame.outward().normalize();
+
+        Vec3 origin = frame.center()
+                .add(visibleOutward.scale(TEXT_EPSILON))
+                .subtract(camera);
 
         Matrix4f basis = new Matrix4f().identity();
         basis.m00((float) right.x);
@@ -65,9 +79,9 @@ public abstract class HackingDeviceScreenTransformMixin {
         basis.m10((float) down.x);
         basis.m11((float) down.y);
         basis.m12((float) down.z);
-        basis.m20((float) outward.x);
-        basis.m21((float) outward.y);
-        basis.m22((float) outward.z);
+        basis.m20((float) visibleOutward.x);
+        basis.m21((float) visibleOutward.y);
+        basis.m22((float) visibleOutward.z);
 
         poseStack.pushPose();
         poseStack.translate(origin.x, origin.y, origin.z);

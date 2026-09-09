@@ -70,6 +70,8 @@
     "client.TeslaTerminalOverlayRenderMixin",
     "client.TeslaTerminalCameraMixin",
     "client.HackingDeviceUiPolishMixin",
+    "client.HackingDeviceAttachedRendererInvoker",
+    "client.HackingDeviceScreenTransformMixin",
     "client.ScpDeathScreenLiveFeedMixin",
     "client.ResponsiveScreenForgeHooksMixin",
     "client.ResponsiveScreenRenderEventMixin",

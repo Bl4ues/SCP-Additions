@@ -48,6 +48,9 @@ public final class HackingDeviceNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(SessionResult.class,
                 SessionResult::encode, SessionResult::decode,
                 SessionResult::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(BeginCooldown.class,
+                BeginCooldown::encode, BeginCooldown::decode,
+                BeginCooldown::handle);
         ScpClassifiedDirectiveMod.addNetworkMessage(SubmitCandidate.class,
                 SubmitCandidate::encode, SubmitCandidate::decode,
                 SubmitCandidate::handle);
@@ -90,6 +93,14 @@ public final class HackingDeviceNetwork {
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new SessionResult(pos, result, round, failures, puzzle));
+    }
+
+    public static void beginCooldown(ServerPlayer player, BlockPos pos,
+            long countdownEnd, long readyAt) {
+        if (player == null || pos == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new BeginCooldown(pos, countdownEnd, readyAt));
     }
 
     public static void submitCandidate(BlockPos pos, int candidateIndex) {
@@ -213,6 +224,33 @@ public final class HackingDeviceNetwork {
                             HackingDeviceMinigameClient.onResult(message.result,
                                     message.round, message.failures,
                                     message.puzzle);
+                        }
+                    }));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record BeginCooldown(BlockPos pos, long countdownEnd, long readyAt) {
+        private static void encode(BeginCooldown message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.pos);
+            buffer.writeLong(message.countdownEnd);
+            buffer.writeLong(message.readyAt);
+        }
+
+        private static BeginCooldown decode(FriendlyByteBuf buffer) {
+            return new BeginCooldown(buffer.readBlockPos(), buffer.readLong(),
+                    buffer.readLong());
+        }
+
+        private static void handle(BeginCooldown message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> {
+                        if (message.pos.equals(HackingDeviceMinigameClient.pos())) {
+                            HackingDeviceMinigameClient.beginCooldown(
+                                    message.countdownEnd, message.readyAt);
                         }
                     }));
             context.setPacketHandled(true);

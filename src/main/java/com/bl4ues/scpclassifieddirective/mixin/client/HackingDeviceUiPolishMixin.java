@@ -102,7 +102,7 @@ public abstract class HackingDeviceUiPolishMixin {
                 "> READER HANDSHAKE.....ACCEPT"
         };
         int visible = Math.min(lines.length,
-                Math.max(1, (int) Math.floor(progress * 7.0D)));
+                Math.max(1, 1 + (int) Math.floor(progress * 7.0D)));
         for (int index = 0; index < visible; index++) {
             draw(font, poseStack, buffers, lines[index], 8.0F,
                     31.0F + index * 17.0F,

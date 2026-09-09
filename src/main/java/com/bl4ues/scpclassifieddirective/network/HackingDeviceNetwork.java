@@ -103,10 +103,10 @@ public final class HackingDeviceNetwork {
                 new BeginCooldown(pos, countdownEnd, readyAt));
     }
 
-    public static void submitCandidate(BlockPos pos, int candidateIndex) {
+    public static void submitCandidate(BlockPos pos, int answer) {
         if (pos == null) return;
         ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
-                new SubmitCandidate(pos, candidateIndex));
+                new SubmitCandidate(pos, answer));
     }
 
     public static void exitSession(BlockPos pos) {
@@ -257,16 +257,16 @@ public final class HackingDeviceNetwork {
         }
     }
 
-    public record SubmitCandidate(BlockPos pos, int candidateIndex) {
+    public record SubmitCandidate(BlockPos pos, int answer) {
         private static void encode(SubmitCandidate message,
                 FriendlyByteBuf buffer) {
             buffer.writeBlockPos(message.pos);
-            buffer.writeByte(message.candidateIndex);
+            buffer.writeVarInt(message.answer);
         }
 
         private static SubmitCandidate decode(FriendlyByteBuf buffer) {
             return new SubmitCandidate(buffer.readBlockPos(),
-                    buffer.readUnsignedByte());
+                    buffer.readVarInt());
         }
 
         private static void handle(SubmitCandidate message,
@@ -274,7 +274,7 @@ public final class HackingDeviceNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             ServerPlayer sender = context.getSender();
             context.enqueueWork(() -> HackingDeviceSessionManager.submit(sender,
-                    message.pos, message.candidateIndex));
+                    message.pos, message.answer));
             context.setPacketHandled(true);
         }
     }

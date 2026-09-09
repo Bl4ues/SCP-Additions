@@ -4,7 +4,6 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient.Phase;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
-import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -25,25 +24,19 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Matrix4f;
 
 import java.util.Set;
 
-/** Renders the device and its character-only CRT in the exact same world pose. */
+/** Renders reader-attached Hacking Devices in world space. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceAttachedRenderer {
     private static final float LOGICAL_WIDTH =
             HackingDeviceScreenTextClient.LOGICAL_WIDTH;
-    private static final float LOGICAL_HEIGHT =
-            HackingDeviceScreenTextClient.LOGICAL_HEIGHT;
     private static final int GREEN = HackingDeviceScreenTextClient.GREEN;
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
-
-    /* Match the proven Diagnostic Terminal world-text depth separation. */
-    private static final double TEXT_EPSILON = 0.0078D;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -75,21 +68,6 @@ public final class HackingDeviceAttachedRenderer {
                         attachment);
             }
         }
-        // Finish Gecko/item body passes before drawing emissive glyphs over the CRT.
-        buffers.endBatch();
-
-        for (BlockPos pos : visibleDevices) {
-            if (!minecraft.level.hasChunkAt(pos)
-                    || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
-                continue;
-            }
-            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
-                    minecraft.level.getBlockState(pos));
-            if (attachment != null) {
-                renderWorldScreenText(minecraft, poseStack, buffers, camera,
-                        pos, attachment);
-            }
-        }
         buffers.endBatch();
     }
 
@@ -112,65 +90,24 @@ public final class HackingDeviceAttachedRenderer {
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
         ItemStack deviceStack = new ItemStack(
                 ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
-        minecraft.getItemRenderer().renderStatic(deviceStack,
-                ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
-                poseStack, buffers, minecraft.level, 0);
-        poseStack.popPose();
+
+        /*
+         * ItemDisplayContext.NONE is also used for this world render, so identify
+         * the target explicitly while GeckoLib walks the model. The item renderer
+         * then paints the UI from the live `screen` bone/cube pose itself.
+         */
+        HackingDeviceItemRenderer.beginAttachedRender(pos);
+        try {
+            minecraft.getItemRenderer().renderStatic(deviceStack,
+                    ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
+                    poseStack, buffers, minecraft.level, 0);
+        } finally {
+            HackingDeviceItemRenderer.endAttachedRender();
+            poseStack.popPose();
+        }
     }
 
-    /**
-     * Draw the characters with the same world-space recipe already proven by the
-     * Diagnostic Terminal: top-left screen origin, RIGHT/UP/NORMAL basis,
-     * negative logical Y scale and a real depth separation before NORMAL font
-     * rendering. The Hacking Device may be approached from either side, so the
-     * normal and horizontal axis are flipped together when the camera is behind
-     * the authored +Z face. This keeps text facing the player without mirroring
-     * it and, crucially, keeps the glyphs clear of the coplanar CRT/housing face
-     * under shader depth precision.
-     */
-    private static void renderWorldScreenText(Minecraft minecraft,
-            PoseStack poseStack, MultiBufferSource.BufferSource buffers,
-            Vec3 camera, BlockPos pos, Attachment attachment) {
-        double seating = HackingDeviceClientState.seatingOffset(pos);
-        Frame frame = attachment.screen();
-        Vec3 center = frame.center()
-                .add(attachment.mountOutward().scale(seating));
-        Vec3 up = frame.up().normalize();
-        Vec3 authoredNormal = frame.outward().normalize();
-        double cameraSide = camera.subtract(center).dot(authoredNormal);
-        Vec3 visibleNormal = cameraSide >= 0.0D
-                ? authoredNormal : authoredNormal.scale(-1.0D);
-        Vec3 right = up.cross(visibleNormal).normalize();
-
-        Vec3 topLeft = center
-                .add(right.scale(-frame.width() * 0.5D))
-                .add(up.scale(frame.height() * 0.5D))
-                .add(visibleNormal.scale(TEXT_EPSILON))
-                .subtract(camera);
-
-        Matrix4f basis = new Matrix4f().identity();
-        basis.m00((float) right.x);
-        basis.m01((float) right.y);
-        basis.m02((float) right.z);
-        basis.m10((float) up.x);
-        basis.m11((float) up.y);
-        basis.m12((float) up.z);
-        basis.m20((float) visibleNormal.x);
-        basis.m21((float) visibleNormal.y);
-        basis.m22((float) visibleNormal.z);
-
-        float pixelScaleX = (float) (frame.width() / LOGICAL_WIDTH);
-        float pixelScaleY = (float) (frame.height() / LOGICAL_HEIGHT);
-        float depthScale = Math.min(pixelScaleX, pixelScaleY);
-
-        poseStack.pushPose();
-        poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
-        poseStack.mulPoseMatrix(basis);
-        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
-        renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
-        poseStack.popPose();
-    }
-
+    /** Called from the Hacking Device GeoRenderLayer while on the real screen bone. */
     public static void renderAttachedScreenText(BlockPos pos, Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
         if (HackingDeviceMinigameClient.active()

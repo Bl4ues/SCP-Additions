@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.hacking;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
+import com.bl4ues.scpclassifieddirective.item.HackingDeviceItem;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import com.bl4ues.scpclassifieddirective.mixin.ObjectContainmentUnitHackInvoker;
 import com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork;
@@ -15,6 +16,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -30,6 +32,7 @@ public final class HackingDeviceSessionManager {
     public static final int TOTAL_ROUNDS = 3;
     public static final int MAX_FAILURES = 3;
     private static final int SUCCESS_GRANT_DELAY_TICKS = 24;
+    private static final int AUTO_RETURN_AFTER_GRANT_TICKS = 10;
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
     private HackingDeviceSessionManager() {
@@ -117,8 +120,8 @@ public final class HackingDeviceSessionManager {
         Session session = SESSIONS.get(player.getUUID());
         if (session == null || !session.pos.equals(pos)) return;
 
-        // Once the third frame is valid the breach has succeeded. Exiting during
-        // the lock animation must not turn a solved hack back into a failure.
+        // A solved third frame remains successful even if the player exits while
+        // the final terminal sequence is still playing.
         if (session.finished && session.failures < MAX_FAILURES
                 && session.round >= TOTAL_ROUNDS) {
             ServerLevel level = sessionLevel(player, session);
@@ -153,7 +156,8 @@ public final class HackingDeviceSessionManager {
         ServerLevel level = sessionLevel(player, session);
         if (level == null) return;
         HackingDeviceAttachmentManager.detach(player, level, session.pos,
-                session.hand, playReturnCue);
+                session.hand, playReturnCue, session.countdownEnd,
+                session.readyAt);
     }
 
     private static ServerLevel sessionLevel(ServerPlayer player,
@@ -172,16 +176,57 @@ public final class HackingDeviceSessionManager {
                 || !HackingDeviceAttachmentManager.isAttached(level, pos)) {
             return;
         }
-        session.granted = true;
+
+        boolean accepted;
         if (level.getBlockEntity(pos)
                 instanceof ObjectContainmentUnitModule.UnitBlockEntity unit) {
             ObjectContainmentUnitHackInvoker invoker =
                     (ObjectContainmentUnitHackInvoker) (Object) unit;
             invoker.scpclassifieddirective$playReaderSound(true);
             invoker.scpclassifieddirective$startOpening();
+            accepted = true;
+        } else {
+            accepted = KeycardReaderLevels.activateAccepted(level, pos);
+        }
+        if (!accepted) return;
+
+        session.granted = true;
+        session.countdownEnd = level.getGameTime()
+                + HackingDeviceItem.PASSAGE_COUNTDOWN_TICKS;
+        session.readyAt = session.countdownEnd
+                + HackingDeviceItem.BLINK_TOTAL_TICKS;
+
+        ServerPlayer player = level.getServer().getPlayerList()
+                .getPlayer(playerId);
+        if (player != null) {
+            // Creative does not consume the original stack, so arm that same item
+            // immediately. Survival receives the tagged replacement on detach.
+            ItemStack held = player.getItemInHand(session.hand);
+            if (held.getItem() instanceof HackingDeviceItem) {
+                HackingDeviceItem.armCooldown(held, session.countdownEnd,
+                        session.readyAt);
+            }
+            HackingDeviceNetwork.beginCooldown(player, pos,
+                    session.countdownEnd, session.readyAt);
+        }
+
+        BlockPos target = pos.immutable();
+        ScpClassifiedDirectiveMod.queueServerWork(AUTO_RETURN_AFTER_GRANT_TICKS,
+                () -> returnGrantedDevice(level, target, playerId));
+    }
+
+    private static void returnGrantedDevice(ServerLevel level, BlockPos pos,
+            UUID playerId) {
+        Session session = SESSIONS.get(playerId);
+        if (session == null || !session.granted || !session.pos.equals(pos)
+                || !session.dimension.equals(level.dimension())) {
             return;
         }
-        KeycardReaderLevels.activateAccepted(level, pos);
+        ServerPlayer player = level.getServer().getPlayerList()
+                .getPlayer(playerId);
+        if (player == null) return;
+        SESSIONS.remove(playerId);
+        detachSession(player, session, true);
     }
 
     private static void playReaderResult(ServerLevel level, BlockPos pos,
@@ -234,6 +279,8 @@ public final class HackingDeviceSessionManager {
         private HackingDevicePuzzle puzzle;
         private boolean finished;
         private boolean granted;
+        private long countdownEnd;
+        private long readyAt;
 
         private Session(BlockPos pos, ResourceKey<Level> dimension,
                 InteractionHand hand, int accessLevel, int round, int failures,

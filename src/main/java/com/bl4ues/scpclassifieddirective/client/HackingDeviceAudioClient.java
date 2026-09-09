@@ -1,10 +1,13 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
+import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079SpeakerCueSoundInstance;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Positional, narrow-band playback for Hacking Device UI feedback. The source
@@ -46,14 +49,21 @@ public final class HackingDeviceAudioClient {
             float volume, float pitch) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || pos == null) return;
+
+        Vec3 source = Vec3.atCenterOf(pos);
+        if (minecraft.level.hasChunkAt(pos)) {
+            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
+                    minecraft.level.getBlockState(pos));
+            if (attachment != null) {
+                // Follow the actual animated handheld, not the host block centre.
+                source = attachment.screen().center().add(
+                        attachment.screen().outward().scale(
+                                HackingDeviceClientState.seatingOffset(pos)));
+            }
+        }
+
         minecraft.getSoundManager().play(new Scp079SpeakerCueSoundInstance(
-                cue,
-                pos.getX() + 0.5D,
-                pos.getY() + 0.5D,
-                pos.getZ() + 0.5D,
-                volume,
-                pitch,
-                true));
+                cue, source.x, source.y, source.z, volume, pitch, true));
     }
 
     private static ResourceLocation id(String path) {

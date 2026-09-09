@@ -41,7 +41,7 @@ public final class HackingDeviceAttachedRenderer {
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
-    private static final double TEXT_EPSILON = 0.0020D;
+    private static final double TEXT_EPSILON = 0.0026D;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -117,41 +117,44 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     /**
-     * Draws directly from the resolved physical frame. There is no second black
-     * panel and no reconstruction from yaw/pitch, so the actual model `screen`
-     * plane remains the only background surface.
+     * Draws characters on the actual 2.5 x 1.5 `screen` plane. The previous
+     * centre/down/outward basis was left-handed, so font triangles could be
+     * mirrored away or culled even though their coordinates were numerically
+     * close to the CRT. Build a right-handed RIGHT/UP/OUTWARD basis instead and
+     * map logical Y downward with a negative scale, exactly like the working
+     * physical terminal renderers.
      */
     private static void renderWorldScreenText(Minecraft minecraft,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers,
             Vec3 camera, BlockPos pos, Attachment attachment) {
         double seating = HackingDeviceClientState.seatingOffset(pos);
         Frame frame = attachment.screen();
-        Vec3 center = frame.center()
+        Vec3 topLeft = frame.point(-0.5D, 0.5D, TEXT_EPSILON)
                 .add(attachment.mountOutward().scale(seating))
-                .add(frame.outward().scale(TEXT_EPSILON))
                 .subtract(camera);
         Vec3 right = frame.right().normalize();
-        Vec3 down = frame.up().scale(-1.0D).normalize();
+        Vec3 up = frame.up().normalize();
         Vec3 outward = frame.outward().normalize();
 
         Matrix4f basis = new Matrix4f().identity();
         basis.m00((float) right.x);
         basis.m01((float) right.y);
         basis.m02((float) right.z);
-        basis.m10((float) down.x);
-        basis.m11((float) down.y);
-        basis.m12((float) down.z);
+        basis.m10((float) up.x);
+        basis.m11((float) up.y);
+        basis.m12((float) up.z);
         basis.m20((float) outward.x);
         basis.m21((float) outward.y);
         basis.m22((float) outward.z);
 
+        float pixelScaleX = (float) (frame.width() / LOGICAL_WIDTH);
+        float pixelScaleY = (float) (frame.height() / LOGICAL_HEIGHT);
+        float depthScale = Math.min(pixelScaleX, pixelScaleY);
+
         poseStack.pushPose();
-        poseStack.translate(center.x, center.y, center.z);
+        poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
         poseStack.mulPoseMatrix(basis);
-        poseStack.scale((float) (frame.width() / LOGICAL_WIDTH),
-                (float) (frame.height() / LOGICAL_HEIGHT), 1.0F);
-        poseStack.translate(-LOGICAL_WIDTH * 0.5F,
-                -LOGICAL_HEIGHT * 0.5F, 0.0F);
+        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
         renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
         poseStack.popPose();
     }

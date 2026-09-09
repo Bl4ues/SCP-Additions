@@ -14,7 +14,7 @@ import org.lwjgl.glfw.GLFW;
  * {@code -Dscp_classified_directive.photoMode=true|false}.</p>
  */
 public final class PhotoModeFeature {
-    private static final boolean DEFAULT_ENABLED = true;
+    private static final boolean DEFAULT_ENABLED = false;
 
     /** Maximum distance at which the frozen-frame picker can select an object. */
     static final double PICK_DISTANCE = 96.0D;

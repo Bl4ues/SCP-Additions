@@ -27,7 +27,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(value = HackingDeviceAttachedRenderer.class, remap = false)
 public abstract class HackingDeviceScreenTransformMixin {
-    private static final double TEXT_EPSILON = 0.00125D;
+    /*
+     * Use a real physical separation instead of POLYGON_OFFSET. The latter is
+     * unreliable on small sloped world-space text with shader pipelines (the
+     * Facility Sign renderer follows the same rule). 0.04 model pixel remains
+     * visually flush while giving the depth buffer an unambiguous front layer.
+     */
+    private static final double TEXT_EPSILON = 0.04D / 16.0D;
     private static final float SCALE = (float)
             (HackingDeviceAttachmentGeometry.SCREEN_WIDTH
                     / HackingDeviceScreenTextClient.LOGICAL_WIDTH);
@@ -45,17 +51,24 @@ public abstract class HackingDeviceScreenTransformMixin {
 
         double seating = HackingDeviceClientState.seatingOffset(pos);
         Frame frame = attachment.screen();
-        Vec3 center = frame.center()
-                .add(frame.outward().scale(seating + TEXT_EPSILON))
+        Vec3 surfaceCenter = frame.center()
+                .add(frame.outward().scale(seating));
+
+        /*
+         * The world camera is expected on the authored OUTWARD side, but use the
+         * viewer side for the tiny depth separation so an oblique inspection can
+         * never put the glyphs behind the zero-thickness screen plane.
+         */
+        double side = camera.subtract(surfaceCenter).dot(frame.outward()) >= 0.0D
+                ? 1.0D : -1.0D;
+        Vec3 center = surfaceCenter
+                .add(frame.outward().scale(TEXT_EPSILON * side))
                 .subtract(camera);
 
         /*
-         * This is the exact transform of the authored screen cube:
-         * body Y = 180 degrees, then screen X = -22.5 degrees. Rebuilding the
-         * plane from a hand-written Matrix4f introduced an axis convention bug
-         * that sent the glyphs away from the CRT even though the camera itself
-         * was correct. Using the authored rotations keeps body, screen and text
-         * in one coordinate system.
+         * Exact authored transform of the CRT cube: body Y = 180 degrees,
+         * screen X = -22.5 degrees. The translation is the already-transformed
+         * physical screen centre, so no second imaginary screen is reconstructed.
          */
         poseStack.pushPose();
         poseStack.translate(center.x, center.y, center.z);
@@ -89,7 +102,7 @@ public abstract class HackingDeviceScreenTransformMixin {
         font.drawInBatch(text, 10.0F, 68.0F,
                 HackingDeviceScreenTextClient.GREEN_DIM, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0,
+                Font.DisplayMode.NORMAL, 0,
                 LightTexture.FULL_BRIGHT);
     }
 }

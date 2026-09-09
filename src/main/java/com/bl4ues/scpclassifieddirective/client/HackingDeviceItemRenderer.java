@@ -2,15 +2,40 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.item.HackingDeviceItem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 public final class HackingDeviceItemRenderer
         extends GeoItemRenderer<HackingDeviceItem> {
+    private static final double SCREEN_X = -0.03D / 16.0D;
+    private static final double SCREEN_Y = 7.41817334D / 16.0D;
+    private static final double SCREEN_Z = 1.16496434D / 16.0D;
+    private static final float SCREEN_SCALE = (float)
+            ((2.5D / 16.0D) / HackingDeviceScreenTextClient.LOGICAL_WIDTH);
+
+    private ItemStack renderedStack = ItemStack.EMPTY;
+    private ItemDisplayContext renderedContext = ItemDisplayContext.NONE;
+
     public HackingDeviceItemRenderer() {
         super(new HackingDeviceGeoModel());
+        addRenderLayer(new GeoRenderLayer<>(this) {
+            @Override
+            public void render(PoseStack poseStack,
+                    HackingDeviceItem animatable,
+                    BakedGeoModel bakedModel, RenderType renderType,
+                    MultiBufferSource bufferSource, VertexConsumer buffer,
+                    float partialTick, int packedLight, int packedOverlay) {
+                renderCooldownScreen(poseStack, bufferSource);
+            }
+        });
     }
 
     @Override
@@ -18,14 +43,14 @@ public final class HackingDeviceItemRenderer
             PoseStack poseStack, MultiBufferSource bufferSource,
             int packedLight, int packedOverlay) {
         boolean rawWorldPlacement = displayContext == ItemDisplayContext.NONE;
+        renderedStack = stack;
+        renderedContext = displayContext;
         if (rawWorldPlacement) {
             poseStack.pushPose();
             /*
              * GeoItemRenderer centers item models on half-block coordinates.
              * The attached-device world geometry is authored around Blockbench's
              * actual zero, so cancel that item-only centering before rendering it.
-             * Without this the model sits roughly half a block above/outside the
-             * physical screen frame used by the camera.
              */
             poseStack.translate(-0.5D, -0.5D, -0.5D);
         }
@@ -34,6 +59,31 @@ public final class HackingDeviceItemRenderer
                     packedLight, packedOverlay);
         } finally {
             if (rawWorldPlacement) poseStack.popPose();
+            renderedStack = ItemStack.EMPTY;
+            renderedContext = ItemDisplayContext.NONE;
         }
+    }
+
+    private void renderCooldownScreen(PoseStack poseStack,
+            MultiBufferSource bufferSource) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (renderedContext == ItemDisplayContext.NONE
+                || renderedStack.isEmpty() || minecraft.level == null
+                || !HackingDeviceItem.isCoolingDown(renderedStack,
+                        minecraft.level)) {
+            return;
+        }
+
+        poseStack.pushPose();
+        /* Same physical plane as the attached world-space screen. */
+        poseStack.translate(SCREEN_X, SCREEN_Y, SCREEN_Z - 0.0015D);
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+        poseStack.mulPose(Axis.XP.rotationDegrees(-22.5F));
+        poseStack.scale(-SCREEN_SCALE, -SCREEN_SCALE, SCREEN_SCALE);
+        poseStack.translate(-HackingDeviceScreenTextClient.LOGICAL_WIDTH * 0.5F,
+                -HackingDeviceScreenTextClient.LOGICAL_HEIGHT * 0.5F, 0.0F);
+        HackingDeviceScreenTextClient.renderItemCooldown(renderedStack,
+                minecraft.font, poseStack, bufferSource);
+        poseStack.popPose();
     }
 }

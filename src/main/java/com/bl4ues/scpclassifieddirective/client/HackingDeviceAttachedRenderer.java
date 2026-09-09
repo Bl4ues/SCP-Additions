@@ -24,7 +24,10 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /** Renders reader-attached Hacking Devices in world space. */
@@ -54,6 +57,7 @@ public final class HackingDeviceAttachedRenderer {
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
         Set<BlockPos> visibleDevices = HackingDeviceClientState.snapshot();
+        List<PendingScreen> pendingScreens = new ArrayList<>();
 
         for (BlockPos pos : visibleDevices) {
             if (!minecraft.level.hasChunkAt(pos)
@@ -64,16 +68,34 @@ public final class HackingDeviceAttachedRenderer {
             Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
                     state);
             if (attachment != null) {
-                renderDevice(minecraft, poseStack, buffers, camera, pos,
-                        attachment);
+                Matrix4f screenTransform = renderDevice(minecraft, poseStack,
+                        buffers, camera, pos, attachment);
+                if (screenTransform != null) {
+                    pendingScreens.add(new PendingScreen(pos, screenTransform));
+                }
             }
+        }
+
+        /*
+         * The screen matrix above was captured from the real Gecko `screen` bone,
+         * but the characters are intentionally emitted only now. This is the same
+         * pass separation used by the Diagnostic Terminal: body/glass first,
+         * explicit flush, then the physical CRT content. It matters under shaders.
+         */
+        buffers.endBatch();
+        for (PendingScreen pending : pendingScreens) {
+            poseStack.pushPose();
+            poseStack.last().pose().set(pending.transform());
+            renderAttachedScreenText(pending.pos(), minecraft.font, poseStack,
+                    buffers);
+            poseStack.popPose();
         }
         buffers.endBatch();
     }
 
-    private static void renderDevice(Minecraft minecraft, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers, Vec3 camera, BlockPos pos,
-            Attachment attachment) {
+    private static Matrix4f renderDevice(Minecraft minecraft,
+            PoseStack poseStack, MultiBufferSource.BufferSource buffers,
+            Vec3 camera, BlockPos pos, Attachment attachment) {
         double seating = HackingDeviceClientState.seatingOffset(pos);
         Vec3 origin = attachment.modelOrigin()
                 .add(attachment.mountOutward().scale(seating))
@@ -94,20 +116,24 @@ public final class HackingDeviceAttachedRenderer {
         /*
          * ItemDisplayContext.NONE is also used for this world render, so identify
          * the target explicitly while GeckoLib walks the model. The item renderer
-         * then paints the UI from the live `screen` bone/cube pose itself.
+         * captures the final logical-screen transform from the live screen cube.
          */
+        Matrix4f screenTransform = null;
         HackingDeviceItemRenderer.beginAttachedRender(pos);
         try {
             minecraft.getItemRenderer().renderStatic(deviceStack,
                     ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
                     poseStack, buffers, minecraft.level, 0);
+            screenTransform = HackingDeviceItemRenderer
+                    .takeAttachedScreenTransform();
         } finally {
             HackingDeviceItemRenderer.endAttachedRender();
             poseStack.popPose();
         }
+        return screenTransform;
     }
 
-    /** Called from the Hacking Device GeoRenderLayer while on the real screen bone. */
+    /** Draws characters using the exact screen matrix captured by GeckoLib. */
     public static void renderAttachedScreenText(BlockPos pos, Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
         if (HackingDeviceMinigameClient.active()
@@ -277,7 +303,7 @@ public final class HackingDeviceAttachedRenderer {
         float x = (LOGICAL_WIDTH - font.width(sequence)) * 0.5F;
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0,
+                Font.DisplayMode.NORMAL, 0,
                 LightTexture.FULL_BRIGHT);
     }
 
@@ -287,7 +313,7 @@ public final class HackingDeviceAttachedRenderer {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.POLYGON_OFFSET, 0,
+                Font.DisplayMode.NORMAL, 0,
                 LightTexture.FULL_BRIGHT);
     }
 
@@ -295,5 +321,8 @@ public final class HackingDeviceAttachedRenderer {
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         HackingDeviceClientState.clear();
         HackingDeviceFocusClient.forceClear();
+    }
+
+    private record PendingScreen(BlockPos pos, Matrix4f transform) {
     }
 }

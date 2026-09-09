@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient.Phase;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
+import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -24,24 +25,23 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
 
 import java.util.Set;
 
-/**
- * Renders the device physically seated on readers. The CRT background is the
- * actual `screen` plane in the GeckoLib model. Its characters are injected by
- * HackingDeviceItemRenderer from the very same model pose, so there is no
- * second world-space screen that can clip, jump or disagree with the model.
- */
+/** Renders the device and its character-only CRT in the exact same world pose. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceAttachedRenderer {
     private static final float LOGICAL_WIDTH =
             HackingDeviceScreenTextClient.LOGICAL_WIDTH;
+    private static final float LOGICAL_HEIGHT =
+            HackingDeviceScreenTextClient.LOGICAL_HEIGHT;
     private static final int GREEN = HackingDeviceScreenTextClient.GREEN;
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
+    private static final double TEXT_EPSILON = 0.0020D;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -68,9 +68,25 @@ public final class HackingDeviceAttachedRenderer {
             BlockState state = minecraft.level.getBlockState(pos);
             Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
                     state);
-            if (attachment == null) continue;
-            renderDevice(minecraft, poseStack, buffers, camera, pos,
-                    attachment);
+            if (attachment != null) {
+                renderDevice(minecraft, poseStack, buffers, camera, pos,
+                        attachment);
+            }
+        }
+        // Finish Gecko/item body passes before drawing emissive glyphs over the CRT.
+        buffers.endBatch();
+
+        for (BlockPos pos : visibleDevices) {
+            if (!minecraft.level.hasChunkAt(pos)
+                    || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
+                continue;
+            }
+            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
+                    minecraft.level.getBlockState(pos));
+            if (attachment != null) {
+                renderWorldScreenText(minecraft, poseStack, buffers, camera,
+                        pos, attachment);
+            }
         }
         buffers.endBatch();
     }
@@ -80,31 +96,68 @@ public final class HackingDeviceAttachedRenderer {
             Attachment attachment) {
         double seating = HackingDeviceClientState.seatingOffset(pos);
         Vec3 origin = attachment.modelOrigin()
-                .add(attachment.screen().outward().scale(seating))
+                .add(attachment.mountOutward().scale(seating))
                 .subtract(camera);
 
         poseStack.pushPose();
         poseStack.translate(origin.x, origin.y, origin.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(
                 HackingDeviceAttachmentGeometry.modelYaw(attachment.facing())));
+        if (Math.abs(attachment.pitchDegrees()) > 0.001F) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(attachment.pitchDegrees()));
+        }
+
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
         ItemStack deviceStack = new ItemStack(
                 ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
-
-        HackingDeviceItemRenderer.beginAttachedRender(pos);
-        try {
-            minecraft.getItemRenderer().renderStatic(deviceStack,
-                    ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
-                    poseStack, buffers, minecraft.level, 0);
-        } finally {
-            HackingDeviceItemRenderer.endAttachedRender();
-        }
+        minecraft.getItemRenderer().renderStatic(deviceStack,
+                ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
+                poseStack, buffers, minecraft.level, 0);
         poseStack.popPose();
     }
 
-    /** Called from the Hacking Device's GeoRenderLayer in the live model pose. */
+    /**
+     * Draws directly from the resolved physical frame. There is no second black
+     * panel and no reconstruction from yaw/pitch, so the actual model `screen`
+     * plane remains the only background surface.
+     */
+    private static void renderWorldScreenText(Minecraft minecraft,
+            PoseStack poseStack, MultiBufferSource.BufferSource buffers,
+            Vec3 camera, BlockPos pos, Attachment attachment) {
+        double seating = HackingDeviceClientState.seatingOffset(pos);
+        Frame frame = attachment.screen();
+        Vec3 center = frame.center()
+                .add(attachment.mountOutward().scale(seating))
+                .add(frame.outward().scale(TEXT_EPSILON))
+                .subtract(camera);
+        Vec3 right = frame.right().normalize();
+        Vec3 down = frame.up().scale(-1.0D).normalize();
+        Vec3 outward = frame.outward().normalize();
+
+        Matrix4f basis = new Matrix4f().identity();
+        basis.m00((float) right.x);
+        basis.m01((float) right.y);
+        basis.m02((float) right.z);
+        basis.m10((float) down.x);
+        basis.m11((float) down.y);
+        basis.m12((float) down.z);
+        basis.m20((float) outward.x);
+        basis.m21((float) outward.y);
+        basis.m22((float) outward.z);
+
+        poseStack.pushPose();
+        poseStack.translate(center.x, center.y, center.z);
+        poseStack.mulPoseMatrix(basis);
+        poseStack.scale((float) (frame.width() / LOGICAL_WIDTH),
+                (float) (frame.height() / LOGICAL_HEIGHT), 1.0F);
+        poseStack.translate(-LOGICAL_WIDTH * 0.5F,
+                -LOGICAL_HEIGHT * 0.5F, 0.0F);
+        renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
+        poseStack.popPose();
+    }
+
     public static void renderAttachedScreenText(BlockPos pos, Font font,
-            PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
+            PoseStack poseStack, MultiBufferSource buffers) {
         if (HackingDeviceMinigameClient.active()
                 && pos != null && pos.equals(HackingDeviceMinigameClient.pos())) {
             renderSession(font, poseStack, buffers);
@@ -117,7 +170,7 @@ public final class HackingDeviceAttachedRenderer {
     /* Keep these method signatures stable: HackingDeviceUiPolishMixin adds the
      * Facility Mapping lines and the finalized success sequence here. */
     private static void renderSession(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         Phase phase = HackingDeviceMinigameClient.phase();
         switch (phase) {
             case LOADING -> renderLoading(font, poseStack, buffers);
@@ -133,7 +186,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderLoading(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         double progress = HackingDeviceMinigameClient.phaseProgress();
         int filled = (int) Math.round(progress * 24.0D);
         String bar = "[" + "#".repeat(Math.max(0, Math.min(24, filled)))
@@ -158,7 +211,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderBoot(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         int count = HackingDeviceMinigameClient.bootLineCount();
         draw(font, poseStack, buffers,
                 String.format("TARGET: KCR-L%d",
@@ -182,7 +235,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderPuzzle(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         HackingDevicePuzzle puzzle = HackingDeviceMinigameClient.puzzle();
         if (puzzle == null) return;
         draw(font, poseStack, buffers,
@@ -227,7 +280,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderRoundOk(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         centered(font, poseStack, buffers, "CRC VALID", 51, GREEN_BRIGHT);
         centered(font, poseStack, buffers, "FRAME REPAIRED", 70, GREEN);
         centered(font, poseStack, buffers, "> ADVANCING BREACH...", 96,
@@ -235,7 +288,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderDenied(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         centered(font, poseStack, buffers, "!! CRC MISMATCH !!", 46,
                 GREEN_BRIGHT);
         centered(font, poseStack, buffers, "ACCESS DENIED", 67, GREEN);
@@ -248,7 +301,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderLocked(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         centered(font, poseStack, buffers, "BREACH LIMIT REACHED", 50,
                 GREEN_BRIGHT);
         centered(font, poseStack, buffers, "ACCESS DENIED", 72, GREEN);
@@ -257,7 +310,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderSuccess(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers) {
+            MultiBufferSource buffers) {
         HackingDeviceScreenTextClient.renderSuccess(font, poseStack, buffers);
     }
 
@@ -266,8 +319,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void centered(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers, String text, float y,
-            int color) {
+            MultiBufferSource buffers, String text, float y, int color) {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         float x = (LOGICAL_WIDTH - font.width(sequence)) * 0.5F;
         font.drawInBatch(sequence, x, y, color, false,
@@ -277,7 +329,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void draw(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers, String text, float x,
+            MultiBufferSource buffers, String text, float x,
             float y, int color) {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         font.drawInBatch(sequence, x, y, color, false,

@@ -21,21 +21,24 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Owns one temporary hacking session per player. Nothing client-side can grant access. */
+/** Owns one temporary hacking session per player. Unlocks remain server-authoritative. */
 public final class HackingDeviceSessionManager {
-    public static final int TOTAL_ROUNDS = 3;
     public static final int MAX_FAILURES = 3;
     private static final int SUCCESS_GRANT_DELAY_TICKS = 24;
     private static final int AUTO_RETURN_AFTER_GRANT_TICKS = 10;
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 
     private HackingDeviceSessionManager() {
+    }
+
+    public static int requiredWins(int accessLevel) {
+        int level = Math.max(1, Math.min(6, accessLevel));
+        return level <= 2 ? 1 : level <= 4 ? 2 : 3;
     }
 
     public static void start(ServerPlayer player, BlockPos pos,
@@ -48,9 +51,10 @@ public final class HackingDeviceSessionManager {
         int accessLevel = Math.max(1,
                 com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents
                         .configurableLevel(level, pos));
+        HackingDevicePuzzle puzzle = createPuzzle(player.getRandom(),
+                accessLevel, null);
         Session session = new Session(pos.immutable(), level.dimension(), hand,
-                accessLevel, 1, 0, createPuzzle(player.getRandom()), false,
-                false);
+                accessLevel, 1, 0, puzzle, false, false);
         SESSIONS.put(player.getUUID(), session);
         HackingDeviceNetwork.startSession(player, session.pos,
                 session.accessLevel, session.round, session.failures,
@@ -67,8 +71,7 @@ public final class HackingDeviceSessionManager {
         return false;
     }
 
-    public static void submit(ServerPlayer player, BlockPos pos,
-            int candidateIndex) {
+    public static void submit(ServerPlayer player, BlockPos pos, int answer) {
         if (player == null || pos == null
                 || !(player.level() instanceof ServerLevel level)) {
             return;
@@ -79,8 +82,9 @@ public final class HackingDeviceSessionManager {
                 || !HackingDeviceAttachmentManager.isAttached(level, pos)) {
             return;
         }
-        int index = Math.max(0, Math.min(3, candidateIndex));
-        if (index != session.puzzle.correctIndex()) {
+
+        HackingDevicePuzzle previous = session.puzzle;
+        if (!isCorrect(previous, answer)) {
             session.failures++;
             playReaderResult(level, pos, false);
             if (session.failures >= MAX_FAILURES) {
@@ -89,6 +93,8 @@ public final class HackingDeviceSessionManager {
                         HackingDeviceNetwork.ResultKind.LOCKED,
                         session.round, session.failures, null);
             } else {
+                session.puzzle = createPuzzle(player.getRandom(),
+                        session.accessLevel, previous.type());
                 HackingDeviceNetwork.sessionResult(player, pos,
                         HackingDeviceNetwork.ResultKind.DENIED,
                         session.round, session.failures, session.puzzle);
@@ -96,7 +102,7 @@ public final class HackingDeviceSessionManager {
             return;
         }
 
-        if (session.round >= TOTAL_ROUNDS) {
+        if (session.round >= requiredWins(session.accessLevel)) {
             session.finished = true;
             HackingDeviceNetwork.sessionResult(player, pos,
                     HackingDeviceNetwork.ResultKind.SUCCESS,
@@ -109,7 +115,8 @@ public final class HackingDeviceSessionManager {
         }
 
         session.round++;
-        session.puzzle = createPuzzle(player.getRandom());
+        session.puzzle = createPuzzle(player.getRandom(), session.accessLevel,
+                previous.type());
         HackingDeviceNetwork.sessionResult(player, pos,
                 HackingDeviceNetwork.ResultKind.ROUND_OK,
                 session.round, session.failures, session.puzzle);
@@ -120,10 +127,8 @@ public final class HackingDeviceSessionManager {
         Session session = SESSIONS.get(player.getUUID());
         if (session == null || !session.pos.equals(pos)) return;
 
-        // A solved third frame remains successful even if the player exits while
-        // the final terminal sequence is still playing.
         if (session.finished && session.failures < MAX_FAILURES
-                && session.round >= TOTAL_ROUNDS) {
+                && session.round >= requiredWins(session.accessLevel)) {
             ServerLevel level = sessionLevel(player, session);
             if (level != null) grantIfStillValid(level, session.pos,
                     player.getUUID());
@@ -196,8 +201,6 @@ public final class HackingDeviceSessionManager {
 
         session.granted = true;
         if (objectContainmentUnit) {
-            // The OCU has no five-second passage window. Power the Hacking Device
-            // screen down and return it normally without arming item cooldown NBT.
             session.countdownEnd = 0L;
             session.readyAt = 0L;
         } else {
@@ -211,16 +214,12 @@ public final class HackingDeviceSessionManager {
                 .getPlayer(playerId);
         if (player != null) {
             if (!objectContainmentUnit) {
-                // Creative does not consume the original stack, so arm that same
-                // item immediately. Survival receives the tagged replacement on detach.
                 ItemStack held = player.getItemInHand(session.hand);
                 if (held.getItem() instanceof HackingDeviceItem) {
                     HackingDeviceItem.armCooldown(held, session.countdownEnd,
                             session.readyAt);
                 }
             }
-            // Zero timestamps deliberately select the same short COOLDOWN/off phase
-            // client-side for the OCU without drawing a countdown.
             HackingDeviceNetwork.beginCooldown(player, pos,
                     session.countdownEnd, session.readyAt);
         }
@@ -254,34 +253,123 @@ public final class HackingDeviceSessionManager {
         }
     }
 
-    private static HackingDevicePuzzle createPuzzle(RandomSource random) {
-        int[] bytes = new int[4];
-        for (int index = 0; index < 4; index++) bytes[index] = random.nextInt(256);
-        int missing = random.nextInt(4);
-        int checksum = bytes[0] ^ bytes[1] ^ bytes[2] ^ bytes[3];
-        int correct = bytes[missing] & 0xFF;
+    private static boolean isCorrect(HackingDevicePuzzle puzzle, int answer) {
+        if (puzzle == null) return false;
+        return switch (puzzle.type()) {
+            case CIRCUIT_PATH -> answer == puzzle.serverAnswer();
+            case VISUAL_CHECKSUM -> checksumMatches(puzzle, answer);
+            case FIREWALL_WINDOWS, HOLD_SIGNAL -> answer == 1;
+            case FREQUENCY_LOCK -> Math.abs(answer - puzzle.data(0, 50))
+                    <= puzzle.data(1, 5);
+        };
+    }
 
-        List<Integer> pool = new ArrayList<>();
-        pool.add(correct);
-        while (pool.size() < 4) {
-            int delta = switch (pool.size()) {
-                case 1 -> 0x10;
-                case 2 -> 0x01;
-                default -> 0x11;
-            };
-            int candidate = (correct ^ delta ^ random.nextInt(4)) & 0xFF;
-            if (!pool.contains(candidate)) pool.add(candidate);
+    private static boolean checksumMatches(HackingDevicePuzzle puzzle,
+            int packedValues) {
+        int count = Math.max(1, Math.min(5, puzzle.data(0, 3)));
+        int max = Math.max(1, Math.min(7, puzzle.data(1, 3)));
+        int target = puzzle.data(2, 0);
+        int sum = 0;
+        for (int index = 0; index < count; index++) {
+            int value = packedValues >> index * 4 & 0xF;
+            if (value > max) return false;
+            sum += value;
         }
-        Collections.shuffle(pool, new java.util.Random(random.nextLong()));
-        int[] candidates = new int[4];
-        int correctIndex = 0;
-        for (int index = 0; index < 4; index++) {
-            candidates[index] = pool.get(index);
-            if (candidates[index] == correct) correctIndex = index;
+        return sum == target;
+    }
+
+    private static HackingDevicePuzzle createPuzzle(RandomSource random,
+            int accessLevel, HackingDevicePuzzle.Type avoid) {
+        int difficulty = Math.max(1, Math.min(6, accessLevel));
+        HackingDevicePuzzle.Type[] types = HackingDevicePuzzle.Type.values();
+        HackingDevicePuzzle.Type type;
+        do {
+            type = types[random.nextInt(types.length)];
+        } while (types.length > 1 && type == avoid);
+
+        return switch (type) {
+            case CIRCUIT_PATH -> createCircuit(random, difficulty);
+            case VISUAL_CHECKSUM -> createChecksum(random, difficulty);
+            case FIREWALL_WINDOWS -> createFirewall(random, difficulty);
+            case HOLD_SIGNAL -> createHoldSignal(random, difficulty);
+            case FREQUENCY_LOCK -> createFrequency(random, difficulty);
+        };
+    }
+
+    private static HackingDevicePuzzle createCircuit(RandomSource random,
+            int difficulty) {
+        int count = Math.min(8, 2 + difficulty);
+        int targetMask = random.nextInt(1 << count);
+        int initialMask = targetMask;
+        int mismatches = Math.min(count, 1 + (difficulty - 1) / 2);
+        int flipped = 0;
+        while (Integer.bitCount(flipped) < mismatches) {
+            flipped |= 1 << random.nextInt(count);
         }
-        bytes[missing] = 0;
-        return new HackingDevicePuzzle(bytes, missing, checksum, candidates,
-                correctIndex);
+        initialMask ^= flipped;
+        return new HackingDevicePuzzle(HackingDevicePuzzle.Type.CIRCUIT_PATH,
+                difficulty, new int[]{count, initialMask, targetMask},
+                targetMask);
+    }
+
+    private static HackingDevicePuzzle createChecksum(RandomSource random,
+            int difficulty) {
+        int count = difficulty <= 2 ? 3 : difficulty <= 4 ? 4 : 5;
+        int max = difficulty <= 2 ? 3 : difficulty <= 4 ? 4 : 5;
+        int target = 1 + random.nextInt(Math.max(1, count * max));
+        int packed = 0;
+        int sum = 0;
+        for (int index = 0; index < count; index++) {
+            int value = random.nextInt(max + 1);
+            packed |= value << index * 4;
+            sum += value;
+        }
+        if (sum == target) {
+            int value = packed & 0xF;
+            int next = value < max ? value + 1 : value - 1;
+            packed = packed & ~0xF | next;
+        }
+        return new HackingDevicePuzzle(
+                HackingDevicePuzzle.Type.VISUAL_CHECKSUM, difficulty,
+                new int[]{count, max, target, packed}, 0);
+    }
+
+    private static HackingDevicePuzzle createFirewall(RandomSource random,
+            int difficulty) {
+        int gates = 2 + difficulty / 2;
+        int periodMs = Math.max(420, 1100 - (difficulty - 1) * 130);
+        int seed = random.nextInt(10000);
+        int timeoutMs = Math.max(6500, gates * periodMs * 7);
+        return new HackingDevicePuzzle(
+                HackingDevicePuzzle.Type.FIREWALL_WINDOWS, difficulty,
+                new int[]{gates, periodMs, seed, timeoutMs}, 1);
+    }
+
+    private static HackingDevicePuzzle createHoldSignal(RandomSource random,
+            int difficulty) {
+        int center = 30 + random.nextInt(41);
+        int halfWidth = Math.max(7, 15 - difficulty);
+        int seed = random.nextInt(10000);
+        int holdMs = 900 + difficulty * 250;
+        int amplitude = 8 + difficulty * 3;
+        int speed = 650 + difficulty * 120;
+        int timeoutMs = 12000 - difficulty * 500;
+        return new HackingDevicePuzzle(HackingDevicePuzzle.Type.HOLD_SIGNAL,
+                difficulty, new int[]{center, halfWidth, seed, holdMs,
+                        amplitude, speed, timeoutMs}, 1);
+    }
+
+    private static HackingDevicePuzzle createFrequency(RandomSource random,
+            int difficulty) {
+        int[] tolerances = {10, 8, 7, 5, 4, 3};
+        int target = 15 + random.nextInt(71);
+        int offset = 10 + difficulty * 4;
+        if (random.nextBoolean()) offset = -offset;
+        int initial = Math.max(0, Math.min(100, target + offset));
+        int step = difficulty <= 2 ? 2 : 1;
+        return new HackingDevicePuzzle(HackingDevicePuzzle.Type.FREQUENCY_LOCK,
+                difficulty, new int[]{target, tolerances[difficulty - 1],
+                        initial, step}, target);
     }
 
     private static final class Session {

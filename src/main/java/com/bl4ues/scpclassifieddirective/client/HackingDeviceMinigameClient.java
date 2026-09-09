@@ -25,7 +25,8 @@ public final class HackingDeviceMinigameClient {
     private static final long ROUND_FLASH_NANOS = 620_000_000L;
     private static final long DENIED_FLASH_NANOS = 900_000_000L;
     private static final long LOCKED_NANOS = 1_650_000_000L;
-    private static final long SUCCESS_NANOS = 3_000_000_000L;
+    private static final long SUCCESS_VISUAL_NANOS = 1_200_000_000L;
+    private static final long SUCCESS_TIMEOUT_NANOS = 3_000_000_000L;
     private static final long COOLDOWN_ATTACHED_NANOS = 520_000_000L;
     private static final long PROBE_NANOS = 950_000_000L;
     private static final int MAX_PROBES = 2;
@@ -147,7 +148,7 @@ public final class HackingDeviceMinigameClient {
             case ROUND_OK -> ROUND_FLASH_NANOS;
             case DENIED -> DENIED_FLASH_NANOS;
             case LOCKED -> LOCKED_NANOS;
-            case SUCCESS -> SUCCESS_NANOS;
+            case SUCCESS -> SUCCESS_VISUAL_NANOS;
             case COOLDOWN -> COOLDOWN_ATTACHED_NANOS;
             default -> 1L;
         };
@@ -289,7 +290,7 @@ public final class HackingDeviceMinigameClient {
                 if (elapsed >= LOCKED_NANOS) requestExit();
             }
             case SUCCESS -> {
-                if (elapsed >= SUCCESS_NANOS) requestExit();
+                if (elapsed >= SUCCESS_TIMEOUT_NANOS) requestExit();
             }
             case COOLDOWN -> {
                 if (elapsed >= COOLDOWN_ATTACHED_NANOS) requestExit();

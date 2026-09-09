@@ -46,30 +46,30 @@ public final class KeycardSwipeClient {
 
     /*
      * Raw keycard geometry is x=6.8..9.1, y=1..4.6, z=7.5..7.6. The supplied
-     * coordinates describe the physical line followed by the same thin edge of
-     * the card on every reader. Keep that x=6.8 edge on the authored path.
+     * paths describe the same x=6.8 physical edge, so keep that exact edge on
+     * the measured slot instead of moving the item's arbitrary model centre.
      */
     private static final Vec3 SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
     private static final Vec3 RENDER_COMPENSATION = compensation(SLOT_EDGE);
 
-    /* Wall-reader orientation already validated in-game. */
+    /* Wall-reader orientation is already visually validated. */
     private static final float EDGE_INTO_SLOT_YAW = 90.0F;
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
 
     /*
-     * The OCU reader surface spans local X and the measured diagonal Y/Z swipe
-     * path. The previous basis incorrectly treated local X as the card's THIN
-     * normal, which turned the broad face into a Y/Z plane and made the card
-     * physically slice through the OCU. Keep local +Y on the authored swipe
-     * direction, use local +X as the visible card width, then derive local +Z as
-     * the face normal perpendicular to that reader plane.
+     * The OCU is also a swipe SLOT, not a tray to lay the card flat on. The bad
+     * version mapped the card's broad X/Y face onto the reader surface, which is
+     * why it floated beside the assembly like a little white flap. Keep the
+     * card's thin local Z axis across the slot (OCU X), and its broad face in
+     * the Y/Z swipe plane. Local +Y is reversed relative to travel so the card
+     * remains upside-down, matching the arrow-following wall-reader swipe.
      */
-    private static final Vec3 OCU_LONG_AXIS =
-            OCU_END.subtract(OCU_START).normalize();
-    private static final Vec3 OCU_WIDTH_AXIS =
+    private static final Vec3 OCU_CARD_LONG_AXIS =
+            OCU_START.subtract(OCU_END).normalize();
+    private static final Vec3 OCU_THIN_NORMAL =
             new Vec3(1.0D, 0.0D, 0.0D);
-    private static final Vec3 OCU_FACE_NORMAL =
-            OCU_WIDTH_AXIS.cross(OCU_LONG_AXIS).normalize();
+    private static final Vec3 OCU_CARD_WIDTH_AXIS =
+            OCU_CARD_LONG_AXIS.cross(OCU_THIN_NORMAL).normalize();
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
 
@@ -172,16 +172,16 @@ public final class KeycardSwipeClient {
 
     private static void applyOcuSlotOrientation(PoseStack poseStack) {
         Matrix4f basis = new Matrix4f().identity();
-        // Keycard local X/Y/Z = reader width / swipe direction / face normal.
-        basis.m00((float) OCU_WIDTH_AXIS.x);
-        basis.m01((float) OCU_WIDTH_AXIS.y);
-        basis.m02((float) OCU_WIDTH_AXIS.z);
-        basis.m10((float) OCU_LONG_AXIS.x);
-        basis.m11((float) OCU_LONG_AXIS.y);
-        basis.m12((float) OCU_LONG_AXIS.z);
-        basis.m20((float) OCU_FACE_NORMAL.x);
-        basis.m21((float) OCU_FACE_NORMAL.y);
-        basis.m22((float) OCU_FACE_NORMAL.z);
+        // Keycard local X/Y/Z = broad width / upside-down long axis / thin edge.
+        basis.m00((float) OCU_CARD_WIDTH_AXIS.x);
+        basis.m01((float) OCU_CARD_WIDTH_AXIS.y);
+        basis.m02((float) OCU_CARD_WIDTH_AXIS.z);
+        basis.m10((float) OCU_CARD_LONG_AXIS.x);
+        basis.m11((float) OCU_CARD_LONG_AXIS.y);
+        basis.m12((float) OCU_CARD_LONG_AXIS.z);
+        basis.m20((float) OCU_THIN_NORMAL.x);
+        basis.m21((float) OCU_THIN_NORMAL.y);
+        basis.m22((float) OCU_THIN_NORMAL.z);
         poseStack.mulPoseMatrix(basis);
     }
 

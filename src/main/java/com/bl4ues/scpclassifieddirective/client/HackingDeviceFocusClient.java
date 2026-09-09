@@ -25,9 +25,9 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceFocusClient {
-    private static final long APPROACH_NANOS = 260_000_000L;
-    private static final long RETURN_NANOS = 260_000_000L;
-    private static final double TARGET_FOV = 50.0D;
+    private static final long APPROACH_NANOS = 700_000_000L;
+    private static final long RETURN_NANOS = 450_000_000L;
+    private static final double TARGET_FOV = 48.0D;
 
     private static BlockPos activePos;
     private static CameraType previousCameraType;

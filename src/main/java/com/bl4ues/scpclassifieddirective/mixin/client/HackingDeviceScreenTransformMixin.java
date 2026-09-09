@@ -9,26 +9,25 @@ import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGe
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Keeps characters on the model's actual screen plane instead of reconstructing
- * that plane with yaw/pitch guesses. The authored black screen texture remains
- * the background; only emissive characters are added above it.
+ * Renders only the emissive character layer on the model's authored CRT plane.
+ * The black screen in the Gecko model remains the sole background.
  */
 @Mixin(value = HackingDeviceAttachedRenderer.class, remap = false)
 public abstract class HackingDeviceScreenTransformMixin {
-    private static final double TEXT_EPSILON = 0.0015D;
+    private static final double TEXT_EPSILON = 0.00125D;
     private static final float SCALE = (float)
             (HackingDeviceAttachmentGeometry.SCREEN_WIDTH
                     / HackingDeviceScreenTextClient.LOGICAL_WIDTH);
@@ -45,48 +44,28 @@ public abstract class HackingDeviceScreenTransformMixin {
         }
 
         double seating = HackingDeviceClientState.seatingOffset(pos);
-        Frame source = attachment.screen();
-        Frame frame = new Frame(
-                source.center().add(source.outward().scale(seating)),
-                source.right(), source.up(), source.outward(),
-                source.width(), source.height());
-
-        /*
-         * The focus camera deliberately locks itself to the side of the CRT the
-         * player was already standing on. The previous text pass always used the
-         * authored +OUTWARD side, so whenever the camera selected the opposite
-         * face the glyphs were rendered behind the zero-thickness black plane and
-         * vanished (or appeared detached from the device at grazing angles).
-         *
-         * Choose the visible normal from the actual render camera every frame.
-         * Flip screen-right with it so text remains readable instead of mirrored.
-         */
-        Vec3 authoredOutward = frame.outward().normalize();
-        double side = camera.subtract(frame.center()).dot(authoredOutward);
-        double faceSign = side >= 0.0D ? 1.0D : -1.0D;
-        Vec3 visibleOutward = authoredOutward.scale(faceSign);
-        Vec3 right = frame.right().normalize().scale(faceSign);
-        Vec3 down = frame.up().normalize().scale(-1.0D);
-
-        Vec3 origin = frame.center()
-                .add(visibleOutward.scale(TEXT_EPSILON))
+        Frame frame = attachment.screen();
+        Vec3 center = frame.center()
+                .add(frame.outward().scale(seating + TEXT_EPSILON))
                 .subtract(camera);
 
-        Matrix4f basis = new Matrix4f().identity();
-        basis.m00((float) right.x);
-        basis.m01((float) right.y);
-        basis.m02((float) right.z);
-        basis.m10((float) down.x);
-        basis.m11((float) down.y);
-        basis.m12((float) down.z);
-        basis.m20((float) visibleOutward.x);
-        basis.m21((float) visibleOutward.y);
-        basis.m22((float) visibleOutward.z);
-
+        /*
+         * This is the exact transform of the authored screen cube:
+         * body Y = 180 degrees, then screen X = -22.5 degrees. Rebuilding the
+         * plane from a hand-written Matrix4f introduced an axis convention bug
+         * that sent the glyphs away from the CRT even though the camera itself
+         * was correct. Using the authored rotations keeps body, screen and text
+         * in one coordinate system.
+         */
         poseStack.pushPose();
-        poseStack.translate(origin.x, origin.y, origin.z);
-        poseStack.mulPoseMatrix(basis);
-        poseStack.scale(SCALE, SCALE, SCALE);
+        poseStack.translate(center.x, center.y, center.z);
+        poseStack.mulPose(Axis.YP.rotationDegrees(
+                HackingDeviceAttachmentGeometry.modelYaw(attachment.facing())
+                        + 180.0F));
+        poseStack.mulPose(Axis.XP.rotationDegrees(-22.5F));
+
+        // Font +X goes to viewer-right and font +Y goes downward on the CRT.
+        poseStack.scale(SCALE, -SCALE, SCALE);
         poseStack.translate(
                 -HackingDeviceScreenTextClient.LOGICAL_WIDTH * 0.5F,
                 -HackingDeviceScreenTextClient.LOGICAL_HEIGHT * 0.5F,

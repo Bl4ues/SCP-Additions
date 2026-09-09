@@ -42,23 +42,17 @@ public final class HackingDeviceItemRenderer
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext,
             PoseStack poseStack, MultiBufferSource bufferSource,
             int packedLight, int packedOverlay) {
-        boolean rawWorldPlacement = displayContext == ItemDisplayContext.NONE;
         renderedStack = stack;
         renderedContext = displayContext;
-        if (rawWorldPlacement) {
-            poseStack.pushPose();
-            /*
-             * GeoItemRenderer centers item models on half-block coordinates.
-             * The attached-device world geometry is authored around Blockbench's
-             * actual zero, so cancel that item-only centering before rendering it.
-             */
-            poseStack.translate(-0.5D, -0.5D, -0.5D);
-        }
         try {
+            /*
+             * GeoItemRenderer already applies its own item-space centering.
+             * The old NONE-only -0.5 translation applied a second compensation,
+             * moving the attached body away from the authored world-space CRT.
+             */
             super.renderByItem(stack, displayContext, poseStack, bufferSource,
                     packedLight, packedOverlay);
         } finally {
-            if (rawWorldPlacement) poseStack.popPose();
             renderedStack = ItemStack.EMPTY;
             renderedContext = ItemDisplayContext.NONE;
         }

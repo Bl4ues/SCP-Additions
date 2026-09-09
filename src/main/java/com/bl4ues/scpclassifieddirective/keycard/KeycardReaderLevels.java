@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.keycard;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -110,9 +111,10 @@ public final class KeycardReaderLevels {
     }
 
     /**
-     * Forces the current reader into its ordinary accepted/redstone state without
-     * manufacturing a fake keycard. Its existing accept block owns sounds,
-     * redstone output and the normal timed reset back to idle.
+     * Forces the current reader into its ordinary accepted/redstone state. Every
+     * successful authorization explicitly rearms a fresh five-second pulse, even
+     * if the reader was already accepted. This makes repeated access extend from
+     * the latest acceptance instead of inheriting a stale scheduled reset.
      */
     public static boolean activateAccepted(Level level, BlockPos pos) {
         if (level == null || pos == null) return false;
@@ -120,8 +122,16 @@ public final class KeycardReaderLevels {
         ReaderDescriptor descriptor = describe(current);
         if (descriptor == null) return false;
         Block target = acceptedBlock(descriptor.level(), descriptor.side());
-        return replacePreservingState(level, pos, current,
+
+        boolean changed = replacePreservingState(level, pos, current,
                 target.defaultBlockState());
+        BlockState acceptedState = level.getBlockState(pos);
+        if (level instanceof ServerLevel serverLevel
+                && acceptedState.getBlock() == target) {
+            KeycardReaderPulse.arm(serverLevel, pos, target);
+            return true;
+        }
+        return changed;
     }
 
     public static Block normalBlock(int level, Side side) {

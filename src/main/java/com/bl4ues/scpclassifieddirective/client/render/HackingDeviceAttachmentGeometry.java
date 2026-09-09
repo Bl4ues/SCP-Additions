@@ -10,40 +10,37 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * One geometry definition for attached-device rendering, its physical screen and
- * camera focus. Values come directly from the authored Blockbench pivots.
+ * camera focus. Values come directly from the authored Blockbench geometry.
  */
 public final class HackingDeviceAttachmentGeometry {
     /** User-authored back/head contact point used to seat the device on a reader. */
     private static final Vec3 DEVICE_CONTACT = pixels(0.35D, 7.8009D, 1.4402D);
 
     /*
-     * The screen bone is parented to a body rotated 180 degrees around Y. The
-     * previous calculation re-rotated the zero-thickness screen cube with the
-     * wrong X handedness and produced Y=7.418 / Z=1.165, which put the logical
-     * screen below and behind the CRT that GeckoLib actually renders. The screen
-     * bone pivot is already the authored center of the visible plane after its
-     * local tilt: [-0.35, 7.80085677, -1.05977520]. Applying only the parent's
-     * 180-degree body rotation yields this exact model-space center.
+     * The visible screen is the actual 2.5 x 1.5 zero-thickness cube inside the
+     * `screen` bone, not the bone pivot. Its cube centre is
+     * [-0.35, 7.60, -1.05], rotated -22.5 degrees around
+     * [-0.35, 7.725, -0.55], then inherited through the body's 180-degree Y
+     * rotation. That produces the real rendered centre below. Using the bone
+     * pivot as the centre was the source of the later camera regression.
      */
     private static final Vec3 SCREEN_CENTER = pixels(
-            -0.03D, 7.80085677D, 1.26063520D);
+            -0.03D, 7.41817334D, 1.16496434D);
 
     /*
-     * Visible CRT basis. Gecko/Blockbench's X-rotation handedness is opposite the
-     * earlier hand-derived matrix here. The screen slopes upward toward the
-     * viewer, so a camera on OUTWARD is naturally above the display and normal
-     * to it instead of driving through the device into the wall.
+     * Exact transformed basis of that same plane. RIGHT x UP = OUTWARD. The
+     * contact pivot is on the back of the head at +Z, so the CRT's visible face
+     * points toward -Z, away from the reader.
      */
     private static final Vec3 SCREEN_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 SCREEN_UP = new Vec3(
-            0.0D, 0.9238795325D, -0.3826834324D);
+            0.0D, 0.9238795325D, 0.3826834324D);
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
-            0.0D, 0.3826834324D, 0.9238795325D);
+            0.0D, 0.3826834324D, -0.9238795325D);
 
     public static final double SCREEN_WIDTH = 2.5D / 16.0D;
     public static final double SCREEN_HEIGHT = 1.5D / 16.0D;
-    /** Comfortable close-up without putting the eye inside the bulky CRT hood. */
-    public static final double FOCUS_DISTANCE = 0.335D;
+    public static final double FOCUS_DISTANCE = 0.36D;
 
     private HackingDeviceAttachmentGeometry() {
     }
@@ -58,7 +55,7 @@ public final class HackingDeviceAttachmentGeometry {
         Direction facing = horizontalFacing(state);
         Vec3 localTarget;
         if (ocu) {
-            // Same physical keycard-reader center used by the OCU context prompt.
+            // Existing OCU attachment anchor. Its reader uses centred Geo coordinates.
             localTarget = new Vec3(
                     0.5D - 9.625D / 16.0D,
                     13.28094476D / 16.0D,

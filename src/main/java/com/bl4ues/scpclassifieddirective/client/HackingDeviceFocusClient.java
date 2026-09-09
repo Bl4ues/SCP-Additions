@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.hacking.HackingDeviceAttachmentManager;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -30,6 +31,17 @@ public final class HackingDeviceFocusClient {
     private static final double TARGET_FOV = 52.0D;
     private static final double CAMERA_DOWN = 0.020D;
     private static final double LOOK_DOWN = 0.035D;
+
+    /*
+     * The operation view is intentionally not perpendicular to the CRT. The
+     * approved framing looks down at the inclined screen from above/front. This
+     * is the exact local direction used by the good pre-regression camera: 22.5
+     * degrees above the reader-facing horizontal. Do not derive it from the
+     * screen quad normal, because doing so produced either the device's back or
+     * its underside depending on which normal sign was chosen.
+     */
+    private static final Vec3 LOCAL_OPERATION_VIEW = new Vec3(
+            0.0D, 0.3826834324D, -0.9238795325D);
 
     private static BlockPos activePos;
     private static CameraType previousCameraType;
@@ -110,19 +122,17 @@ public final class HackingDeviceFocusClient {
         Attachment attachment = attachment(minecraft);
         if (attachment == null) return null;
         double seating = HackingDeviceClientState.seatingOffset(activePos);
-        Vec3 frameNormal = attachment.screen().outward().normalize();
         Vec3 center = attachment.screen().center().add(
                 attachment.mountOutward().scale(seating));
 
         /*
-         * The baked screen quad's normal points opposite the side from which the
-         * CRT is actually viewed on this mirrored Gecko item model. Always use
-         * the opposite normal for camera placement. This keeps front/side/rear
-         * interactions converging on the same real screen face without reviving
-         * the old bug that selected a side from the player's starting position.
+         * Always converge on the same authored operation side, independent of
+         * where the player started the interaction. This preserves the original
+         * above-to-below view while also fixing the rear-interaction bug.
          */
-        Vec3 cameraNormal = frameNormal.scale(-1.0D);
-        Vec3 targetEye = center.add(cameraNormal
+        Vec3 cameraVector = rotateHorizontal(LOCAL_OPERATION_VIEW,
+                attachment.facing()).normalize();
+        Vec3 targetEye = center.add(cameraVector
                 .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE))
                 .add(0.0D, -CAMERA_DOWN, 0.0D);
         Vec3 lookTarget = center.add(0.0D, -LOOK_DOWN, 0.0D);
@@ -137,6 +147,15 @@ public final class HackingDeviceFocusClient {
         float yaw = startYaw + Mth.wrapDegrees(targetYaw - startYaw) * eased;
         float pitch = Mth.lerp(eased, startPitch, targetPitch);
         return new Pose(position, yaw, pitch);
+    }
+
+    private static Vec3 rotateHorizontal(Vec3 value, Direction facing) {
+        return switch (facing) {
+            case EAST -> new Vec3(-value.z, value.y, value.x);
+            case SOUTH -> new Vec3(-value.x, value.y, -value.z);
+            case WEST -> new Vec3(value.z, value.y, -value.x);
+            default -> value;
+        };
     }
 
     @SubscribeEvent

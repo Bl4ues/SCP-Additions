@@ -7,7 +7,6 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -21,27 +20,15 @@ import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-/**
- * GeckoLib renderer for the Hacking Device.
- *
- * The actual zero-thickness cube inside the authored `screen` bone is the only
- * source of truth for CRT placement. We read its already-rendered vertices after
- * GeckoLib has applied the item, parent-bone and cube transforms, then construct
- * a small logical 256x154 coordinate system directly on that rectangle.
- */
+/** GeckoLib renderer for the handheld Hacking Device and its physical CRT. */
 public final class HackingDeviceItemRenderer
         extends GeoItemRenderer<HackingDeviceItem> {
-    /** Slightly in front of the physical flat screen to avoid z-fighting. */
-    private static final double SCREEN_TEXT_OFFSET = 0.0078D;
+    private static final double SCREEN_TEXT_OFFSET = 0.0080D;
     private static final float MIN_FACE_AREA = 0.0000001F;
-
-    private static final ThreadLocal<BlockPos> ATTACHED_TARGET =
-            new ThreadLocal<>();
-    private static final ThreadLocal<Matrix4f> ATTACHED_SCREEN_TRANSFORM =
-            new ThreadLocal<>();
 
     private ItemStack renderedStack = ItemStack.EMPTY;
     private ItemDisplayContext renderedContext = ItemDisplayContext.NONE;
+    private Matrix4f heldScreenTransform;
 
     public HackingDeviceItemRenderer() {
         super(new HackingDeviceGeoModel());
@@ -53,29 +40,10 @@ public final class HackingDeviceItemRenderer
                     VertexConsumer buffer, float partialTick, int packedLight,
                     int packedOverlay) {
                 if ("screen".equals(bone.getName())) {
-                    captureOrRenderPhysicalScreen(poseStack, bone, renderType,
-                            bufferSource);
+                    captureHeldPhysicalScreen(poseStack, bone);
                 }
             }
         });
-    }
-
-    /** Marks an ItemDisplayContext.NONE render as a device attached to a reader. */
-    public static void beginAttachedRender(BlockPos pos) {
-        ATTACHED_SCREEN_TRANSFORM.remove();
-        if (pos != null) ATTACHED_TARGET.set(pos.immutable());
-    }
-
-    /** Returns the logical CRT transform captured from the live Gecko screen. */
-    public static Matrix4f takeAttachedScreenTransform() {
-        Matrix4f transform = ATTACHED_SCREEN_TRANSFORM.get();
-        ATTACHED_SCREEN_TRANSFORM.remove();
-        return transform == null ? null : new Matrix4f(transform);
-    }
-
-    public static void endAttachedRender() {
-        ATTACHED_TARGET.remove();
-        ATTACHED_SCREEN_TRANSFORM.remove();
     }
 
     @Override
@@ -84,79 +52,61 @@ public final class HackingDeviceItemRenderer
             int packedLight, int packedOverlay) {
         renderedStack = stack;
         renderedContext = displayContext;
+        heldScreenTransform = null;
         try {
             super.renderByItem(stack, displayContext, poseStack, bufferSource,
                     packedLight, packedOverlay);
+
+            /*
+             * Do not emit font geometry from renderForBone. At that point Gecko
+             * still owns an item RenderType and shaders can reorder/overwrite the
+             * glyphs with the rest of the model. Capture the real screen matrix
+             * there, finish Gecko completely, then render the cooldown here.
+             */
+            if (heldScreenTransform != null
+                    && displayContext != ItemDisplayContext.NONE
+                    && Minecraft.getInstance().level != null
+                    && HackingDeviceItem.isCoolingDown(stack,
+                            Minecraft.getInstance().level)) {
+                MultiBufferSource.BufferSource direct =
+                        bufferSource instanceof MultiBufferSource.BufferSource source
+                                ? source : null;
+                if (direct != null) direct.endBatch();
+
+                poseStack.pushPose();
+                poseStack.last().pose().set(heldScreenTransform);
+                HackingDeviceScreenTextClient.renderItemCooldown(stack,
+                        Minecraft.getInstance().font, poseStack, bufferSource);
+                poseStack.popPose();
+
+                if (direct != null) direct.endBatch();
+            }
         } finally {
+            heldScreenTransform = null;
             renderedStack = ItemStack.EMPTY;
             renderedContext = ItemDisplayContext.NONE;
         }
     }
 
-    private void captureOrRenderPhysicalScreen(PoseStack poseStack, GeoBone bone,
-            RenderType originalRenderType, MultiBufferSource bufferSource) {
+    private void captureHeldPhysicalScreen(PoseStack poseStack, GeoBone bone) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || bone.getCubes().isEmpty()) return;
-
-        BlockPos attachedPos = ATTACHED_TARGET.get();
-        boolean attached = attachedPos != null;
-        boolean heldCooldown = !attached
-                && renderedContext != ItemDisplayContext.NONE
-                && !renderedStack.isEmpty()
-                && HackingDeviceItem.isCoolingDown(renderedStack,
-                        minecraft.level);
-        if (!attached && !heldCooldown) return;
-
-        GeoCube screenCube = bone.getCubes().get(0);
-
-        /*
-         * renderForBone runs with the `screen` bone transform already on the
-         * PoseStack, but GeckoLib pops each cube's own pivot/rotation before the
-         * layer callback. Reapply only that cube transform, exactly as its normal
-         * render pass does, then inspect the resulting vertices.
-         */
-        poseStack.pushPose();
-        applyCubeTransform(poseStack, screenCube);
-        Matrix4f logicalTransform = buildLogicalScreenTransform(screenCube,
-                poseStack.last().pose());
-        poseStack.popPose();
-        if (logicalTransform == null) return;
-
-        if (attached) {
-            ATTACHED_SCREEN_TRANSFORM.set(logicalTransform);
+        if (minecraft.level == null || bone.getCubes().isEmpty()
+                || renderedContext == ItemDisplayContext.NONE
+                || renderedStack.isEmpty()
+                || !HackingDeviceItem.isCoolingDown(renderedStack,
+                        minecraft.level)) {
             return;
         }
 
-        /*
-         * Held cooldowns use the same captured physical plane. A direct vanilla
-         * BufferSource can be flushed before/after text; shader wrappers are still
-         * allowed through instead of making the whole CRT silently disappear.
-         */
-        MultiBufferSource.BufferSource direct =
-                bufferSource instanceof MultiBufferSource.BufferSource source
-                        ? source : null;
-        if (direct != null) direct.endBatch();
-
+        GeoCube screenCube = bone.getCubes().get(0);
         poseStack.pushPose();
-        poseStack.last().pose().set(logicalTransform);
-        HackingDeviceScreenTextClient.renderItemCooldown(renderedStack,
-                minecraft.font, poseStack, bufferSource);
+        applyCubeTransform(poseStack, screenCube);
+        heldScreenTransform = buildLogicalScreenTransform(screenCube,
+                poseStack.last().pose());
         poseStack.popPose();
-
-        if (direct != null) direct.endBatch();
-        if (originalRenderType != null) {
-            bufferSource.getBuffer(originalRenderType);
-        }
     }
 
-    /**
-     * Builds a logical-screen matrix from the actual transformed quad vertices.
-     *
-     * This deliberately does not trust a hard-coded NORTH/SOUTH normal. Flat
-     * Gecko cubes are special-cased internally and their face normals can be
-     * inverted by mirroring/shader compatibility code. We instead choose the
-     * largest non-degenerate face whose geometric winding points at the camera.
-     */
+    /** Builds logical CRT coordinates from the real transformed screen quad. */
     private static Matrix4f buildLogicalScreenTransform(GeoCube cube,
             Matrix4f renderedCubePose) {
         ScreenFace bestFacing = null;
@@ -165,7 +115,6 @@ public final class HackingDeviceItemRenderer
         for (GeoQuad quad : cube.quads()) {
             ScreenFace candidate = screenFace(quad, renderedCubePose);
             if (candidate == null) continue;
-
             if (bestAny == null || candidate.area() > bestAny.area()) {
                 bestAny = candidate;
             }
@@ -179,10 +128,8 @@ public final class HackingDeviceItemRenderer
         ScreenFace face = bestFacing != null ? bestFacing : bestAny;
         if (face == null) return null;
 
-        Vector3f right = new Vector3f(face.topRight())
-                .sub(face.topLeft());
-        Vector3f down = new Vector3f(face.bottomLeft())
-                .sub(face.topLeft());
+        Vector3f right = new Vector3f(face.topRight()).sub(face.topLeft());
+        Vector3f down = new Vector3f(face.bottomLeft()).sub(face.topLeft());
         float width = right.length();
         float height = down.length();
         if (width <= 0.00001F || height <= 0.00001F) return null;
@@ -194,9 +141,7 @@ public final class HackingDeviceItemRenderer
                 .add(face.topRight()).add(face.bottomLeft())
                 .add(face.bottomRight()).mul(0.25F);
         Vector3f toCamera = new Vector3f(center).negate();
-        if (visibleNormal.dot(toCamera) < 0.0F) {
-            visibleNormal.negate();
-        }
+        if (visibleNormal.dot(toCamera) < 0.0F) visibleNormal.negate();
 
         float pixelScaleX = width
                 / HackingDeviceScreenTextClient.LOGICAL_WIDTH;
@@ -206,11 +151,6 @@ public final class HackingDeviceItemRenderer
         Vector3f origin = new Vector3f(face.topLeft()).fma(
                 (float) SCREEN_TEXT_OFFSET, visibleNormal);
 
-        /*
-         * Columns are logical RIGHT, logical DOWN and screen normal. Using DOWN
-         * explicitly avoids the negative-Y/reflection chain that kept producing
-         * valid-looking matrices with invisible font winding.
-         */
         Matrix4f result = new Matrix4f().identity();
         result.m00(right.x() * pixelScaleX);
         result.m01(right.y() * pixelScaleX);
@@ -241,9 +181,7 @@ public final class HackingDeviceItemRenderer
 
         Vector3f edgeRight = new Vector3f(p1).sub(p0);
         Vector3f edgeDown = new Vector3f(p3).sub(p0);
-        float width = edgeRight.length();
-        float height = edgeDown.length();
-        float area = width * height;
+        float area = edgeRight.length() * edgeDown.length();
         if (area <= MIN_FACE_AREA) return null;
 
         Vector3f normal = new Vector3f(edgeRight).cross(edgeDown);

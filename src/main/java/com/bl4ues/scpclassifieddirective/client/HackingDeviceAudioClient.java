@@ -52,7 +52,8 @@ public final class HackingDeviceAudioClient {
                 pos.getY() + 0.5D,
                 pos.getZ() + 0.5D,
                 volume,
-                pitch));
+                pitch,
+                true));
     }
 
     private static ResourceLocation id(String path) {

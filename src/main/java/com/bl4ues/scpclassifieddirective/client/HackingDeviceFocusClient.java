@@ -110,18 +110,19 @@ public final class HackingDeviceFocusClient {
         Attachment attachment = attachment(minecraft);
         if (attachment == null) return null;
         double seating = HackingDeviceClientState.seatingOffset(activePos);
-        Vec3 outward = attachment.screen().outward().normalize();
+        Vec3 frameNormal = attachment.screen().outward().normalize();
         Vec3 center = attachment.screen().center().add(
                 attachment.mountOutward().scale(seating));
 
         /*
-         * Always approach the authored visible CRT face. Choosing the side from
-         * the player's starting position made a rear interaction intentionally
-         * select the back of the device, so the focus animation ended facing away
-         * from the reader. Front and side interactions already converge on this
-         * same physical face and therefore keep their existing framing.
+         * The baked screen quad's normal points opposite the side from which the
+         * CRT is actually viewed on this mirrored Gecko item model. Always use
+         * the opposite normal for camera placement. This keeps front/side/rear
+         * interactions converging on the same real screen face without reviving
+         * the old bug that selected a side from the player's starting position.
          */
-        Vec3 targetEye = center.add(outward
+        Vec3 cameraNormal = frameNormal.scale(-1.0D);
+        Vec3 targetEye = center.add(cameraNormal
                 .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE))
                 .add(0.0D, -CAMERA_DOWN, 0.0D);
         Vec3 lookTarget = center.add(0.0D, -LOOK_DOWN, 0.0D);

@@ -43,29 +43,36 @@ public final class KeycardSwipeClient {
     private static final Vec3 OCU_START = pixels(-10.3D, 15.9D, 2.95D);
     private static final Vec3 OCU_END = pixels(-10.3D, 13.05D, -1.15D);
 
-    // Raw keycard geometry occupies x=6.8..9.1, y=1..4.6, z=7.5..7.6.
-    private static final Vec3 CARD_MODEL_CENTER = pixels(7.95D, 2.8D, 7.55D);
+    /*
+     * Raw keycard geometry is x=6.8..9.1, y=1..4.6, z=7.5..7.6. The supplied
+     * swipe coordinates describe the reader groove itself, not the centre of the
+     * card. Anchor the thin x=6.8 edge to that line so the card actually touches
+     * the slot while the rest of the card sticks out from the reader.
+     */
+    private static final Vec3 CARD_SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
     /* ItemRenderer translates baked items by -0.5 on each axis. */
     private static final Vec3 CARD_RENDER_COMPENSATION = new Vec3(
-            0.5D - CARD_MODEL_CENTER.x,
-            0.5D - CARD_MODEL_CENTER.y,
-            0.5D - CARD_MODEL_CENTER.z);
+            0.5D - CARD_SLOT_EDGE.x,
+            0.5D - CARD_SLOT_EDGE.y,
+            0.5D - CARD_SLOT_EDGE.z);
 
     /*
-     * The wall reader wants the portrait card upside-down while it travels down
-     * the slot arrow. The previous 270-degree roll turned the card landscape;
-     * 180 keeps the long edge vertical and inverts the card as intended.
+     * A swipe reader receives the card edge-on. +90 Y turns the flat keycard
+     * perpendicular to the reader face, and 180 Z makes it portrait and upside
+     * down so the printed face follows the reader arrow during the downward pass.
      */
-    private static final float READER_CARD_ROLL = 180.0F;
+    private static final float EDGE_INTO_SLOT_YAW = 90.0F;
+    private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
 
     /*
-     * The OCU reader itself is authored at 35 degrees around X in
-     * containment_stand.geo.json. The old 55.2-degree value was derived from the
-     * movement vector, which made the card chase its path instead of lying on the
-     * actual reader surface.
+     * The OCU trajectory is already measured along its sloped reader surface.
+     * Derive the X tilt directly from that path, rather than using the 35-degree
+     * surface angle as though it were the swipe direction. They are complementary
+     * angles: the measured path is about 55.2 degrees from vertical.
      */
-    private static final float OCU_READER_TILT = 35.0F;
-    private static final float OCU_CARD_ROLL = 180.0F;
+    private static final float OCU_PATH_TILT = (float) Math.toDegrees(Math.atan2(
+            OCU_START.z - OCU_END.z,
+            OCU_START.y - OCU_END.y));
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
 
@@ -149,12 +156,14 @@ public final class KeycardSwipeClient {
         poseStack.pushPose();
         poseStack.translate(world.x, world.y, world.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(modelYaw(facing)));
+
         if (swipe.objectContainmentUnit) {
-            poseStack.mulPose(Axis.XP.rotationDegrees(OCU_READER_TILT));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(OCU_CARD_ROLL));
-        } else {
-            poseStack.mulPose(Axis.ZP.rotationDegrees(READER_CARD_ROLL));
+            // Follow the measured diagonal groove, then stand the card edge-on.
+            poseStack.mulPose(Axis.XP.rotationDegrees(OCU_PATH_TILT));
         }
+        poseStack.mulPose(Axis.YP.rotationDegrees(EDGE_INTO_SLOT_YAW));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
+
         poseStack.translate(CARD_RENDER_COMPENSATION.x,
                 CARD_RENDER_COMPENSATION.y, CARD_RENDER_COMPENSATION.z);
         int light = LevelRenderer.getLightColor(minecraft.level, pos);

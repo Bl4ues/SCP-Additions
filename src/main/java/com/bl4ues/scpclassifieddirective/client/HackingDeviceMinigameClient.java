@@ -16,7 +16,8 @@ public final class HackingDeviceMinigameClient {
         ROUND_OK,
         DENIED,
         LOCKED,
-        SUCCESS
+        SUCCESS,
+        COOLDOWN
     }
 
     private static final long LOADING_NANOS = 1_650_000_000L;
@@ -24,7 +25,8 @@ public final class HackingDeviceMinigameClient {
     private static final long ROUND_FLASH_NANOS = 620_000_000L;
     private static final long DENIED_FLASH_NANOS = 900_000_000L;
     private static final long LOCKED_NANOS = 1_650_000_000L;
-    private static final long SUCCESS_NANOS = 2_050_000_000L;
+    private static final long SUCCESS_NANOS = 3_000_000_000L;
+    private static final long COOLDOWN_ATTACHED_NANOS = 520_000_000L;
     private static final long PROBE_NANOS = 950_000_000L;
     private static final int MAX_PROBES = 2;
 
@@ -44,6 +46,8 @@ public final class HackingDeviceMinigameClient {
     private static int queuedRound;
     private static boolean exitSent;
     private static int lastBootCue = -1;
+    private static long cooldownEnd;
+    private static long readyAt;
 
     private HackingDeviceMinigameClient() {
     }
@@ -64,6 +68,8 @@ public final class HackingDeviceMinigameClient {
         queuedRound = round;
         exitSent = false;
         lastBootCue = -1;
+        cooldownEnd = 0L;
+        readyAt = 0L;
         setPhase(Phase.LOADING);
     }
 
@@ -116,6 +122,22 @@ public final class HackingDeviceMinigameClient {
         return waitingForServer;
     }
 
+    public static long cooldownEnd() {
+        return cooldownEnd;
+    }
+
+    public static long readyAt() {
+        return readyAt;
+    }
+
+    public static int cooldownSeconds() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || cooldownEnd <= 0L) return 0;
+        long remaining = cooldownEnd - minecraft.level.getGameTime();
+        if (remaining <= 0L) return 0;
+        return (int) Math.min(5L, Math.max(1L, (remaining + 19L) / 20L));
+    }
+
     public static double phaseProgress() {
         update();
         long elapsed = Math.max(0L, System.nanoTime() - phaseStarted);
@@ -126,6 +148,7 @@ public final class HackingDeviceMinigameClient {
             case DENIED -> DENIED_FLASH_NANOS;
             case LOCKED -> LOCKED_NANOS;
             case SUCCESS -> SUCCESS_NANOS;
+            case COOLDOWN -> COOLDOWN_ATTACHED_NANOS;
             default -> 1L;
         };
         return Mth.clamp(elapsed / (double) duration, 0.0D, 1.0D);
@@ -203,6 +226,14 @@ public final class HackingDeviceMinigameClient {
         }
     }
 
+    public static void beginCooldown(long newCooldownEnd, long newReadyAt) {
+        if (!active()) return;
+        cooldownEnd = Math.max(0L, newCooldownEnd);
+        readyAt = Math.max(cooldownEnd, newReadyAt);
+        HackingDeviceAudioClient.playConfirm(pos);
+        setPhase(Phase.COOLDOWN);
+    }
+
     public static void requestExit() {
         if (!active() || exitSent) return;
         exitSent = true;
@@ -222,6 +253,8 @@ public final class HackingDeviceMinigameClient {
         exitSent = false;
         probeChecksum = -1;
         probeUntil = 0L;
+        cooldownEnd = 0L;
+        readyAt = 0L;
     }
 
     private static void update() {
@@ -257,6 +290,9 @@ public final class HackingDeviceMinigameClient {
             }
             case SUCCESS -> {
                 if (elapsed >= SUCCESS_NANOS) requestExit();
+            }
+            case COOLDOWN -> {
+                if (elapsed >= COOLDOWN_ATTACHED_NANOS) requestExit();
             }
             default -> {
             }

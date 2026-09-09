@@ -3,13 +3,11 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceAttachedRenderer;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceScreenTextClient;
-import com.bl4ues.scpclassifieddirective.client.ScpFonts;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,12 +15,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Adds mapped facility context to the Hacking Device and replaces the old
- * lock drawing with the same terse terminal-language used by its boot sequence.
+ * Adds mapped facility context to the Hacking Device and keeps every injected
+ * line on the same physical pixel CRT as the base minigame renderer.
  */
 @Mixin(value = HackingDeviceAttachedRenderer.class, remap = false)
 public abstract class HackingDeviceUiPolishMixin {
-    private static final float WIDTH = 256.0F;
     private static final int GREEN = 0xFF49F06F;
     private static final int GREEN_BRIGHT = 0xFF78FF94;
     private static final int GREEN_DIM = 0xFF238A42;
@@ -166,28 +163,19 @@ public abstract class HackingDeviceUiPolishMixin {
     }
 
     private static int width(Font font, String text) {
-        return font.width(ScpFonts.anonymousPro(text).getVisualOrderText());
+        return Math.round(HackingDeviceAttachedRenderer.pixelWidth(text));
     }
 
     private static void centered(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers, String text, float y,
             int color) {
-        var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
-        float x = (WIDTH - font.width(sequence)) * 0.5F;
-        font.drawInBatch(sequence, x, y, color, false,
-                poseStack.last().pose(), buffers,
-                Font.DisplayMode.SEE_THROUGH, 0,
-                LightTexture.FULL_BRIGHT);
+        HackingDeviceAttachedRenderer.pixelCentered(text, y, color);
     }
 
     private static void draw(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers, String text, float x,
             float y, int color) {
-        var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
-        font.drawInBatch(sequence, x, y, color, false,
-                poseStack.last().pose(), buffers,
-                Font.DisplayMode.SEE_THROUGH, 0,
-                LightTexture.FULL_BRIGHT);
+        HackingDeviceAttachedRenderer.pixelDraw(text, x, y, color);
     }
 
     private record FacilityContext(String zone, String floor, String room,

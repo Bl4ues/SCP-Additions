@@ -9,38 +9,35 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * One geometry definition for attached-device rendering, its physical screen and
- * camera focus. Values are expressed in GeckoLib's rendered model coordinates.
+ * One geometry definition for attached-device placement and camera focus.
+ *
+ * The screen text renderer does not reconstruct the CRT from these constants: it
+ * captures the live GeckoLib `screen` bone/cube transform directly. These values
+ * intentionally preserve the already-approved operation framing and attachment
+ * motion instead of trying to reinterpret GeckoLib's baked quad normals.
  */
 public final class HackingDeviceAttachmentGeometry {
     /** User-authored back/head contact point used to seat the device on a reader. */
     private static final Vec3 DEVICE_CONTACT = pixels(0.35D, 7.8009D, 1.4402D);
 
     /*
-     * The Blockbench screen cube is authored at origin [-1.6, 6.85, -1.05],
-     * size [2.5, 1.5, 0], pivot [-0.35, 7.725, -0.55] and -22.5 degrees X,
-     * inside a body rotated 180 degrees Y. GeckoLib 4.4.9 mirrors model X and
-     * negates authored X/Y rotations while baking. Applying those same rules
-     * gives the actual rendered plane below. The previous constants applied the
-     * raw Blockbench rotations directly, putting the camera frame on the back of
-     * the device and tilting its centre away from the real CRT.
+     * Proven operation frame from the iteration whose camera was visually
+     * correct. The CRT is viewed from above/front, not directly along a baked
+     * face normal. Keeping this frame separate from the text matrix prevents a
+     * render-side normal change from flipping the operator camera again.
      */
     private static final Vec3 SCREEN_CENTER = pixels(
-            0.03D, 7.8008567746D, 1.2606351953D);
+            -0.03D, 7.41817334D, 1.16496434D);
     private static final Vec3 SCREEN_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 SCREEN_UP = new Vec3(
-            0.0D, 0.9238795325D, -0.3826834324D);
-
-    /** Visible NORTH face of the baked zero-thickness CRT plane. */
+            0.0D, 0.9238795325D, 0.3826834324D);
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
-            0.0D, 0.3826834324D, 0.9238795325D);
+            0.0D, 0.3826834324D, -0.9238795325D);
 
     /*
      * Centre of the OCU reader's visible upper surface. The old attachment point
      * was authored at y=13.85 before the reader's +35 degree X rotation, inside
-     * the reader thickness. Moving only this target to y=14.45 leaves the device
-     * orientation/camera untouched while giving its body 0.05 px clearance over
-     * the actual top face at y=14.4.
+     * the reader thickness. This target keeps the device clear of that surface.
      */
     private static final Vec3 OCU_READER_SURFACE = centeredPixels(
             -9.625D, 13.7724359891D, 1.2489584952D);
@@ -52,7 +49,7 @@ public final class HackingDeviceAttachmentGeometry {
     private HackingDeviceAttachmentGeometry() {
     }
 
-    /** Exact CRT frame in the Hacking Device model's rendered local coordinates. */
+    /** Stable operation frame; live CRT drawing comes from the Gecko screen bone. */
     public static PhysicalBlockScreenGeometry.Frame localScreenFrame() {
         return new PhysicalBlockScreenGeometry.Frame(
                 SCREEN_CENTER, SCREEN_RIGHT, SCREEN_UP, SCREEN_OUTWARD,
@@ -89,7 +86,6 @@ public final class HackingDeviceAttachmentGeometry {
                 new PhysicalBlockScreenGeometry.Frame(screenCenter, right, up,
                         outward, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        // The screen's visible normal is also the reader-facing slide direction.
         return new Attachment(origin, worldTarget, facing, 0.0F, outward,
                 frame, ocu);
     }

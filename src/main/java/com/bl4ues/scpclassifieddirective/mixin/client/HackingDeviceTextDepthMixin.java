@@ -13,13 +13,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * The CRT layer already has a real world-space depth offset. Do not ask
- * POLYGON_OFFSET to solve a second time what shaders routinely make worse.
+ * The attached Hacking Device is rendered from a RenderLevelStageEvent rather
+ * than a BlockEntityRenderer. Shader pipelines can leave the opaque item/CRT
+ * depth pass in front of vanilla NORMAL world text even after a physical offset.
+ * Use the same SEE_THROUGH font pass already used by the SCP-079 world labels so
+ * the CRT glyphs remain visible without adding a second fake screen surface.
  */
 @Mixin(value = HackingDeviceAttachedRenderer.class, remap = false)
 public abstract class HackingDeviceTextDepthMixin {
     @Inject(method = "centered", at = @At("HEAD"), cancellable = true)
-    private static void scpclassifieddirective$centeredNormalDepth(Font font,
+    private static void scpclassifieddirective$centeredShaderSafe(Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers,
             String text, float y, int color, CallbackInfo ci) {
         ci.cancel();
@@ -28,17 +31,17 @@ public abstract class HackingDeviceTextDepthMixin {
                 - font.width(sequence)) * 0.5F;
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.SEE_THROUGH, 0, LightTexture.FULL_BRIGHT);
     }
 
     @Inject(method = "draw", at = @At("HEAD"), cancellable = true)
-    private static void scpclassifieddirective$drawNormalDepth(Font font,
+    private static void scpclassifieddirective$drawShaderSafe(Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers,
             String text, float x, float y, int color, CallbackInfo ci) {
         ci.cancel();
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
+                Font.DisplayMode.SEE_THROUGH, 0, LightTexture.FULL_BRIGHT);
     }
 }

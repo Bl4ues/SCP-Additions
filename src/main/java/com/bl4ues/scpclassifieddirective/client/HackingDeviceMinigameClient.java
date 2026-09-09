@@ -137,7 +137,7 @@ public final class HackingDeviceMinigameClient {
         count = Math.max(1, Math.min(4, count));
         if (count != lastBootCue) {
             lastBootCue = count;
-            HackingDeviceAudioClient.playInterfaceCue(pos, count % 2 == 0);
+            HackingDeviceAudioClient.playBootPulse(pos, count);
         }
         return count;
     }
@@ -147,7 +147,7 @@ public final class HackingDeviceMinigameClient {
         if (phase != Phase.PUZZLE || waitingForServer || puzzle == null) return;
         selectedIndex = Math.floorMod(selectedIndex + delta, 4);
         probeChecksum = -1;
-        HackingDeviceAudioClient.playInterfaceCue(pos, false);
+        HackingDeviceAudioClient.playNavigate(pos);
     }
 
     public static void probe() {
@@ -159,7 +159,7 @@ public final class HackingDeviceMinigameClient {
         probeChecksum = puzzle.computedChecksum(selectedIndex);
         probesUsed++;
         probeUntil = System.nanoTime() + PROBE_NANOS;
-        HackingDeviceAudioClient.playInterfaceCue(pos, true);
+        HackingDeviceAudioClient.playStatus(pos);
     }
 
     public static void submit() {
@@ -169,7 +169,7 @@ public final class HackingDeviceMinigameClient {
             return;
         }
         waitingForServer = true;
-        HackingDeviceAudioClient.playInterfaceCue(pos, true);
+        HackingDeviceAudioClient.playConfirm(pos);
         HackingDeviceNetwork.submitCandidate(pos, selectedIndex);
     }
 
@@ -185,19 +185,19 @@ public final class HackingDeviceMinigameClient {
 
         switch (result) {
             case ROUND_OK -> {
-                HackingDeviceAudioClient.playInterfaceCue(pos, true);
+                HackingDeviceAudioClient.playConfirm(pos);
                 setPhase(Phase.ROUND_OK);
             }
             case DENIED -> {
-                HackingDeviceAudioClient.playInterfaceCue(pos, false);
+                HackingDeviceAudioClient.playDenied(pos);
                 setPhase(Phase.DENIED);
             }
             case LOCKED -> {
-                HackingDeviceAudioClient.playInterfaceCue(pos, false);
+                HackingDeviceAudioClient.playDenied(pos);
                 setPhase(Phase.LOCKED);
             }
             case SUCCESS -> {
-                HackingDeviceAudioClient.playInterfaceCue(pos, true);
+                HackingDeviceAudioClient.playConfirm(pos);
                 setPhase(Phase.SUCCESS);
             }
         }
@@ -230,7 +230,7 @@ public final class HackingDeviceMinigameClient {
         switch (phase) {
             case LOADING -> {
                 if (elapsed >= LOADING_NANOS) {
-                    HackingDeviceAudioClient.playInterfaceCue(pos, true);
+                    HackingDeviceAudioClient.playStatus(pos);
                     setPhase(Phase.BOOT);
                 }
             }

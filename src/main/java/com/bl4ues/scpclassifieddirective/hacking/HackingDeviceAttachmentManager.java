@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.hacking;
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSoundFeedback;
+import com.bl4ues.scpclassifieddirective.item.HackingDeviceItem;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork;
 import net.minecraft.core.BlockPos;
@@ -55,7 +56,8 @@ public final class HackingDeviceAttachmentManager {
         if (data.attached.contains(pos)) return false;
 
         ItemStack held = player.getItemInHand(hand);
-        if (!held.is(ScpClassifiedDirectiveModItems.HACKING_DEVICE.get())) {
+        if (!held.is(ScpClassifiedDirectiveModItems.HACKING_DEVICE.get())
+                || !HackingDeviceItem.isReady(held, level)) {
             return false;
         }
 
@@ -72,14 +74,31 @@ public final class HackingDeviceAttachmentManager {
     public static boolean detach(ServerPlayer player, ServerLevel level,
             BlockPos pos, InteractionHand preferredHand,
             boolean playReturnCue) {
+        return detach(player, level, pos, preferredHand, playReturnCue, 0L, 0L);
+    }
+
+    public static boolean detach(ServerPlayer player, ServerLevel level,
+            BlockPos pos, InteractionHand preferredHand,
+            boolean playReturnCue, long countdownEnd, long readyAt) {
         if (player == null || level == null || pos == null) return false;
         Data data = data(level);
         if (!data.attached.remove(pos)) return false;
         data.setDirty();
 
-        if (!player.getAbilities().instabuild) {
+        if (player.getAbilities().instabuild) {
+            if (preferredHand != null) {
+                ItemStack existing = player.getItemInHand(preferredHand);
+                if (existing.is(ScpClassifiedDirectiveModItems.HACKING_DEVICE.get())
+                        && readyAt > 0L) {
+                    HackingDeviceItem.armCooldown(existing, countdownEnd, readyAt);
+                }
+            }
+        } else {
             ItemStack returned = new ItemStack(
                     ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
+            if (readyAt > 0L) {
+                HackingDeviceItem.armCooldown(returned, countdownEnd, readyAt);
+            }
             if (preferredHand != null
                     && player.getItemInHand(preferredHand).isEmpty()) {
                 player.setItemInHand(preferredHand, returned);

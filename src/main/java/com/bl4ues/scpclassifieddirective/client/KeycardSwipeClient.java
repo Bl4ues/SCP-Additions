@@ -39,32 +39,33 @@ public final class KeycardSwipeClient {
     private static final Vec3 LEFT_START = pixels(18.025D, 2.8D, 14.5D);
     private static final Vec3 LEFT_END = pixels(18.025D, -0.1D, 14.5D);
 
-    /*
-     * OCU coordinates are Gecko/Blockbench model coordinates centered on the
-     * block origin, unlike the old JSON keycard readers whose authored X/Z use
-     * vanilla 0..16 block coordinates. Keep these in centered model space and
-     * convert them explicitly below.
-     */
+    /* Exact authored swipe path supplied for the OCU reader. */
     private static final Vec3 OCU_START = pixels(-10.3D, 15.9D, 2.95D);
     private static final Vec3 OCU_END = pixels(-10.3D, 13.05D, -1.15D);
 
     // Raw keycard geometry occupies x=6.8..9.1, y=1..4.6, z=7.5..7.6.
     private static final Vec3 CARD_MODEL_CENTER = pixels(7.95D, 2.8D, 7.55D);
-    /* ItemRenderer always translates a raw baked item by -0.5 on each axis. */
+    /* ItemRenderer translates baked items by -0.5 on each axis. */
     private static final Vec3 CARD_RENDER_COMPENSATION = new Vec3(
             0.5D - CARD_MODEL_CENTER.x,
             0.5D - CARD_MODEL_CENTER.y,
             0.5D - CARD_MODEL_CENTER.z);
 
     /*
-     * The wall-reader arrow expects the card rotated a quarter turn and inverted
-     * relative to its normal item presentation. 270 degrees is deliberately not
-     * simplified to -90 here because the intent is "90 + upside-down".
+     * The wall reader wants the portrait card upside-down while it travels down
+     * the slot arrow. The previous 270-degree roll turned the card landscape;
+     * 180 keeps the long edge vertical and inverts the card as intended.
      */
-    private static final float READER_CARD_ROLL = 270.0F;
+    private static final float READER_CARD_ROLL = 180.0F;
 
-    /* OCU swipe vector is the authored diagonal track on the reader face. */
-    private static final float OCU_CARD_TILT = 55.2F;
+    /*
+     * The OCU reader itself is authored at 35 degrees around X in
+     * containment_stand.geo.json. The old 55.2-degree value was derived from the
+     * movement vector, which made the card chase its path instead of lying on the
+     * actual reader surface.
+     */
+    private static final float OCU_READER_TILT = 35.0F;
+    private static final float OCU_CARD_ROLL = 180.0F;
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
 
@@ -149,7 +150,8 @@ public final class KeycardSwipeClient {
         poseStack.translate(world.x, world.y, world.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(modelYaw(facing)));
         if (swipe.objectContainmentUnit) {
-            poseStack.mulPose(Axis.XP.rotationDegrees(OCU_CARD_TILT));
+            poseStack.mulPose(Axis.XP.rotationDegrees(OCU_READER_TILT));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(OCU_CARD_ROLL));
         } else {
             poseStack.mulPose(Axis.ZP.rotationDegrees(READER_CARD_ROLL));
         }

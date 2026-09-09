@@ -73,6 +73,7 @@
     "client.HackingDeviceUiPolishMixin",
     "client.HackingDeviceAttachedRendererInvoker",
     "client.HackingDeviceScreenTransformMixin",
+    "client.HackingDeviceTextDepthMixin",
     "client.ScpDeathScreenLiveFeedMixin",
     "client.ResponsiveScreenForgeHooksMixin",
     "client.ResponsiveScreenRenderEventMixin",

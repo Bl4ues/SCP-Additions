@@ -75,11 +75,20 @@ public final class HackingDeviceScreen extends Screen {
     private void closeSession() {
         if (closing) return;
         closing = true;
-        HackingDeviceMinigameClient.requestExit();
-        // requestExit() is deliberately a no-op once its client session is gone.
-        // Focus must still be released in that race, otherwise the camera remains
-        // pinned while normal inventory/world input resumes.
-        HackingDeviceFocusClient.end();
+
+        /*
+         * A replacement StartSession can install a new minigame before Minecraft
+         * finishes disposing the previous Screen instance. Never let that stale
+         * screen send ExitSession for the new target. Conversely, if the client
+         * session has already vanished, still release an orphaned camera focus.
+         */
+        BlockPos current = HackingDeviceMinigameClient.pos();
+        if (current != null && pos.equals(current)) {
+            HackingDeviceMinigameClient.requestExit();
+        } else if (!HackingDeviceMinigameClient.active()) {
+            HackingDeviceFocusClient.end();
+        }
+
         if (minecraft != null && minecraft.screen == this) {
             minecraft.setScreen(null);
         }

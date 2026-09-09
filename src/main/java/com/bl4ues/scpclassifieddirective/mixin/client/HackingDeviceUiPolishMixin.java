@@ -21,6 +21,8 @@ public abstract class HackingDeviceUiPolishMixin {
     private static final int GREEN_BRIGHT = 0xFF78FF94;
     private static final int GREEN_DIM = 0xFF238A42;
     private static final int AMBER = 0xFFFFC857;
+    private static final float PAD_X = 12.0F;
+    private static final float CONTENT_WIDTH = 232.0F;
 
     @Inject(method = "renderBoot", at = @At("HEAD"), cancellable = true)
     private static void scpclassifieddirective$renderMappedBoot(Font font,
@@ -33,22 +35,22 @@ public abstract class HackingDeviceUiPolishMixin {
         draw(font, poseStack, buffers,
                 String.format("CI//SCIPNET-RIPPER  KCR-L%d",
                         HackingDeviceMinigameClient.accessLevel()),
-                8.0F, 7.0F, GREEN_DIM);
+                PAD_X, 7.0F, GREEN_DIM);
 
         float bootY;
         float bootStep;
         if (facility != null) {
             drawFit(font, poseStack, buffers,
                     "STOLEN MAP: " + facility.zone() + " / " + facility.floor(),
-                    8.0F, 21.0F, 240.0F, AMBER);
+                    PAD_X, 21.0F, CONTENT_WIDTH, AMBER);
             drawFit(font, poseStack, buffers,
                     "TARGET ROOM: " + facility.room(),
-                    8.0F, 34.0F, 240.0F, GREEN_BRIGHT);
+                    PAD_X, 34.0F, CONTENT_WIDTH, GREEN_BRIGHT);
             bootY = 52.0F;
             bootStep = 16.0F;
         } else {
             draw(font, poseStack, buffers,
-                    "STOLEN MAP: [NO FACILITY CACHE]", 8.0F, 24.0F,
+                    "STOLEN MAP: [NO FACILITY CACHE]", PAD_X, 24.0F,
                     AMBER);
             bootY = 43.0F;
             bootStep = 18.0F;
@@ -62,13 +64,13 @@ public abstract class HackingDeviceUiPolishMixin {
                 "> BREACH MODULES....ARMED"
         };
         for (int index = 0; index < count; index++) {
-            draw(font, poseStack, buffers, lines[index], 8.0F,
+            draw(font, poseStack, buffers, lines[index], PAD_X,
                     bootY + index * bootStep,
                     index == count - 1 ? GREEN_BRIGHT : GREEN);
         }
 
         draw(font, poseStack, buffers, "PATCHSET: BLACKBOX/0.7F-UNSIGNED",
-                8.0F, 139.0F, AMBER);
+                PAD_X, 139.0F, AMBER);
     }
 
     @Inject(method = "renderSuccess", at = @At("HEAD"), cancellable = true)

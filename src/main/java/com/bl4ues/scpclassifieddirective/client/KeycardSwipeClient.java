@@ -45,31 +45,20 @@ public final class KeycardSwipeClient {
 
     /*
      * Raw keycard geometry is x=6.8..9.1, y=1..4.6, z=7.5..7.6. The supplied
-     * coordinates describe the physical swipe line, not the centre of the card.
-     * Keep the measured x=6.8 edge on that line for both reader types.
+     * coordinates describe the physical line followed by the same thin edge of
+     * the card on every reader. Keep that x=6.8 edge on the authored path.
      */
-    private static final Vec3 WALL_SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
-    private static final Vec3 OCU_SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
-    private static final Vec3 WALL_RENDER_COMPENSATION = compensation(WALL_SLOT_EDGE);
-    private static final Vec3 OCU_RENDER_COMPENSATION = compensation(OCU_SLOT_EDGE);
+    private static final Vec3 SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
+    private static final Vec3 RENDER_COMPENSATION = compensation(SLOT_EDGE);
 
     /*
-     * Wall readers are literal slots: rotate the card 90 degrees in Y so its
-     * thin edge enters the groove, then flip it 180 degrees in Z so the printed
-     * top/arrow end points down along the reader arrow.
+     * This is the orientation that already works on the wall readers: the card
+     * turns edge-on by 90 degrees around Y, then flips 180 degrees around Z so
+     * its narrow/top end follows the reader arrow. The OCU uses the exact same
+     * physical edge and orientation; only its measured swipe path differs.
      */
     private static final float EDGE_INTO_SLOT_YAW = 90.0F;
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
-
-    /*
-     * The OCU is different. Its reader is an exposed sloped swipe surface, not a
-     * wall slot. The path below is the surface tangent. Rotating only around X by
-     * this exact angle lays the card flat on that surface; adding the wall-reader
-     * 90-degree Y rotation was what made the card stand edge-on inside the OCU.
-     */
-    private static final float OCU_PATH_TILT = (float) Math.toDegrees(Math.atan2(
-            OCU_START.z - OCU_END.z,
-            OCU_START.y - OCU_END.y));
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
 
@@ -154,22 +143,12 @@ public final class KeycardSwipeClient {
         poseStack.translate(world.x, world.y, world.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(modelYaw(facing)));
 
-        if (swipe.objectContainmentUnit) {
-            /*
-             * Flat against the OCU reader. Local +Y is flipped first so the
-             * card's printed top/arrow end points from OCU_START toward OCU_END;
-             * the X tilt then makes that axis coincide with the measured path.
-             */
-            poseStack.mulPose(Axis.XP.rotationDegrees(OCU_PATH_TILT));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
-        } else {
-            poseStack.mulPose(Axis.YP.rotationDegrees(EDGE_INTO_SLOT_YAW));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
-        }
+        // Same physical card edge and orientation on wall readers and the OCU.
+        poseStack.mulPose(Axis.YP.rotationDegrees(EDGE_INTO_SLOT_YAW));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
+        poseStack.translate(RENDER_COMPENSATION.x,
+                RENDER_COMPENSATION.y, RENDER_COMPENSATION.z);
 
-        Vec3 compensation = swipe.objectContainmentUnit
-                ? OCU_RENDER_COMPENSATION : WALL_RENDER_COMPENSATION;
-        poseStack.translate(compensation.x, compensation.y, compensation.z);
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
         minecraft.getItemRenderer().renderStatic(card, ItemDisplayContext.NONE,
                 light, OverlayTexture.NO_OVERLAY, poseStack, buffers,

@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.client;
 import com.bl4ues.scpclassifieddirective.item.HackingDeviceItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -10,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.cache.object.GeoCube;
@@ -17,7 +19,6 @@ import software.bernie.geckolib.cache.object.GeoQuad;
 import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
-import software.bernie.geckolib.util.RenderUtil;
 
 /**
  * GeckoLib renderer for the Hacking Device.
@@ -129,9 +130,7 @@ public final class HackingDeviceItemRenderer
         float depthScale = Math.min(pixelScaleX, pixelScaleY);
 
         poseStack.pushPose();
-        RenderUtil.translateToPivotPoint(poseStack, screenCube);
-        RenderUtil.rotateMatrixAroundCube(poseStack, screenCube);
-        RenderUtil.translateAwayFromPivotPoint(poseStack, screenCube);
+        applyCubeTransform(poseStack, screenCube);
         poseStack.translate(
                 topLeft.x() + normal.x() * SCREEN_TEXT_OFFSET,
                 topLeft.y() + normal.y() * SCREEN_TEXT_OFFSET,
@@ -150,6 +149,25 @@ public final class HackingDeviceItemRenderer
         // Font rendering selects its own buffers. Restore the model's buffer as
         // required by GeoRenderLayer before GeckoLib continues recursion.
         bufferSource.getBuffer(originalRenderType);
+    }
+
+    /** Mirrors GeckoLib's cube-pivot transform without depending on internal util APIs. */
+    private static void applyCubeTransform(PoseStack poseStack, GeoCube cube) {
+        Vec3 pivot = cube.pivot();
+        Vec3 rotation = cube.rotation();
+        poseStack.translate(pivot.x / 16.0D, pivot.y / 16.0D,
+                pivot.z / 16.0D);
+        if (rotation.z != 0.0D) {
+            poseStack.mulPose(Axis.ZP.rotation((float) rotation.z));
+        }
+        if (rotation.y != 0.0D) {
+            poseStack.mulPose(Axis.YP.rotation((float) rotation.y));
+        }
+        if (rotation.x != 0.0D) {
+            poseStack.mulPose(Axis.XP.rotation((float) rotation.x));
+        }
+        poseStack.translate(-pivot.x / 16.0D, -pivot.y / 16.0D,
+                -pivot.z / 16.0D);
     }
 
     private static float distance(Vector3f first, Vector3f second) {

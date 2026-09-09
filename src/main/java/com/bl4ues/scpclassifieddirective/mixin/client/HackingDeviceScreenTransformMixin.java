@@ -9,13 +9,13 @@ import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGe
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
 import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,12 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(value = HackingDeviceAttachedRenderer.class, remap = false)
 public abstract class HackingDeviceScreenTransformMixin {
-    /*
-     * Use a real physical separation instead of POLYGON_OFFSET. The latter is
-     * unreliable on small sloped world-space text with shader pipelines (the
-     * Facility Sign renderer follows the same rule). 0.04 model pixel remains
-     * visually flush while giving the depth buffer an unambiguous front layer.
-     */
+    /* 0.04 model pixel: visually flush, but unambiguously in front of the plane. */
     private static final double TEXT_EPSILON = 0.04D / 16.0D;
     private static final float SCALE = (float)
             (HackingDeviceAttachmentGeometry.SCREEN_WIDTH
@@ -53,32 +48,41 @@ public abstract class HackingDeviceScreenTransformMixin {
         Frame frame = attachment.screen();
         Vec3 surfaceCenter = frame.center()
                 .add(frame.outward().scale(seating));
-
-        /*
-         * The world camera is expected on the authored OUTWARD side, but use the
-         * viewer side for the tiny depth separation so an oblique inspection can
-         * never put the glyphs behind the zero-thickness screen plane.
-         */
-        double side = camera.subtract(surfaceCenter).dot(frame.outward()) >= 0.0D
-                ? 1.0D : -1.0D;
-        Vec3 center = surfaceCenter
-                .add(frame.outward().scale(TEXT_EPSILON * side))
+        Vec3 textCenter = surfaceCenter
+                .add(frame.outward().scale(TEXT_EPSILON))
                 .subtract(camera);
 
         /*
-         * Exact authored transform of the CRT cube: body Y = 180 degrees,
-         * screen X = -22.5 degrees. The translation is the already-transformed
-         * physical screen centre, so no second imaginary screen is reconstructed.
+         * Do not reconstruct the CRT with yaw/pitch a second time. The Frame is
+         * already the transformed physical plane used by the renderer and camera.
+         * Mapping font axes straight onto that basis prevents the previous
+         * "text floating in a wall / inside the model" failures caused by a
+         * second, slightly different transform chain.
+         *
+         * Font +X = screen-right. Font +Y runs downward, hence -frame.up().
          */
-        poseStack.pushPose();
-        poseStack.translate(center.x, center.y, center.z);
-        poseStack.mulPose(Axis.YP.rotationDegrees(
-                HackingDeviceAttachmentGeometry.modelYaw(attachment.facing())
-                        + 180.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(-22.5F));
+        Vec3 right = frame.right().normalize();
+        Vec3 down = frame.up().scale(-1.0D).normalize();
+        Vec3 normal = frame.outward().normalize();
 
-        // Font +X goes to viewer-right and font +Y goes downward on the CRT.
-        poseStack.scale(SCALE, -SCALE, SCALE);
+        Matrix4f physicalScreen = new Matrix4f().identity();
+        // JOML local X/Y/Z axes are columns 0/1/2; translation is column 3.
+        physicalScreen.m00((float) right.x);
+        physicalScreen.m01((float) right.y);
+        physicalScreen.m02((float) right.z);
+        physicalScreen.m10((float) down.x);
+        physicalScreen.m11((float) down.y);
+        physicalScreen.m12((float) down.z);
+        physicalScreen.m20((float) normal.x);
+        physicalScreen.m21((float) normal.y);
+        physicalScreen.m22((float) normal.z);
+        physicalScreen.m30((float) textCenter.x);
+        physicalScreen.m31((float) textCenter.y);
+        physicalScreen.m32((float) textCenter.z);
+
+        poseStack.pushPose();
+        poseStack.mulPoseMatrix(physicalScreen);
+        poseStack.scale(SCALE, SCALE, SCALE);
         poseStack.translate(
                 -HackingDeviceScreenTextClient.LOGICAL_WIDTH * 0.5F,
                 -HackingDeviceScreenTextClient.LOGICAL_HEIGHT * 0.5F,

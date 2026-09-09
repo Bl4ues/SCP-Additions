@@ -16,27 +16,34 @@ public final class HackingDeviceAttachmentGeometry {
     /** User-authored back/head contact point used to seat the device on a reader. */
     private static final Vec3 DEVICE_CONTACT = pixels(0.35D, 7.8009D, 1.4402D);
 
-    /**
-     * Exact screen center after the screen cube's -22.5 degree X rotation and
-     * the body's 180 degree Y rotation. The model itself owns the black CRT plane;
-     * this frame is used only for text and camera geometry.
+    /*
+     * The screen bone is parented to a body rotated 180 degrees around Y. The
+     * previous calculation re-rotated the zero-thickness screen cube with the
+     * wrong X handedness and produced Y=7.418 / Z=1.165, which put the logical
+     * screen below and behind the CRT that GeckoLib actually renders. The screen
+     * bone pivot is already the authored center of the visible plane after its
+     * local tilt: [-0.35, 7.80085677, -1.05977520]. Applying only the parent's
+     * 180-degree body rotation yields this exact model-space center.
      */
     private static final Vec3 SCREEN_CENTER = pixels(
-            -0.03D, 7.41817334D, 1.16496434D);
+            -0.03D, 7.80085677D, 1.26063520D);
+
+    /*
+     * Visible CRT basis. Gecko/Blockbench's X-rotation handedness is opposite the
+     * earlier hand-derived matrix here. The screen slopes upward toward the
+     * viewer, so a camera on OUTWARD is naturally above the display and normal
+     * to it instead of driving through the device into the wall.
+     */
     private static final Vec3 SCREEN_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 SCREEN_UP = new Vec3(
-            0.0D, 0.9238795325D, 0.3826834324D);
-    /**
-     * Viewer-side CRT normal. The attachment contact is on the back of the head
-     * at positive local Z, so the visible CRT faces the opposite half-space.
-     * This sign is shared by rendering, seating animation and camera focus.
-     */
+            0.0D, 0.9238795325D, -0.3826834324D);
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
-            0.0D, 0.3826834324D, -0.9238795325D);
+            0.0D, 0.3826834324D, 0.9238795325D);
 
     public static final double SCREEN_WIDTH = 2.5D / 16.0D;
     public static final double SCREEN_HEIGHT = 1.5D / 16.0D;
-    public static final double FOCUS_DISTANCE = 0.230D;
+    /** Comfortable close-up without putting the eye inside the bulky CRT hood. */
+    public static final double FOCUS_DISTANCE = 0.335D;
 
     private HackingDeviceAttachmentGeometry() {
     }

@@ -23,6 +23,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,14 +52,24 @@ public final class KeycardSwipeClient {
     private static final Vec3 SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
     private static final Vec3 RENDER_COMPENSATION = compensation(SLOT_EDGE);
 
-    /*
-     * This is the orientation that already works on the wall readers: the card
-     * turns edge-on by 90 degrees around Y, then flips 180 degrees around Z so
-     * its narrow/top end follows the reader arrow. The OCU uses the exact same
-     * physical edge and orientation; only its measured swipe path differs.
-     */
+    /* Wall-reader orientation already validated in-game. */
     private static final float EDGE_INTO_SLOT_YAW = 90.0F;
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
+
+    /*
+     * OCU reader is not vertical: the measured slot runs from OCU_START to
+     * OCU_END in the local Y/Z plane. Build the card basis from that real path
+     * instead of keeping the wall-reader pitch and merely moving it diagonally.
+     *
+     * Card local +Y is its long axis and therefore follows the swipe direction.
+     * Local +Z remains the thin edge normal (+X in OCU-local space). Local +X
+     * is derived so X x Y = Z, preserving the same handedness as the already
+     * correct wall-reader orientation while keeping the card upside-down along
+     * the arrow direction.
+     */
+    private static final Vec3 OCU_LONG_AXIS = OCU_END.subtract(OCU_START).normalize();
+    private static final Vec3 OCU_THIN_NORMAL = new Vec3(1.0D, 0.0D, 0.0D);
+    private static final Vec3 OCU_WIDTH_AXIS = OCU_LONG_AXIS.cross(OCU_THIN_NORMAL).normalize();
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
 
@@ -143,9 +154,12 @@ public final class KeycardSwipeClient {
         poseStack.translate(world.x, world.y, world.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(modelYaw(facing)));
 
-        // Same physical card edge and orientation on wall readers and the OCU.
-        poseStack.mulPose(Axis.YP.rotationDegrees(EDGE_INTO_SLOT_YAW));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
+        if (swipe.objectContainmentUnit) {
+            applyOcuSlotOrientation(poseStack);
+        } else {
+            poseStack.mulPose(Axis.YP.rotationDegrees(EDGE_INTO_SLOT_YAW));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
+        }
         poseStack.translate(RENDER_COMPENSATION.x,
                 RENDER_COMPENSATION.y, RENDER_COMPENSATION.z);
 
@@ -154,6 +168,21 @@ public final class KeycardSwipeClient {
                 light, OverlayTexture.NO_OVERLAY, poseStack, buffers,
                 minecraft.level, 0);
         poseStack.popPose();
+    }
+
+    private static void applyOcuSlotOrientation(PoseStack poseStack) {
+        Matrix4f basis = new Matrix4f().identity();
+        // JOML transforms local X/Y/Z from columns 0/1/2 respectively.
+        basis.m00((float) OCU_WIDTH_AXIS.x);
+        basis.m01((float) OCU_WIDTH_AXIS.y);
+        basis.m02((float) OCU_WIDTH_AXIS.z);
+        basis.m10((float) OCU_LONG_AXIS.x);
+        basis.m11((float) OCU_LONG_AXIS.y);
+        basis.m12((float) OCU_LONG_AXIS.z);
+        basis.m20((float) OCU_THIN_NORMAL.x);
+        basis.m21((float) OCU_THIN_NORMAL.y);
+        basis.m22((float) OCU_THIN_NORMAL.z);
+        poseStack.mulPoseMatrix(basis);
     }
 
     private static Vec3 compensation(Vec3 anchor) {

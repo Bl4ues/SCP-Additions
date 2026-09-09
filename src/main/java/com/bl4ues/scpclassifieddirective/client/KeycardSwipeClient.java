@@ -46,19 +46,21 @@ public final class KeycardSwipeClient {
     /*
      * Raw keycard geometry is x=6.8..9.1, y=1..4.6, z=7.5..7.6. The supplied
      * swipe coordinates describe the reader groove itself, not the centre of the
-     * card. The wall reader receives the x=6.8 edge; the OCU uses the opposite
-     * x=9.1 edge because its sloped surface normal points the other way. In both
-     * cases the card body extends away from the hardware rather than through it.
+     * card. Both readers anchor the x=6.8 edge. With the OCU's measured diagonal
+     * transform, local +X is the outward surface direction, so anchoring x=6.8
+     * makes the rest of the card extend away from the OCU instead of through its
+     * reader housing. The previous x=9.1 anchor put the entire card on the inward
+     * side even though the path itself was correct.
      */
     private static final Vec3 WALL_SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
-    private static final Vec3 OCU_SLOT_EDGE = pixels(9.1D, 2.8D, 7.55D);
+    private static final Vec3 OCU_SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
     private static final Vec3 WALL_RENDER_COMPENSATION = compensation(WALL_SLOT_EDGE);
     private static final Vec3 OCU_RENDER_COMPENSATION = compensation(OCU_SLOT_EDGE);
 
     /*
      * A swipe reader receives the card edge-on. +90 Y turns the flat keycard
      * perpendicular to the reader face, and 180 Z makes it upside down so the
-     * printed face follows the reader arrow during the downward pass.
+     * printed top/arrow end travels downward with the swipe.
      */
     private static final float EDGE_INTO_SLOT_YAW = 90.0F;
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
@@ -66,8 +68,7 @@ public final class KeycardSwipeClient {
     /*
      * The OCU trajectory is measured along its sloped reader surface. Derive the
      * X tilt from that exact path. The approximately 55.2-degree path angle is
-     * complementary to the reader's 35-degree surface tilt; substituting 35 here
-     * is what made the earlier card float across the assembly.
+     * complementary to the reader's 35-degree surface tilt.
      */
     private static final float OCU_PATH_TILT = (float) Math.toDegrees(Math.atan2(
             OCU_START.z - OCU_END.z,

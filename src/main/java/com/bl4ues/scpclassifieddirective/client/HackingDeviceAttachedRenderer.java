@@ -4,7 +4,6 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient.Phase;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
-import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -16,6 +15,7 @@ import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -27,11 +27,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
-/** Renders reader-attached Hacking Devices in world space. */
+/** Renders reader-attached Hacking Devices and their physical CRTs. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceAttachedRenderer {
@@ -45,23 +45,59 @@ public final class HackingDeviceAttachedRenderer {
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
     private static final double TEXT_EPSILON = 0.0080D;
 
+    /*
+     * Exact rendered plane of the 2.5 x 1.5 x 0 cube inside bone `screen`.
+     *
+     * These values include GeckoLib 4.4.9's X mirroring, the body's 180 degree
+     * Y rotation, the cube's baked +22.5 degree X rotation, and the net +0.01 Y
+     * introduced by the vanilla custom-item -> GeoItemRenderer handoff. They are
+     * deliberately separate from the already-approved camera framing constants:
+     * the camera looks at the CRT obliquely, while these axes are the CRT itself.
+     */
+    private static final Vec3 LOCAL_CRT_CENTER = new Vec3(
+            0.001875D, 0.49755355D, 0.07878970D);
+    private static final Vec3 LOCAL_CRT_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
+    private static final Vec3 LOCAL_CRT_UP = new Vec3(
+            0.0D, 0.9238795325D, -0.3826834324D);
+    private static final Vec3 LOCAL_CRT_OUTWARD = new Vec3(
+            0.0D, -0.3826834324D, -0.9238795325D);
+
+    /*
+     * Body rendering happens while Forge is rendering block entities. Text is
+     * intentionally deferred until AFTER_PARTICLES. Oculus/Hysteria can compose
+     * another world target after AFTER_BLOCK_ENTITIES; drawing Font geometry in
+     * the earlier stage made perfectly valid glyph buffers disappear later in
+     * the shader pipeline. The model remains in the opaque stage, only the tiny
+     * CRT character pass moves later.
+     */
+    private static final Map<BlockPos, Matrix4f> SCREEN_TRANSFORMS =
+            new HashMap<>();
+
     private HackingDeviceAttachedRenderer() {
     }
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
+            renderBodies(event);
+        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            renderScreens(event);
+        }
+    }
+
+    private static void renderBodies(RenderLevelStageEvent event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            SCREEN_TRANSFORMS.clear();
             return;
         }
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) return;
 
         PoseStack poseStack = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
         Set<BlockPos> visibleDevices = HackingDeviceClientState.snapshot();
-        List<PendingScreen> pendingScreens = new ArrayList<>();
+        SCREEN_TRANSFORMS.clear();
 
         for (BlockPos pos : visibleDevices) {
             if (!minecraft.level.hasChunkAt(pos)
@@ -71,46 +107,46 @@ public final class HackingDeviceAttachedRenderer {
             BlockState state = minecraft.level.getBlockState(pos);
             Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
                     state);
-            if (attachment != null) {
-                Matrix4f screenTransform = renderDevice(minecraft, poseStack,
-                        buffers, camera, pos, attachment);
+            if (attachment == null) continue;
 
-                /*
-                 * The live Gecko capture is preferred because it follows the
-                 * authored screen bone exactly. If a shader/renderer wrapper
-                 * prevents that GeoRenderLayer callback from producing a matrix,
-                 * fall back to the same physical frame used by the approved
-                 * operation camera instead of silently drawing nothing.
-                 */
-                if (screenTransform == null) {
-                    screenTransform = fallbackScreenTransform(poseStack, camera,
-                            pos, attachment);
-                }
-                if (screenTransform != null) {
-                    pendingScreens.add(new PendingScreen(pos, screenTransform));
-                }
-            }
+            renderDevice(minecraft, poseStack, buffers, camera, pos, attachment);
+            Matrix4f transform = physicalScreenTransform(poseStack, camera, pos,
+                    attachment);
+            if (transform != null) SCREEN_TRANSFORMS.put(pos.immutable(), transform);
         }
 
-        /*
-         * Finish the opaque Gecko body/glass before asking the font renderer for
-         * its own text render type. This mirrors the Diagnostic Terminal's pass
-         * separation and avoids carrying an item RenderType into the CRT pass.
-         */
-        buffers.endBatch();
-        for (PendingScreen pending : pendingScreens) {
-            poseStack.pushPose();
-            poseStack.last().pose().set(pending.transform());
-            renderAttachedScreenText(pending.pos(), minecraft.font, poseStack,
-                    buffers);
-            poseStack.popPose();
-        }
+        // Finish every opaque/PBR item pass before any later CRT characters.
         buffers.endBatch();
     }
 
-    private static Matrix4f renderDevice(Minecraft minecraft,
-            PoseStack poseStack, MultiBufferSource.BufferSource buffers,
-            Vec3 camera, BlockPos pos, Attachment attachment) {
+    private static void renderScreens(RenderLevelStageEvent event) {
+        if (SCREEN_TRANSFORMS.isEmpty()) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            SCREEN_TRANSFORMS.clear();
+            return;
+        }
+
+        PoseStack poseStack = event.getPoseStack();
+        MultiBufferSource.BufferSource buffers =
+                minecraft.renderBuffers().bufferSource();
+
+        for (Map.Entry<BlockPos, Matrix4f> entry : SCREEN_TRANSFORMS.entrySet()) {
+            BlockPos pos = entry.getKey();
+            if (!minecraft.level.hasChunkAt(pos)) continue;
+            poseStack.pushPose();
+            poseStack.last().pose().set(entry.getValue());
+            renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
+            poseStack.popPose();
+        }
+
+        buffers.endBatch();
+        SCREEN_TRANSFORMS.clear();
+    }
+
+    private static void renderDevice(Minecraft minecraft, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, Vec3 camera, BlockPos pos,
+            Attachment attachment) {
         double seating = HackingDeviceClientState.seatingOffset(pos);
         Vec3 origin = attachment.modelOrigin()
                 .add(attachment.mountOutward().scale(seating))
@@ -127,53 +163,42 @@ public final class HackingDeviceAttachedRenderer {
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
         ItemStack deviceStack = new ItemStack(
                 ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
-
-        /*
-         * ItemDisplayContext.NONE is also used for this world render, so identify
-         * the target explicitly while GeckoLib walks the model. The item renderer
-         * captures the final logical-screen transform from the live screen cube.
-         */
-        Matrix4f screenTransform = null;
-        HackingDeviceItemRenderer.beginAttachedRender(pos);
-        try {
-            minecraft.getItemRenderer().renderStatic(deviceStack,
-                    ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
-                    poseStack, buffers, minecraft.level, 0);
-            screenTransform = HackingDeviceItemRenderer
-                    .takeAttachedScreenTransform();
-        } finally {
-            HackingDeviceItemRenderer.endAttachedRender();
-            poseStack.popPose();
-        }
-        return screenTransform;
+        minecraft.getItemRenderer().renderStatic(deviceStack,
+                ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
+                poseStack, buffers, minecraft.level, 0);
+        poseStack.popPose();
     }
 
     /**
-     * Shader-safe fallback using the already-approved physical operation frame.
-     * The font's logical origin is the visible top-left of the CRT and logical Y
-     * runs downward. Flipping RIGHT together with the normal preserves readable
-     * winding if the camera ever ends up on the opposite side.
+     * Builds the logical 256x154 screen directly from the authored screen cube's
+     * real rendered plane. There is no guessed bone normal and no camera-derived
+     * tilt here: the same static model that draws the black rectangle supplies
+     * this centre and basis.
      */
-    private static Matrix4f fallbackScreenTransform(PoseStack poseStack,
+    private static Matrix4f physicalScreenTransform(PoseStack poseStack,
             Vec3 camera, BlockPos pos, Attachment attachment) {
-        if (attachment == null) return null;
-
         double seating = HackingDeviceClientState.seatingOffset(pos);
-        Frame frame = attachment.screen();
-        Vec3 center = frame.center()
-                .add(attachment.mountOutward().scale(seating));
-        Vec3 up = frame.up().normalize();
-        Vec3 right = frame.right().normalize();
-        Vec3 normal = frame.outward().normalize();
+        Direction facing = attachment.facing();
 
+        Vec3 center = attachment.modelOrigin()
+                .add(attachment.mountOutward().scale(seating))
+                .add(rotateHorizontal(LOCAL_CRT_CENTER, facing));
+        Vec3 right = rotateHorizontal(LOCAL_CRT_RIGHT, facing).normalize();
+        Vec3 up = rotateHorizontal(LOCAL_CRT_UP, facing).normalize();
+        Vec3 normal = rotateHorizontal(LOCAL_CRT_OUTWARD, facing).normalize();
+
+        /* Keep the text readable if another camera observes the attached unit
+         * from behind, without moving the physical plane itself. */
         if (camera.subtract(center).dot(normal) < 0.0D) {
             normal = normal.scale(-1.0D);
             right = right.scale(-1.0D);
         }
 
         Vec3 topLeft = center
-                .add(right.scale(-frame.width() * 0.5D))
-                .add(up.scale(frame.height() * 0.5D))
+                .add(right.scale(-HackingDeviceAttachmentGeometry.SCREEN_WIDTH
+                        * 0.5D))
+                .add(up.scale(HackingDeviceAttachmentGeometry.SCREEN_HEIGHT
+                        * 0.5D))
                 .add(normal.scale(TEXT_EPSILON))
                 .subtract(camera);
 
@@ -188,20 +213,32 @@ public final class HackingDeviceAttachedRenderer {
         basis.m21((float) normal.y);
         basis.m22((float) normal.z);
 
-        float pixelScaleX = (float) (frame.width() / LOGICAL_WIDTH);
-        float pixelScaleY = (float) (frame.height() / LOGICAL_HEIGHT);
+        float pixelScaleX = (float)
+                (HackingDeviceAttachmentGeometry.SCREEN_WIDTH / LOGICAL_WIDTH);
+        float pixelScaleY = (float)
+                (HackingDeviceAttachmentGeometry.SCREEN_HEIGHT / LOGICAL_HEIGHT);
         float depthScale = Math.min(pixelScaleX, pixelScaleY);
 
         poseStack.pushPose();
         poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
         poseStack.mulPoseMatrix(basis);
+        // Match the proven Diagnostic Terminal convention: logical Y goes down.
         poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
         Matrix4f transform = new Matrix4f(poseStack.last().pose());
         poseStack.popPose();
         return transform;
     }
 
-    /** Draws characters using the physical screen transform resolved above. */
+    private static Vec3 rotateHorizontal(Vec3 value, Direction facing) {
+        return switch (facing) {
+            case EAST -> new Vec3(-value.z, value.y, value.x);
+            case SOUTH -> new Vec3(-value.x, value.y, -value.z);
+            case WEST -> new Vec3(value.z, value.y, -value.x);
+            default -> value;
+        };
+    }
+
+    /** Draws characters using the physical CRT transform resolved above. */
     public static void renderAttachedScreenText(BlockPos pos, Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
         if (HackingDeviceMinigameClient.active()
@@ -387,10 +424,8 @@ public final class HackingDeviceAttachedRenderer {
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        SCREEN_TRANSFORMS.clear();
         HackingDeviceClientState.clear();
         HackingDeviceFocusClient.forceClear();
-    }
-
-    private record PendingScreen(BlockPos pos, Matrix4f transform) {
     }
 }

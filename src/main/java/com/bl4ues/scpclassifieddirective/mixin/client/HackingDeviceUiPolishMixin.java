@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceAttachedRenderer;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient;
+import com.bl4ues.scpclassifieddirective.client.HackingDeviceScreenTextClient;
 import com.bl4ues.scpclassifieddirective.client.ScpFonts;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
@@ -90,37 +91,18 @@ public abstract class HackingDeviceUiPolishMixin {
             PoseStack poseStack, MultiBufferSource.BufferSource buffers,
             CallbackInfo ci) {
         ci.cancel();
-        double progress = HackingDeviceMinigameClient.phaseProgress();
-        draw(font, poseStack, buffers, "BREACH COMMIT // FINAL",
-                8.0F, 8.0F, GREEN_DIM);
+        HackingDeviceScreenTextClient.renderSuccess(font, poseStack, buffers);
+    }
 
-        String[] lines = {
-                "> CRC CHAIN............VALID",
-                "> FORGE AUTH FRAME.......OK",
-                "> INJECT CREDENTIAL......OK",
-                "> OVERRIDE ACCESS LIST...OK",
-                "> READER HANDSHAKE.....ACCEPT"
-        };
-        int visible = Math.min(lines.length,
-                Math.max(1, 1 + (int) Math.floor(progress * 7.0D)));
-        for (int index = 0; index < visible; index++) {
-            draw(font, poseStack, buffers, lines[index], 8.0F,
-                    31.0F + index * 17.0F,
-                    index == visible - 1 ? GREEN_BRIGHT : GREEN);
-        }
-
-        if (progress > 0.38D) {
-            long pulse = System.nanoTime() / 90_000_000L;
-            String trace = String.format("AUTH TRACE %02X:%02X  TOKEN %04X",
-                    (pulse * 29L) & 0xFFL,
-                    (pulse * 71L + 0x4CL) & 0xFFL,
-                    (pulse * 313L + 0xA91EL) & 0xFFFFL);
-            draw(font, poseStack, buffers, trace, 8.0F, 120.0F,
-                    GREEN_DIM);
-        }
-        if (progress >= 0.60D) {
-            centered(font, poseStack, buffers, "ACCESS GRANTED",
-                    138.0F, GREEN_BRIGHT);
+    @Inject(method = "renderSession", at = @At("HEAD"), cancellable = true)
+    private static void scpclassifieddirective$renderGrantCountdown(Font font,
+            PoseStack poseStack, MultiBufferSource.BufferSource buffers,
+            CallbackInfo ci) {
+        if (HackingDeviceMinigameClient.phase()
+                == HackingDeviceMinigameClient.Phase.COOLDOWN) {
+            HackingDeviceScreenTextClient.renderAttachedCooldown(font, poseStack,
+                    buffers);
+            ci.cancel();
         }
     }
 

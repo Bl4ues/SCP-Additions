@@ -176,7 +176,7 @@ public abstract class HackingDeviceUiPolishMixin {
         float x = (WIDTH - font.width(sequence)) * 0.5F;
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.NORMAL, 0,
+                Font.DisplayMode.SEE_THROUGH, 0,
                 LightTexture.FULL_BRIGHT);
     }
 
@@ -186,7 +186,7 @@ public abstract class HackingDeviceUiPolishMixin {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.NORMAL, 0,
+                Font.DisplayMode.SEE_THROUGH, 0,
                 LightTexture.FULL_BRIGHT);
     }
 

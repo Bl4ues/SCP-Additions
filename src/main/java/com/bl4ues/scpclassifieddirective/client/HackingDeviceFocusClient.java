@@ -21,16 +21,13 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Smooth camera/input session centered on the tiny physical Hacking Device CRT. */
+/** Smooth camera/input session centered on the physical Hacking Device CRT. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceFocusClient {
-    private static final long APPROACH_NANOS = 1_450_000_000L;
-    private static final long RETURN_NANOS = 650_000_000L;
+    private static final long APPROACH_NANOS = 1_650_000_000L;
+    private static final long RETURN_NANOS = 700_000_000L;
     private static final double TARGET_FOV = 52.0D;
-    /* Small framing correction requested after the physical attachment was aligned. */
-    private static final double CAMERA_DOWN = 0.020D;
-    private static final double LOOK_DOWN = 0.035D;
 
     private static BlockPos activePos;
     private static CameraType previousCameraType;
@@ -46,8 +43,6 @@ public final class HackingDeviceFocusClient {
     private static float returnStartYaw;
     private static float returnStartPitch;
     private static double returnStartFov;
-    /* Locked once per session so an animation cannot flip the camera side mid-flight. */
-    private static double cameraNormalSign;
 
     private HackingDeviceFocusClient() {
     }
@@ -74,7 +69,6 @@ public final class HackingDeviceFocusClient {
         approachStarted = System.nanoTime();
         returning = false;
         returnStarted = 0L;
-        cameraNormalSign = 0.0D;
         minecraft.options.setCameraType(CameraType.FIRST_PERSON);
     }
 
@@ -114,30 +108,16 @@ public final class HackingDeviceFocusClient {
         Attachment attachment = attachment(minecraft);
         if (attachment == null) return null;
         double seating = HackingDeviceClientState.seatingOffset(activePos);
-        Vec3 authoredOutward = attachment.screen().outward().normalize();
-        Vec3 center = attachment.screen().center().add(
-                authoredOutward.scale(seating));
+        Vec3 center = attachment.screen().center()
+                .add(attachment.mountOutward().scale(seating));
+        Vec3 outward = attachment.screen().outward().normalize();
 
-        /*
-         * Keep the camera on the player's original side of the physical CRT.
-         * This prevents a handedness regression from moving it through the
-         * device or reader during the seating animation.
-         */
-        if (cameraNormalSign == 0.0D) {
-            double side = startPosition.subtract(center).dot(authoredOutward);
-            cameraNormalSign = side >= 0.0D ? 1.0D : -1.0D;
-        }
-        Vec3 cameraNormal = authoredOutward.scale(cameraNormalSign);
-        Vec3 targetEye = center.add(cameraNormal
-                .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE))
-                .add(0.0D, -CAMERA_DOWN, 0.0D);
-        /*
-         * The CRT is inclined. Aim a little below its geometric centre so the
-         * final view is pitched directly down onto the face instead of grazing
-         * the upper bezel after lowering the eye.
-         */
-        Vec3 lookTarget = center.add(0.0D, -LOOK_DOWN, 0.0D);
-        Vec3 look = lookTarget.subtract(targetEye);
+        // The frame's OUTWARD is now the authored visible CRT face. Do not infer
+        // a side from the player's starting position: doing so could deliberately
+        // choose the back of the device and put the camera inside the reader.
+        Vec3 targetEye = center.add(outward.scale(
+                HackingDeviceAttachmentGeometry.FOCUS_DISTANCE));
+        Vec3 look = center.subtract(targetEye);
         double horizontal = Math.sqrt(look.x * look.x + look.z * look.z);
         float targetYaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
         float targetPitch = (float) -Math.toDegrees(
@@ -232,7 +212,6 @@ public final class HackingDeviceFocusClient {
         approachStarted = 0L;
         returning = false;
         returnStarted = 0L;
-        cameraNormalSign = 0.0D;
         currentFov = originalFov;
         HackingDeviceMinigameClient.clear();
     }

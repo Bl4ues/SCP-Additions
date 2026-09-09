@@ -28,6 +28,7 @@
     "IntercomContextAvailabilityMixin",
     "HackingDeviceContextDefaultsMixin",
     "HackingDeviceContextAvailabilityMixin",
+    "KeycardReaderAcceptPulseMixin",
     "ObjectContainmentUnitHackInvoker",
     "ServerLevelIntercomSoundMixin",
     "CoreRoomElevatorManagerFixMixin",

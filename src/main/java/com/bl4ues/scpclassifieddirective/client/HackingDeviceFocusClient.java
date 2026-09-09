@@ -25,9 +25,9 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceFocusClient {
-    private static final long APPROACH_NANOS = 1_100_000_000L;
-    private static final long RETURN_NANOS = 550_000_000L;
-    private static final double TARGET_FOV = 48.0D;
+    private static final long APPROACH_NANOS = 1_450_000_000L;
+    private static final long RETURN_NANOS = 650_000_000L;
+    private static final double TARGET_FOV = 52.0D;
 
     private static BlockPos activePos;
     private static CameraType previousCameraType;
@@ -110,6 +110,11 @@ public final class HackingDeviceFocusClient {
         double seating = HackingDeviceClientState.seatingOffset(activePos);
         Vec3 center = attachment.screen().center().add(
                 attachment.screen().outward().scale(seating));
+
+        // The camera lives on the visible CRT normal itself. Because the frame's
+        // normal includes the authored screen tilt, this naturally puts the eye
+        // above the display and square to its glass instead of aiming horizontally
+        // through the bulky head of the device.
         Vec3 targetEye = center.add(attachment.screen().outward()
                 .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE));
         Vec3 look = center.subtract(targetEye);

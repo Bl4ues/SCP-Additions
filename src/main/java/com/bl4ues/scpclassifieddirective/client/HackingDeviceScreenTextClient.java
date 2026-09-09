@@ -108,7 +108,7 @@ public final class HackingDeviceScreenTextClient {
         float x = (LOGICAL_WIDTH - font.width(sequence)) * 0.5F;
         font.drawInBatch(sequence, x, y, color, false,
                 poseStack.last().pose(), buffers,
-                Font.DisplayMode.NORMAL, 0,
+                Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
     }
 
@@ -117,7 +117,7 @@ public final class HackingDeviceScreenTextClient {
             int color) {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         font.drawInBatch(sequence, x, y, color, false, poseStack.last().pose(),
-                buffers, Font.DisplayMode.NORMAL, 0,
+                buffers, Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
     }
 }

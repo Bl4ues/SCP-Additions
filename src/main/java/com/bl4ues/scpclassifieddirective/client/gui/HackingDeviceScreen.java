@@ -30,7 +30,7 @@ public final class HackingDeviceScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY,
             float partialTick) {
-        // Intentionally empty. The physical model remains the only GUI surface.
+        // Physical CRT only. Calling phase also advances timed breach modules.
         HackingDeviceMinigameClient.phase();
     }
 
@@ -48,7 +48,7 @@ public final class HackingDeviceScreen extends Screen {
                     HackingDeviceMinigameClient.moveSelection(-1);
             case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_D ->
                     HackingDeviceMinigameClient.moveSelection(1);
-            case GLFW.GLFW_KEY_SPACE -> HackingDeviceMinigameClient.probe();
+            case GLFW.GLFW_KEY_SPACE -> HackingDeviceMinigameClient.primary();
             case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER ->
                     HackingDeviceMinigameClient.submit();
             default -> {
@@ -76,12 +76,6 @@ public final class HackingDeviceScreen extends Screen {
         if (closing) return;
         closing = true;
 
-        /*
-         * A replacement StartSession can install a new minigame before Minecraft
-         * finishes disposing the previous Screen instance. Never let that stale
-         * screen send ExitSession for the new target. Conversely, if the client
-         * session has already vanished, still release an orphaned camera focus.
-         */
         BlockPos current = HackingDeviceMinigameClient.pos();
         if (current != null && pos.equals(current)) {
             HackingDeviceMinigameClient.requestExit();

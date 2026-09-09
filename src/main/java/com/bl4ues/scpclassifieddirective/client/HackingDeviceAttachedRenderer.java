@@ -157,7 +157,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     public static void renderAttachedScreenText(BlockPos pos, Font font,
-            PoseStack poseStack, MultiBufferSource buffers) {
+            PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
         if (HackingDeviceMinigameClient.active()
                 && pos != null && pos.equals(HackingDeviceMinigameClient.pos())) {
             renderSession(font, poseStack, buffers);
@@ -170,7 +170,7 @@ public final class HackingDeviceAttachedRenderer {
     /* Keep these method signatures stable: HackingDeviceUiPolishMixin adds the
      * Facility Mapping lines and the finalized success sequence here. */
     private static void renderSession(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         Phase phase = HackingDeviceMinigameClient.phase();
         switch (phase) {
             case LOADING -> renderLoading(font, poseStack, buffers);
@@ -186,7 +186,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderLoading(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         double progress = HackingDeviceMinigameClient.phaseProgress();
         int filled = (int) Math.round(progress * 24.0D);
         String bar = "[" + "#".repeat(Math.max(0, Math.min(24, filled)))
@@ -211,7 +211,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderBoot(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         int count = HackingDeviceMinigameClient.bootLineCount();
         draw(font, poseStack, buffers,
                 String.format("TARGET: KCR-L%d",
@@ -235,7 +235,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderPuzzle(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         HackingDevicePuzzle puzzle = HackingDeviceMinigameClient.puzzle();
         if (puzzle == null) return;
         draw(font, poseStack, buffers,
@@ -280,7 +280,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderRoundOk(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         centered(font, poseStack, buffers, "CRC VALID", 51, GREEN_BRIGHT);
         centered(font, poseStack, buffers, "FRAME REPAIRED", 70, GREEN);
         centered(font, poseStack, buffers, "> ADVANCING BREACH...", 96,
@@ -288,7 +288,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderDenied(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         centered(font, poseStack, buffers, "!! CRC MISMATCH !!", 46,
                 GREEN_BRIGHT);
         centered(font, poseStack, buffers, "ACCESS DENIED", 67, GREEN);
@@ -301,7 +301,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderLocked(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         centered(font, poseStack, buffers, "BREACH LIMIT REACHED", 50,
                 GREEN_BRIGHT);
         centered(font, poseStack, buffers, "ACCESS DENIED", 72, GREEN);
@@ -310,7 +310,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void renderSuccess(Font font, PoseStack poseStack,
-            MultiBufferSource buffers) {
+            MultiBufferSource.BufferSource buffers) {
         HackingDeviceScreenTextClient.renderSuccess(font, poseStack, buffers);
     }
 
@@ -319,7 +319,8 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void centered(Font font, PoseStack poseStack,
-            MultiBufferSource buffers, String text, float y, int color) {
+            MultiBufferSource.BufferSource buffers, String text, float y,
+            int color) {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         float x = (LOGICAL_WIDTH - font.width(sequence)) * 0.5F;
         font.drawInBatch(sequence, x, y, color, false,
@@ -329,7 +330,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     private static void draw(Font font, PoseStack poseStack,
-            MultiBufferSource buffers, String text, float x,
+            MultiBufferSource.BufferSource buffers, String text, float x,
             float y, int color) {
         var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
         font.drawInBatch(sequence, x, y, color, false,

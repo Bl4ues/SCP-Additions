@@ -57,17 +57,17 @@ public final class KeycardSwipeClient {
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
 
     /*
-     * The OCU is also a swipe SLOT, not a tray to lay the card flat on. The bad
-     * version mapped the card's broad X/Y face onto the reader surface, which is
-     * why it floated beside the assembly like a little white flap. Keep the
-     * card's thin local Z axis across the slot (OCU X), and its broad face in
-     * the Y/Z swipe plane. Local +Y is reversed relative to travel so the card
-     * remains upside-down, matching the arrow-following wall-reader swipe.
+     * The OCU path itself is already correct: its Y/Z slope follows the reader's
+     * authored +35 degree slot. Keep the card's long axis on that path and rotate
+     * only around it. The previous +X thin normal put the rest of the card on the
+     * inward side of the anchored x=6.8 edge, so it visibly sliced into the
+     * reader. Flipping the thin normal preserves path/alignment while placing the
+     * card body on the exposed side of the slot.
      */
     private static final Vec3 OCU_CARD_LONG_AXIS =
             OCU_START.subtract(OCU_END).normalize();
     private static final Vec3 OCU_THIN_NORMAL =
-            new Vec3(1.0D, 0.0D, 0.0D);
+            new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 OCU_CARD_WIDTH_AXIS =
             OCU_CARD_LONG_AXIS.cross(OCU_THIN_NORMAL).normalize();
 

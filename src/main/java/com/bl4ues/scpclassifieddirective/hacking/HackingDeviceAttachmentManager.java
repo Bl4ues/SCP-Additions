@@ -19,7 +19,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Server-authoritative persistent state for Hacking Devices attached to readers. */
+/** Server-authoritative persistent mirror for devices physically seated during a hack. */
 public final class HackingDeviceAttachmentManager {
     private static final String DATA_NAME = "scp_cd_hacking_device_attachments";
 
@@ -65,43 +65,48 @@ public final class HackingDeviceAttachmentManager {
 
         HackingDeviceNetwork.broadcastAttachment(level, pos, true);
         InventoryInteractionSoundFeedback.pickup(player);
-        HackingDeviceSessionManager.start(player, pos);
+        HackingDeviceSessionManager.start(player, pos, hand);
         return true;
     }
 
-    public static boolean detach(ServerPlayer player, BlockPos pos) {
-        return detach(player, pos, true);
-    }
-
-    public static boolean detach(ServerPlayer player, BlockPos pos,
+    public static boolean detach(ServerPlayer player, ServerLevel level,
+            BlockPos pos, InteractionHand preferredHand,
             boolean playReturnCue) {
-        if (player == null || pos == null
-                || !(player.level() instanceof ServerLevel level)) {
-            return false;
-        }
+        if (player == null || level == null || pos == null) return false;
         Data data = data(level);
         if (!data.attached.remove(pos)) return false;
         data.setDirty();
 
-        ItemStack returned = new ItemStack(
-                ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
-        if (!player.getAbilities().instabuild
-                && !player.getInventory().add(returned)) {
-            player.drop(returned, false);
+        if (!player.getAbilities().instabuild) {
+            ItemStack returned = new ItemStack(
+                    ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
+            if (preferredHand != null
+                    && player.getItemInHand(preferredHand).isEmpty()) {
+                player.setItemInHand(preferredHand, returned);
+            } else if (!player.getInventory().add(returned)) {
+                player.drop(returned, false);
+            }
         }
         HackingDeviceNetwork.broadcastAttachment(level, pos, false);
         if (playReturnCue) InventoryInteractionSoundFeedback.pickup(player);
         return true;
     }
 
-    /** Removes orphaned devices if their reader is destroyed or replaced. */
+    /**
+     * Removes old pre-session attachments and broken targets. Attachments are now
+     * deliberately temporary and may only exist while a live hacking session owns
+     * the reader.
+     */
     public static void validate(ServerLevel level) {
         if (level == null) return;
         Data data = data(level);
         Set<BlockPos> invalid = new HashSet<>();
         for (BlockPos pos : data.attached) {
             if (!level.hasChunkAt(pos)) continue;
-            if (!isCompatibleTarget(level, pos)) invalid.add(pos);
+            if (!isCompatibleTarget(level, pos)
+                    || !HackingDeviceSessionManager.hasActiveTarget(level, pos)) {
+                invalid.add(pos);
+            }
         }
         if (invalid.isEmpty()) return;
 

@@ -45,12 +45,8 @@ public final class KeycardSwipeClient {
 
     /*
      * Raw keycard geometry is x=6.8..9.1, y=1..4.6, z=7.5..7.6. The supplied
-     * swipe coordinates describe the reader groove itself, not the centre of the
-     * card. Both readers anchor the x=6.8 edge. With the OCU's measured diagonal
-     * transform, local +X is the outward surface direction, so anchoring x=6.8
-     * makes the rest of the card extend away from the OCU instead of through its
-     * reader housing. The previous x=9.1 anchor put the entire card on the inward
-     * side even though the path itself was correct.
+     * coordinates describe the physical swipe line, not the centre of the card.
+     * Keep the measured x=6.8 edge on that line for both reader types.
      */
     private static final Vec3 WALL_SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
     private static final Vec3 OCU_SLOT_EDGE = pixels(6.8D, 2.8D, 7.55D);
@@ -58,17 +54,18 @@ public final class KeycardSwipeClient {
     private static final Vec3 OCU_RENDER_COMPENSATION = compensation(OCU_SLOT_EDGE);
 
     /*
-     * A swipe reader receives the card edge-on. +90 Y turns the flat keycard
-     * perpendicular to the reader face, and 180 Z makes it upside down so the
-     * printed top/arrow end travels downward with the swipe.
+     * Wall readers are literal slots: rotate the card 90 degrees in Y so its
+     * thin edge enters the groove, then flip it 180 degrees in Z so the printed
+     * top/arrow end points down along the reader arrow.
      */
     private static final float EDGE_INTO_SLOT_YAW = 90.0F;
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
 
     /*
-     * The OCU trajectory is measured along its sloped reader surface. Derive the
-     * X tilt from that exact path. The approximately 55.2-degree path angle is
-     * complementary to the reader's 35-degree surface tilt.
+     * The OCU is different. Its reader is an exposed sloped swipe surface, not a
+     * wall slot. The path below is the surface tangent. Rotating only around X by
+     * this exact angle lays the card flat on that surface; adding the wall-reader
+     * 90-degree Y rotation was what made the card stand edge-on inside the OCU.
      */
     private static final float OCU_PATH_TILT = (float) Math.toDegrees(Math.atan2(
             OCU_START.z - OCU_END.z,
@@ -158,10 +155,17 @@ public final class KeycardSwipeClient {
         poseStack.mulPose(Axis.YP.rotationDegrees(modelYaw(facing)));
 
         if (swipe.objectContainmentUnit) {
+            /*
+             * Flat against the OCU reader. Local +Y is flipped first so the
+             * card's printed top/arrow end points from OCU_START toward OCU_END;
+             * the X tilt then makes that axis coincide with the measured path.
+             */
             poseStack.mulPose(Axis.XP.rotationDegrees(OCU_PATH_TILT));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
+        } else {
+            poseStack.mulPose(Axis.YP.rotationDegrees(EDGE_INTO_SLOT_YAW));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
         }
-        poseStack.mulPose(Axis.YP.rotationDegrees(EDGE_INTO_SLOT_YAW));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(CARD_UPSIDE_DOWN_ROLL));
 
         Vec3 compensation = swipe.objectContainmentUnit
                 ? OCU_RENDER_COMPENSATION : WALL_RENDER_COMPENSATION;

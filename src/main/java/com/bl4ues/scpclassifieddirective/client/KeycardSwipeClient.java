@@ -41,8 +41,13 @@ public final class KeycardSwipeClient {
     private static final Vec3 OCU_START = pixels(-10.3D, 15.9D, 2.95D);
     private static final Vec3 OCU_END = pixels(-10.3D, 13.05D, -1.15D);
 
-    // Raw keycard model center from custom/keycard*.json.
+    // Raw keycard geometry occupies x=6.8..9.1, y=1..4.6, z=7.5..7.6.
     private static final Vec3 CARD_MODEL_CENTER = pixels(7.95D, 2.8D, 7.55D);
+    /* ItemRenderer always translates a raw baked item by -0.5 on each axis. */
+    private static final Vec3 CARD_RENDER_COMPENSATION = new Vec3(
+            0.5D - CARD_MODEL_CENTER.x,
+            0.5D - CARD_MODEL_CENTER.y,
+            0.5D - CARD_MODEL_CENTER.z);
     private static final float OCU_CARD_TILT = 55.2F;
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
@@ -128,8 +133,8 @@ public final class KeycardSwipeClient {
         if (swipe.objectContainmentUnit) {
             poseStack.mulPose(Axis.XP.rotationDegrees(OCU_CARD_TILT));
         }
-        poseStack.translate(-CARD_MODEL_CENTER.x,
-                -CARD_MODEL_CENTER.y, -CARD_MODEL_CENTER.z);
+        poseStack.translate(CARD_RENDER_COMPENSATION.x,
+                CARD_RENDER_COMPENSATION.y, CARD_RENDER_COMPENSATION.z);
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
         minecraft.getItemRenderer().renderStatic(card, ItemDisplayContext.NONE,
                 light, OverlayTexture.NO_OVERLAY, poseStack, buffers,

@@ -104,14 +104,19 @@ public final class HackingDeviceScreenTextClient {
 
     private static void centered(Font font, PoseStack poseStack,
             MultiBufferSource buffers, String text, float y, int color) {
-        float x = (LOGICAL_WIDTH - font.width(text)) * 0.5F;
-        draw(font, poseStack, buffers, text, x, y, color);
+        var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
+        float x = (LOGICAL_WIDTH - font.width(sequence)) * 0.5F;
+        font.drawInBatch(sequence, x, y, color, false,
+                poseStack.last().pose(), buffers,
+                Font.DisplayMode.POLYGON_OFFSET, 0,
+                LightTexture.FULL_BRIGHT);
     }
 
     private static void draw(Font font, PoseStack poseStack,
             MultiBufferSource buffers, String text, float x, float y,
             int color) {
-        font.drawInBatch(text, x, y, color, false, poseStack.last().pose(),
+        var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
+        font.drawInBatch(sequence, x, y, color, false, poseStack.last().pose(),
                 buffers, Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
     }

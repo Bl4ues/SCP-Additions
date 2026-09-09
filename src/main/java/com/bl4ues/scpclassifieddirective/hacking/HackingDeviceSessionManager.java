@@ -46,7 +46,8 @@ public final class HackingDeviceSessionManager {
                 com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents
                         .configurableLevel(level, pos));
         Session session = new Session(pos.immutable(), level.dimension(), hand,
-                accessLevel, 1, 0, createPuzzle(player.getRandom()), false);
+                accessLevel, 1, 0, createPuzzle(player.getRandom()), false,
+                false);
         SESSIONS.put(player.getUUID(), session);
         HackingDeviceNetwork.startSession(player, session.pos,
                 session.accessLevel, session.round, session.failures,
@@ -115,6 +116,16 @@ public final class HackingDeviceSessionManager {
         if (player == null || pos == null) return;
         Session session = SESSIONS.get(player.getUUID());
         if (session == null || !session.pos.equals(pos)) return;
+
+        // Once the third frame is valid the breach has succeeded. Exiting during
+        // the lock animation must not turn a solved hack back into a failure.
+        if (session.finished && session.failures < MAX_FAILURES
+                && session.round >= TOTAL_ROUNDS) {
+            ServerLevel level = sessionLevel(player, session);
+            if (level != null) grantIfStillValid(level, session.pos,
+                    player.getUUID());
+        }
+
         SESSIONS.remove(player.getUUID());
         detachSession(player, session, true);
     }
@@ -139,22 +150,29 @@ public final class HackingDeviceSessionManager {
 
     private static void detachSession(ServerPlayer player, Session session,
             boolean playReturnCue) {
-        MinecraftServer server = player.getServer();
-        ServerLevel level = server == null ? null
-                : server.getLevel(session.dimension);
+        ServerLevel level = sessionLevel(player, session);
         if (level == null) return;
         HackingDeviceAttachmentManager.detach(player, level, session.pos,
                 session.hand, playReturnCue);
     }
 
+    private static ServerLevel sessionLevel(ServerPlayer player,
+            Session session) {
+        MinecraftServer server = player == null ? null : player.getServer();
+        return server == null || session == null ? null
+                : server.getLevel(session.dimension);
+    }
+
     private static void grantIfStillValid(ServerLevel level, BlockPos pos,
             UUID playerId) {
         Session session = SESSIONS.get(playerId);
-        if (session == null || !session.finished || !session.pos.equals(pos)
+        if (session == null || !session.finished || session.granted
+                || !session.pos.equals(pos)
                 || !session.dimension.equals(level.dimension())
                 || !HackingDeviceAttachmentManager.isAttached(level, pos)) {
             return;
         }
+        session.granted = true;
         if (level.getBlockEntity(pos)
                 instanceof ObjectContainmentUnitModule.UnitBlockEntity unit) {
             ObjectContainmentUnitHackInvoker invoker =
@@ -215,10 +233,11 @@ public final class HackingDeviceSessionManager {
         private int failures;
         private HackingDevicePuzzle puzzle;
         private boolean finished;
+        private boolean granted;
 
         private Session(BlockPos pos, ResourceKey<Level> dimension,
                 InteractionHand hand, int accessLevel, int round, int failures,
-                HackingDevicePuzzle puzzle, boolean finished) {
+                HackingDevicePuzzle puzzle, boolean finished, boolean granted) {
             this.pos = pos;
             this.dimension = dimension;
             this.hand = hand;
@@ -227,6 +246,7 @@ public final class HackingDeviceSessionManager {
             this.failures = failures;
             this.puzzle = puzzle;
             this.finished = finished;
+            this.granted = granted;
         }
     }
 }

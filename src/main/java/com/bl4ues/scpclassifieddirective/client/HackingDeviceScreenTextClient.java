@@ -15,36 +15,38 @@ public final class HackingDeviceScreenTextClient {
     public static final int GREEN = 0xFF49F06F;
     public static final int GREEN_BRIGHT = 0xFF78FF94;
     public static final int GREEN_DIM = 0xFF238A42;
+    private static final int AMBER = 0xFFFFC857;
 
     private HackingDeviceScreenTextClient() {
     }
 
-    /** Replaces the old ASCII lock with a fast SCP-079-style terminal commit. */
+    /** Final forged-credential commit after the required breach chain is complete. */
     public static void renderSuccess(Font font, PoseStack poseStack,
             MultiBufferSource buffers) {
         double progress = HackingDeviceMinigameClient.phaseProgress();
-        draw("BREACH COMMIT // FINAL", 8, 10, GREEN_DIM);
+        draw("CI//SCIPNET OVERRIDE COMMIT", 8, 9, GREEN_DIM);
 
         String[] lines = {
-                "> CRC CHAIN............VALID",
-                "> FORGE AUTH FRAME........OK",
-                "> INJECT CREDENTIAL........OK",
-                "> OVERRIDE ACCESS LIST.....OK",
-                "> READER HANDSHAKE........WAIT"
+                "> BREACH CHAIN.........VALID",
+                "> FOUNDATION CERT......FORGED",
+                "> ACL ENTRY.............LIED",
+                "> READER TRUST..........YES",
+                "> OPEN REQUEST.........QUEUED"
         };
         int visible = Math.max(1, Math.min(lines.length,
                 1 + (int) Math.floor(progress * lines.length)));
         for (int index = 0; index < visible; index++) {
             int color = index == visible - 1 ? GREEN_BRIGHT : GREEN;
-            draw(lines[index], 8, 34 + index * 19, color);
+            draw(lines[index], 8, 32 + index * 19, color);
         }
 
+        if (progress > 0.72D) {
+            centered("ACCESS BORROWED. MOVE.", 128, AMBER);
+        }
         long noise = System.nanoTime() / 45_000_000L;
-        int a = (int) ((noise * 37L + 0xA7L) & 0xFFL);
-        int b = (int) ((noise * 91L + 0x31L) & 0xFFL);
         int token = (int) ((noise * 31337L + 0x92FCL) & 0xFFFFL);
-        draw(String.format("AUTH TRACE %02X:%02X  TOKEN %04X", a, b, token),
-                8, 137, GREEN_DIM);
+        draw(String.format("CI TOKEN %04X // TRUST US", token),
+                8, 142, GREEN_DIM);
     }
 
     public static void renderAttachedCooldown(Font font, PoseStack poseStack,
@@ -79,9 +81,10 @@ public final class HackingDeviceScreenTextClient {
             int seconds = (int) Math.min(5L,
                     Math.max(1L, (remaining + 19L) / 20L));
             centered("ACCESS GRANTED", 24, GREEN_BRIGHT);
-            centered("PASS WINDOW", 52, GREEN_DIM);
-            centered(String.format("[%d]", seconds), 76, GREEN_BRIGHT);
-            centered("> CROSS NOW", 113, GREEN);
+            centered("STOLEN PASS WINDOW", 48, GREEN_DIM);
+            centered(String.format("[%d]", seconds), 75, GREEN_BRIGHT);
+            centered("> CROSS NOW", 110, GREEN);
+            centered("CI LINK WILL SELF-BURN", 132, AMBER);
             return;
         }
 
@@ -91,7 +94,7 @@ public final class HackingDeviceScreenTextClient {
                 && (phase & 1L) == 0L;
         if (visible) {
             centered("0", 56, GREEN_BRIGHT);
-            centered("LINK CLOSED", 86, GREEN_DIM);
+            centered("BORROWED ACCESS EXPIRED", 86, GREEN_DIM);
         }
     }
 

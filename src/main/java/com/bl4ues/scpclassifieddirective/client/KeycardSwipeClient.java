@@ -38,6 +38,13 @@ public final class KeycardSwipeClient {
     private static final Vec3 RIGHT_END = pixels(-1.875D, -0.1D, 14.5D);
     private static final Vec3 LEFT_START = pixels(18.025D, 2.8D, 14.5D);
     private static final Vec3 LEFT_END = pixels(18.025D, -0.1D, 14.5D);
+
+    /*
+     * OCU coordinates are Gecko/Blockbench model coordinates centered on the
+     * block origin, unlike the old JSON keycard readers whose authored X/Z use
+     * vanilla 0..16 block coordinates. Keep these in centered model space and
+     * convert them explicitly below.
+     */
     private static final Vec3 OCU_START = pixels(-10.3D, 15.9D, 2.95D);
     private static final Vec3 OCU_END = pixels(-10.3D, 13.05D, -1.15D);
 
@@ -48,6 +55,15 @@ public final class KeycardSwipeClient {
             0.5D - CARD_MODEL_CENTER.x,
             0.5D - CARD_MODEL_CENTER.y,
             0.5D - CARD_MODEL_CENTER.z);
+
+    /*
+     * The wall-reader arrow expects the card rotated a quarter turn and inverted
+     * relative to its normal item presentation. 270 degrees is deliberately not
+     * simplified to -90 here because the intent is "90 + upside-down".
+     */
+    private static final float READER_CARD_ROLL = 270.0F;
+
+    /* OCU swipe vector is the authored diagonal track on the reader face. */
     private static final float OCU_CARD_TILT = 55.2F;
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
@@ -124,7 +140,9 @@ public final class KeycardSwipeClient {
         }
 
         Vec3 local = start.lerp(end, progress);
-        Vec3 world = localToWorld(pos, local, facing).subtract(camera);
+        Vec3 absoluteLocal = swipe.objectContainmentUnit
+                ? centeredModelToBlockLocal(local) : local;
+        Vec3 world = localToWorld(pos, absoluteLocal, facing).subtract(camera);
         ItemStack card = KeycardAccess.visualStack(swipe.keycardLevel);
 
         poseStack.pushPose();
@@ -132,6 +150,8 @@ public final class KeycardSwipeClient {
         poseStack.mulPose(Axis.YP.rotationDegrees(modelYaw(facing)));
         if (swipe.objectContainmentUnit) {
             poseStack.mulPose(Axis.XP.rotationDegrees(OCU_CARD_TILT));
+        } else {
+            poseStack.mulPose(Axis.ZP.rotationDegrees(READER_CARD_ROLL));
         }
         poseStack.translate(CARD_RENDER_COMPENSATION.x,
                 CARD_RENDER_COMPENSATION.y, CARD_RENDER_COMPENSATION.z);
@@ -140,6 +160,10 @@ public final class KeycardSwipeClient {
                 light, OverlayTexture.NO_OVERLAY, poseStack, buffers,
                 minecraft.level, 0);
         poseStack.popPose();
+    }
+
+    private static Vec3 centeredModelToBlockLocal(Vec3 centered) {
+        return new Vec3(0.5D + centered.x, centered.y, 0.5D + centered.z);
     }
 
     private static boolean isStillCompatible(BlockState state, boolean ocu) {

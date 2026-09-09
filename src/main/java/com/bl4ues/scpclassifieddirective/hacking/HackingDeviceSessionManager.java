@@ -6,12 +6,16 @@ import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import com.bl4ues.scpclassifieddirective.mixin.ObjectContainmentUnitHackInvoker;
 import com.bl4ues.scpclassifieddirective.network.HackingDeviceNetwork;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
@@ -31,8 +35,9 @@ public final class HackingDeviceSessionManager {
     private HackingDeviceSessionManager() {
     }
 
-    public static void start(ServerPlayer player, BlockPos pos) {
-        if (player == null || pos == null
+    public static void start(ServerPlayer player, BlockPos pos,
+            InteractionHand hand) {
+        if (player == null || pos == null || hand == null
                 || !(player.level() instanceof ServerLevel level)
                 || !HackingDeviceAttachmentManager.isAttached(level, pos)) {
             return;
@@ -40,12 +45,22 @@ public final class HackingDeviceSessionManager {
         int accessLevel = Math.max(1,
                 com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents
                         .configurableLevel(level, pos));
-        Session session = new Session(pos.immutable(), accessLevel, 1, 0,
-                createPuzzle(player.getRandom()), false);
+        Session session = new Session(pos.immutable(), level.dimension(), hand,
+                accessLevel, 1, 0, createPuzzle(player.getRandom()), false);
         SESSIONS.put(player.getUUID(), session);
         HackingDeviceNetwork.startSession(player, session.pos,
                 session.accessLevel, session.round, session.failures,
                 session.puzzle);
+    }
+
+    public static boolean hasActiveTarget(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null) return false;
+        ResourceKey<Level> dimension = level.dimension();
+        for (Session session : SESSIONS.values()) {
+            if (session.dimension.equals(dimension)
+                    && session.pos.equals(pos)) return true;
+        }
+        return false;
     }
 
     public static void submit(ServerPlayer player, BlockPos pos,
@@ -56,6 +71,7 @@ public final class HackingDeviceSessionManager {
         }
         Session session = SESSIONS.get(player.getUUID());
         if (session == null || session.finished || !session.pos.equals(pos)
+                || !session.dimension.equals(level.dimension())
                 || !HackingDeviceAttachmentManager.isAttached(level, pos)) {
             return;
         }
@@ -96,35 +112,46 @@ public final class HackingDeviceSessionManager {
     }
 
     public static void exit(ServerPlayer player, BlockPos pos) {
-        if (player == null || pos == null
-                || !(player.level() instanceof ServerLevel level)) {
-            return;
-        }
-        Session session = SESSIONS.remove(player.getUUID());
+        if (player == null || pos == null) return;
+        Session session = SESSIONS.get(player.getUUID());
         if (session == null || !session.pos.equals(pos)) return;
-        HackingDeviceAttachmentManager.detach(player, pos, true);
+        SESSIONS.remove(player.getUUID());
+        detachSession(player, session, true);
     }
 
     public static void abort(ServerPlayer player) {
-        if (player == null || !(player.level() instanceof ServerLevel level)) return;
+        if (player == null) return;
         Session session = SESSIONS.remove(player.getUUID());
         if (session == null) return;
-        HackingDeviceAttachmentManager.detach(player, session.pos, false);
+        detachSession(player, session, false);
     }
 
     public static void abortTarget(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null) return;
         List<UUID> remove = new ArrayList<>();
         for (Map.Entry<UUID, Session> entry : SESSIONS.entrySet()) {
-            if (entry.getValue().pos.equals(pos)) remove.add(entry.getKey());
+            Session session = entry.getValue();
+            if (session.dimension.equals(level.dimension())
+                    && session.pos.equals(pos)) remove.add(entry.getKey());
         }
         for (UUID id : remove) SESSIONS.remove(id);
+    }
+
+    private static void detachSession(ServerPlayer player, Session session,
+            boolean playReturnCue) {
+        MinecraftServer server = player.getServer();
+        ServerLevel level = server == null ? null
+                : server.getLevel(session.dimension);
+        if (level == null) return;
+        HackingDeviceAttachmentManager.detach(player, level, session.pos,
+                session.hand, playReturnCue);
     }
 
     private static void grantIfStillValid(ServerLevel level, BlockPos pos,
             UUID playerId) {
         Session session = SESSIONS.get(playerId);
         if (session == null || !session.finished || !session.pos.equals(pos)
+                || !session.dimension.equals(level.dimension())
                 || !HackingDeviceAttachmentManager.isAttached(level, pos)) {
             return;
         }
@@ -181,15 +208,20 @@ public final class HackingDeviceSessionManager {
 
     private static final class Session {
         private final BlockPos pos;
+        private final ResourceKey<Level> dimension;
+        private final InteractionHand hand;
         private final int accessLevel;
         private int round;
         private int failures;
         private HackingDevicePuzzle puzzle;
         private boolean finished;
 
-        private Session(BlockPos pos, int accessLevel, int round, int failures,
+        private Session(BlockPos pos, ResourceKey<Level> dimension,
+                InteractionHand hand, int accessLevel, int round, int failures,
                 HackingDevicePuzzle puzzle, boolean finished) {
             this.pos = pos;
+            this.dimension = dimension;
+            this.hand = hand;
             this.accessLevel = accessLevel;
             this.round = round;
             this.failures = failures;

@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.client.gui;
 
+import com.bl4ues.scpclassifieddirective.client.HackingDeviceFocusClient;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -75,6 +76,10 @@ public final class HackingDeviceScreen extends Screen {
         if (closing) return;
         closing = true;
         HackingDeviceMinigameClient.requestExit();
+        // requestExit() is deliberately a no-op once its client session is gone.
+        // Focus must still be released in that race, otherwise the camera remains
+        // pinned while normal inventory/world input resumes.
+        HackingDeviceFocusClient.end();
         if (minecraft != null && minecraft.screen == this) {
             minecraft.setScreen(null);
         }

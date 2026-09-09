@@ -4,18 +4,17 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient.Phase;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
+import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -25,10 +24,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Matrix4f;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /** Renders reader-attached Hacking Devices and their physical CRTs. */
@@ -37,68 +33,35 @@ import java.util.Set;
 public final class HackingDeviceAttachedRenderer {
     private static final float LOGICAL_WIDTH =
             HackingDeviceScreenTextClient.LOGICAL_WIDTH;
-    private static final float LOGICAL_HEIGHT =
-            HackingDeviceScreenTextClient.LOGICAL_HEIGHT;
     private static final int GREEN = HackingDeviceScreenTextClient.GREEN;
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
-    private static final double TEXT_EPSILON = 0.0080D;
-
-    /*
-     * Exact rendered plane of the 2.5 x 1.5 x 0 cube inside bone `screen`.
-     *
-     * These values include GeckoLib 4.4.9's X mirroring, the body's 180 degree
-     * Y rotation, the cube's baked +22.5 degree X rotation, and the net +0.01 Y
-     * introduced by the vanilla custom-item -> GeoItemRenderer handoff. They are
-     * deliberately separate from the already-approved camera framing constants:
-     * the camera looks at the CRT obliquely, while these axes are the CRT itself.
-     */
-    private static final Vec3 LOCAL_CRT_CENTER = new Vec3(
-            0.001875D, 0.49755355D, 0.07878970D);
-    private static final Vec3 LOCAL_CRT_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
-    private static final Vec3 LOCAL_CRT_UP = new Vec3(
-            0.0D, 0.9238795325D, -0.3826834324D);
-    private static final Vec3 LOCAL_CRT_OUTWARD = new Vec3(
-            0.0D, -0.3826834324D, -0.9238795325D);
-
-    /*
-     * Body rendering happens while Forge is rendering block entities. Text is
-     * intentionally deferred until AFTER_PARTICLES. Oculus/Hysteria can compose
-     * another world target after AFTER_BLOCK_ENTITIES; drawing Font geometry in
-     * the earlier stage made perfectly valid glyph buffers disappear later in
-     * the shader pipeline. The model remains in the opaque stage, only the tiny
-     * CRT character pass moves later.
-     */
-    private static final Map<BlockPos, Matrix4f> SCREEN_TRANSFORMS =
-            new HashMap<>();
 
     private HackingDeviceAttachedRenderer() {
     }
 
     @SubscribeEvent
     public static void render(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
-            renderBodies(event);
-        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-            renderScreens(event);
-        }
-    }
-
-    private static void renderBodies(RenderLevelStageEvent event) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) {
-            SCREEN_TRANSFORMS.clear();
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             return;
         }
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return;
 
         PoseStack poseStack = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
         Set<BlockPos> visibleDevices = HackingDeviceClientState.snapshot();
-        SCREEN_TRANSFORMS.clear();
 
+        /*
+         * First render the authored Gecko body exactly as before. The entire item
+         * pass is flushed before any CRT pixels are submitted. This is the same
+         * ordering used by the working Diagnostic Terminal and avoids mixing the
+         * device PBR/glass RenderTypes with its display.
+         */
         for (BlockPos pos : visibleDevices) {
             if (!minecraft.level.hasChunkAt(pos)
                     || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
@@ -107,41 +70,38 @@ public final class HackingDeviceAttachedRenderer {
             BlockState state = minecraft.level.getBlockState(pos);
             Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
                     state);
+            if (attachment != null) {
+                renderDevice(minecraft, poseStack, buffers, camera, pos,
+                        attachment);
+            }
+        }
+        buffers.endBatch();
+
+        /*
+         * Do not route the tiny CRT through Font.drawInBatch. That path was the
+         * common denominator behind every black-screen result reported so far.
+         * Characters are now rasterized as opaque full-bright 5x7 quads directly
+         * on the SAME Frame used by the approved camera. No second screen plane,
+         * no guessed Gecko matrix and no shader-dependent font RenderType.
+         */
+        for (BlockPos pos : visibleDevices) {
+            if (!minecraft.level.hasChunkAt(pos)
+                    || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
+                continue;
+            }
+            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
+                    minecraft.level.getBlockState(pos));
             if (attachment == null) continue;
 
-            renderDevice(minecraft, poseStack, buffers, camera, pos, attachment);
-            Matrix4f transform = physicalScreenTransform(poseStack, camera, pos,
-                    attachment);
-            if (transform != null) SCREEN_TRANSFORMS.put(pos.immutable(), transform);
+            Frame screen = animatedScreen(pos, attachment);
+            HackingDevicePixelFont.beginWorld(poseStack, buffers, screen, camera);
+            try {
+                renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
+            } finally {
+                HackingDevicePixelFont.end();
+            }
         }
-
-        // Finish every opaque/PBR item pass before any later CRT characters.
-        buffers.endBatch();
-    }
-
-    private static void renderScreens(RenderLevelStageEvent event) {
-        if (SCREEN_TRANSFORMS.isEmpty()) return;
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) {
-            SCREEN_TRANSFORMS.clear();
-            return;
-        }
-
-        PoseStack poseStack = event.getPoseStack();
-        MultiBufferSource.BufferSource buffers =
-                minecraft.renderBuffers().bufferSource();
-
-        for (Map.Entry<BlockPos, Matrix4f> entry : SCREEN_TRANSFORMS.entrySet()) {
-            BlockPos pos = entry.getKey();
-            if (!minecraft.level.hasChunkAt(pos)) continue;
-            poseStack.pushPose();
-            poseStack.last().pose().set(entry.getValue());
-            renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
-            poseStack.popPose();
-        }
-
-        buffers.endBatch();
-        SCREEN_TRANSFORMS.clear();
+        HackingDevicePixelFont.flush(buffers);
     }
 
     private static void renderDevice(Minecraft minecraft, PoseStack poseStack,
@@ -169,76 +129,16 @@ public final class HackingDeviceAttachedRenderer {
         poseStack.popPose();
     }
 
-    /**
-     * Builds the logical 256x154 screen directly from the authored screen cube's
-     * real rendered plane. There is no guessed bone normal and no camera-derived
-     * tilt here: the same static model that draws the black rectangle supplies
-     * this centre and basis.
-     */
-    private static Matrix4f physicalScreenTransform(PoseStack poseStack,
-            Vec3 camera, BlockPos pos, Attachment attachment) {
+    private static Frame animatedScreen(BlockPos pos, Attachment attachment) {
         double seating = HackingDeviceClientState.seatingOffset(pos);
-        Direction facing = attachment.facing();
-
-        Vec3 center = attachment.modelOrigin()
-                .add(attachment.mountOutward().scale(seating))
-                .add(rotateHorizontal(LOCAL_CRT_CENTER, facing));
-        Vec3 right = rotateHorizontal(LOCAL_CRT_RIGHT, facing).normalize();
-        Vec3 up = rotateHorizontal(LOCAL_CRT_UP, facing).normalize();
-        Vec3 normal = rotateHorizontal(LOCAL_CRT_OUTWARD, facing).normalize();
-
-        /* Keep the text readable if another camera observes the attached unit
-         * from behind, without moving the physical plane itself. */
-        if (camera.subtract(center).dot(normal) < 0.0D) {
-            normal = normal.scale(-1.0D);
-            right = right.scale(-1.0D);
-        }
-
-        Vec3 topLeft = center
-                .add(right.scale(-HackingDeviceAttachmentGeometry.SCREEN_WIDTH
-                        * 0.5D))
-                .add(up.scale(HackingDeviceAttachmentGeometry.SCREEN_HEIGHT
-                        * 0.5D))
-                .add(normal.scale(TEXT_EPSILON))
-                .subtract(camera);
-
-        Matrix4f basis = new Matrix4f().identity();
-        basis.m00((float) right.x);
-        basis.m01((float) right.y);
-        basis.m02((float) right.z);
-        basis.m10((float) up.x);
-        basis.m11((float) up.y);
-        basis.m12((float) up.z);
-        basis.m20((float) normal.x);
-        basis.m21((float) normal.y);
-        basis.m22((float) normal.z);
-
-        float pixelScaleX = (float)
-                (HackingDeviceAttachmentGeometry.SCREEN_WIDTH / LOGICAL_WIDTH);
-        float pixelScaleY = (float)
-                (HackingDeviceAttachmentGeometry.SCREEN_HEIGHT / LOGICAL_HEIGHT);
-        float depthScale = Math.min(pixelScaleX, pixelScaleY);
-
-        poseStack.pushPose();
-        poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
-        poseStack.mulPoseMatrix(basis);
-        // Match the proven Diagnostic Terminal convention: logical Y goes down.
-        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
-        Matrix4f transform = new Matrix4f(poseStack.last().pose());
-        poseStack.popPose();
-        return transform;
+        Frame original = attachment.screen();
+        return new Frame(original.center()
+                        .add(attachment.mountOutward().scale(seating)),
+                original.right(), original.up(), original.outward(),
+                original.width(), original.height());
     }
 
-    private static Vec3 rotateHorizontal(Vec3 value, Direction facing) {
-        return switch (facing) {
-            case EAST -> new Vec3(-value.z, value.y, value.x);
-            case SOUTH -> new Vec3(-value.x, value.y, -value.z);
-            case WEST -> new Vec3(value.z, value.y, -value.x);
-            default -> value;
-        };
-    }
-
-    /** Draws characters using the physical CRT transform resolved above. */
+    /** Draws characters on the active physical CRT canvas. */
     public static void renderAttachedScreenText(BlockPos pos, Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
         if (HackingDeviceMinigameClient.active()
@@ -251,7 +151,7 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     /* Keep these method signatures stable: HackingDeviceUiPolishMixin adds the
-     * Facility Mapping lines and the finalized success sequence here. */
+     * Facility Mapping lines and finalized success sequence here. */
     private static void renderSession(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
         Phase phase = HackingDeviceMinigameClient.phase();
@@ -401,30 +301,34 @@ public final class HackingDeviceAttachedRenderer {
         return String.format("%02X", value & 0xFF);
     }
 
+    /** Public bridge used by the UI-polish mixin without touching Font buffers. */
+    public static void pixelDraw(String text, float x, float y, int color) {
+        HackingDevicePixelFont.draw(text, x, y, color);
+    }
+
+    public static void pixelCentered(String text, float y, int color) {
+        HackingDevicePixelFont.centered(text, y, color);
+    }
+
+    public static float pixelWidth(String text) {
+        return HackingDevicePixelFont.width(text);
+    }
+
     private static void centered(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers, String text, float y,
             int color) {
-        var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
-        float x = (LOGICAL_WIDTH - font.width(sequence)) * 0.5F;
-        font.drawInBatch(sequence, x, y, color, false,
-                poseStack.last().pose(), buffers,
-                Font.DisplayMode.SEE_THROUGH, 0,
-                LightTexture.FULL_BRIGHT);
+        HackingDevicePixelFont.centered(text, y, color);
     }
 
     private static void draw(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers, String text, float x,
             float y, int color) {
-        var sequence = ScpFonts.anonymousPro(text).getVisualOrderText();
-        font.drawInBatch(sequence, x, y, color, false,
-                poseStack.last().pose(), buffers,
-                Font.DisplayMode.SEE_THROUGH, 0,
-                LightTexture.FULL_BRIGHT);
+        HackingDevicePixelFont.draw(text, x, y, color);
     }
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
-        SCREEN_TRANSFORMS.clear();
+        HackingDevicePixelFont.end();
         HackingDeviceClientState.clear();
         HackingDeviceFocusClient.forceClear();
     }

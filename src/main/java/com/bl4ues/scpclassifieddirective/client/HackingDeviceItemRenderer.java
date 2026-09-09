@@ -57,12 +57,6 @@ public final class HackingDeviceItemRenderer
             super.renderByItem(stack, displayContext, poseStack, bufferSource,
                     packedLight, packedOverlay);
 
-            /*
-             * Do not emit font geometry from renderForBone. At that point Gecko
-             * still owns an item RenderType and shaders can reorder/overwrite the
-             * glyphs with the rest of the model. Capture the real screen matrix
-             * there, finish Gecko completely, then render the cooldown here.
-             */
             if (heldScreenTransform != null
                     && displayContext != ItemDisplayContext.NONE
                     && Minecraft.getInstance().level != null
@@ -73,13 +67,21 @@ public final class HackingDeviceItemRenderer
                                 ? source : null;
                 if (direct != null) direct.endBatch();
 
-                poseStack.pushPose();
-                poseStack.last().pose().set(heldScreenTransform);
-                HackingDeviceScreenTextClient.renderItemCooldown(stack,
-                        Minecraft.getInstance().font, poseStack, bufferSource);
-                poseStack.popPose();
-
-                if (direct != null) direct.endBatch();
+                /*
+                 * The screen bone still supplies the exact hand/item transform,
+                 * but the countdown itself is now emitted as opaque pixel quads.
+                 * This avoids the same Font RenderType failure that kept the
+                 * attached minigame completely black.
+                 */
+                HackingDevicePixelFont.beginMatrix(bufferSource,
+                        heldScreenTransform);
+                try {
+                    HackingDeviceScreenTextClient.renderItemCooldown(stack,
+                            Minecraft.getInstance().font, poseStack, bufferSource);
+                } finally {
+                    HackingDevicePixelFont.end();
+                }
+                HackingDevicePixelFont.flush(bufferSource);
             }
         } finally {
             heldScreenTransform = null;

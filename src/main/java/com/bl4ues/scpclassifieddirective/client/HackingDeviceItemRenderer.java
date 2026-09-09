@@ -28,9 +28,7 @@ import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
  * reader-attached device we capture the exact logical-screen matrix while Gecko
  * walks that bone and let the world renderer paint characters only after the
  * model batch has been flushed. For a held cooldown we can paint immediately,
- * but still split the model and font passes explicitly. This prevents the CRT
- * text from losing a depth/order fight with the zero-thickness screen under
- * shaders.
+ * but still split the model and font passes explicitly.
  */
 public final class HackingDeviceItemRenderer
         extends GeoItemRenderer<HackingDeviceItem> {
@@ -135,7 +133,7 @@ public final class HackingDeviceItemRenderer
         Vector3f topLeft = vertices[0].position();
         Vector3f topRight = vertices[1].position();
         Vector3f bottomLeft = vertices[3].position();
-        Vector3f normal = screenQuad.normal();
+        Vector3f northNormal = screenQuad.normal();
 
         float width = distance(topLeft, topRight);
         float height = distance(topLeft, bottomLeft);
@@ -147,21 +145,24 @@ public final class HackingDeviceItemRenderer
 
         poseStack.pushPose();
         applyCubeTransform(poseStack, screenCube);
+
+        /*
+         * The approved operation camera sees the opposite side of the authored
+         * NORTH face. Offsetting text along NORTH therefore buried every glyph
+         * behind the opaque zero-thickness CRT plane. Move it toward the actual
+         * visible side instead. The same fix applies to the five-second timer in
+         * hand because both are drawn from this exact screen cube.
+         */
         poseStack.translate(
-                topLeft.x() + normal.x() * SCREEN_TEXT_OFFSET,
-                topLeft.y() + normal.y() * SCREEN_TEXT_OFFSET,
-                topLeft.z() + normal.z() * SCREEN_TEXT_OFFSET);
+                topLeft.x() - northNormal.x() * SCREEN_TEXT_OFFSET,
+                topLeft.y() - northNormal.y() * SCREEN_TEXT_OFFSET,
+                topLeft.z() - northNormal.z() * SCREEN_TEXT_OFFSET);
         poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
 
         if (attached) {
-            // Store the complete final model-view transform. Drawing is deferred
-            // until HackingDeviceAttachedRenderer has flushed the Gecko body.
             ATTACHED_SCREEN_TRANSFORM.set(
                     new Matrix4f(poseStack.last().pose()));
         } else {
-            // The screen cube has already been submitted to the model buffer.
-            // Finish it before emitting font vertices so shaders cannot reorder
-            // the coplanar-ish passes and hide the cooldown characters.
             buffers.endBatch();
             HackingDeviceScreenTextClient.renderItemCooldown(renderedStack,
                     minecraft.font, poseStack, buffers);

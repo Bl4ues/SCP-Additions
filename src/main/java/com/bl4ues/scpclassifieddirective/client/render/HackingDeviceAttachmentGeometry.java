@@ -16,15 +16,22 @@ public final class HackingDeviceAttachmentGeometry {
     /** User-authored back/head contact point used to seat the device on a reader. */
     private static final Vec3 DEVICE_CONTACT = pixels(0.35D, 7.8009D, 1.4402D);
 
-    /** Screen center after its -22.5 degree X rotation and the body's 180 Y turn. */
+    /**
+     * Exact screen center after the screen cube's -22.5 degree X rotation and
+     * the body's 180 degree Y rotation. The model itself owns the black CRT plane;
+     * this frame is used only for text and camera geometry.
+     */
     private static final Vec3 SCREEN_CENTER = pixels(
             -0.03D, 7.41817334D, 1.16496434D);
     private static final Vec3 SCREEN_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 SCREEN_UP = new Vec3(
             0.0D, 0.9238795325D, 0.3826834324D);
-    /** Visible CRT normal, derived from RIGHT x UP. */
+    /**
+     * Viewer-side CRT normal. RIGHT x UP points into the model for this authored
+     * plane, so the visible normal is the opposite direction.
+     */
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
-            0.0D, 0.3826834324D, -0.9238795325D);
+            0.0D, -0.3826834324D, 0.9238795325D);
 
     public static final double SCREEN_WIDTH = 2.5D / 16.0D;
     public static final double SCREEN_HEIGHT = 1.5D / 16.0D;
@@ -48,11 +55,12 @@ public final class HackingDeviceAttachmentGeometry {
                     0.5D - 9.625D / 16.0D,
                     13.28094476D / 16.0D,
                     0.5D + 0.90481263D / 16.0D);
+        } else if (reader.side() == KeycardReaderLevels.Side.RIGHT) {
+            // Exact Blockbench attachment pivot supplied for right readers.
+            localTarget = pixels(-2.65D, 1.05D, 14.2D);
         } else {
-            double x = reader.side() == KeycardReaderLevels.Side.RIGHT
-                    ? -2.63D / 16.0D : 18.67D / 16.0D;
-            /* 14.3076 is the visible/front face, not the wall-side 15.98 cap. */
-            localTarget = new Vec3(x, 1.3716D / 16.0D, 14.3076D / 16.0D);
+            // Exact Blockbench attachment pivot supplied for left readers.
+            localTarget = pixels(18.85D, 1.05D, 14.2D);
         }
 
         Vec3 worldTarget = localToWorld(pos, localTarget, facing);

@@ -28,7 +28,10 @@ public final class SpeakerVoiceChatBridge {
     private static final Map<UUID, OpusDecoder> DECODERS = new HashMap<>();
     private static final Map<ChannelKey, FilterChannel> CHANNELS = new HashMap<>();
 
-    private static final boolean OPERATOR_SELF_MONITOR = true;
+    // The SCP-079 operator heard their own routed microphone during development
+    // so Speaker filtering could be tuned without a second client. Keep the
+    // broadcast itself intact, but do not echo that microphone back to 079 now.
+    private static final boolean SCP079_OPERATOR_SELF_MONITOR = false;
     private static final double SCP079_VOICE_OUTPUT_GAIN = 0.50D;
     private static final double INTERCOM_VOICE_OUTPUT_GAIN = 0.28D;
     private static final double VOICE_SAMPLE_RATE = 48_000.0D;
@@ -131,10 +134,13 @@ public final class SpeakerVoiceChatBridge {
             MinecraftServer server, ServerPlayer speaker,
             SpeakerBroadcastManager.VoiceSource source,
             LocationalSoundPacket packet) {
+        boolean suppressScp079SelfMonitor = source.sourceType()
+                == SpeakerBroadcastManager.SourceType.SCP_079
+                && !SCP079_OPERATOR_SELF_MONITOR;
         for (ServerPlayer receiver : server.getPlayerList().getPlayers()) {
             if (!receiver.level().dimension().equals(source.dimension())
                     || DeathSpectateCoordinator.isDeadVoiceParticipant(receiver)
-                    || (!OPERATOR_SELF_MONITOR
+                    || (suppressScp079SelfMonitor
                     && receiver.getUUID().equals(speaker.getUUID()))) {
                 continue;
             }

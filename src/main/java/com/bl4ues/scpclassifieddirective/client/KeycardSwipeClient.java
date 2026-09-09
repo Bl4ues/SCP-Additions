@@ -57,19 +57,25 @@ public final class KeycardSwipeClient {
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
 
     /*
-     * The OCU path is already correct. Its Y/Z slope follows the reader's
-     * authored +35 degree slot, so the card's long axis remains locked to that
-     * path. The slot lives between the two reader slabs along X. With the x=6.8
-     * edge anchored on the measured centre line, local +X must point toward the
-     * exposed side of the reader. The previous -X sign put the full 2.3 px card
-     * width into the reader even though the anchored edge itself was correct.
+     * Do not derive the OCU card orientation from the swipe endpoints. Those
+     * coordinates describe the animation path, not the reader's local frame.
+     * The physical slot is authored at +35 degrees around X. Its top-face normal
+     * is therefore (0, cos(35), sin(35)), while its groove runs along rotated
+     * local +Z. Anchor the card's x=6.8 edge in the slot, put its 0.1 px thin
+     * axis across the 0.1 px X gap, and let the rest of the card grow along the
+     * actual exposed surface normal. This removes the inward rotation without
+     * changing the already-correct swipe trajectory.
      */
-    private static final Vec3 OCU_CARD_LONG_AXIS =
-            OCU_START.subtract(OCU_END).normalize();
+    private static final double OCU_READER_PITCH_RADIANS =
+            Math.toRadians(35.0D);
     private static final Vec3 OCU_THIN_NORMAL =
             new Vec3(1.0D, 0.0D, 0.0D);
-    private static final Vec3 OCU_CARD_WIDTH_AXIS =
-            OCU_CARD_LONG_AXIS.cross(OCU_THIN_NORMAL).normalize();
+    private static final Vec3 OCU_CARD_WIDTH_AXIS = new Vec3(
+            0.0D,
+            Math.cos(OCU_READER_PITCH_RADIANS),
+            Math.sin(OCU_READER_PITCH_RADIANS));
+    private static final Vec3 OCU_CARD_LONG_AXIS =
+            OCU_THIN_NORMAL.cross(OCU_CARD_WIDTH_AXIS).normalize();
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
 
@@ -172,7 +178,7 @@ public final class KeycardSwipeClient {
 
     private static void applyOcuSlotOrientation(PoseStack poseStack) {
         Matrix4f basis = new Matrix4f().identity();
-        // Keycard local X/Y/Z = broad width / upside-down long axis / thin edge.
+        // Keycard local X/Y/Z = exposed width / groove direction / thin slot edge.
         basis.m00((float) OCU_CARD_WIDTH_AXIS.x);
         basis.m01((float) OCU_CARD_WIDTH_AXIS.y);
         basis.m02((float) OCU_CARD_WIDTH_AXIS.z);

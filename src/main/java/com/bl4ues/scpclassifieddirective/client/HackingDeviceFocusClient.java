@@ -107,7 +107,9 @@ public final class HackingDeviceFocusClient {
 
         Attachment attachment = attachment(minecraft);
         if (attachment == null) return null;
-        Vec3 center = attachment.screen().center();
+        double seating = HackingDeviceClientState.seatingOffset(activePos);
+        Vec3 center = attachment.screen().center().add(
+                attachment.screen().outward().scale(seating));
         Vec3 targetEye = center.add(attachment.screen().outward()
                 .scale(HackingDeviceAttachmentGeometry.FOCUS_DISTANCE));
         Vec3 look = center.subtract(targetEye);

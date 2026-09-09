@@ -41,7 +41,9 @@ public final class HackingDeviceAttachedRenderer {
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
-    private static final double TEXT_EPSILON = 0.0026D;
+
+    /* Match the proven Diagnostic Terminal world-text depth separation. */
+    private static final double TEXT_EPSILON = 0.0078D;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -117,13 +119,14 @@ public final class HackingDeviceAttachedRenderer {
     }
 
     /**
-     * Draws characters directly on the authored 2.5 x 1.5 `screen` plane. The
-     * Hacking Device camera is intentionally allowed to remain on whichever side
-     * of that plane the player approached from. Therefore a fixed +OUTWARD text
-     * offset can put every glyph behind the opaque CRT even while the camera is
-     * framed correctly. Resolve the visible face from the real camera position,
-     * offset toward that face, and build a right-handed logical X/down/normal
-     * basis so font geometry is never reflected or back-facing.
+     * Draw the characters with the same world-space recipe already proven by the
+     * Diagnostic Terminal: top-left screen origin, RIGHT/UP/NORMAL basis,
+     * negative logical Y scale and a real depth separation before NORMAL font
+     * rendering. The Hacking Device may be approached from either side, so the
+     * normal and horizontal axis are flipped together when the camera is behind
+     * the authored +Z face. This keeps text facing the player without mirroring
+     * it and, crucially, keeps the glyphs clear of the coplanar CRT/housing face
+     * under shader depth precision.
      */
     private static void renderWorldScreenText(Minecraft minecraft,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers,
@@ -132,16 +135,16 @@ public final class HackingDeviceAttachedRenderer {
         Frame frame = attachment.screen();
         Vec3 center = frame.center()
                 .add(attachment.mountOutward().scale(seating));
-        Vec3 authoredOutward = frame.outward().normalize();
-        double cameraSide = camera.subtract(center).dot(authoredOutward);
+        Vec3 up = frame.up().normalize();
+        Vec3 authoredNormal = frame.outward().normalize();
+        double cameraSide = camera.subtract(center).dot(authoredNormal);
         Vec3 visibleNormal = cameraSide >= 0.0D
-                ? authoredOutward : authoredOutward.scale(-1.0D);
-        Vec3 down = frame.up().normalize().scale(-1.0D);
-        Vec3 right = down.cross(visibleNormal).normalize();
+                ? authoredNormal : authoredNormal.scale(-1.0D);
+        Vec3 right = up.cross(visibleNormal).normalize();
 
         Vec3 topLeft = center
                 .add(right.scale(-frame.width() * 0.5D))
-                .add(down.scale(-frame.height() * 0.5D))
+                .add(up.scale(frame.height() * 0.5D))
                 .add(visibleNormal.scale(TEXT_EPSILON))
                 .subtract(camera);
 
@@ -149,9 +152,9 @@ public final class HackingDeviceAttachedRenderer {
         basis.m00((float) right.x);
         basis.m01((float) right.y);
         basis.m02((float) right.z);
-        basis.m10((float) down.x);
-        basis.m11((float) down.y);
-        basis.m12((float) down.z);
+        basis.m10((float) up.x);
+        basis.m11((float) up.y);
+        basis.m12((float) up.z);
         basis.m20((float) visibleNormal.x);
         basis.m21((float) visibleNormal.y);
         basis.m22((float) visibleNormal.z);
@@ -163,7 +166,7 @@ public final class HackingDeviceAttachedRenderer {
         poseStack.pushPose();
         poseStack.translate(topLeft.x, topLeft.y, topLeft.z);
         poseStack.mulPoseMatrix(basis);
-        poseStack.scale(pixelScaleX, pixelScaleY, depthScale);
+        poseStack.scale(pixelScaleX, -pixelScaleY, depthScale);
         renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
         poseStack.popPose();
     }

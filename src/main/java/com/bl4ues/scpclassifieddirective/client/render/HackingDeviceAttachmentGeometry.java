@@ -22,20 +22,13 @@ public final class HackingDeviceAttachmentGeometry {
     private static final Vec3 SCREEN_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 SCREEN_UP = new Vec3(
             0.0D, 0.9238795325D, 0.3826834324D);
-    /*
-     * Front-face normal. The device's authored contact point is on the back of
-     * the head at +Z after the body 180 degree turn, while the CRT faces toward
-     * -Z. Keeping OUTWARD = RIGHT x UP makes renderer, screen offset and camera
-     * all agree on the same visible side. The previous sign put the camera
-     * between the CRT and the reader, which is why the entire view was buried
-     * inside the model.
-     */
+    /** Visible CRT normal, derived from RIGHT x UP. */
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
             0.0D, 0.3826834324D, -0.9238795325D);
 
     public static final double SCREEN_WIDTH = 2.5D / 16.0D;
     public static final double SCREEN_HEIGHT = 1.5D / 16.0D;
-    public static final double FOCUS_DISTANCE = 0.150D;
+    public static final double FOCUS_DISTANCE = 0.230D;
 
     private HackingDeviceAttachmentGeometry() {
     }
@@ -56,10 +49,10 @@ public final class HackingDeviceAttachmentGeometry {
                     13.28094476D / 16.0D,
                     0.5D + 0.90481263D / 16.0D);
         } else {
-            // Center of the actual wall-reader body/cap in its NORTH-authored model.
             double x = reader.side() == KeycardReaderLevels.Side.RIGHT
                     ? -2.63D / 16.0D : 18.67D / 16.0D;
-            localTarget = new Vec3(x, 1.3716D / 16.0D, 15.98D / 16.0D);
+            /* 14.3076 is the visible/front face, not the wall-side 15.98 cap. */
+            localTarget = new Vec3(x, 1.3716D / 16.0D, 14.3076D / 16.0D);
         }
 
         Vec3 worldTarget = localToWorld(pos, localTarget, facing);

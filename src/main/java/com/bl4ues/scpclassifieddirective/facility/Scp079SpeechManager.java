@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.compat.ModCompatibilityConfig;
+import com.bl4ues.scpclassifieddirective.compat.SimpleVoiceChatPresence;
 import com.bl4ues.scpclassifieddirective.facility.speaker.FacilitySpeakerRegistry;
 import com.bl4ues.scpclassifieddirective.facility.speaker.SpeakerBroadcastManager;
 import com.bl4ues.scpclassifieddirective.facility.speaker.SpeakerTransientBroadcastManager;
@@ -71,7 +72,12 @@ public final class Scp079SpeechManager {
 
     public static boolean request(ServerPlayer player, String rawText) {
         if (player == null || player.getServer() == null
-                || !Scp079PlayableManager.isController(player)) return false;
+                || !Scp079PlayableManager.isController(player)
+                || !SimpleVoiceChatPresence.installed()
+                || !ModCompatibilityConfig.simpleVoiceChatEnabled()
+                || backend == null) {
+            return false;
+        }
         String text = sanitize(rawText);
         if (text.isEmpty() || text.startsWith("/")) return false;
 
@@ -131,6 +137,7 @@ public final class Scp079SpeechManager {
         ServerPlayer player = server.getPlayerList().getPlayer(playerId);
         if (player == null || !Scp079PlayableManager.isController(player)
                 || audio == null || audio.length == 0
+                || !SimpleVoiceChatPresence.installed()
                 || !ModCompatibilityConfig.simpleVoiceChatEnabled()) {
             finish(server, playerId, token);
             return;

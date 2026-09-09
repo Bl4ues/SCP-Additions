@@ -7,6 +7,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -20,15 +21,25 @@ import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
-/** GeckoLib renderer for the handheld Hacking Device and its physical CRT. */
+/**
+ * GeckoLib renderer for the Hacking Device and its physical CRT.
+ *
+ * The CRT transform is captured from the real `screen` bone while GeckoLib is
+ * rendering it. Attached minigame characters and the held five-second timer are
+ * then painted only after the item model has completely finished its own pass.
+ * This keeps the UI on the authored 2.5 x 1.5 screen plane instead of trying to
+ * reproduce that plane from the separate camera framing geometry.
+ */
 public final class HackingDeviceItemRenderer
         extends GeoItemRenderer<HackingDeviceItem> {
     private static final double SCREEN_TEXT_OFFSET = 0.0080D;
     private static final float MIN_FACE_AREA = 0.0000001F;
+    private static final ThreadLocal<BlockPos> ATTACHED_TARGET =
+            new ThreadLocal<>();
 
     private ItemStack renderedStack = ItemStack.EMPTY;
     private ItemDisplayContext renderedContext = ItemDisplayContext.NONE;
-    private Matrix4f heldScreenTransform;
+    private Matrix4f screenTransform;
 
     public HackingDeviceItemRenderer() {
         super(new HackingDeviceGeoModel());
@@ -40,75 +51,109 @@ public final class HackingDeviceItemRenderer
                     VertexConsumer buffer, float partialTick, int packedLight,
                     int packedOverlay) {
                 if ("screen".equals(bone.getName())) {
-                    captureHeldPhysicalScreen(poseStack, bone);
+                    capturePhysicalScreen(poseStack, bone);
                 }
             }
         });
+    }
+
+    /** Marks the following NONE-context item render as a reader-attached unit. */
+    public static void beginAttachedRender(BlockPos pos) {
+        ATTACHED_TARGET.remove();
+        if (pos != null) ATTACHED_TARGET.set(pos.immutable());
+    }
+
+    public static void endAttachedRender() {
+        ATTACHED_TARGET.remove();
     }
 
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext,
             PoseStack poseStack, MultiBufferSource bufferSource,
             int packedLight, int packedOverlay) {
+        Minecraft minecraft = Minecraft.getInstance();
+        BlockPos attachedTarget = ATTACHED_TARGET.get();
+        boolean attached = attachedTarget != null;
+
         renderedStack = stack;
         renderedContext = displayContext;
-        heldScreenTransform = null;
+        screenTransform = null;
         try {
             super.renderByItem(stack, displayContext, poseStack, bufferSource,
                     packedLight, packedOverlay);
 
-            if (heldScreenTransform != null
-                    && displayContext != ItemDisplayContext.NONE
-                    && Minecraft.getInstance().level != null
-                    && HackingDeviceItem.isCoolingDown(stack,
-                            Minecraft.getInstance().level)) {
-                MultiBufferSource.BufferSource direct =
-                        bufferSource instanceof MultiBufferSource.BufferSource source
-                                ? source : null;
-                if (direct != null) direct.endBatch();
+            if (screenTransform == null || minecraft.level == null) return;
 
-                /*
-                 * The screen bone still supplies the exact hand/item transform,
-                 * but the countdown itself is now emitted as opaque pixel quads.
-                 * This avoids the same Font RenderType failure that kept the
-                 * attached minigame completely black.
-                 */
-                HackingDevicePixelFont.beginMatrix(bufferSource,
-                        heldScreenTransform);
-                try {
-                    HackingDeviceScreenTextClient.renderItemCooldown(stack,
-                            Minecraft.getInstance().font, poseStack, bufferSource);
-                } finally {
-                    HackingDevicePixelFont.end();
-                }
-                HackingDevicePixelFont.flush(bufferSource);
+            boolean heldCooldown = !attached
+                    && displayContext != ItemDisplayContext.NONE
+                    && !stack.isEmpty()
+                    && HackingDeviceItem.isCoolingDown(stack, minecraft.level);
+            if (!attached && !heldCooldown) return;
+
+            /*
+             * Stay inside the same BEWLR invocation that drew the model. The
+             * stored matrix already contains the actual screen bone, cube,
+             * display-context and reader-world transforms, so there is nothing
+             * left to reconstruct from the camera frame.
+             */
+            if (bufferSource instanceof MultiBufferSource.BufferSource direct) {
+                direct.endBatch();
             }
+
+            HackingDevicePixelFont.beginMatrix(bufferSource, screenTransform);
+            try {
+                if (attached) {
+                    if (bufferSource instanceof MultiBufferSource.BufferSource direct) {
+                        HackingDeviceAttachedRenderer.renderAttachedScreenText(
+                                attachedTarget, minecraft.font, poseStack, direct);
+                    } else {
+                        HackingDeviceAttachedRenderer.renderAttachedPixels(
+                                attachedTarget);
+                    }
+                } else {
+                    HackingDeviceScreenTextClient.renderItemCooldown(stack,
+                            minecraft.font, poseStack, bufferSource);
+                }
+            } finally {
+                HackingDevicePixelFont.end();
+            }
+            HackingDevicePixelFont.flush(bufferSource);
         } finally {
-            heldScreenTransform = null;
+            screenTransform = null;
             renderedStack = ItemStack.EMPTY;
             renderedContext = ItemDisplayContext.NONE;
         }
     }
 
-    private void captureHeldPhysicalScreen(PoseStack poseStack, GeoBone bone) {
+    private void capturePhysicalScreen(PoseStack poseStack, GeoBone bone) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || bone.getCubes().isEmpty()
-                || renderedContext == ItemDisplayContext.NONE
-                || renderedStack.isEmpty()
-                || !HackingDeviceItem.isCoolingDown(renderedStack,
-                        minecraft.level)) {
+        boolean attached = ATTACHED_TARGET.get() != null;
+        boolean heldCooldown = !attached
+                && minecraft.level != null
+                && renderedContext != ItemDisplayContext.NONE
+                && !renderedStack.isEmpty()
+                && HackingDeviceItem.isCoolingDown(renderedStack,
+                        minecraft.level);
+
+        if ((!attached && !heldCooldown) || bone.getCubes().isEmpty()) {
             return;
         }
 
+        /*
+         * renderForBone is called with every parent-bone transform already on
+         * the stack, but after Gecko has popped the individual cube transform.
+         * Reapply only the `screen` cube pivot/rotation, exactly like
+         * GeoRenderer.renderCube(), then resolve the real flat face.
+         */
         GeoCube screenCube = bone.getCubes().get(0);
         poseStack.pushPose();
         applyCubeTransform(poseStack, screenCube);
-        heldScreenTransform = buildLogicalScreenTransform(screenCube,
+        screenTransform = buildLogicalScreenTransform(screenCube,
                 poseStack.last().pose());
         poseStack.popPose();
     }
 
-    /** Builds logical CRT coordinates from the real transformed screen quad. */
+    /** Builds 256x154 logical CRT coordinates from the transformed flat cube. */
     private static Matrix4f buildLogicalScreenTransform(GeoCube cube,
             Matrix4f renderedCubePose) {
         ScreenFace bestFacing = null;
@@ -181,12 +226,12 @@ public final class HackingDeviceItemRenderer
         Vector3f p2 = transform(vertices[2].position(), pose);
         Vector3f p3 = transform(vertices[3].position(), pose);
 
-        Vector3f edgeRight = new Vector3f(p1).sub(p0);
-        Vector3f edgeDown = new Vector3f(p3).sub(p0);
-        float area = edgeRight.length() * edgeDown.length();
+        Vector3f edgeOne = new Vector3f(p1).sub(p0);
+        Vector3f edgeTwo = new Vector3f(p3).sub(p0);
+        float area = edgeOne.length() * edgeTwo.length();
         if (area <= MIN_FACE_AREA) return null;
 
-        Vector3f normal = new Vector3f(edgeRight).cross(edgeDown);
+        Vector3f normal = new Vector3f(edgeOne).cross(edgeTwo);
         if (normal.lengthSquared() <= MIN_FACE_AREA) return null;
         normal.normalize();
 

@@ -10,28 +10,30 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * One geometry definition for attached-device rendering, its physical screen and
- * camera focus. Values come directly from the authored Blockbench geometry.
+ * camera focus. Values are expressed in GeckoLib's rendered model coordinates.
  */
 public final class HackingDeviceAttachmentGeometry {
     /** User-authored back/head contact point used to seat the device on a reader. */
     private static final Vec3 DEVICE_CONTACT = pixels(0.35D, 7.8009D, 1.4402D);
 
     /*
-     * The visible screen is the actual 2.5 x 1.5 zero-thickness cube inside the
-     * `screen` bone, not the bone pivot. Its cube centre is
-     * [-0.35, 7.60, -1.05], rotated -22.5 degrees around
-     * [-0.35, 7.725, -0.55], then inherited through the body's 180-degree Y
-     * rotation. That produces the real rendered centre below.
+     * The Blockbench screen cube is authored at origin [-1.6, 6.85, -1.05],
+     * size [2.5, 1.5, 0], pivot [-0.35, 7.725, -0.55] and -22.5 degrees X,
+     * inside a body rotated 180 degrees Y. GeckoLib 4.4.9 mirrors model X and
+     * negates authored X/Y rotations while baking. Applying those same rules
+     * gives the actual rendered plane below. The previous constants applied the
+     * raw Blockbench rotations directly, putting the camera frame on the back of
+     * the device and tilting its centre away from the real CRT.
      */
     private static final Vec3 SCREEN_CENTER = pixels(
-            -0.03D, 7.41817334D, 1.16496434D);
+            0.03D, 7.8008567746D, 1.2606351953D);
     private static final Vec3 SCREEN_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 SCREEN_UP = new Vec3(
-            0.0D, 0.9238795325D, 0.3826834324D);
+            0.0D, 0.9238795325D, -0.3826834324D);
 
-    /* RIGHT x UP: the authored visible CRT face. */
+    /** Visible NORTH face of the baked zero-thickness CRT plane. */
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
-            0.0D, 0.3826834324D, -0.9238795325D);
+            0.0D, 0.3826834324D, 0.9238795325D);
 
     /*
      * Centre of the OCU reader's visible upper surface. The old attachment point
@@ -50,7 +52,7 @@ public final class HackingDeviceAttachmentGeometry {
     private HackingDeviceAttachmentGeometry() {
     }
 
-    /** Exact CRT frame in the Hacking Device model's own rendered coordinates. */
+    /** Exact CRT frame in the Hacking Device model's rendered local coordinates. */
     public static PhysicalBlockScreenGeometry.Frame localScreenFrame() {
         return new PhysicalBlockScreenGeometry.Frame(
                 SCREEN_CENTER, SCREEN_RIGHT, SCREEN_UP, SCREEN_OUTWARD,
@@ -87,9 +89,7 @@ public final class HackingDeviceAttachmentGeometry {
                 new PhysicalBlockScreenGeometry.Frame(screenCenter, right, up,
                         outward, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        // Keep the current Attachment API so renderer/audio callers remain stable.
-        // The pre-regression placement had no extra OCU pitch; seating followed
-        // the same visible-screen normal used by the camera.
+        // The screen's visible normal is also the reader-facing slide direction.
         return new Attachment(origin, worldTarget, facing, 0.0F, outward,
                 frame, ocu);
     }

@@ -178,8 +178,12 @@ public final class HackingDeviceSessionManager {
         }
 
         boolean accepted;
-        if (level.getBlockEntity(pos)
-                instanceof ObjectContainmentUnitModule.UnitBlockEntity unit) {
+        boolean objectContainmentUnit = level.getBlockEntity(pos)
+                instanceof ObjectContainmentUnitModule.UnitBlockEntity;
+        if (objectContainmentUnit) {
+            ObjectContainmentUnitModule.UnitBlockEntity unit =
+                    (ObjectContainmentUnitModule.UnitBlockEntity)
+                            level.getBlockEntity(pos);
             ObjectContainmentUnitHackInvoker invoker =
                     (ObjectContainmentUnitHackInvoker) (Object) unit;
             invoker.scpclassifieddirective$playReaderSound(true);
@@ -191,21 +195,32 @@ public final class HackingDeviceSessionManager {
         if (!accepted) return;
 
         session.granted = true;
-        session.countdownEnd = level.getGameTime()
-                + HackingDeviceItem.PASSAGE_COUNTDOWN_TICKS;
-        session.readyAt = session.countdownEnd
-                + HackingDeviceItem.BLINK_TOTAL_TICKS;
+        if (objectContainmentUnit) {
+            // The OCU has no five-second passage window. Power the Hacking Device
+            // screen down and return it normally without arming item cooldown NBT.
+            session.countdownEnd = 0L;
+            session.readyAt = 0L;
+        } else {
+            session.countdownEnd = level.getGameTime()
+                    + HackingDeviceItem.PASSAGE_COUNTDOWN_TICKS;
+            session.readyAt = session.countdownEnd
+                    + HackingDeviceItem.BLINK_TOTAL_TICKS;
+        }
 
         ServerPlayer player = level.getServer().getPlayerList()
                 .getPlayer(playerId);
         if (player != null) {
-            // Creative does not consume the original stack, so arm that same item
-            // immediately. Survival receives the tagged replacement on detach.
-            ItemStack held = player.getItemInHand(session.hand);
-            if (held.getItem() instanceof HackingDeviceItem) {
-                HackingDeviceItem.armCooldown(held, session.countdownEnd,
-                        session.readyAt);
+            if (!objectContainmentUnit) {
+                // Creative does not consume the original stack, so arm that same
+                // item immediately. Survival receives the tagged replacement on detach.
+                ItemStack held = player.getItemInHand(session.hand);
+                if (held.getItem() instanceof HackingDeviceItem) {
+                    HackingDeviceItem.armCooldown(held, session.countdownEnd,
+                            session.readyAt);
+                }
             }
+            // Zero timestamps deliberately select the same short COOLDOWN/off phase
+            // client-side for the OCU without drawing a countdown.
             HackingDeviceNetwork.beginCooldown(player, pos,
                     session.countdownEnd, session.readyAt);
         }

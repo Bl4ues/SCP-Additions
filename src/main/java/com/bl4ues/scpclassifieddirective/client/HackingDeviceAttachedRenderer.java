@@ -4,22 +4,17 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient.Phase;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
-import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,25 +24,24 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 
 import java.util.Set;
 
-/** Renders the device physically seated on readers and its character-only CRT. */
+/**
+ * Renders the device physically seated on readers. The CRT background is the
+ * actual `screen` plane in the GeckoLib model. Its characters are injected by
+ * HackingDeviceItemRenderer from the very same model pose, so there is no
+ * second world-space screen that can clip, jump or disagree with the model.
+ */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceAttachedRenderer {
-    private static final float LOGICAL_WIDTH = 256.0F;
-    private static final float LOGICAL_HEIGHT = 154.0F;
-    private static final float SCREEN_SCALE = (float)
-            (HackingDeviceAttachmentGeometry.SCREEN_WIDTH / LOGICAL_WIDTH);
-    private static final int GREEN = 0xFF49F06F;
-    private static final int GREEN_BRIGHT = 0xFF78FF94;
-    private static final int GREEN_DIM = 0xFF238A42;
-    private static final double SCREEN_EPSILON = 0.0015D;
-    private static final ResourceLocation SCREEN_MASK = new ResourceLocation(
-            "minecraft", "textures/block/white_concrete.png");
+    private static final float LOGICAL_WIDTH =
+            HackingDeviceScreenTextClient.LOGICAL_WIDTH;
+    private static final int GREEN = HackingDeviceScreenTextClient.GREEN;
+    private static final int GREEN_BRIGHT =
+            HackingDeviceScreenTextClient.GREEN_BRIGHT;
+    private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -72,24 +66,11 @@ public final class HackingDeviceAttachedRenderer {
                 continue;
             }
             BlockState state = minecraft.level.getBlockState(pos);
-            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos, state);
+            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
+                    state);
             if (attachment == null) continue;
             renderDevice(minecraft, poseStack, buffers, camera, pos,
                     attachment);
-        }
-        buffers.endBatch();
-
-        for (BlockPos pos : visibleDevices) {
-            if (!minecraft.level.hasChunkAt(pos)
-                    || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
-                continue;
-            }
-            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
-                    minecraft.level.getBlockState(pos));
-            if (attachment != null) {
-                renderScreen(minecraft, poseStack, buffers, camera, pos,
-                        attachment);
-            }
         }
         buffers.endBatch();
     }
@@ -101,6 +82,7 @@ public final class HackingDeviceAttachedRenderer {
         Vec3 origin = attachment.modelOrigin()
                 .add(attachment.screen().outward().scale(seating))
                 .subtract(camera);
+
         poseStack.pushPose();
         poseStack.translate(origin.x, origin.y, origin.z);
         poseStack.mulPose(Axis.YP.rotationDegrees(
@@ -108,48 +90,32 @@ public final class HackingDeviceAttachedRenderer {
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
         ItemStack deviceStack = new ItemStack(
                 ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
-        minecraft.getItemRenderer().renderStatic(deviceStack,
-                ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
-                poseStack, buffers, minecraft.level, 0);
-        poseStack.popPose();
-    }
 
-    private static void renderScreen(Minecraft minecraft, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers, Vec3 camera, BlockPos pos,
-            Attachment attachment) {
-        double seating = HackingDeviceClientState.seatingOffset(pos);
-        Frame original = attachment.screen();
-        Vec3 animatedCenter = original.center()
-                .add(original.outward().scale(seating));
-        Frame frame = new Frame(animatedCenter, original.right(), original.up(),
-                original.outward(), original.width(), original.height());
-        RenderType panelType = RenderType.entityCutoutNoCull(SCREEN_MASK);
-        VertexConsumer panel = buffers.getBuffer(panelType);
-        emitBlackPanel(panel, poseStack.last(), frame, camera);
-        buffers.endBatch(panelType);
-
-        Vec3 center = frame.center().subtract(camera)
-                .add(frame.outward().scale(SCREEN_EPSILON * 2.0D));
-        poseStack.pushPose();
-        poseStack.translate(center.x, center.y, center.z);
-        poseStack.mulPose(Axis.YP.rotationDegrees(
-                HackingDeviceAttachmentGeometry.modelYaw(attachment.facing())
-                        + 180.0F));
-        poseStack.mulPose(Axis.XP.rotationDegrees(-22.5F));
-        poseStack.scale(-SCREEN_SCALE, -SCREEN_SCALE, SCREEN_SCALE);
-        poseStack.translate(-LOGICAL_WIDTH * 0.5F,
-                -LOGICAL_HEIGHT * 0.5F, 0.0F);
-
-        if (HackingDeviceMinigameClient.active()
-                && pos.equals(HackingDeviceMinigameClient.pos())) {
-            renderSession(minecraft.font, poseStack, buffers);
-        } else {
-            draw(minecraft.font, poseStack, buffers,
-                    "CI FIELD UNIT // STANDBY", 10.0F, 68.0F, GREEN_DIM);
+        HackingDeviceItemRenderer.beginAttachedRender(pos);
+        try {
+            minecraft.getItemRenderer().renderStatic(deviceStack,
+                    ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
+                    poseStack, buffers, minecraft.level, 0);
+        } finally {
+            HackingDeviceItemRenderer.endAttachedRender();
         }
         poseStack.popPose();
     }
 
+    /** Called from the Hacking Device's GeoRenderLayer in the live model pose. */
+    public static void renderAttachedScreenText(BlockPos pos, Font font,
+            PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
+        if (HackingDeviceMinigameClient.active()
+                && pos != null && pos.equals(HackingDeviceMinigameClient.pos())) {
+            renderSession(font, poseStack, buffers);
+        } else {
+            draw(font, poseStack, buffers, "CI FIELD UNIT // STANDBY",
+                    10.0F, 68.0F, GREEN_DIM);
+        }
+    }
+
+    /* Keep these method signatures stable: HackingDeviceUiPolishMixin adds the
+     * Facility Mapping lines and the finalized success sequence here. */
     private static void renderSession(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
         Phase phase = HackingDeviceMinigameClient.phase();
@@ -161,6 +127,8 @@ public final class HackingDeviceAttachedRenderer {
             case DENIED -> renderDenied(font, poseStack, buffers);
             case LOCKED -> renderLocked(font, poseStack, buffers);
             case SUCCESS -> renderSuccess(font, poseStack, buffers);
+            case COOLDOWN -> HackingDeviceScreenTextClient.renderAttachedCooldown(
+                    font, poseStack, buffers);
         }
     }
 
@@ -176,7 +144,8 @@ public final class HackingDeviceAttachedRenderer {
                 GREEN);
         draw(font, poseStack, buffers, bar, 10, 67, GREEN_BRIGHT);
         draw(font, poseStack, buffers,
-                String.format("LINK %3d%%", (int) Math.round(progress * 100.0D)),
+                String.format("LINK %3d%%",
+                        (int) Math.round(progress * 100.0D)),
                 10, 82, GREEN);
         if (progress > 0.35D) {
             draw(font, poseStack, buffers, "> CLOCK........SYNC", 10, 108,
@@ -192,7 +161,8 @@ public final class HackingDeviceAttachedRenderer {
             MultiBufferSource.BufferSource buffers) {
         int count = HackingDeviceMinigameClient.bootLineCount();
         draw(font, poseStack, buffers,
-                String.format("TARGET: KCR-L%d", HackingDeviceMinigameClient.accessLevel()),
+                String.format("TARGET: KCR-L%d",
+                        HackingDeviceMinigameClient.accessLevel()),
                 10, 15, GREEN_DIM);
         String[] lines = {
                 "> SNIFF AUTH BUS........OK",
@@ -202,11 +172,12 @@ public final class HackingDeviceAttachedRenderer {
         };
         for (int index = 0; index < count; index++) {
             draw(font, poseStack, buffers, lines[index], 10,
-                    42 + index * 22, index == count - 1 ? GREEN_BRIGHT : GREEN);
+                    42 + index * 22,
+                    index == count - 1 ? GREEN_BRIGHT : GREEN);
         }
         if ((System.nanoTime() / 80_000_000L & 1L) == 0L) {
-            draw(font, poseStack, buffers, "7A:4C:FF/03  0xA91E", 104, 132,
-                    GREEN_DIM);
+            draw(font, poseStack, buffers, "7A:4C:FF/03  0xA91E",
+                    104, 132, GREEN_DIM);
         }
     }
 
@@ -287,59 +258,7 @@ public final class HackingDeviceAttachedRenderer {
 
     private static void renderSuccess(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
-        double progress = HackingDeviceMinigameClient.phaseProgress();
-        centered(font, poseStack, buffers, "AUTH BYPASS COMMITTED", 9,
-                GREEN_DIM);
-        if (progress < 0.40D) {
-            asciiLock(font, poseStack, buffers, false, false);
-            centered(font, poseStack, buffers, "> RELEASING LOCK...", 128,
-                    GREEN);
-        } else if (progress < 0.58D) {
-            asciiLock(font, poseStack, buffers, true, false);
-            centered(font, poseStack, buffers, "> LATCH OVERRIDE...", 128,
-                    GREEN_BRIGHT);
-        } else {
-            asciiLock(font, poseStack, buffers, true, true);
-            centered(font, poseStack, buffers, "ACCESS GRANTED", 128,
-                    GREEN_BRIGHT);
-        }
-    }
-
-    private static void asciiLock(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers, boolean opening,
-            boolean open) {
-        String[] closed = {
-                "     .------.     ",
-                "    /        \\    ",
-                "    |        |    ",
-                "  .------------.  ",
-                "  |    [##]    |  ",
-                "  |     ||     |  ",
-                "  '------------'  "
-        };
-        String[] half = {
-                "       .----.      ",
-                "      /            ",
-                "     /             ",
-                "  .------------.  ",
-                "  |    [##]    |  ",
-                "  |     ||     |  ",
-                "  '------------'  "
-        };
-        String[] opened = {
-                "    .----.         ",
-                "   /               ",
-                "   |               ",
-                "  .------------.  ",
-                "  |    [  ]    |  ",
-                "  |            |  ",
-                "  '------------'  "
-        };
-        String[] lines = open ? opened : opening ? half : closed;
-        for (int index = 0; index < lines.length; index++) {
-            centered(font, poseStack, buffers, lines[index],
-                    30 + index * 12, GREEN_BRIGHT);
-        }
+        HackingDeviceScreenTextClient.renderSuccess(font, poseStack, buffers);
     }
 
     private static String hex(int value) {
@@ -365,38 +284,6 @@ public final class HackingDeviceAttachedRenderer {
                 poseStack.last().pose(), buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0,
                 LightTexture.FULL_BRIGHT);
-    }
-
-    private static void emitBlackPanel(VertexConsumer consumer,
-            PoseStack.Pose pose, Frame frame, Vec3 camera) {
-        Vec3 offset = frame.outward().scale(SCREEN_EPSILON);
-        Vec3 topLeft = frame.point(-0.5D, 0.5D, 0.0D)
-                .add(offset).subtract(camera);
-        Vec3 topRight = frame.point(0.5D, 0.5D, 0.0D)
-                .add(offset).subtract(camera);
-        Vec3 bottomRight = frame.point(0.5D, -0.5D, 0.0D)
-                .add(offset).subtract(camera);
-        Vec3 bottomLeft = frame.point(-0.5D, -0.5D, 0.0D)
-                .add(offset).subtract(camera);
-        Vec3 normalVector = frame.outward();
-        Matrix4f matrix = pose.pose();
-        Matrix3f normal = pose.normal();
-        vertex(consumer, matrix, normal, topLeft, 0.0F, 0.0F, normalVector);
-        vertex(consumer, matrix, normal, topRight, 1.0F, 0.0F, normalVector);
-        vertex(consumer, matrix, normal, bottomRight, 1.0F, 1.0F, normalVector);
-        vertex(consumer, matrix, normal, bottomLeft, 0.0F, 1.0F, normalVector);
-    }
-
-    private static void vertex(VertexConsumer consumer, Matrix4f matrix,
-            Matrix3f normal, Vec3 point, float u, float v, Vec3 normalVector) {
-        consumer.vertex(matrix, (float) point.x, (float) point.y, (float) point.z)
-                .color(0, 0, 0, 255)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(LightTexture.FULL_BRIGHT)
-                .normal(normal, (float) normalVector.x,
-                        (float) normalVector.y, (float) normalVector.z)
-                .endVertex();
     }
 
     @SubscribeEvent

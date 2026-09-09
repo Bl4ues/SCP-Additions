@@ -14,15 +14,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Adds mapped facility context to the Hacking Device and keeps every injected
- * line on the same physical pixel CRT as the base minigame renderer.
- */
+/** Adds stolen Facility Mapping context to the Chaos Insurgency boot sequence. */
 @Mixin(value = HackingDeviceAttachedRenderer.class, remap = false)
 public abstract class HackingDeviceUiPolishMixin {
     private static final int GREEN = 0xFF49F06F;
     private static final int GREEN_BRIGHT = 0xFF78FF94;
     private static final int GREEN_DIM = 0xFF238A42;
+    private static final int AMBER = 0xFFFFC857;
 
     @Inject(method = "renderBoot", at = @At("HEAD"), cancellable = true)
     private static void scpclassifieddirective$renderMappedBoot(Font font,
@@ -33,31 +31,35 @@ public abstract class HackingDeviceUiPolishMixin {
         int count = HackingDeviceMinigameClient.bootLineCount();
 
         draw(font, poseStack, buffers,
-                String.format("TARGET: KCR-L%d",
+                String.format("CI//SCIPNET-RIPPER  KCR-L%d",
                         HackingDeviceMinigameClient.accessLevel()),
                 8.0F, 7.0F, GREEN_DIM);
 
         float bootY;
         float bootStep;
         if (facility != null) {
-            drawFit(font, poseStack, buffers, "ZONE....." + facility.zone(),
-                    8.0F, 23.0F, 240.0F, GREEN);
-            drawFit(font, poseStack, buffers, "FLOOR...." + facility.floor(),
-                    8.0F, 37.0F, 240.0F, GREEN);
-            drawFit(font, poseStack, buffers, "ROOM....." + facility.room(),
-                    8.0F, 51.0F, 240.0F, GREEN_BRIGHT);
-            bootY = 72.0F;
-            bootStep = 15.0F;
+            drawFit(font, poseStack, buffers,
+                    "STOLEN MAP: " + facility.zone() + " / " + facility.floor(),
+                    8.0F, 21.0F, 240.0F, AMBER);
+            drawFit(font, poseStack, buffers,
+                    "TARGET ROOM: " + facility.room(),
+                    8.0F, 34.0F, 240.0F, GREEN_BRIGHT);
+            bootY = 52.0F;
+            bootStep = 16.0F;
         } else {
-            bootY = 35.0F;
-            bootStep = 22.0F;
+            draw(font, poseStack, buffers,
+                    "STOLEN MAP: [NO FACILITY CACHE]", 8.0F, 24.0F,
+                    AMBER);
+            bootY = 43.0F;
+            bootStep = 18.0F;
         }
 
         String[] lines = {
-                "> SNIFF AUTH BUS........OK",
-                "> CAPTURE FRAME.........OK",
-                "> CRC/XOR TABLE......LOADED",
-                "> BREACH CHANNEL......READY"
+                "> CERT CHAIN........FORGED",
+                "> NODE MAP.........STOLEN",
+                "> AUTH BUS........HOTWIRE",
+                "> ACL CACHE.........LIED",
+                "> BREACH MODULES....ARMED"
         };
         for (int index = 0; index < count; index++) {
             draw(font, poseStack, buffers, lines[index], 8.0F,
@@ -65,22 +67,8 @@ public abstract class HackingDeviceUiPolishMixin {
                     index == count - 1 ? GREEN_BRIGHT : GREEN);
         }
 
-        if ((System.nanoTime() / 80_000_000L & 1L) == 0L) {
-            draw(font, poseStack, buffers, "7A:4C:FF/03  0xA91E",
-                    104.0F, 138.0F, GREEN_DIM);
-        }
-    }
-
-    @Inject(method = "renderPuzzle", at = @At("TAIL"))
-    private static void scpclassifieddirective$renderMappedPuzzleContext(
-            Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers, CallbackInfo ci) {
-        FacilityContext facility = facilityContext();
-        if (facility == null) return;
-        String line = "MAP: " + facility.compactZone() + " / "
-                + facility.compactFloor() + " / " + facility.room();
-        drawFit(font, poseStack, buffers, line, 8.0F, 116.0F,
-                240.0F, GREEN_DIM);
+        draw(font, poseStack, buffers, "PATCHSET: BLACKBOX/0.7F-UNSIGNED",
+                8.0F, 139.0F, AMBER);
     }
 
     @Inject(method = "renderSuccess", at = @At("HEAD"), cancellable = true)
@@ -114,27 +102,16 @@ public abstract class HackingDeviceUiPolishMixin {
         if (room == null) return null;
 
         String longLabel = clean(room.floorLongLabel());
-        String shortLabel = clean(room.floorShortLabel());
         String zone = "UNKNOWN";
         String floor = longLabel.isBlank() ? "UNASSIGNED" : longLabel;
-        String compactZone = "?";
-        String compactFloor = shortLabel.isBlank() ? "?" : shortLabel;
-
-        int longSeparator = longLabel.indexOf(" - ");
-        if (longSeparator > 0) {
-            zone = longLabel.substring(0, longSeparator).strip();
-            floor = longLabel.substring(longSeparator + 3).strip();
+        int separator = longLabel.indexOf(" - ");
+        if (separator > 0) {
+            zone = longLabel.substring(0, separator).strip();
+            floor = longLabel.substring(separator + 3).strip();
         }
-        int shortSeparator = shortLabel.indexOf(" - ");
-        if (shortSeparator > 0) {
-            compactZone = shortLabel.substring(0, shortSeparator).strip();
-            compactFloor = shortLabel.substring(shortSeparator + 3).strip();
-        }
-
         String roomName = clean(room.name());
         if (roomName.isBlank()) roomName = "UNNAMED ROOM";
-        return new FacilityContext(zone, floor, roomName,
-                compactZone, compactFloor);
+        return new FacilityContext(zone, floor, roomName);
     }
 
     private static String clean(String value) {
@@ -145,31 +122,26 @@ public abstract class HackingDeviceUiPolishMixin {
     private static void drawFit(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers, String text, float x,
             float y, float maxWidth, int color) {
-        String fitted = fit(font, text, maxWidth);
-        draw(font, poseStack, buffers, fitted, x, y, color);
-    }
-
-    private static String fit(Font font, String text, float maxWidth) {
         String source = text == null ? "" : text;
-        if (width(font, source) <= maxWidth) return source;
+        if (width(source) <= maxWidth) {
+            draw(font, poseStack, buffers, source, x, y, color);
+            return;
+        }
         String suffix = "...";
         int end = source.length();
         while (end > 0) {
             String candidate = source.substring(0, end).stripTrailing() + suffix;
-            if (width(font, candidate) <= maxWidth) return candidate;
+            if (width(candidate) <= maxWidth) {
+                draw(font, poseStack, buffers, candidate, x, y, color);
+                return;
+            }
             end--;
         }
-        return suffix;
+        draw(font, poseStack, buffers, suffix, x, y, color);
     }
 
-    private static int width(Font font, String text) {
-        return Math.round(HackingDeviceAttachedRenderer.pixelWidth(text));
-    }
-
-    private static void centered(Font font, PoseStack poseStack,
-            MultiBufferSource.BufferSource buffers, String text, float y,
-            int color) {
-        HackingDeviceAttachedRenderer.pixelCentered(text, y, color);
+    private static float width(String text) {
+        return HackingDeviceAttachedRenderer.pixelWidth(text);
     }
 
     private static void draw(Font font, PoseStack poseStack,
@@ -178,7 +150,6 @@ public abstract class HackingDeviceUiPolishMixin {
         HackingDeviceAttachedRenderer.pixelDraw(text, x, y, color);
     }
 
-    private record FacilityContext(String zone, String floor, String room,
-            String compactZone, String compactFloor) {
+    private record FacilityContext(String zone, String floor, String room) {
     }
 }

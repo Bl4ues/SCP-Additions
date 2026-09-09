@@ -4,64 +4,59 @@ import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.Arrays;
 
-/** Immutable four-byte XOR-checksum repair challenge. */
-public record HackingDevicePuzzle(int[] bytes, int missingIndex,
-        int checksum, int[] candidates, int correctIndex) {
+/**
+ * One server-authored Hacking Device challenge.
+ *
+ * The client receives only the puzzle type/difficulty/public data. serverAnswer
+ * deliberately stays server-side and is never encoded into the packet.
+ */
+public record HackingDevicePuzzle(Type type, int difficulty, int[] data,
+        int serverAnswer) {
+    public enum Type {
+        CIRCUIT_PATH,
+        VISUAL_CHECKSUM,
+        FIREWALL_WINDOWS,
+        HOLD_SIGNAL,
+        FREQUENCY_LOCK
+    }
+
+    private static final int MAX_DATA = 24;
+
     public HackingDevicePuzzle {
-        bytes = sanitize(bytes, 4);
-        candidates = sanitize(candidates, 4);
-        missingIndex = Math.max(0, Math.min(3, missingIndex));
-        checksum &= 0xFF;
-        correctIndex = Math.max(0, Math.min(3, correctIndex));
+        type = type == null ? Type.FREQUENCY_LOCK : type;
+        difficulty = Math.max(1, Math.min(6, difficulty));
+        data = sanitize(data);
     }
 
     @Override
-    public int[] bytes() {
-        return Arrays.copyOf(bytes, bytes.length);
+    public int[] data() {
+        return Arrays.copyOf(data, data.length);
     }
 
-    @Override
-    public int[] candidates() {
-        return Arrays.copyOf(candidates, candidates.length);
-    }
-
-    public int candidate(int index) {
-        return candidates[Math.max(0, Math.min(candidates.length - 1, index))];
-    }
-
-    public int computedChecksum(int candidateIndex) {
-        int value = 0;
-        for (int index = 0; index < bytes.length; index++) {
-            value ^= index == missingIndex ? candidate(candidateIndex) : bytes[index];
-        }
-        return value & 0xFF;
+    public int data(int index, int fallback) {
+        return index >= 0 && index < data.length ? data[index] : fallback;
     }
 
     public void encode(FriendlyByteBuf buffer) {
-        for (int value : bytes) buffer.writeByte(value & 0xFF);
-        buffer.writeByte(missingIndex);
-        buffer.writeByte(checksum);
-        for (int value : candidates) buffer.writeByte(value & 0xFF);
-        buffer.writeByte(correctIndex);
+        buffer.writeEnum(type);
+        buffer.writeByte(difficulty);
+        buffer.writeVarInt(data.length);
+        for (int value : data) buffer.writeVarInt(value);
     }
 
     public static HackingDevicePuzzle decode(FriendlyByteBuf buffer) {
-        int[] bytes = new int[4];
-        int[] candidates = new int[4];
-        for (int index = 0; index < 4; index++) bytes[index] = buffer.readUnsignedByte();
-        int missing = buffer.readUnsignedByte();
-        int checksum = buffer.readUnsignedByte();
-        for (int index = 0; index < 4; index++) candidates[index] = buffer.readUnsignedByte();
-        int correct = buffer.readUnsignedByte();
-        return new HackingDevicePuzzle(bytes, missing, checksum, candidates, correct);
+        Type type = buffer.readEnum(Type.class);
+        int difficulty = buffer.readUnsignedByte();
+        int length = Math.max(0, Math.min(MAX_DATA, buffer.readVarInt()));
+        int[] data = new int[length];
+        for (int index = 0; index < length; index++) {
+            data[index] = buffer.readVarInt();
+        }
+        return new HackingDevicePuzzle(type, difficulty, data, 0);
     }
 
-    private static int[] sanitize(int[] values, int length) {
-        int[] result = new int[length];
-        if (values != null) {
-            System.arraycopy(values, 0, result, 0, Math.min(length, values.length));
-        }
-        for (int index = 0; index < result.length; index++) result[index] &= 0xFF;
-        return result;
+    private static int[] sanitize(int[] values) {
+        if (values == null || values.length == 0) return new int[0];
+        return Arrays.copyOf(values, Math.min(values.length, MAX_DATA));
     }
 }

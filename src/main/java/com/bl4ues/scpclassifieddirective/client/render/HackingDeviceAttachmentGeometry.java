@@ -45,6 +45,13 @@ public final class HackingDeviceAttachmentGeometry {
     private HackingDeviceAttachmentGeometry() {
     }
 
+    /** Exact CRT frame in the Hacking Device model's own local coordinates. */
+    public static PhysicalBlockScreenGeometry.Frame localScreenFrame() {
+        return new PhysicalBlockScreenGeometry.Frame(
+                SCREEN_CENTER, SCREEN_RIGHT, SCREEN_UP, SCREEN_OUTWARD,
+                SCREEN_WIDTH, SCREEN_HEIGHT);
+    }
+
     public static Attachment resolve(BlockPos pos, BlockState state) {
         if (pos == null || state == null) return null;
         KeycardReaderLevels.ReaderDescriptor reader =

@@ -27,11 +27,12 @@ public final class HackingDeviceAttachmentGeometry {
     private static final Vec3 SCREEN_UP = new Vec3(
             0.0D, 0.9238795325D, 0.3826834324D);
     /**
-     * Viewer-side CRT normal. RIGHT x UP points into the model for this authored
-     * plane, so the visible normal is the opposite direction.
+     * Viewer-side CRT normal. The attachment contact is on the back of the head
+     * at positive local Z, so the visible CRT faces the opposite half-space.
+     * This sign is shared by rendering, seating animation and camera focus.
      */
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
-            0.0D, -0.3826834324D, 0.9238795325D);
+            0.0D, 0.3826834324D, -0.9238795325D);
 
     public static final double SCREEN_WIDTH = 2.5D / 16.0D;
     public static final double SCREEN_HEIGHT = 1.5D / 16.0D;

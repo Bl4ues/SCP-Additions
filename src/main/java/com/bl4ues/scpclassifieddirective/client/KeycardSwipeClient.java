@@ -57,17 +57,17 @@ public final class KeycardSwipeClient {
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
 
     /*
-     * The OCU path itself is already correct: its Y/Z slope follows the reader's
-     * authored +35 degree slot. Keep the card's long axis on that path and rotate
-     * only around it. The previous +X thin normal put the rest of the card on the
-     * inward side of the anchored x=6.8 edge, so it visibly sliced into the
-     * reader. Flipping the thin normal preserves path/alignment while placing the
-     * card body on the exposed side of the slot.
+     * The OCU path is already correct. Its Y/Z slope follows the reader's
+     * authored +35 degree slot, so the card's long axis remains locked to that
+     * path. The slot lives between the two reader slabs along X. With the x=6.8
+     * edge anchored on the measured centre line, local +X must point toward the
+     * exposed side of the reader. The previous -X sign put the full 2.3 px card
+     * width into the reader even though the anchored edge itself was correct.
      */
     private static final Vec3 OCU_CARD_LONG_AXIS =
             OCU_START.subtract(OCU_END).normalize();
     private static final Vec3 OCU_THIN_NORMAL =
-            new Vec3(-1.0D, 0.0D, 0.0D);
+            new Vec3(1.0D, 0.0D, 0.0D);
     private static final Vec3 OCU_CARD_WIDTH_AXIS =
             OCU_CARD_LONG_AXIS.cross(OCU_THIN_NORMAL).normalize();
 

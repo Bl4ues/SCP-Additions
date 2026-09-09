@@ -10,62 +10,47 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * One geometry definition for attached-device rendering, its physical screen and
- * camera focus. All positions below are derived from the authored Blockbench
- * model; renderer, text and camera consume the same resolved transform.
+ * camera focus. Values come directly from the authored Blockbench geometry.
  */
 public final class HackingDeviceAttachmentGeometry {
-    /*
-     * The user-authored contact point was measured inside the `body` bone at
-     * (0.35, 7.8009, 1.4402). That bone itself is rotated 180 degrees around
-     * (-0.19, 8.0569, 0.10043), so the actual rendered point is the transformed
-     * value below. Treating the raw pre-bone coordinate as rendered space was
-     * what left the whole device offset from (and partly inside) the reader.
-     */
-    private static final Vec3 DEVICE_CONTACT =
-            pixels(-0.73D, 7.8009D, -1.23934D);
+    /** User-authored back/head contact point used to seat the device on a reader. */
+    private static final Vec3 DEVICE_CONTACT = pixels(0.35D, 7.8009D, 1.4402D);
 
-    /* Exact rendered centre of the 2.5 x 1.5 zero-thickness `screen` cube. */
+    /*
+     * The visible screen is the actual 2.5 x 1.5 zero-thickness cube inside the
+     * `screen` bone, not the bone pivot. Its cube centre is
+     * [-0.35, 7.60, -1.05], rotated -22.5 degrees around
+     * [-0.35, 7.725, -0.55], then inherited through the body's 180-degree Y
+     * rotation. That produces the real rendered centre below.
+     */
     private static final Vec3 SCREEN_CENTER = pixels(
             -0.03D, 7.41817334D, 1.16496434D);
     private static final Vec3 SCREEN_RIGHT = new Vec3(-1.0D, 0.0D, 0.0D);
     private static final Vec3 SCREEN_UP = new Vec3(
             0.0D, 0.9238795325D, 0.3826834324D);
 
-    /*
-     * Visible CRT face. The previous sign pointed through the device toward the
-     * reader. With logical Y rendered downward, RIGHT x DOWN equals this normal,
-     * so text, depth and camera all use the same front side.
-     */
+    /* RIGHT x UP: the authored visible CRT face. */
     private static final Vec3 SCREEN_OUTWARD = new Vec3(
-            0.0D, -0.3826834324D, 0.9238795325D);
-
-    private static final Vec3 DEVICE_FORWARD = new Vec3(0.0D, 0.0D, 1.0D);
+            0.0D, 0.3826834324D, -0.9238795325D);
 
     /*
-     * The OCU keycard-reader slab is authored as an X/Z face rotated +35 degrees
-     * around X. The Hacking Device's back is an X/Y face, so -55 degrees aligns
-     * its front/back axis with the reader's outward surface normal.
-     */
-    private static final float OCU_DEVICE_PITCH = -55.0F;
-
-    /*
-     * Centre of the OCU reader's visible top surface, not the old centre point
-     * buried inside its 0.5/0.6 px thickness. X is mirrored by the Gecko block
-     * coordinate convention used by the existing OCU interaction anchor.
-     * The Y/Z values are (14.45, 1.10) rotated +35 degrees around
-     * (13.875, 0.10), with a 0.05 px clearance from the actual top face.
+     * Centre of the OCU reader's visible upper surface. The old attachment point
+     * was authored at y=13.85 before the reader's +35 degree X rotation, inside
+     * the reader thickness. Moving only this target to y=14.45 leaves the device
+     * orientation/camera untouched while giving its body 0.05 px clearance over
+     * the actual top face at y=14.4.
      */
     private static final Vec3 OCU_READER_SURFACE = centeredPixels(
             -9.625D, 13.7724359891D, 1.2489584952D);
 
     public static final double SCREEN_WIDTH = 2.5D / 16.0D;
     public static final double SCREEN_HEIGHT = 1.5D / 16.0D;
-    public static final double FOCUS_DISTANCE = 0.26D;
+    public static final double FOCUS_DISTANCE = 0.36D;
 
     private HackingDeviceAttachmentGeometry() {
     }
 
-    /** Exact CRT frame in the item's own rendered local coordinates. */
+    /** Exact CRT frame in the Hacking Device model's own rendered coordinates. */
     public static PhysicalBlockScreenGeometry.Frame localScreenFrame() {
         return new PhysicalBlockScreenGeometry.Frame(
                 SCREEN_CENTER, SCREEN_RIGHT, SCREEN_UP, SCREEN_OUTWARD,
@@ -80,7 +65,6 @@ public final class HackingDeviceAttachmentGeometry {
         if (reader == null && !ocu) return null;
 
         Direction facing = horizontalFacing(state);
-        float pitch = ocu ? OCU_DEVICE_PITCH : 0.0F;
         Vec3 localTarget;
         if (ocu) {
             localTarget = OCU_READER_SURFACE;
@@ -91,20 +75,22 @@ public final class HackingDeviceAttachmentGeometry {
         }
 
         Vec3 worldTarget = localToWorld(pos, localTarget, facing);
-        Vec3 contactVector = transformVector(DEVICE_CONTACT, facing, pitch);
+        Vec3 contactVector = rotateHorizontalVector(DEVICE_CONTACT, facing);
         Vec3 origin = worldTarget.subtract(contactVector);
 
         Vec3 screenCenter = origin.add(
-                transformVector(SCREEN_CENTER, facing, pitch));
-        Vec3 right = transformVector(SCREEN_RIGHT, facing, pitch).normalize();
-        Vec3 up = transformVector(SCREEN_UP, facing, pitch).normalize();
-        Vec3 outward = transformVector(SCREEN_OUTWARD, facing, pitch).normalize();
-        Vec3 mountOutward = transformVector(DEVICE_FORWARD, facing, pitch)
-                .normalize();
+                rotateHorizontalVector(SCREEN_CENTER, facing));
+        Vec3 right = rotateHorizontalVector(SCREEN_RIGHT, facing).normalize();
+        Vec3 up = rotateHorizontalVector(SCREEN_UP, facing).normalize();
+        Vec3 outward = rotateHorizontalVector(SCREEN_OUTWARD, facing).normalize();
         PhysicalBlockScreenGeometry.Frame frame =
                 new PhysicalBlockScreenGeometry.Frame(screenCenter, right, up,
                         outward, SCREEN_WIDTH, SCREEN_HEIGHT);
-        return new Attachment(origin, worldTarget, facing, pitch, mountOutward,
+
+        // Keep the current Attachment API so renderer/audio callers remain stable.
+        // The pre-regression placement had no extra OCU pitch; seating followed
+        // the same visible-screen normal used by the camera.
+        return new Attachment(origin, worldTarget, facing, 0.0F, outward,
                 frame, ocu);
     }
 
@@ -141,15 +127,8 @@ public final class HackingDeviceAttachmentGeometry {
                 rotated.z + 0.5D);
     }
 
-    /** Applies the item's OCU pitch first, then the host block's horizontal yaw. */
-    private static Vec3 transformVector(Vec3 value, Direction facing,
-            float pitchDegrees) {
-        double radians = Math.toRadians(pitchDegrees);
-        double cos = Math.cos(radians);
-        double sin = Math.sin(radians);
-        double y = value.y * cos - value.z * sin;
-        double z = value.y * sin + value.z * cos;
-        return rotateXZ(value.x, y, z, facing);
+    private static Vec3 rotateHorizontalVector(Vec3 value, Direction facing) {
+        return rotateXZ(value.x, value.y, value.z, facing);
     }
 
     private static Vec3 rotateXZ(double x, double y, double z,

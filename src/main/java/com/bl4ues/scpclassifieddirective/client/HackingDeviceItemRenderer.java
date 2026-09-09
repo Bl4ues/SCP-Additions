@@ -19,6 +19,7 @@ public final class HackingDeviceItemRenderer
     private static final double SCREEN_X = -0.03D / 16.0D;
     private static final double SCREEN_Y = 7.41817334D / 16.0D;
     private static final double SCREEN_Z = 1.16496434D / 16.0D;
+    private static final double SCREEN_TEXT_OFFSET = 0.04D / 16.0D;
     private static final float SCREEN_SCALE = (float)
             ((2.5D / 16.0D) / HackingDeviceScreenTextClient.LOGICAL_WIDTH);
 
@@ -66,15 +67,14 @@ public final class HackingDeviceItemRenderer
 
         poseStack.pushPose();
         poseStack.translate(SCREEN_X, SCREEN_Y, SCREEN_Z);
-        /*
-         * Match the same authored hierarchy used by the attached world screen:
-         * the body contributes 180 degrees around Y and the screen cube contributes
-         * -22.5 degrees around X. Keeping these transforms identical prevents the
-         * returned-to-hand countdown from drifting to a separate imaginary CRT.
-         */
+        /* Match body Y=180 and the authored screen X=-22.5 hierarchy. */
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
         poseStack.mulPose(Axis.XP.rotationDegrees(-22.5F));
-        poseStack.translate(0.0D, 0.0D, 0.00125D);
+        /*
+         * Same real separation as the attached CRT. With NORMAL depth-tested
+         * glyphs this remains shader-safe and visually flush to the black plane.
+         */
+        poseStack.translate(0.0D, 0.0D, SCREEN_TEXT_OFFSET);
         poseStack.scale(SCREEN_SCALE, -SCREEN_SCALE, SCREEN_SCALE);
         poseStack.translate(-HackingDeviceScreenTextClient.LOGICAL_WIDTH * 0.5F,
                 -HackingDeviceScreenTextClient.LOGICAL_HEIGHT * 0.5F, 0.0F);

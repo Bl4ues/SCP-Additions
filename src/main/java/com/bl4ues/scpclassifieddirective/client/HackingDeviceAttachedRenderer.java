@@ -4,7 +4,6 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.HackingDeviceMinigameClient.Phase;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry;
 import com.bl4ues.scpclassifieddirective.client.render.HackingDeviceAttachmentGeometry.Attachment;
-import com.bl4ues.scpclassifieddirective.client.render.PhysicalBlockScreenGeometry.Frame;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDevicePuzzle;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -27,12 +26,10 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.Set;
 
-/** Renders reader-attached Hacking Devices and their physical CRTs. */
+/** Renders reader-attached Hacking Devices and delegates their CRT to the item renderer. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT)
 public final class HackingDeviceAttachedRenderer {
-    private static final float LOGICAL_WIDTH =
-            HackingDeviceScreenTextClient.LOGICAL_WIDTH;
     private static final int GREEN = HackingDeviceScreenTextClient.GREEN;
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
@@ -57,10 +54,12 @@ public final class HackingDeviceAttachedRenderer {
         Set<BlockPos> visibleDevices = HackingDeviceClientState.snapshot();
 
         /*
-         * First render the authored Gecko body exactly as before. The entire item
-         * pass is flushed before any CRT pixels are submitted. This is the same
-         * ordering used by the working Diagnostic Terminal and avoids mixing the
-         * device PBR/glass RenderTypes with its display.
+         * The attached model and CRT must share one Gecko render invocation.
+         * HackingDeviceItemRenderer captures the live `screen` bone while this
+         * call is active, flushes the completed body and paints the minigame on
+         * that exact plane before returning. Keeping the old independent world
+         * screen pass here was the source of the persistent black-screen drift:
+         * it used camera framing geometry rather than the model's screen cube.
          */
         for (BlockPos pos : visibleDevices) {
             if (!minecraft.level.hasChunkAt(pos)
@@ -76,32 +75,6 @@ public final class HackingDeviceAttachedRenderer {
             }
         }
         buffers.endBatch();
-
-        /*
-         * Do not route the tiny CRT through Font.drawInBatch. That path was the
-         * common denominator behind every black-screen result reported so far.
-         * Characters are now rasterized as opaque full-bright 5x7 quads directly
-         * on the SAME Frame used by the approved camera. No second screen plane,
-         * no guessed Gecko matrix and no shader-dependent font RenderType.
-         */
-        for (BlockPos pos : visibleDevices) {
-            if (!minecraft.level.hasChunkAt(pos)
-                    || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
-                continue;
-            }
-            Attachment attachment = HackingDeviceAttachmentGeometry.resolve(pos,
-                    minecraft.level.getBlockState(pos));
-            if (attachment == null) continue;
-
-            Frame screen = animatedScreen(pos, attachment);
-            HackingDevicePixelFont.beginWorld(poseStack, buffers, screen, camera);
-            try {
-                renderAttachedScreenText(pos, minecraft.font, poseStack, buffers);
-            } finally {
-                HackingDevicePixelFont.end();
-            }
-        }
-        HackingDevicePixelFont.flush(buffers);
     }
 
     private static void renderDevice(Minecraft minecraft, PoseStack poseStack,
@@ -123,29 +96,33 @@ public final class HackingDeviceAttachedRenderer {
         int light = LevelRenderer.getLightColor(minecraft.level, pos);
         ItemStack deviceStack = new ItemStack(
                 ScpClassifiedDirectiveModItems.HACKING_DEVICE.get());
-        minecraft.getItemRenderer().renderStatic(deviceStack,
-                ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
-                poseStack, buffers, minecraft.level, 0);
-        poseStack.popPose();
-    }
-
-    private static Frame animatedScreen(BlockPos pos, Attachment attachment) {
-        double seating = HackingDeviceClientState.seatingOffset(pos);
-        Frame original = attachment.screen();
-        return new Frame(original.center()
-                        .add(attachment.mountOutward().scale(seating)),
-                original.right(), original.up(), original.outward(),
-                original.width(), original.height());
+        HackingDeviceItemRenderer.beginAttachedRender(pos);
+        try {
+            minecraft.getItemRenderer().renderStatic(deviceStack,
+                    ItemDisplayContext.NONE, light, OverlayTexture.NO_OVERLAY,
+                    poseStack, buffers, minecraft.level, 0);
+        } finally {
+            HackingDeviceItemRenderer.endAttachedRender();
+            poseStack.popPose();
+        }
     }
 
     /** Draws characters on the active physical CRT canvas. */
     public static void renderAttachedScreenText(BlockPos pos, Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
+        renderAttachedPixels(pos);
+    }
+
+    /**
+     * Parameter-free bridge for renderer wrappers that are not BufferSource.
+     * HackingDevicePixelFont already owns the active physical canvas here.
+     */
+    public static void renderAttachedPixels(BlockPos pos) {
         if (HackingDeviceMinigameClient.active()
                 && pos != null && pos.equals(HackingDeviceMinigameClient.pos())) {
-            renderSession(font, poseStack, buffers);
+            renderSession(null, null, null);
         } else {
-            draw(font, poseStack, buffers, "CI FIELD UNIT // STANDBY",
+            HackingDevicePixelFont.draw("CI FIELD UNIT // STANDBY",
                     10.0F, 68.0F, GREEN_DIM);
         }
     }

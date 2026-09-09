@@ -57,19 +57,19 @@ public final class KeycardSwipeClient {
     private static final float CARD_UPSIDE_DOWN_ROLL = 180.0F;
 
     /*
-     * OCU reader is not vertical: the measured slot runs from OCU_START to
-     * OCU_END in the local Y/Z plane. Build the card basis from that real path
-     * instead of keeping the wall-reader pitch and merely moving it diagonally.
-     *
-     * Card local +Y is its long axis and therefore follows the swipe direction.
-     * Local +Z remains the thin edge normal (+X in OCU-local space). Local +X
-     * is derived so X x Y = Z, preserving the same handedness as the already
-     * correct wall-reader orientation while keeping the card upside-down along
-     * the arrow direction.
+     * The OCU reader surface spans local X and the measured diagonal Y/Z swipe
+     * path. The previous basis incorrectly treated local X as the card's THIN
+     * normal, which turned the broad face into a Y/Z plane and made the card
+     * physically slice through the OCU. Keep local +Y on the authored swipe
+     * direction, use local +X as the visible card width, then derive local +Z as
+     * the face normal perpendicular to that reader plane.
      */
-    private static final Vec3 OCU_LONG_AXIS = OCU_END.subtract(OCU_START).normalize();
-    private static final Vec3 OCU_THIN_NORMAL = new Vec3(1.0D, 0.0D, 0.0D);
-    private static final Vec3 OCU_WIDTH_AXIS = OCU_LONG_AXIS.cross(OCU_THIN_NORMAL).normalize();
+    private static final Vec3 OCU_LONG_AXIS =
+            OCU_END.subtract(OCU_START).normalize();
+    private static final Vec3 OCU_WIDTH_AXIS =
+            new Vec3(1.0D, 0.0D, 0.0D);
+    private static final Vec3 OCU_FACE_NORMAL =
+            OCU_WIDTH_AXIS.cross(OCU_LONG_AXIS).normalize();
 
     private static final Map<BlockPos, Swipe> SWIPES = new HashMap<>();
 
@@ -172,16 +172,16 @@ public final class KeycardSwipeClient {
 
     private static void applyOcuSlotOrientation(PoseStack poseStack) {
         Matrix4f basis = new Matrix4f().identity();
-        // JOML transforms local X/Y/Z from columns 0/1/2 respectively.
+        // Keycard local X/Y/Z = reader width / swipe direction / face normal.
         basis.m00((float) OCU_WIDTH_AXIS.x);
         basis.m01((float) OCU_WIDTH_AXIS.y);
         basis.m02((float) OCU_WIDTH_AXIS.z);
         basis.m10((float) OCU_LONG_AXIS.x);
         basis.m11((float) OCU_LONG_AXIS.y);
         basis.m12((float) OCU_LONG_AXIS.z);
-        basis.m20((float) OCU_THIN_NORMAL.x);
-        basis.m21((float) OCU_THIN_NORMAL.y);
-        basis.m22((float) OCU_THIN_NORMAL.z);
+        basis.m20((float) OCU_FACE_NORMAL.x);
+        basis.m21((float) OCU_FACE_NORMAL.y);
+        basis.m22((float) OCU_FACE_NORMAL.z);
         poseStack.mulPoseMatrix(basis);
     }
 

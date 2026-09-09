@@ -34,6 +34,8 @@ public final class HackingDeviceAttachedRenderer {
     private static final int GREEN_BRIGHT =
             HackingDeviceScreenTextClient.GREEN_BRIGHT;
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
+    private static final int AMBER = 0xFFFFC857;
+    private static final int RED = 0xFFFF675C;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -53,14 +55,6 @@ public final class HackingDeviceAttachedRenderer {
                 minecraft.renderBuffers().bufferSource();
         Set<BlockPos> visibleDevices = HackingDeviceClientState.snapshot();
 
-        /*
-         * The attached model and CRT must share one Gecko render invocation.
-         * HackingDeviceItemRenderer captures the live `screen` bone while this
-         * call is active, flushes the completed body and paints the minigame on
-         * that exact plane before returning. Keeping the old independent world
-         * screen pass here was the source of the persistent black-screen drift:
-         * it used camera framing geometry rather than the model's screen cube.
-         */
         for (BlockPos pos : visibleDevices) {
             if (!minecraft.level.hasChunkAt(pos)
                     || camera.distanceToSqr(Vec3.atCenterOf(pos)) > 4096.0D) {
@@ -107,16 +101,11 @@ public final class HackingDeviceAttachedRenderer {
         }
     }
 
-    /** Draws characters on the active physical CRT canvas. */
     public static void renderAttachedScreenText(BlockPos pos, Font font,
             PoseStack poseStack, MultiBufferSource.BufferSource buffers) {
         renderAttachedPixels(pos);
     }
 
-    /**
-     * Parameter-free bridge for renderer wrappers that are not BufferSource.
-     * HackingDevicePixelFont already owns the active physical canvas here.
-     */
     public static void renderAttachedPixels(BlockPos pos) {
         if (HackingDeviceMinigameClient.active()
                 && pos != null && pos.equals(HackingDeviceMinigameClient.pos())) {
@@ -127,8 +116,7 @@ public final class HackingDeviceAttachedRenderer {
         }
     }
 
-    /* Keep these method signatures stable: HackingDeviceUiPolishMixin adds the
-     * Facility Mapping lines and finalized success sequence here. */
+    /* Keep signatures stable for the facility-mapping/UI-polish mixin. */
     private static void renderSession(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
         Phase phase = HackingDeviceMinigameClient.phase();
@@ -148,25 +136,24 @@ public final class HackingDeviceAttachedRenderer {
     private static void renderLoading(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
         double progress = HackingDeviceMinigameClient.phaseProgress();
-        int filled = (int) Math.round(progress * 24.0D);
-        String bar = "[" + "#".repeat(Math.max(0, Math.min(24, filled)))
-                + ".".repeat(Math.max(0, 24 - filled)) + "]";
-        draw(font, poseStack, buffers, "CI FIELD NODE // HDEV", 10, 18,
+        int filled = (int) Math.round(progress * 28.0D);
+        String bar = "[" + "#".repeat(Math.max(0, Math.min(28, filled)))
+                + ".".repeat(Math.max(0, 28 - filled)) + "]";
+        draw(font, poseStack, buffers, "CI//FIELDNODE HDEV-RIPPER", 8, 12,
                 GREEN_DIM);
-        draw(font, poseStack, buffers, "> PHY TAP: READER BUS", 10, 42,
+        draw(font, poseStack, buffers, "SCIPNET BRIDGE: UNSIGNED / DIRTY", 8,
+                30, AMBER);
+        draw(font, poseStack, buffers, "> JACK READER BUS", 8, 52, GREEN);
+        draw(font, poseStack, buffers, "> SPOOF FOUNDATION HANDSHAKE", 8, 69,
                 GREEN);
-        draw(font, poseStack, buffers, bar, 10, 67, GREEN_BRIGHT);
+        draw(font, poseStack, buffers, bar, 8, 94, GREEN_BRIGHT);
         draw(font, poseStack, buffers,
-                String.format("LINK %3d%%",
+                String.format("BOOTSTRAP %3d%% // DO NOT UNPLUG",
                         (int) Math.round(progress * 100.0D)),
-                10, 82, GREEN);
-        if (progress > 0.35D) {
-            draw(font, poseStack, buffers, "> CLOCK........SYNC", 10, 108,
-                    GREEN_DIM);
-        }
-        if (progress > 0.70D) {
-            draw(font, poseStack, buffers, "> BUS..........ONLINE", 10, 121,
-                    GREEN_DIM);
+                8, 111, GREEN_DIM);
+        if (progress > 0.72D) {
+            draw(font, poseStack, buffers, "PRAYER FLAG........SET", 8, 132,
+                    AMBER);
         }
     }
 
@@ -174,98 +161,228 @@ public final class HackingDeviceAttachedRenderer {
             MultiBufferSource.BufferSource buffers) {
         int count = HackingDeviceMinigameClient.bootLineCount();
         draw(font, poseStack, buffers,
-                String.format("TARGET: KCR-L%d",
+                String.format("CI//SCIPNET-RIPPER  KCR-L%d",
                         HackingDeviceMinigameClient.accessLevel()),
-                10, 15, GREEN_DIM);
+                8, 9, GREEN_DIM);
         String[] lines = {
-                "> SNIFF AUTH BUS........OK",
-                "> CAPTURE FRAME.........OK",
-                "> CRC/XOR TABLE......LOADED",
-                "> BREACH CHANNEL......READY"
+                "> CERT CHAIN........FORGED",
+                "> NODE MAP.........STOLEN",
+                "> AUTH BUS........HOTWIRE",
+                "> ACL CACHE.........LIED",
+                "> BREACH MODULES....ARMED"
         };
         for (int index = 0; index < count; index++) {
-            draw(font, poseStack, buffers, lines[index], 10,
-                    42 + index * 22,
+            draw(font, poseStack, buffers, lines[index], 8,
+                    34 + index * 20,
                     index == count - 1 ? GREEN_BRIGHT : GREEN);
         }
-        if ((System.nanoTime() / 80_000_000L & 1L) == 0L) {
-            draw(font, poseStack, buffers, "7A:4C:FF/03  0xA91E",
-                    104, 132, GREEN_DIM);
-        }
+        draw(font, poseStack, buffers, "PATCHSET: BLACKBOX/0.7F-UNSIGNED",
+                8, 139, AMBER);
     }
 
     private static void renderPuzzle(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
         HackingDevicePuzzle puzzle = HackingDeviceMinigameClient.puzzle();
         if (puzzle == null) return;
-        draw(font, poseStack, buffers,
-                String.format("CRC BREACH %d/3   ERR %d/3",
-                        HackingDeviceMinigameClient.round(),
-                        HackingDeviceMinigameClient.failures()),
-                8, 8, GREEN_DIM);
-        draw(font, poseStack, buffers,
-                "RULE: B0 ^ B1 ^ B2 ^ B3 = CRC", 8, 26, GREEN);
 
-        int[] bytes = puzzle.bytes();
-        StringBuilder frame = new StringBuilder("FRAME: ");
-        for (int index = 0; index < 4; index++) {
-            if (index > 0) frame.append(' ');
-            frame.append(index == puzzle.missingIndex()
-                    ? "??" : hex(bytes[index]));
-        }
-        draw(font, poseStack, buffers, frame.toString(), 8, 48,
-                GREEN_BRIGHT);
-        draw(font, poseStack, buffers,
-                "TARGET CRC: " + hex(puzzle.checksum()), 8, 64, GREEN);
-
-        int selected = HackingDeviceMinigameClient.selectedIndex();
-        draw(font, poseStack, buffers,
-                "REPAIR:  < [" + hex(puzzle.candidate(selected)) + "] >",
-                8, 86, GREEN_BRIGHT);
-        int probe = HackingDeviceMinigameClient.probeChecksum();
-        String probeText = probe >= 0
-                ? "PROBE CRC: " + hex(probe)
-                        + (probe == puzzle.checksum() ? "  MATCH" : "  MISMATCH")
-                : String.format("PROBES: %d/%d",
-                        HackingDeviceMinigameClient.probesUsed(),
-                        HackingDeviceMinigameClient.maxProbes());
-        draw(font, poseStack, buffers, probeText, 8, 103,
-                probe == puzzle.checksum() ? GREEN_BRIGHT : GREEN);
-        draw(font, poseStack, buffers, "A/D SELECT   SPACE PROBE", 8, 128,
+        draw(font, poseStack, buffers, "CI//SCIPNET BRIDGE [UNSIGNED]", 5, 4,
                 GREEN_DIM);
         draw(font, poseStack, buffers,
-                HackingDeviceMinigameClient.waitingForServer()
-                        ? "ENTER INJECT   [WAIT]" : "ENTER INJECT",
-                8, 140, GREEN_DIM);
+                String.format("KCR-L%d  CHAIN %d/%d  ERR %d/3",
+                        HackingDeviceMinigameClient.accessLevel(),
+                        HackingDeviceMinigameClient.round(),
+                        HackingDeviceMinigameClient.requiredWins(),
+                        HackingDeviceMinigameClient.failures()),
+                5, 15, GREEN);
+        draw(font, poseStack, buffers,
+                "-----------------------------------------", 5, 25, GREEN_DIM);
+
+        switch (puzzle.type()) {
+            case CIRCUIT_PATH -> renderCircuit(font, poseStack, buffers, puzzle);
+            case VISUAL_CHECKSUM -> renderChecksum(font, poseStack, buffers,
+                    puzzle);
+            case FIREWALL_WINDOWS -> renderFirewall(font, poseStack, buffers,
+                    puzzle);
+            case HOLD_SIGNAL -> renderHoldSignal(font, poseStack, buffers,
+                    puzzle);
+            case FREQUENCY_LOCK -> renderFrequency(font, poseStack, buffers,
+                    puzzle);
+        }
+    }
+
+    private static void renderCircuit(Font font, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, HackingDevicePuzzle puzzle) {
+        int count = Math.max(1, puzzle.data(0, 3));
+        int target = puzzle.data(2, 0);
+        int current = HackingDeviceMinigameClient.circuitMask();
+        int selected = HackingDeviceMinigameClient.selectedIndex();
+
+        draw(font, poseStack, buffers, "HOTWIRE // CIRCUIT PATH", 8, 36,
+                AMBER);
+        draw(font, poseStack, buffers, "MATCH TRACE. PATCH BROKEN NODES.", 8,
+                48, GREEN_DIM);
+        draw(font, poseStack, buffers, "TRACE  " + circuitString(target, count),
+                8, 66, GREEN_BRIGHT);
+        draw(font, poseStack, buffers, "PATCH  " + circuitString(current, count),
+                8, 84, GREEN);
+        float caretX = 8 + pixelWidth("PATCH  ") + selected * 12.0F;
+        draw(font, poseStack, buffers, "^", caretX, 96, AMBER);
+        int bad = Integer.bitCount((target ^ current) & ((1 << count) - 1));
+        draw(font, poseStack, buffers,
+                String.format("OPEN LINKS: %d   NODE %d/%d", bad,
+                        selected + 1, count), 8, 111,
+                bad == 0 ? GREEN_BRIGHT : GREEN_DIM);
+        controls(font, poseStack, buffers,
+                "A/D NODE  SPACE FLIP  ENTER INJECT");
+    }
+
+    private static void renderChecksum(Font font, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, HackingDevicePuzzle puzzle) {
+        int count = Math.max(1, Math.min(5, puzzle.data(0, 3)));
+        int max = Math.max(1, puzzle.data(1, 3));
+        int target = puzzle.data(2, 0);
+        int selected = HackingDeviceMinigameClient.selectedIndex();
+
+        draw(font, poseStack, buffers, "VISUAL CHECKSUM // FORGE", 8, 36,
+                AMBER);
+        draw(font, poseStack, buffers,
+                String.format("MAKE SUM = %02d   CURRENT = %02d", target,
+                        HackingDeviceMinigameClient.checksumSum()),
+                8, 48, GREEN_BRIGHT);
+
+        for (int i = 0; i < count; i++) {
+            int value = HackingDeviceMinigameClient.checksumValue(i);
+            String bar = "#".repeat(value) + ".".repeat(Math.max(0, max - value));
+            draw(font, poseStack, buffers,
+                    String.format("%s CH%d [%s] %d", i == selected ? ">" : " ",
+                            i + 1, bar, value),
+                    12, 62 + i * 13, i == selected ? GREEN_BRIGHT : GREEN);
+        }
+        controls(font, poseStack, buffers,
+                "A/D CHANNEL  SPACE +  ENTER FORGE");
+    }
+
+    private static void renderFirewall(Font font, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, HackingDevicePuzzle puzzle) {
+        int gates = Math.max(1, puzzle.data(0, 2));
+        int gate = HackingDeviceMinigameClient.firewallGate();
+        int lane = HackingDeviceMinigameClient.firewallLane();
+        int open = HackingDeviceMinigameClient.firewallOpenLane();
+        int periodMs = Math.max(250, puzzle.data(1, 800));
+
+        draw(font, poseStack, buffers, "FIREWALL WINDOWS // PUNCH", 8, 36,
+                AMBER);
+        draw(font, poseStack, buffers,
+                String.format("GATE %d/%d   WINDOW %.2FS", Math.min(gate + 1,
+                                gates), gates, periodMs / 1000.0F),
+                8, 49, GREEN_DIM);
+        for (int row = 0; row < 3; row++) {
+            String state = row == open ? "[     OPEN     ]" : "[##############]";
+            draw(font, poseStack, buffers,
+                    String.format("%s LANE %d ---- %s", row == lane ? ">" : " ",
+                            row + 1, state), 8, 67 + row * 19,
+                    row == open ? GREEN_BRIGHT : GREEN_DIM);
+        }
+        draw(font, poseStack, buffers,
+                "MOVE PACKET TO LIVE GAP. SPACE = CROSS.", 8, 126, GREEN);
+        controls(font, poseStack, buffers, "A/D LANE  SPACE BREACH");
+    }
+
+    private static void renderHoldSignal(Font font, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, HackingDevicePuzzle puzzle) {
+        int center = puzzle.data(0, 50);
+        int half = Math.max(2, puzzle.data(1, 10));
+        float marker = HackingDeviceMinigameClient.holdMarker();
+        float progress = HackingDeviceMinigameClient.holdProgress();
+
+        draw(font, poseStack, buffers, "HOLD SIGNAL // DIRTY PLL", 8, 36,
+                AMBER);
+        draw(font, poseStack, buffers, "KEEP CARRIER INSIDE LOCK BAND.", 8, 49,
+                GREEN_DIM);
+        draw(font, poseStack, buffers,
+                signalBar(marker, center - half, center + half), 8, 69,
+                GREEN_BRIGHT);
+        draw(font, poseStack, buffers,
+                String.format("CARRIER %05.1F   BAND %02d..%02d", marker,
+                        center - half, center + half), 8, 87, GREEN);
+        int filled = Math.max(0, Math.min(18, Math.round(progress * 18.0F)));
+        draw(font, poseStack, buffers,
+                "LOCK [" + "#".repeat(filled)
+                        + ".".repeat(18 - filled) + "]",
+                8, 106, progress >= 1.0F ? GREEN_BRIGHT : GREEN);
+        draw(font, poseStack, buffers,
+                String.format("HOLD %3d%% // KEEP YOUR HAND STEADY",
+                        Math.round(progress * 100.0F)),
+                8, 122, GREEN_DIM);
+        controls(font, poseStack, buffers, "A/D TRIM  DO NOT LET IT ESCAPE");
+    }
+
+    private static void renderFrequency(Font font, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, HackingDevicePuzzle puzzle) {
+        int target = puzzle.data(0, 50);
+        int tolerance = Math.max(1, puzzle.data(1, 5));
+        int current = HackingDeviceMinigameClient.frequencyValue();
+
+        draw(font, poseStack, buffers, "FREQUENCY LOCK // BUS TAP", 8, 36,
+                AMBER);
+        draw(font, poseStack, buffers, "TUNE CARRIER INTO CAPTURE BAND.", 8, 49,
+                GREEN_DIM);
+        draw(font, poseStack, buffers,
+                signalBar(current, target - tolerance, target + tolerance),
+                8, 72, GREEN_BRIGHT);
+        draw(font, poseStack, buffers,
+                String.format("TUNE %03d   TARGET %03d +/- %02d", current,
+                        target, tolerance), 8, 92,
+                Math.abs(current - target) <= tolerance
+                        ? GREEN_BRIGHT : GREEN);
+        draw(font, poseStack, buffers,
+                Math.abs(current - target) <= tolerance
+                        ? "LOCK WINDOW ACQUIRED // INJECT NOW"
+                        : "NO CARRIER // KEEP TUNING",
+                8, 113,
+                Math.abs(current - target) <= tolerance
+                        ? GREEN_BRIGHT : GREEN_DIM);
+        controls(font, poseStack, buffers, "A/D TUNE  ENTER LOCK");
     }
 
     private static void renderRoundOk(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
-        centered(font, poseStack, buffers, "CRC VALID", 51, GREEN_BRIGHT);
-        centered(font, poseStack, buffers, "FRAME REPAIRED", 70, GREEN);
-        centered(font, poseStack, buffers, "> ADVANCING BREACH...", 96,
+        centered(font, poseStack, buffers, "CHANNEL BREACHED", 43,
+                GREEN_BRIGHT);
+        centered(font, poseStack, buffers, "PATCH ACCEPTED BY SCIPNET", 62,
+                GREEN);
+        centered(font, poseStack, buffers,
+                String.format("CHAIN %d/%d", HackingDeviceMinigameClient.round(),
+                        HackingDeviceMinigameClient.requiredWins()),
+                83, AMBER);
+        centered(font, poseStack, buffers, "> SWAPPING ATTACK MODULE...", 108,
+                GREEN_DIM);
+        centered(font, poseStack, buffers, "PLEASE CONTINUE BELIEVING", 128,
                 GREEN_DIM);
     }
 
     private static void renderDenied(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
-        centered(font, poseStack, buffers, "!! CRC MISMATCH !!", 46,
-                GREEN_BRIGHT);
-        centered(font, poseStack, buffers, "ACCESS DENIED", 67, GREEN);
+        centered(font, poseStack, buffers, "!! SCIPNET KICKBACK !!", 41, RED);
+        centered(font, poseStack, buffers, "ROUTE BURNED / AUTH REJECTED", 61,
+                GREEN);
         centered(font, poseStack, buffers,
-                String.format("BREACH ERROR %d/3",
+                String.format("ERROR BUDGET %d/3",
                         HackingDeviceMinigameClient.failures()),
-                88, GREEN);
-        centered(font, poseStack, buffers, "> RECALIBRATING...", 111,
+                82, AMBER);
+        centered(font, poseStack, buffers, "> DUMPING MODULE...", 105,
+                GREEN_DIM);
+        centered(font, poseStack, buffers, "> TRYING SOMETHING DUMBER...", 122,
                 GREEN_DIM);
     }
 
     private static void renderLocked(Font font, PoseStack poseStack,
             MultiBufferSource.BufferSource buffers) {
-        centered(font, poseStack, buffers, "BREACH LIMIT REACHED", 50,
-                GREEN_BRIGHT);
-        centered(font, poseStack, buffers, "ACCESS DENIED", 72, GREEN);
-        centered(font, poseStack, buffers, "> SESSION ABORT", 101,
+        centered(font, poseStack, buffers, "SCIPNET HAS NOTICED US", 42, RED);
+        centered(font, poseStack, buffers, "THREE BAD HANDSHAKES", 63, AMBER);
+        centered(font, poseStack, buffers, "BURN SESSION / PULL CABLE", 85,
+                GREEN);
+        centered(font, poseStack, buffers, "CI FIELDNOTE: RUN.", 113,
                 GREEN_DIM);
     }
 
@@ -274,8 +391,39 @@ public final class HackingDeviceAttachedRenderer {
         HackingDeviceScreenTextClient.renderSuccess(font, poseStack, buffers);
     }
 
-    private static String hex(int value) {
-        return String.format("%02X", value & 0xFF);
+    private static void controls(Font font, PoseStack poseStack,
+            MultiBufferSource.BufferSource buffers, String line) {
+        draw(font, poseStack, buffers,
+                HackingDeviceMinigameClient.waitingForServer()
+                        ? "[ WAITING ON FORGED AUTH... ]" : line,
+                8, 140, HackingDeviceMinigameClient.waitingForServer()
+                        ? AMBER : GREEN_DIM);
+    }
+
+    private static String circuitString(int mask, int count) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            if (i > 0) builder.append(' ');
+            builder.append((mask & 1 << i) != 0 ? '/' : '\\');
+        }
+        return builder.toString();
+    }
+
+    private static String signalBar(float marker, float low, float high) {
+        int cells = 30;
+        int markerCell = Math.max(0, Math.min(cells - 1,
+                Math.round(marker / 100.0F * (cells - 1))));
+        int lowCell = Math.max(0, Math.min(cells - 1,
+                Math.round(low / 100.0F * (cells - 1))));
+        int highCell = Math.max(0, Math.min(cells - 1,
+                Math.round(high / 100.0F * (cells - 1))));
+        StringBuilder builder = new StringBuilder("[");
+        for (int i = 0; i < cells; i++) {
+            if (i == markerCell) builder.append('|');
+            else if (i >= lowCell && i <= highCell) builder.append('=');
+            else builder.append('.');
+        }
+        return builder.append(']').toString();
     }
 
     /** Public bridge used by the UI-polish mixin without touching Font buffers. */

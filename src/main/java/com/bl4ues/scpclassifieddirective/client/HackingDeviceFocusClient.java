@@ -32,14 +32,6 @@ public final class HackingDeviceFocusClient {
     private static final double CAMERA_DOWN = 0.020D;
     private static final double LOOK_DOWN = 0.035D;
 
-    /*
-     * The operation view is intentionally not perpendicular to the CRT. The
-     * approved framing looks down at the inclined screen from above/front. This
-     * is the exact local direction used by the good pre-regression camera: 22.5
-     * degrees above the reader-facing horizontal. Do not derive it from the
-     * screen quad normal, because doing so produced either the device's back or
-     * its underside depending on which normal sign was chosen.
-     */
     private static final Vec3 LOCAL_OPERATION_VIEW = new Vec3(
             0.0D, 0.3826834324D, -0.9238795325D);
 
@@ -72,7 +64,18 @@ public final class HackingDeviceFocusClient {
 
     private static void begin(BlockPos pos) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (active()) forceClear();
+
+        /*
+         * A new StartSession packet can arrive while the previous camera is still
+         * interpolating home. The old code called forceClear() here, which also
+         * cleared HackingDeviceMinigameClient. Because networking starts the new
+         * minigame immediately before beginSession(), a fast detach/reattach could
+         * erase the brand-new session while leaving a brand-new focused camera.
+         * That is the exact orphaned-focus state where inventory opens and the
+         * player can never leave the device. Reset only the camera state here.
+         */
+        if (active()) clearFocusState(false);
+
         activePos = pos.immutable();
         previousCameraType = minecraft.options.getCameraType();
         startPosition = minecraft.gameRenderer.getMainCamera().getPosition();
@@ -94,7 +97,7 @@ public final class HackingDeviceFocusClient {
         if (!active() || returning) return;
         Pose current = cameraPose();
         if (current == null) {
-            forceClear();
+            clearFocusState(false);
             return;
         }
         returning = true;
@@ -125,11 +128,6 @@ public final class HackingDeviceFocusClient {
         Vec3 center = attachment.screen().center().add(
                 attachment.mountOutward().scale(seating));
 
-        /*
-         * Always converge on the same authored operation side, independent of
-         * where the player started the interaction. This preserves the original
-         * above-to-below view while also fixing the rear-interaction bug.
-         */
         Vec3 cameraVector = rotateHorizontal(LOCAL_OPERATION_VIEW,
                 attachment.facing()).normalize();
         Vec3 targetEye = center.add(cameraVector
@@ -172,14 +170,28 @@ public final class HackingDeviceFocusClient {
             if (returnProgress() >= 1.0D) forceClear();
             return;
         }
+
         if (attachment(minecraft) == null) {
-            HackingDeviceMinigameClient.requestExit();
+            exitOrReleaseFocus();
             return;
         }
 
         if (!(minecraft.screen instanceof HackingDeviceScreen screen)
                 || !screen.isFor(activePos)) {
+            exitOrReleaseFocus();
+        }
+    }
+
+    /**
+     * Never let camera lifetime depend on minigame lifetime. If a packet race has
+     * already cleared the minigame, release the focus directly instead of asking
+     * requestExit() to do nothing because its own state is inactive.
+     */
+    private static void exitOrReleaseFocus() {
+        if (HackingDeviceMinigameClient.active()) {
             HackingDeviceMinigameClient.requestExit();
+        } else {
+            end();
         }
     }
 
@@ -231,6 +243,10 @@ public final class HackingDeviceFocusClient {
     }
 
     public static void forceClear() {
+        clearFocusState(true);
+    }
+
+    private static void clearFocusState(boolean clearMinigame) {
         Minecraft minecraft = Minecraft.getInstance();
         if (previousCameraType != null) {
             minecraft.options.setCameraType(previousCameraType);
@@ -241,7 +257,7 @@ public final class HackingDeviceFocusClient {
         returning = false;
         returnStarted = 0L;
         currentFov = originalFov;
-        HackingDeviceMinigameClient.clear();
+        if (clearMinigame) HackingDeviceMinigameClient.clear();
     }
 
     private static float smooth(float value) {

@@ -36,6 +36,8 @@ public final class HackingDeviceAttachedRenderer {
     private static final int GREEN_DIM = HackingDeviceScreenTextClient.GREEN_DIM;
     private static final int AMBER = 0xFFFFC857;
     private static final int RED = 0xFFFF675C;
+    private static final float PAD_X = 12.0F;
+    private static final float INNER_X = 16.0F;
 
     private HackingDeviceAttachedRenderer() {
     }
@@ -112,7 +114,7 @@ public final class HackingDeviceAttachedRenderer {
             renderSession(null, null, null);
         } else {
             HackingDevicePixelFont.draw("CI FIELD UNIT // STANDBY",
-                    10.0F, 68.0F, GREEN_DIM);
+                    PAD_X, 68.0F, GREEN_DIM);
         }
     }
 
@@ -139,21 +141,21 @@ public final class HackingDeviceAttachedRenderer {
         int filled = (int) Math.round(progress * 28.0D);
         String bar = "[" + "#".repeat(Math.max(0, Math.min(28, filled)))
                 + ".".repeat(Math.max(0, 28 - filled)) + "]";
-        draw(font, poseStack, buffers, "CI//FIELDNODE HDEV-RIPPER", 8, 12,
+        draw(font, poseStack, buffers, "CI//FIELDNODE HDEV-RIPPER", PAD_X, 12,
                 GREEN_DIM);
-        draw(font, poseStack, buffers, "SCIPNET BRIDGE: UNSIGNED / DIRTY", 8,
-                30, AMBER);
-        draw(font, poseStack, buffers, "> JACK READER BUS", 8, 52, GREEN);
-        draw(font, poseStack, buffers, "> SPOOF FOUNDATION HANDSHAKE", 8, 69,
-                GREEN);
-        draw(font, poseStack, buffers, bar, 8, 94, GREEN_BRIGHT);
+        draw(font, poseStack, buffers, "SCIPNET BRIDGE: UNSIGNED / DIRTY",
+                PAD_X, 30, AMBER);
+        draw(font, poseStack, buffers, "> JACK READER BUS", PAD_X, 52, GREEN);
+        draw(font, poseStack, buffers, "> SPOOF FOUNDATION HANDSHAKE", PAD_X,
+                69, GREEN);
+        draw(font, poseStack, buffers, bar, PAD_X, 94, GREEN_BRIGHT);
         draw(font, poseStack, buffers,
                 String.format("BOOTSTRAP %3d%% // DO NOT UNPLUG",
                         (int) Math.round(progress * 100.0D)),
-                8, 111, GREEN_DIM);
+                PAD_X, 111, GREEN_DIM);
         if (progress > 0.72D) {
-            draw(font, poseStack, buffers, "PRAYER FLAG........SET", 8, 132,
-                    AMBER);
+            draw(font, poseStack, buffers, "FALLBACK ROUTE......ARMED", PAD_X,
+                    132, AMBER);
         }
     }
 
@@ -163,7 +165,7 @@ public final class HackingDeviceAttachedRenderer {
         draw(font, poseStack, buffers,
                 String.format("CI//SCIPNET-RIPPER  KCR-L%d",
                         HackingDeviceMinigameClient.accessLevel()),
-                8, 9, GREEN_DIM);
+                PAD_X, 9, GREEN_DIM);
         String[] lines = {
                 "> CERT CHAIN........FORGED",
                 "> NODE MAP.........STOLEN",
@@ -172,12 +174,12 @@ public final class HackingDeviceAttachedRenderer {
                 "> BREACH MODULES....ARMED"
         };
         for (int index = 0; index < count; index++) {
-            draw(font, poseStack, buffers, lines[index], 8,
+            draw(font, poseStack, buffers, lines[index], PAD_X,
                     34 + index * 20,
                     index == count - 1 ? GREEN_BRIGHT : GREEN);
         }
         draw(font, poseStack, buffers, "PATCHSET: BLACKBOX/0.7F-UNSIGNED",
-                8, 139, AMBER);
+                PAD_X, 139, AMBER);
     }
 
     private static void renderPuzzle(Font font, PoseStack poseStack,
@@ -185,17 +187,17 @@ public final class HackingDeviceAttachedRenderer {
         HackingDevicePuzzle puzzle = HackingDeviceMinigameClient.puzzle();
         if (puzzle == null) return;
 
-        draw(font, poseStack, buffers, "CI//SCIPNET BRIDGE [UNSIGNED]", 5, 4,
-                GREEN_DIM);
+        draw(font, poseStack, buffers, "CI//SCIPNET BRIDGE [UNSIGNED]", PAD_X,
+                6, GREEN_DIM);
         draw(font, poseStack, buffers,
                 String.format("KCR-L%d  CHAIN %d/%d  ERR %d/3",
                         HackingDeviceMinigameClient.accessLevel(),
                         HackingDeviceMinigameClient.round(),
                         HackingDeviceMinigameClient.requiredWins(),
                         HackingDeviceMinigameClient.failures()),
-                5, 15, GREEN);
+                PAD_X, 17, GREEN);
         draw(font, poseStack, buffers,
-                "-----------------------------------------", 5, 25, GREEN_DIM);
+                "--------------------------------------", PAD_X, 28, GREEN_DIM);
 
         switch (puzzle.type()) {
             case CIRCUIT_PATH -> renderCircuit(font, poseStack, buffers, puzzle);
@@ -217,20 +219,20 @@ public final class HackingDeviceAttachedRenderer {
         int current = HackingDeviceMinigameClient.circuitMask();
         int selected = HackingDeviceMinigameClient.selectedIndex();
 
-        draw(font, poseStack, buffers, "HOTWIRE // CIRCUIT PATH", 8, 36,
+        draw(font, poseStack, buffers, "HOTWIRE // CIRCUIT PATH", PAD_X, 39,
                 AMBER);
-        draw(font, poseStack, buffers, "MATCH TRACE. PATCH BROKEN NODES.", 8,
-                48, GREEN_DIM);
+        draw(font, poseStack, buffers, "MATCH TRACE. PATCH BROKEN NODES.",
+                PAD_X, 52, GREEN_DIM);
         draw(font, poseStack, buffers, "TRACE  " + circuitString(target, count),
-                8, 66, GREEN_BRIGHT);
+                PAD_X, 70, GREEN_BRIGHT);
         draw(font, poseStack, buffers, "PATCH  " + circuitString(current, count),
-                8, 84, GREEN);
-        float caretX = 8 + pixelWidth("PATCH  ") + selected * 12.0F;
-        draw(font, poseStack, buffers, "^", caretX, 96, AMBER);
+                PAD_X, 88, GREEN);
+        float caretX = PAD_X + pixelWidth("PATCH  ") + selected * 12.0F;
+        draw(font, poseStack, buffers, "^", caretX, 100, AMBER);
         int bad = Integer.bitCount((target ^ current) & ((1 << count) - 1));
         draw(font, poseStack, buffers,
                 String.format("OPEN LINKS: %d   NODE %d/%d", bad,
-                        selected + 1, count), 8, 111,
+                        selected + 1, count), PAD_X, 115,
                 bad == 0 ? GREEN_BRIGHT : GREEN_DIM);
         controls(font, poseStack, buffers,
                 "A/D NODE  SPACE FLIP  ENTER INJECT");
@@ -243,12 +245,12 @@ public final class HackingDeviceAttachedRenderer {
         int target = puzzle.data(2, 0);
         int selected = HackingDeviceMinigameClient.selectedIndex();
 
-        draw(font, poseStack, buffers, "VISUAL CHECKSUM // FORGE", 8, 36,
+        draw(font, poseStack, buffers, "VISUAL CHECKSUM // FORGE", PAD_X, 39,
                 AMBER);
         draw(font, poseStack, buffers,
                 String.format("MAKE SUM = %02d   CURRENT = %02d", target,
                         HackingDeviceMinigameClient.checksumSum()),
-                8, 48, GREEN_BRIGHT);
+                PAD_X, 52, GREEN_BRIGHT);
 
         for (int i = 0; i < count; i++) {
             int value = HackingDeviceMinigameClient.checksumValue(i);
@@ -256,7 +258,7 @@ public final class HackingDeviceAttachedRenderer {
             draw(font, poseStack, buffers,
                     String.format("%s CH%d [%s] %d", i == selected ? ">" : " ",
                             i + 1, bar, value),
-                    12, 62 + i * 13, i == selected ? GREEN_BRIGHT : GREEN);
+                    INNER_X, 67 + i * 13, i == selected ? GREEN_BRIGHT : GREEN);
         }
         controls(font, poseStack, buffers,
                 "A/D CHANNEL  SPACE +  ENTER FORGE");
@@ -270,21 +272,21 @@ public final class HackingDeviceAttachedRenderer {
         int open = HackingDeviceMinigameClient.firewallOpenLane();
         int periodMs = Math.max(250, puzzle.data(1, 800));
 
-        draw(font, poseStack, buffers, "FIREWALL WINDOWS // PUNCH", 8, 36,
+        draw(font, poseStack, buffers, "FIREWALL WINDOWS // PUNCH", PAD_X, 39,
                 AMBER);
         draw(font, poseStack, buffers,
-                String.format("GATE %d/%d   WINDOW %.2FS", Math.min(gate + 1,
+                String.format("GATE %d/%d   WINDOW %.2fs", Math.min(gate + 1,
                                 gates), gates, periodMs / 1000.0F),
-                8, 49, GREEN_DIM);
+                PAD_X, 52, GREEN_DIM);
         for (int row = 0; row < 3; row++) {
             String state = row == open ? "[     OPEN     ]" : "[##############]";
             draw(font, poseStack, buffers,
-                    String.format("%s LANE %d ---- %s", row == lane ? ">" : " ",
-                            row + 1, state), 8, 67 + row * 19,
+                    String.format("%s LANE %d -- %s", row == lane ? ">" : " ",
+                            row + 1, state), INNER_X, 70 + row * 18,
                     row == open ? GREEN_BRIGHT : GREEN_DIM);
         }
         draw(font, poseStack, buffers,
-                "MOVE PACKET TO LIVE GAP. SPACE = CROSS.", 8, 126, GREEN);
+                "MOVE TO OPEN LANE. SPACE = CROSS.", PAD_X, 127, GREEN);
         controls(font, poseStack, buffers, "A/D LANE  SPACE BREACH");
     }
 
@@ -295,26 +297,26 @@ public final class HackingDeviceAttachedRenderer {
         float marker = HackingDeviceMinigameClient.holdMarker();
         float progress = HackingDeviceMinigameClient.holdProgress();
 
-        draw(font, poseStack, buffers, "HOLD SIGNAL // DIRTY PLL", 8, 36,
+        draw(font, poseStack, buffers, "HOLD SIGNAL // DIRTY PLL", PAD_X, 39,
                 AMBER);
-        draw(font, poseStack, buffers, "KEEP CARRIER INSIDE LOCK BAND.", 8, 49,
-                GREEN_DIM);
+        draw(font, poseStack, buffers, "KEEP CARRIER INSIDE LOCK BAND.", PAD_X,
+                52, GREEN_DIM);
         draw(font, poseStack, buffers,
-                signalBar(marker, center - half, center + half), 8, 69,
+                signalBar(marker, center - half, center + half), PAD_X, 72,
                 GREEN_BRIGHT);
         draw(font, poseStack, buffers,
-                String.format("CARRIER %05.1F   BAND %02d..%02d", marker,
-                        center - half, center + half), 8, 87, GREEN);
+                String.format("CARRIER %05.1f   BAND %02d..%02d", marker,
+                        center - half, center + half), PAD_X, 91, GREEN);
         int filled = Math.max(0, Math.min(18, Math.round(progress * 18.0F)));
         draw(font, poseStack, buffers,
                 "LOCK [" + "#".repeat(filled)
                         + ".".repeat(18 - filled) + "]",
-                8, 106, progress >= 1.0F ? GREEN_BRIGHT : GREEN);
+                PAD_X, 109, progress >= 1.0F ? GREEN_BRIGHT : GREEN);
         draw(font, poseStack, buffers,
-                String.format("HOLD %3d%% // KEEP YOUR HAND STEADY",
+                String.format("HOLD %3d%% // KEEP SIGNAL STABLE",
                         Math.round(progress * 100.0F)),
-                8, 122, GREEN_DIM);
-        controls(font, poseStack, buffers, "A/D TRIM  DO NOT LET IT ESCAPE");
+                PAD_X, 125, GREEN_DIM);
+        controls(font, poseStack, buffers, "A/D TRIM  HOLD IN BAND");
     }
 
     private static void renderFrequency(Font font, PoseStack poseStack,
@@ -323,23 +325,23 @@ public final class HackingDeviceAttachedRenderer {
         int tolerance = Math.max(1, puzzle.data(1, 5));
         int current = HackingDeviceMinigameClient.frequencyValue();
 
-        draw(font, poseStack, buffers, "FREQUENCY LOCK // BUS TAP", 8, 36,
+        draw(font, poseStack, buffers, "FREQUENCY LOCK // BUS TAP", PAD_X, 39,
                 AMBER);
-        draw(font, poseStack, buffers, "TUNE CARRIER INTO CAPTURE BAND.", 8, 49,
-                GREEN_DIM);
+        draw(font, poseStack, buffers, "TUNE CARRIER INTO CAPTURE BAND.", PAD_X,
+                52, GREEN_DIM);
         draw(font, poseStack, buffers,
                 signalBar(current, target - tolerance, target + tolerance),
-                8, 72, GREEN_BRIGHT);
+                PAD_X, 75, GREEN_BRIGHT);
         draw(font, poseStack, buffers,
                 String.format("TUNE %03d   TARGET %03d +/- %02d", current,
-                        target, tolerance), 8, 92,
+                        target, tolerance), PAD_X, 95,
                 Math.abs(current - target) <= tolerance
                         ? GREEN_BRIGHT : GREEN);
         draw(font, poseStack, buffers,
                 Math.abs(current - target) <= tolerance
                         ? "LOCK WINDOW ACQUIRED // INJECT NOW"
                         : "NO CARRIER // KEEP TUNING",
-                8, 113,
+                PAD_X, 116,
                 Math.abs(current - target) <= tolerance
                         ? GREEN_BRIGHT : GREEN_DIM);
         controls(font, poseStack, buffers, "A/D TUNE  ENTER LOCK");
@@ -357,7 +359,7 @@ public final class HackingDeviceAttachedRenderer {
                 83, AMBER);
         centered(font, poseStack, buffers, "> SWAPPING ATTACK MODULE...", 108,
                 GREEN_DIM);
-        centered(font, poseStack, buffers, "PLEASE CONTINUE BELIEVING", 128,
+        centered(font, poseStack, buffers, "> NEXT VECTOR STAGED", 128,
                 GREEN_DIM);
     }
 
@@ -372,7 +374,7 @@ public final class HackingDeviceAttachedRenderer {
                 82, AMBER);
         centered(font, poseStack, buffers, "> DUMPING MODULE...", 105,
                 GREEN_DIM);
-        centered(font, poseStack, buffers, "> TRYING SOMETHING DUMBER...", 122,
+        centered(font, poseStack, buffers, "> SWITCHING BREACH VECTOR...", 122,
                 GREEN_DIM);
     }
 
@@ -382,7 +384,7 @@ public final class HackingDeviceAttachedRenderer {
         centered(font, poseStack, buffers, "THREE BAD HANDSHAKES", 63, AMBER);
         centered(font, poseStack, buffers, "BURN SESSION / PULL CABLE", 85,
                 GREEN);
-        centered(font, poseStack, buffers, "CI FIELDNOTE: RUN.", 113,
+        centered(font, poseStack, buffers, "FIELD SESSION TERMINATED", 113,
                 GREEN_DIM);
     }
 
@@ -396,7 +398,7 @@ public final class HackingDeviceAttachedRenderer {
         draw(font, poseStack, buffers,
                 HackingDeviceMinigameClient.waitingForServer()
                         ? "[ WAITING ON FORGED AUTH... ]" : line,
-                8, 140, HackingDeviceMinigameClient.waitingForServer()
+                PAD_X, 140, HackingDeviceMinigameClient.waitingForServer()
                         ? AMBER : GREEN_DIM);
     }
 

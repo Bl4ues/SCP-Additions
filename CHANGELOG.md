@@ -6,7 +6,7 @@
 > **World compatibility notice:** Worlds created with SCP Additions before the 4.0.0 rebrand are **not block-compatible** with SCP: Classified Directive. Because the registry namespace changed, blocks placed by older versions will not be preserved when those worlds are loaded under 4.0.0 and may be removed from the world. **Back up old worlds before updating.** Configuration, player-capability, and SavedData migrations remain supported where explicitly described below, but placed legacy blocks should be treated as non-migrating content.
 
 ## Highlights
-- SCP: Classified Directive rebrand (formerly SCP Additions)
+- SCP Additions rebrand to SCP: Classified Directive
 - SCP-106
 - SCP-939
 - SCP-1576
@@ -61,16 +61,15 @@
 - Successful pounces knock the victim prone and pin them beneath SCP-939;
 - Added an interactive struggle QTE while pinned, using the player's rebound left/right movement keys rather than hard-coded controls; successful inputs can kick SCP-939 away, while repeated failures allow the mauling attack to continue; its reaction window is more generous on Safe/Thaumiel, uses the baseline timing on Euclid, and is tighter on Keter;
 - Other players can interrupt a pin by attacking SCP-939, immediately freeing the restrained victim;
-- Added a dedicated breath reserve which becomes relevant only at immediate pass-by distance, entering at approximately 2.5 blocks with unobstructed line of sight and clearing around 2.75 blocks to prevent HUD flicker;
+- Added a dedicated breath reserve which becomes relevant only at immediate pass-by distance, entering at approximately 2.5 blocks with unobstructed line of sight and clearing around 2.75;
 - Added a rebindable **Hold Breath** control and HUD meter; holding breath suppresses normal breathing acoustic stimuli until the reserve is exhausted, at which point the player is forced to gasp loudly and temporarily cannot continue holding their breath;
-- Reduced ordinary breathing evidence to match the close-range Hold Breath encounter window while keeping the exhausted gasp intentionally loud and dangerous;
-- Added optional Simple Voice Chat mimicry: players can allow SCP-939 to retain short voice fragments temporarily in memory and replay them from SCP-939's position; fragments expire automatically and are cleared when consent is revoked or the player disconnects;
+- Added optional Simple Voice Chat mimicry: players can allow SCP-939 to retain short voice fragments temporarily in memory and replay them from SCP-939's position;
 - Added `/scp939 mimicry allow`, `/scp939 mimicry deny`, and `/scp939 mimicry status` session controls.
 
 ## SCP-1576
 
 - Added SCP-1576 as a new Usable object;
-- Holding the normal use control winds SCP-1576 for four seconds, while releasing the control early immediately cancels the winding attempt;
+- Holding the use control winds SCP-1576 for four seconds, while releasing the control early immediately cancels the winding attempt;
 - Sneaking and using SCP-1576 on a supported surface places the object on the ground;
 - Completing the wind-up starts 30 seconds of communication with dead players, then places that SCP-1576 instance on a two-minute cooldown;
 - With Simple Voice Chat available, dead players speaking through the multiplayer death/spectating call are relayed positionally from the active SCP-1576 so nearby living players can hear them;
@@ -78,15 +77,13 @@
 
 ## Anomalous Items
 
-- Added Item #006, Vol. I as the first Log of Anomalous Items entry;
-- Item #006's **Glowing Rock** now emits a soft light when placed.
+- Added Item #006, Vol. I as the first Log of Anomalous Items entry.
 
 ## SCP-294
 
-- Reworked SCP-294 around its physical machine controls instead of a separate drawn interface: the payment slot and keyboard are independent contextual targets on the authored model;
-- Inserting the $0.50 coin enables the keyboard interaction, which focuses the physical console while typed orders and machine status remain on the in-world readout rather than being redrawn as a 2D GUI;
-- Added persistent world-space readout states for payment, order entry, out-of-range and pouring feedback, plus a temporary physical cup in the dispenser while a drink is being prepared;
-- SCP-294 accepts the configured coin through both SCP Inventory and vanilla inventory paths, preserving Creative/testing and alternative inventory use.
+- Reworked SCP-294 around its physical machine controls instead of a separate interface;
+- Inserting the coin enables the keyboard interaction;
+- Added persistent world-space readout states for payment, order entry, out-of-range and pouring feedback, plus a temporary physical cup in the dispenser while a drink is being prepared.
 
 ## SCP-914
 
@@ -113,21 +110,20 @@
 ## SCP-714
 
 - Reworked SCP-714's stamina drawback so the ring no longer immediately empties or disables stamina; sprinting begins at normal stamina cost and progressively becomes more exhausting with exposure, reaching **2.5×** stamina drain at the most advanced pre-coma stage;
-- SCP-714 can now be placed on a supported floor with **Sneak + Use**.
+- Now sneaking and using SCP-714 on a supported surface places the object on the ground.
 
 ## SCP-173
 
 - Reduced SCP-173's rendered height to approximately two blocks;
-- Updated and Reworked SCP-173's movement audio;
+- Updated and Reworked SCP-173's movement audio and logic;
 - Added a synchronized two-layer encounter score triggered by SCP-173 reveal scares: the first layer dominates during direct danger, the second paranoia layer crossfades in as the Blink HUD disappears, and the score lingers after the statue leaves before fading out;
-- Prevented SCP-173 from scraping and shuffling against closed doors when no complete path to its target exists;
 - SCP-173 can now move while local illumination is below light level 5, including outdoors at night when no other light reaches it; Night Vision and registered future vision aids preserve observation in darkness, while playable SCP-079 never counts as an observer.
 
 ## SCP-131
 
 - SCP-131 no longer teleports back to distant owners; moving too far away now dismisses the follower normally;
 - SCP-131 instances now dismiss their player's follower group when they begin watching SCP-173, matching the manual dismiss action.
-- The first time a player makes an SCP-131 follow in a world, `scp131found.ogg` now plays once for every player currently connected to that world save.
+- The first time a player makes an SCP-131 follow in a world, a short musical cue now plays once for every player currently connected to that world save.
 
 ## Legacy remakes
 
@@ -136,20 +132,19 @@
 
 ## Stealth and movement
 
-- Added a default-enabled server-side **Advanced Crouch & Stealth** module that replaces instant first-person crouch height changes with smooth lowering and rising transitions while retaining Minecraft's canonical server-authoritative collision poses;
+- Added a default-enabled server-side module that replaces instant first-person crouch height changes with smooth lowering and rising transitions while retaining Minecraft's canonical server-authoritative collision poses;
 - Crouching players now automatically enter Minecraft's low crawling pose when moving into spaces too short for the normal crouch hitbox, then transition back through crouching and standing as clearance becomes available;
 - Added a reusable visual-perception framework for hostile mobs: standing, crouching, and crawling expose configurable visibility values, while local light, distance, line of sight, sustained exposure, invisibility, and per-entity multipliers affect whether a player is acquired as a target;
-- Added entity-specific perception traits for **Omniscient**, **Blind**, and **Night Vision** behavior, with integrated defaults that leave SCP-106 unaffected by hiding, keep SCP-939's acoustic system authoritative instead of granting it visual detection, make hiding from SCP-173 less forgiving than hiding from ordinary mobs, and let spiders ignore darkness penalties;
-- Added public visibility overrides and modifier hooks so future hiding spots, smoke, equipment, and anomalous invisibility can participate in perception without replacing mob AI;
-- Added a dedicated **Stealth & Perception** Configuration Center editor for posture visibility, darkness behavior, close-range detection, acquisition delay, and addable per-entity sensory rules and multipliers.
+- Added entity-specific perception traits for **Omniscient**, **Blind**, and **Night Vision** behavior, with integrated defaults that leave SCP-106 unaffected by hiding, keep SCP-939's acoustic system authoritative, make hiding from SCP-173 less forgiving than hiding from ordinary mobs, and let vanilla spiders ignore darkness penalties;
+- Added public visibility overrides and modifier hooks so future hiding spots, smoke, equipment, and anomalous invisibility can participate in perception without replacing mob AI.
 
 ## SCP-079
 
 - Replaced redstone-based facility access with a powered Facility Diagnostic Terminal and an Auxiliary Power Unit;
 - SCP-079 now requires a physical computer in the world, begins hidden protocol discovery only after a powered diagnostic scan, learns faster from door use and Tesla activity, and gains AP regeneration only after completing access discovery;
-- Rebuilt the Facility Diagnostic Terminal as a persistent physical **SCiPNET** CRT: the technician explicitly runs an analysis from the placed machine, the synchronized diagnostic snapshot remains visible without keeping a GUI open, and another analysis or remote-session cache purge updates the display;
+- Rebuilt the Facility Diagnostic Terminal as a persistent physical SCiPNET diagnostic computer: the technician explicitly runs an analysis from the placed machine, the synchronized diagnostic snapshot remains visible without keeping a GUI open, and another analysis or remote-session cache purge updates the display;
 - Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
-- Added difficulty-scaled processing costs: SCP-079 actions consume more AP on Thaumiel and Safe, use their authored baseline cost on Euclid, and consume less AP on Keter;
+- Added difficulty-scaled processing costs: SCP-079 actions consume more AP on Thaumiel and Safe, use their baseline cost on Euclid, and consume less AP on Keter;
 - Added a strategic expenditure model that protects emergency reserves, tracks recent spending and repeated tactical lanes, permits brief high-power bursts, becomes increasingly conservative below 60% power, and reserves sub-30% expenditure for exceptional traps or critical device opportunities;
 - SCP-079 now evaluates action utility against cost, remaining power, recent expenditure, repeated-action pressure, and the strategic importance of the requesting subsystem instead of spending whenever an action is merely affordable;
 - SCP-079 now reacts differently depending on the threat chasing the player, using doors, temporary access denial, and nearby Tesla Gates when useful;
@@ -157,29 +152,28 @@
 - SCP-079 can now close and lock an open door to separate following SCP-131 instances when SCP-173 is waiting ahead;
 - SCP-079 can spend processing power continuously to keep a useful door locked for longer, releasing it when the strategy is no longer useful or it cannot afford the upkeep;
 - Added a positional hacking sound at each door, Tesla Gate, SCP-012 box, or other facility device successfully manipulated by SCP-079;
-- Added a playable SCP-079 control mode with a local orbit around its physical computer and server-authoritative transfer to registered surveillance cameras while keeping the autonomous decision layer suspended for the duration of player control;
-- Playable SCP-079 now begins at a stripped-down **Local Host** view without camera-frame corners or the Auxiliary Power meter; the first surveillance-network access in each control session runs an animated EXITY terminal boot sequence with staged status/error text and audio cues, then uses the normal camera interference transition into a camera in the host room when one exists or falls back to the Facility Map otherwise;
-- Added an SCP-079 surveillance HUD and facility map built from persistent authored room floors, including floor selection, room/camera switching, AP and network state, lifeform counts, SCP tracking, target labels, low-light enhancement, scanline treatment, and interference during feed changes;
-- The SCP-079 facility map now marks the physical local host with a white **079** marker, visually dims rooms without surveillance cameras, and prevents those offline rooms from being selected;
+- Added a playable SCP-079 control mode with registered surveillance cameras while keeping the autonomous decision layer suspended for the duration of player control;
+- Playable SCP-079 now begins at a stripped-down **Local Host** view without camera-frame corners or the Auxiliary Power meter; the first surveillance-network access in each control session runs an animated terminal boot sequence, then transitions into a camera in the host room when one exists or falls back to the Facility Map otherwise;
+- Added an SCP-079 surveillance HUD and facility map built from persistent room floors, including floor selection, room/camera switching, AP and network state, SCP tracking, target labels, night vision, etc;
+- The SCP-079 facility map marks the physical local host with a white **079** marker, visually dims rooms without surveillance cameras, and prevents offline rooms from being selected;
 - Added map-topology-based **WASD** camera navigation with `GO TO` room labels and disabled `NO CAMERA` routes; on Euclid the base camera-transfer cost is 3 AP on the same floor, 6 AP across floors in one zone, and 9 AP across zones, before the existing Safe/Keter/Thaumiel difficulty scaling; cross-floor and cross-zone hand-offs remain masked by longer authored interference instead of visibly snapping between feeds;
 - Added server-authoritative signal-interruption states that temporarily block SCP-079's remote-control packets while a feed is unavailable; a disabled active camera enters a short no-signal transition before control is returned away from the failed feed;
-- Destroying SCP-079's physical host while a player is controlling it now triggers a two-second no-signal failure before killing the controller and handing the result to the normal death/spectating flow;
+- Destroying SCP-079's physical host while a player is controlling it now triggers a no-signal failure before killing the controller and resulting in the normal death/spectating flow;
 - Added room **Blackout**, disabling redstone-powered lights in the active mapped room for 10 seconds at a 40 AP Euclid baseline, doubled on Surface before difficulty scaling;
 - Added room **Lockdown**, consuming exactly 100 AP to close and deny every controllable door in the active mapped room for 7 seconds, with a 10-second cooldown and AP regeneration paused while active;
 - Playable SCP-079 can manually open, close, and temporarily deny connected heavy-door controls and suppress Tesla Gates from a camera feed, with all actions consuming the same processing-power resource;
-- Added the Creative-only **Facility Mapping Tool** for defining persistent, irregular room floors and associating them with configured Core Room Floor Stations for surveillance and future CCTV systems;
-- Added the Creative-only **SCP Role Selector** in **Tools & Utility**, with an animated administrative role database showing the selected anomaly, containment class, role description and abilities before confirmation; SCP-079 is currently the only implemented playable role, and assuming it binds the player to the nearest valid registered SCP-079 computer in the current dimension while releasing the role restores personnel control;
-- Added a functional **Surveillance Camera** placeholder in the Facility **Functional** section; placed cameras persist in the shared surveillance registry, inherit room membership from the mapped floor beneath them, and reserve the stable `surveillance_camera` registry ID for the future animated GeckoLib replacement;
-- Added the ceiling-mounted **Ceiling Camera** beside the Surveillance Camera in Facility **Functional**; it joins the same mapped-room surveillance network, supports full 360° pan with pitch from horizontal to straight down, performs randomized idle dome scans, and mirrors playable or autonomous SCP-079 aiming through its physical lens;
-- Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section; playable SCP-079 can use a dedicated rebindable shortcut to begin or stop room-wide broadcasts without aiming at the device;
-- Active Speakers play positional startup, shutdown, and continuous static audio, and optionally relay SCP-079's Simple Voice Chat microphone through a deliberately narrow-band, distorted radio filter without adding synthetic noise;
-- SCP-079 Speaker broadcasts now add a separate deterministic robotic filter chain on top of the shared PA/radio coloration, while physical Intercom sources retain the normal human voice filter path;
-- Added terminal-style speech for playable SCP-079: ordinary typed lines are kept in its local terminal history instead of being sent as normal chat, synthesized by a deterministic offline retro speech engine, and routed positionally through the physical host or through Speakers in the currently controlled camera room;
-- Remote SCP-079 camera speech requires a mapped room Speaker and does not silently fall back to the physical host, while local-host speech originates from SCP-079's actual computer;
-- Added an animated desk-mounted **Intercom** to the Facility **Functional** section; its physical contextual button toggles the authored turn-on/turn-off animation, indicator state, and local on/off/loop audio;
+- Added the Creative-only **Facility Mapping Tool** for defining persistent room floors and associating them with configured Core Room Floor Stations for surveillance systems;
+- Added the Creative-only **SCP Role Selector** in **Tools & Utility**, with an administrative role database showing the selected anomaly, containment class, role description and abilities before confirmation; SCP-079 is currently the only implemented playable role, and assuming it binds the player to the nearest valid registered SCP-079 computer in the current dimension while releasing the role restores personnel control;
+- Added a functional **Surveillance Camera** and **Ceiling Camera** in the Facility **Functional** section; 
+- Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section; playable SCP-079 can use a dedicated rebindable shortcut to begin or stop room-wide broadcasts;
+- Active Speakers play positional startup, shutdown, and continuous static audio, and optionally relay SCP-079's Simple Voice Chat microphone through a deliberately narrow-band, distorted radio filter;
+- SCP-079 Speaker broadcasts addS a separate deterministic robotic filter chain on top of the shared PA/radio coloration, while physical Intercom sources retain the normal human voice filter path;
+- Added terminal-style speech for playable SCP-079: ordinary typed lines are kept in its local terminal history instead of being sent as normal chat, synthesized by an offline speech engine, and routed positionally through the physical host or through Speakers in the currently controlled camera room if Simple Voice Chat is available;
+- Remote SCP-079 camera speech requires a mapped room Speaker, while local-host speech originates from SCP-079's actual computer;
+- Added the **Intercom** to the Facility **Functional** section; its physical contextual button toggles the authored turn-on/turn-off animation, indicator state, and local on/off/loop audio;
 - Active Intercoms route every valid Speaker in their mapped room, remain active while a living player stays within two blocks, refresh room endpoints continuously, and shut down when abandoned or when no mapped Speaker remains available;
-- With Simple Voice Chat available, active Intercoms capture ordinary player speech within five blocks of the authored microphone position and relay a filtered positional copy through the room Speakers; nearby server-side world sounds are relayed independently through the same Speaker coloration;
-- The shared source-to-Speaker routing layer now serves both playable SCP-079 and physical Intercoms, keeping room endpoints, activation state, audio presentation, and voice filtering consistent between the two sources;
+- With Simple Voice Chat available, active Intercoms capture ordinary player speech within five blocks of the microphone position and relay a filtered positional copy through the facility Speakers;
+- The shared source-to-Speaker routing layer serves both playable SCP-079 and Intercoms, keeping room endpoints, activation state, audio presentation, and voice filtering consistent between the two sources;
 - Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## SCP-079 auxiliary isolation and SCiPNET reindexing
@@ -193,12 +187,10 @@
 ## Hacking Device and keycard security
 
 - Added the **Hacking Device** to Access & Security as a handheld Chaos Insurgency access-bypass tool built around a compromised SCiPNET-style field interface;
-- The Hacking Device physically seats onto Level 1–6 keycard readers and Object Containment Units through contextual interaction, takes control of the camera around its own CRT, and keeps the entire hacking interface on the placed device instead of opening a conventional fullscreen minigame;
-- Added five server-authored breach challenges — **Circuit Path**, **Visual Checksum**, **Firewall Windows**, **Hold Signal**, and **Frequency Lock** — with the next challenge always changing after either a success or a failure;
+- The Hacking Device physically seats onto Level 1–6 keycard readers and Object Containment Units through contextual interaction, and has five breach challenges: **Circuit Path**, **Visual Checksum**, **Firewall Windows**, **Hold Signal**, and **Frequency Lock**.
 - Hacking difficulty scales directly with reader level: Levels 1–2 require one successful challenge, Levels 3–4 require two, and Levels 5–6 require three, while each challenge independently becomes less forgiving across Levels 1–6; three failed challenges abort the breach;
-- Successful normal reader hacks return the device to the player's hand and leave a five-second passage window displayed as a large live countdown on its physical CRT, while a successful Object Containment Unit hack opens the unit and returns the device without a passage timer;
-- Reworked keycard authentication into a physical swipe sequence: accepted and denied cards visibly travel through the authored keycard-reader or Object Containment Unit slot before the server-authoritative access result resolves;
-- The Hacking Device uses positional filtered interaction audio and a deliberately improvised Chaos/SCiPNET presentation, including forged, stolen, cached and unsigned system telemetry rather than a clean Foundation terminal aesthetic.
+- Successful normal reader hacks return the device to the player's hand and leave a five-second passage window displayed as a live countdown on its screen, while a successful Object Containment Unit hack opens the unit and returns the device without a passage timer;
+- Reworked keycard authentication into a physical swipe sequence: accepted and denied cards visibly swipe through the keycard-reader or Object Containment Unit slot before the access result resolves.
 
 ## Achievements
 
@@ -213,26 +205,26 @@
 
 ## Interface and presentation
 
-- Added a default-enabled client-side **Custom Main Menu** preference that replaces Minecraft's title presentation with SCP: Classified Directive backgrounds, animated elements, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
-- Added a default-enabled client-side **Custom Pause Menu** preference with SCP: Classified Directive-styled navigation, Achievements, Statistics, Open to LAN, Settings, and mod access while preserving the corresponding vanilla actions and extensibility;
-- Added a default-enabled client-side **Custom Loading Screen** preference that replaces vanilla spawn-region loading with the SCP: Classified Directive background and custom world-generation progress.
+- Added a default-enabled client-side preference that replaces Minecraft's title presentation with SCP: Classified Directive backgrounds, animated elements, What's New highlights, an Extras drawer for Realms and compatible mod-added buttons, and smooth screen transitions;
+- Added a default-enabled client-side preference with SCP: Classified Directive-styled navigation, Achievements, Statistics, Open to LAN, Settings, and mod access while preserving the corresponding vanilla actions and extensibility;
+- Added a default-enabled client-side preference that replaces vanilla spawn-region loading with the SCP: Classified Directive background and custom world-generation progress.
 - Rebuilt the **New Game** flow opened from the custom Main Menu with the same animated presentation language while retaining Minecraft's real `CreateWorldScreen` and `WorldCreationUiState` as the authoritative creation backend;
-- Added responsive **GAME**, **WORLD**, and **MORE** creation cards for world naming, Survival/Creative/Apollyon selection, Thaumiel/Safe/Euclid/Keter difficulty presentation, cheats, registered world presets, customization, seed, structures, bonus chest, and the reserved **ARC-Site 48 (Coming Soon)** preset;
+- Added responsive creation cards for world naming, Survival/Creative/Apollyon selection, Thaumiel/Safe/Euclid/Keter difficulty presentation, cheats, registered world presets, customization, seed, structures, bonus chest, and the reserved **ARC-Site 48 (Coming Soon)** preset;
 - Added a registry-driven custom Game Rules editor, a styled Experiments flow that preserves vanilla data-pack state handling, the normal Data Packs workflow, and a **MOD OPTIONS** area that rehosts compatible controls injected into world creation by other mods while preserving their original callbacks;
 - Restyled **Add Server**, **Edit Server**, and **Direct Connection** opened from the custom multiplayer panel with responsive SCP: Classified Directive panels while retaining Minecraft's native validation, resource-pack controls, callbacks, and compatible injected widgets;
-- Added a default-enabled **Custom Achievement Toasts** preference that replaces vanilla advancement popups with animated SCP: Classified Directive achievement cards;
+- Added a default-enabled preference that replaces vanilla advancement popups with animated SCP: Classified Directive achievement cards;
 - Replaced Forge's separate Mods screen in both custom title and pause menus with an animated native mod browser featuring fixed Off/A-Z/Z-A sorting controls, optional internal-component filtering, config-capability indicators, scrollable mod entries, styled metadata and descriptions, direct in-game config access when supported, and an anchored Open mods folder action;
 - Added an SCP-themed Difficulty to the custom in-game Settings panel, mapping Safe/Euclid/Keter/Thaumiel to Easy/Normal/Hard/Peaceful with dedicated classification artwork and immediate world difficulty switching;
 - Extended the custom **Open to LAN** panel to host controls injected into vanilla's LAN screen by compatible mods, preserving their callbacks and settings while keeping the SCP: Classified Directive presentation;
-- Reworked SCP Inventory controls around Minecraft's existing **Inventory** binding as a QoL change: while the module is enabled, the player's normal Inventory key or mouse binding opens and closes SCP Inventory in Survival and Adventure, and opens SCP Inventory first in Creative with a dedicated **Creative Inventory** button leading to the vanilla creative interface; removed the former dedicated **Tab** inventory keybind;
-- Presented SCP Inventory through an animated physical PDA whose authored screen matches the existing interface, remains emissive and fully interactive, visibly reacts instead of fading during world-drop dragging, rotates closer for expanded document reading, completes its stow animation before every screen transition, and is shown with a privacy-safe static display and a two-handed pose to nearby third-person observers;
+- Reworked SCP Inventory controls around Minecraft's existing **Inventory** binding as a QoL change: while the module is enabled, the player's normal Inventory key opens and closes SCP Inventory in Survival and Adventure, and opens SCP Inventory first in Creative with a dedicated **Creative Inventory** button leading to the vanilla creative interface; removed the former dedicated **Tab** inventory keybind;
+- Presented SCP Inventory through an animated physical PDA;
 - Removed **E** as a separate Contextual Interactions input option; contextual actions now use Minecraft's normal **Use / Place** binding, legacy `allowE` configurations migrate to that input automatically, and physical controls that deliberately have no generic click remain unaffected;
 - Added **Hold Item** to equipment context menus in SCP Inventory, allowing equipment and accessories to be moved temporarily into the active hand without changing their equipment category or Quick Equip behavior;
 - Crafting items can now be dragged outside the SCP Inventory interface to drop them into the world;
 - Rebuilt the Configuration Center to match the new main-menu interface, with responsive two-column navigation, menu-style animated controls, preserved title-scene artwork, and smooth entry and exit transitions while retaining the existing configuration editors and validation logic;
-- Added a default-enabled client-side **Disable Text Drop Shadows** preference that removes Minecraft's dark offset shadow pass;
-- Added a default-enabled client-side **Hide Damage Indicator Particles** preference that suppresses the vanilla heart-like hit-feedback particles without affecting other particle effects;
-- Added a default-enabled client-side **Facility Chat Interface** that keeps vanilla chat behavior while making it a stylized console;
+- Added a default-enabled client-side preference that removes Minecraft's dark offset shadow pass;
+- Added a default-enabled client-side preference that suppresses the vanilla heart-like hit-feedback particles without affecting other particle effects;
+- Added a default-enabled client-side preference that keeps vanilla chat behavior while making it a stylized console;
 - Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand pickup prompt artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;
 - Added an SCP Inventory-style interface for plain slot-only storage containers while the custom inventory is enabled, replacing supported chest, barrel, shulker, hopper, dispenser, and compatible modded storage screens with responsive Backpack/Keys/Codex and container lists;
 - Added reversible **Enable/Disable** controls for compatible multi-entry Configuration Center lists; disabled entries remain visible but dimmed and can be restored without recreating them, including integrated and custom Roomba spawn floors, SCP-173 targets, hidden status effects, item rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
@@ -250,12 +242,12 @@
 
 ## Death, saving, and spectating
 
-- Added a default-enabled client-side **Custom Death Screen** inspired by SCP: Containment Breach and SCP: Unity, presenting designation, Safe/Euclid/Keter/Thaumiel difficulty, last save method, vanilla cause of death, animated red organic background treatment, progressive audio muffling, and SCP: Classified Directive-styled Load Game and Main Menu actions;
+- Added a default-enabled client-side **Custom Death Screen** inspired by SCP: Containment Breach and SCP: Unity, presenting designation, Safe/Euclid/Keter/Thaumiel difficulty, last save method, vanilla cause of death, animated red organic background treatment, audio muffling, and SCP: Classified Directive-styled Load Game and Main Menu actions;
 - Added a default-enabled server-side **Persistent Death Bodies** module that leaves an inert, interactable player body at the death location, using a short fake-ragdoll collapse and several low, randomized prone poses as a physical target for future SCP and recovery interactions;
 - Persistent Death Bodies can now be searched through an integrated hand prompt; each corpse opens player-named storage containing the items left by that player, using the normal container presentation when SCP Inventory was disabled and the SCP Inventory storage presentation when it was enabled;
-- Added **Quicksave**, bound to F6 by default and fully rebindable, which records the player's current position as their respawn point on Safe and Thaumiel difficulties;
+- Added **Quicksave**, bound to F6 by default, which records the player's current position as their respawn point on Safe and Thaumiel difficulties;
 - Reworked checkpoint availability around difficulty: Safe and Thaumiel allow Quicksave and Decontamination Checkpoint saves, Euclid allows Decontamination Checkpoints but not Quicksave, Keter disables both while leaving vanilla, command, and compatible modded respawn-point methods available, and Apollyon disables all respawn-point saving from SCP: Classified Directive, vanilla, commands, and compatible mods as part of its permanent-death rules;
-- Added a shared save pipeline that recognizes respawn points set through SCP: Classified Directive, vanilla, commands, and compatible mods, tracks the latest save method, plays the save cue, and shows an animated Roboto **Saving...** indicator with the rotating SCP: Classified Directive loading emblem;
+- Added a shared save pipeline that recognizes respawn points set through SCP: Classified Directive, vanilla, commands, and compatible mods, tracks the latest save method, plays the save cue, and shows an animated **Saving...** indicator with the rotating SCP: Classified Directive loading emblem;
 - Added a short Load Game return transition with FOV and screen effects, accompanied by the world-entry cue, with an Accessibility option to disable the motion effect;
 - Added multiplayer **Spectate** support to the custom Death Screen: when another player remains alive, dead players can open a third-person **Live Personnel Feed**, orbit the camera, switch between surviving players, and view CCTV-style scan noise and interference during feed changes;
 - Live Personnel Feed target selection is server-authoritative and supports surviving players outside normal tracking distance or in other dimensions by streaming the selected player's region to the dead observer while keeping the custom Death Screen active.
@@ -265,9 +257,9 @@
 - Added a dedicated **Mod Integrations** section to the Configuration Center for optional behavior-level integrations with detected mods; unavailable integrations remain visible but disabled;
 - Added **Simple Voice Chat** integration for multiplayer death and spectating: living players keep normal voice-chat behavior, while dead players share a non-positional dead-only call that cannot be heard by living players;
 - Live Personnel Feed observers also receive the voice-chat audio heard by their selected surviving player, including that survivor's own microphone, while remaining isolated from ordinary proximity and group routing at the dead observer's server-side position;
-- Extended the Simple Voice Chat integration to SCP-939: living speech now produces acoustic evidence for its hearing system, while explicit session consent can additionally provide temporary in-memory voice fragments for SCP-939 mimicry without writing captured audio to disk;
-- Extended Simple Voice Chat integration to playable SCP-079 as the optional positional transport for its generated retro speech and for live microphone routing through mapped Speakers and Intercoms;
-- Simple Voice Chat remains an optional dependency: when it is absent or the integration is disabled, voice-dependent relays and audible SCP-079 TTS are unavailable without disabling the corresponding non-voice gameplay systems or turning Simple Voice Chat into a hard requirement;
+- Extended the Simple Voice Chat integration to SCP-939: living speech produces acoustic evidence for its hearing system, while explicit session consent can additionally provide temporary in-memory voice fragments for SCP-939 mimicry without writing captured audio to disk;
+- Extended Simple Voice Chat integration to playable SCP-079 as the optional positional transport for its generated speech and for live microphone routing through mapped Speakers and Intercoms;
+- Simple Voice Chat remains an optional dependency: when it is absent or the integration is disabled, voice-dependent relays and audible SCP-079 TTS are unavailable;
 - Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP: Classified Directive death/spectate flow while using SCP: Classified Directive saves as MineZero checkpoints;
 - MineZero-integrated multiplayer sessions keep dead players in the spectate flow while survivors remain; after a team wipe, dead players vote before the latest valid checkpoint rewinds the session;
 - With MineZero integration active, SCP-714's terminal coma becomes recoverable while another living player remains: the wearer is forced into an attackable sleeping state on the floor, and another living player can use the **Remove / SCP-714** contextual prompt to take the ring and wake them immediately; if the comatose wearer becomes the last living player, the coma becomes fatal normally;
@@ -296,9 +288,9 @@
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;
-- Rebuilt the **Tesla Gate Terminal** as an immersive physical computer: its interface remains rendered on the placed CRT, interaction smoothly focuses the camera on that screen, and cursor/input use the same terminal pixel-space without redrawing the old interface as a conventional 2D panel;
+- Rebuilt the **Tesla Gate Terminal** as an immersive physical computer: its interface remains rendered on the screen;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
-- Added the per-player, per-world `coreroomdiscovery.ogg` cue, played once when that player first sees a Core Room Floor Station;
+- Added the per-player Core Room discovery cue, played once when that player first sees a Core Room Floor Station;
 - Added a construction preview for Core Room elevators: holding a Floor Station or Pulley displays a vertical green/red particle guide for valid range and obstruction checks, while structural beams are generated only after a valid Pulley closes the column and are removed when that connection becomes invalid;
 - Added optional Screwdriver-configured arrival displays per elevator floor station, with animated sector and level announcements shown to passengers as the doors open;
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
@@ -312,6 +304,12 @@
 - Updated props' item textures;
 - Standardized Foundation facility blocks at an effective hardness of 37.5 and required an iron-tier or better pickaxe, making an unenchanted iron pickaxe break them in the same time an unenchanted diamond pickaxe breaks obsidian;
 - Made Foundation structures, props, panels, readers, elevator components, and redstone-operated heavy doors immune to explosion destruction, while manual doors remain vulnerable.
+- Added a functional **Surveillance Camera** and **Ceiling Camera** in the Facility **Functional** section; 
+- Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section;
+- Added the **Intercom** to the Facility **Functional** section; its physical contextual button toggles the authored turn-on/turn-off animation, indicator state, and local on/off/loop audio;
+- Active Intercoms route every valid Speaker in their mapped room, remain active while a living player stays within two blocks, refresh room endpoints continuously, and shut down when abandoned or when no mapped Speaker remains available;
+- With Simple Voice Chat available, active Intercoms capture ordinary player speech within five blocks of the microphone position and relay a filtered positional copy through the facility Speakers;
+- The shared source-to-Speaker routing layer serves both playable SCP-079 and Intercoms, keeping room endpoints, activation state, audio presentation, and voice filtering consistent between the two sources;
 
 
 ## Facility signs
@@ -336,15 +334,11 @@
 
 ## Creative Safe Zones
 
-- Added the Creative-only **Safe Zone Tool** to the Items tab's **Tools & Utility** section, with Debug Stick styling and an in-game usage tooltip;
-- Left-clicking selects the first corner, right-clicking an opposite corner creates a persistent dimension-bound Safe Zone, and sneaking while right-clicking the air cancels the active selection;
-- Added a white selection outline, green outlines for supported automatic soundtrack sources, and post-creation outlines for up to 32 completed Safe Zones within 96 blocks while the tool is held in either hand;
-- Sneaking while right-clicking inside a Safe Zone opens its editor, which supports deletion, Area Music state, and a soundtrack dropdown containing the standard **Offices** and **SCP-131 Containment** tracks; detected special tracks are revealed and selected by default but can be freely replaced;
+- Added the Creative-only **Safe Zone Tool** to the Items tab's **Tools & Utility** section with an in-game usage tooltip;
 - Safe Zones prevent hostile spawn placement, final spawn positions, direct entity insertion, hostile targeting, and physical entry, while redirecting threats to another eligible nearby player where possible;
 - Roamer scheduling now excludes protected players and preserves the exact remaining countdown while every eligible player is inside a Safe Zone;
 - SCP-106 ends an abandoned Safe Zone pursuit with its normal sinking sequence, while SCP-173 waits until it is out of view and SCP-939 retreats from observers before disappearing when no nearby unprotected target remains;
-- Added automatic soundtrack detection for SCP-914, SCP-1176, SCP-079, SCP-012, SCP-426, SCP-294, and Core Room Floor Stations, mapped to their corresponding soundtrack files in the mod sounds folder;
-- Safe Zone music uses one continuous streamed loop, starts at a non-zero `0.001` volume, fades in over three seconds, and fades out over three seconds after leaving or changing tracks.
+- Added automatic soundtrack detection for SCP-914, SCP-1176, SCP-079, SCP-012, SCP-426, SCP-294, and Core Room Floor Stations.
 
 ## Roamer spawning and developer tools
 
@@ -372,7 +366,7 @@
 - Added a default-enabled module that suppresses Minecraft's ambient soundtrack without blocking SCP: Classified Directive' contextual music;
 - Added a default-enabled main menu soundtrack across the title screen and other menus until a world is opened;
 - Added a default-enabled client-side **Contextual Damage Feedback** preference: direct hits retain the normal hurt sound and camera reaction, while continuous damage such as Wither, Poison, and Bleeding reduces health without replaying the direct-hit sound or shaking the view;
-- Added temporary ground splatters for damage feedback, using randomized scale and rotation, smooth ten-second fading, positional splatter audio with slight pitch variation, full-block-only placement, smaller pools for continuous damage, progressively larger pools for Bleeding as health falls, no blood for Poison, and dark blood coloration for Wither.
+- Added temporary ground splatters for damage feedback.
 
 ## Contextual interactions
 
@@ -386,6 +380,7 @@
 - Kept off-screen prompts disabled by default while enabling them in the bundled configuration for door buttons and keycard readers;
 - Added pickup feedback to contextual interactions whose action is exactly **Take**, so SCP-714, SCP-1576, and future item-recovery prompts use the custom pickup cue when **Custom Item Interaction Sounds** is enabled and the vanilla pickup cue when it is disabled;
 - Added a warning in the visual anchor editor when the selected block probably has no native right-click interaction.
+
 ## Configuration integration
 
 - Added update-safe integrated defaults for SCP-914 recipes involving SCP: Classified Directive content, allowing new bundled transformations to appear in existing installations without resetting `914recipes.json` while keeping configured recipes and fragments authoritative;

@@ -107,7 +107,9 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
             GuiGraphics graphics, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
         int right = minecraft.getWindow().getGuiScaledWidth() - HUD_EDGE_INSET;
-        int y = 22;
+        // Match the first keycap's top clearance to its existing right-side
+        // clearance from the SCP-079 frame. Horizontal placement is unchanged.
+        int y = 36;
         String inventory = keyLabel(minecraft.options.keyInventory);
 
         drawCommand(graphics, minecraft, "OPEN FACILITY MAP", inventory,

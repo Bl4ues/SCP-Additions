@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -20,28 +21,39 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Sparse SCP Unity-inspired Roomba encounters driven by authored facility rooms.
+ * Sparse SCP: Unity-inspired Roomba encounters driven by Facility Mapping.
  *
- * <p>The Facility Mapping Tool is now the source of truth for valid floor cells.
- * Sublevel 1 rooms are strongly preferred, Sublevel 2 remains possible, and
- * corridor-like room names receive an additional bias. This preserves Unity's
- * "mostly SL1, sometimes SL2" distribution without coupling spawning to a
- * particular decorative floor block palette.</p>
+ * <p>Only unnamed mapped rooms which do not overlap a Safe Zone are eligible.
+ * Standard Light Containment Zone floor labels follow Unity's documented
+ * distribution: Roombas are primarily an SL1 sight, can occasionally appear on
+ * SL2, and do not naturally appear on SL3. Custom floor layouts instead favor
+ * the highest mapped elevations so the system remains useful without requiring
+ * SCP: Unity's exact zone names.</p>
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class RoombaSpawnEvents {
     private static final int CHECK_INTERVAL_TICKS = 1_800;
     private static final int CHECK_JITTER_TICKS = 600;
-    private static final int PRIMARY_CHANCE_BOUND = 80;
+
+    /*
+     * The highest-frequency tier keeps the old 1/80 check rate. Lower tiers
+     * become progressively rarer instead of making SL1 four times more common
+     * than it was before Facility Mapping became the source of truth.
+     */
+    private static final int PRIMARY_CHANCE_SCALE = 320;
+    private static final int MAX_FREQUENCY_WEIGHT = 4;
     private static final int PAIR_CHANCE_BOUND = 64;
     private static final int SEARCH_ATTEMPTS = 48;
     private static final int PAIR_SEARCH_ATTEMPTS = 28;
@@ -50,6 +62,7 @@ public final class RoombaSpawnEvents {
     private static final double LOCAL_EXCLUSION_RADIUS = 18.0D;
     private static final double REGIONAL_RADIUS = 72.0D;
     private static final int REGIONAL_CAP = 2;
+    private static final double SAFE_ROOM_HEIGHT = 3.0D;
 
     private static final Map<UUID, Long> NEXT_CHECK = new HashMap<>();
 
@@ -80,10 +93,8 @@ public final class RoombaSpawnEvents {
         RandomSource random = player.getRandom();
         int regionalCount = countRoombas(level, player.getX(), player.getY(),
                 player.getZ(), REGIONAL_RADIUS);
-        if (random.nextInt(PRIMARY_CHANCE_BOUND) != 0
-                || countRoombas(level, player.getX(), player.getY(),
-                player.getZ(), LOCAL_EXCLUSION_RADIUS) > 0
-                || regionalCount >= REGIONAL_CAP) {
+        if (countRoombas(level, player.getX(), player.getY(), player.getZ(),
+                LOCAL_EXCLUSION_RADIUS) > 0 || regionalCount >= REGIONAL_CAP) {
             return;
         }
 
@@ -91,9 +102,11 @@ public final class RoombaSpawnEvents {
         if (floor.isEmpty()) return;
 
         MappedFloor mapped = floor.get();
+        if (!passesFrequencyRoll(random, mapped.frequencyWeight())) return;
+
         RoombaEntity primary = spawnAt(level, mapped.floor(), random);
         if (primary == null || regionalCount > 0
-                || !isSublevelOne(mapped.room())
+                || !isUnitySublevelOne(mapped.room())
                 || random.nextInt(PAIR_CHANCE_BOUND) != 0) {
             return;
         }
@@ -129,7 +142,7 @@ public final class RoombaSpawnEvents {
             if (countRoombas(level, x + 0.5D, floor.getY() + 1.0D,
                     z + 0.5D, LOCAL_EXCLUSION_RADIUS) == 0) {
                 return Optional.of(new MappedFloor(floor.immutable(),
-                        selected.room()));
+                        selected.room(), selected.frequencyWeight()));
             }
         }
         return Optional.empty();
@@ -137,32 +150,106 @@ public final class RoombaSpawnEvents {
 
     private static List<WeightedPatch> nearbyMappedPatches(ServerLevel level,
             ServerPlayer player) {
-        List<WeightedPatch> result = new ArrayList<>();
+        List<FacilityRoomSnapshot> eligibleRooms = new ArrayList<>();
         for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
-            int roomWeight = roomWeight(room);
-            if (roomWeight <= 0) continue;
+            if (isEligibleRoom(level, room)) eligibleRooms.add(room);
+        }
+        if (eligibleRooms.isEmpty()) return List.of();
+
+        Map<Integer, Integer> customElevationWeights =
+                customElevationWeights(eligibleRooms);
+        List<WeightedPatch> result = new ArrayList<>();
+        for (FacilityRoomSnapshot room : eligibleRooms) {
             for (FacilityFloorPatch patch : room.patches()) {
-                if (Math.abs((patch.y() + 1.0D) - player.getY()) > 5.0D
+                int frequencyWeight = frequencyWeight(room, patch,
+                        customElevationWeights);
+                if (frequencyWeight <= 0
+                        || Math.abs((patch.y() + 1.0D) - player.getY()) > 5.0D
                         || distanceSqrToPatch(player.getX(), player.getZ(), patch)
                         > MAX_SEARCH_RADIUS * MAX_SEARCH_RADIUS) {
                     continue;
                 }
                 long area = Math.max(1L, Math.min(96L, patch.area()));
-                result.add(new WeightedPatch(room, patch,
-                        Math.max(1L, area * roomWeight)));
+                result.add(new WeightedPatch(room, patch, area,
+                        frequencyWeight));
             }
         }
         return result;
     }
 
+    private static boolean isEligibleRoom(ServerLevel level,
+            FacilityRoomSnapshot room) {
+        return room != null && !room.patches().isEmpty()
+                && room.name().isBlank()
+                && !intersectsSafeZone(level, room);
+    }
+
+    /**
+     * A Safe Zone anywhere in the room's normal walkable height excludes the
+     * whole mapped room. This prevents a room marked safe from still producing a
+     * Roomba just outside the exact Safe Zone selection boundary.
+     */
+    private static boolean intersectsSafeZone(ServerLevel level,
+            FacilityRoomSnapshot room) {
+        for (FacilityFloorPatch patch : room.patches()) {
+            AABB walkableRoom = new AABB(patch.minX(), patch.y(), patch.minZ(),
+                    patch.maxX() + 1.0D, patch.y() + SAFE_ROOM_HEIGHT,
+                    patch.maxZ() + 1.0D);
+            if (SafeZoneManager.intersects(level, walkableRoom)) return true;
+        }
+        return false;
+    }
+
+    private static int frequencyWeight(FacilityRoomSnapshot room,
+            FacilityFloorPatch patch, Map<Integer, Integer> customWeights) {
+        String labels = floorLabels(room);
+        if (isStandardLcz(labels)) {
+            if (matchesSublevel(labels, 1)) return 4;
+            if (matchesSublevel(labels, 2)) return 1;
+            return 0;
+        }
+        return customWeights.getOrDefault(patch.y(), 1);
+    }
+
+    /**
+     * For non-LCZ maps, distinct floor elevations form four frequency tiers:
+     * highest = 4, next = 3, next = 2, and every lower floor = 1.
+     */
+    private static Map<Integer, Integer> customElevationWeights(
+            List<FacilityRoomSnapshot> rooms) {
+        Set<Integer> elevations = new LinkedHashSet<>();
+        rooms.stream()
+                .filter(room -> !isStandardLcz(floorLabels(room)))
+                .flatMap(room -> room.patches().stream())
+                .map(FacilityFloorPatch::y)
+                .distinct()
+                .sorted(Comparator.reverseOrder())
+                .forEach(elevations::add);
+
+        Map<Integer, Integer> weights = new HashMap<>();
+        int rank = 0;
+        for (int y : elevations) {
+            weights.put(y, Math.max(1, MAX_FREQUENCY_WEIGHT - rank));
+            rank++;
+        }
+        return weights;
+    }
+
+    private static boolean passesFrequencyRoll(RandomSource random, int weight) {
+        int clamped = Math.max(1, Math.min(MAX_FREQUENCY_WEIGHT, weight));
+        int bound = Math.max(1,
+                (PRIMARY_CHANCE_SCALE + clamped - 1) / clamped);
+        return random.nextInt(bound) == 0;
+    }
+
     private static WeightedPatch weightedPatch(List<WeightedPatch> patches,
             RandomSource random) {
         long total = 0L;
-        for (WeightedPatch patch : patches) total += patch.weight();
+        for (WeightedPatch patch : patches) total += patch.selectionWeight();
         long roll = Math.floorMod(random.nextLong(), Math.max(1L, total));
         for (WeightedPatch patch : patches) {
-            if (roll < patch.weight()) return patch;
-            roll -= patch.weight();
+            if (roll < patch.selectionWeight()) return patch;
+            roll -= patch.selectionWeight();
         }
         return patches.get(patches.size() - 1);
     }
@@ -203,6 +290,10 @@ public final class RoombaSpawnEvents {
             return false;
         }
         BlockPos spawn = floor.above();
+        if (SafeZoneManager.contains(level, floor)
+                || SafeZoneManager.contains(level, spawn)) {
+            return false;
+        }
         return level.getFluidState(spawn).isEmpty()
                 && level.getBlockState(spawn).getCollisionShape(level, spawn)
                         .isEmpty()
@@ -210,34 +301,22 @@ public final class RoombaSpawnEvents {
                         level, spawn.above()).isEmpty();
     }
 
-    private static int roomWeight(FacilityRoomSnapshot room) {
-        if (room == null) return 0;
-        String floor = (room.floorLongLabel() + " " + room.floorShortLabel())
-                .toLowerCase(Locale.ROOT);
-        if (floor.contains("heavy containment") || floor.contains("hcz")
-                || floor.contains("super heavy") || floor.contains("surface")
-                || floor.contains("exterior")) {
-            return 0;
-        }
-
-        int base;
-        if (matchesSublevel(floor, 1)) base = 4;
-        else if (matchesSublevel(floor, 2)) base = 1;
-        else return 0;
-
-        String name = room.name().toLowerCase(Locale.ROOT);
-        if (name.contains("corridor") || name.contains("hallway")
-                || name.contains("hall ") || name.endsWith(" hall")) {
-            base *= 2;
-        }
-        return base;
+    private static boolean isUnitySublevelOne(FacilityRoomSnapshot room) {
+        String labels = floorLabels(room);
+        return isStandardLcz(labels) && matchesSublevel(labels, 1);
     }
 
-    private static boolean isSublevelOne(FacilityRoomSnapshot room) {
-        if (room == null) return false;
-        String floor = (room.floorLongLabel() + " " + room.floorShortLabel())
-                .toLowerCase(Locale.ROOT);
-        return matchesSublevel(floor, 1);
+    private static boolean isStandardLcz(String labels) {
+        return labels.contains("light containment zone")
+                || token(labels, "lcz");
+    }
+
+    private static String floorLabels(FacilityRoomSnapshot room) {
+        if (room == null) return "";
+        return ((room.floorLongLabel() == null ? "" : room.floorLongLabel())
+                + " " + (room.floorShortLabel() == null ? ""
+                : room.floorShortLabel())).strip().toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ");
     }
 
     private static boolean matchesSublevel(String text, int number) {
@@ -251,10 +330,25 @@ public final class RoombaSpawnEvents {
                 || text.contains("sl" + n);
     }
 
+    private static boolean token(String value, String token) {
+        int index = -1;
+        while ((index = value.indexOf(token, index + 1)) >= 0) {
+            boolean left = index == 0
+                    || !Character.isLetterOrDigit(value.charAt(index - 1));
+            int end = index + token.length();
+            boolean right = end >= value.length()
+                    || !Character.isLetterOrDigit(value.charAt(end));
+            if (left && right) return true;
+        }
+        return false;
+    }
+
     private static double distanceSqrToPatch(double x, double z,
             FacilityFloorPatch patch) {
-        double nearestX = Math.max(patch.minX(), Math.min(x, patch.maxX() + 1.0D));
-        double nearestZ = Math.max(patch.minZ(), Math.min(z, patch.maxZ() + 1.0D));
+        double nearestX = Math.max(patch.minX(),
+                Math.min(x, patch.maxX() + 1.0D));
+        double nearestZ = Math.max(patch.minZ(),
+                Math.min(z, patch.maxZ() + 1.0D));
         double dx = nearestX - x;
         double dz = nearestZ - z;
         return dx * dx + dz * dz;
@@ -296,9 +390,11 @@ public final class RoombaSpawnEvents {
     }
 
     private record WeightedPatch(FacilityRoomSnapshot room,
-            FacilityFloorPatch patch, long weight) {
+            FacilityFloorPatch patch, long selectionWeight,
+            int frequencyWeight) {
     }
 
-    private record MappedFloor(BlockPos floor, FacilityRoomSnapshot room) {
+    private record MappedFloor(BlockPos floor, FacilityRoomSnapshot room,
+            int frequencyWeight) {
     }
 }

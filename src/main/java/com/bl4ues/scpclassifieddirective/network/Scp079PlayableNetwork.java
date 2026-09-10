@@ -53,6 +53,9 @@ public final class Scp079PlayableNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(TrackingState.class,
                 TrackingState::encode, TrackingState::decode,
                 TrackingState::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(DoorLockState.class,
+                DoorLockState::encode, DoorLockState::decode,
+                DoorLockState::handle);
     }
 
     public static void sendState(ServerPlayer player,
@@ -90,6 +93,14 @@ public final class Scp079PlayableNetwork {
                 PacketDistributor.PLAYER.with(() -> player),
                 new TrackingState(totalLifeforms, targets, scpSubjects,
                         entries == null ? List.of() : List.copyOf(entries)));
+    }
+
+    public static void sendDoorLockState(ServerPlayer player, BlockPos doorPos,
+            long untilGameTime) {
+        if (player == null || doorPos == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new DoorLockState(doorPos.immutable(), untilGameTime));
     }
 
     public static void requestRelease() {
@@ -291,6 +302,27 @@ public final class Scp079PlayableNetwork {
                     () -> () -> com.bl4ues.scpclassifieddirective.client.scp079.Scp079TrackingClientState
                             .update(message.totalLifeforms, message.targets,
                                     message.scpSubjects, message.entries)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record DoorLockState(BlockPos doorPos, long untilGameTime) {
+        private static void encode(DoorLockState message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.doorPos);
+            buffer.writeLong(message.untilGameTime);
+        }
+
+        private static DoorLockState decode(FriendlyByteBuf buffer) {
+            return new DoorLockState(buffer.readBlockPos(), buffer.readLong());
+        }
+
+        private static void handle(DoorLockState message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.client.scp079.Scp079DoorLockClientState
+                            .mark(message.doorPos, message.untilGameTime)));
             context.setPacketHandled(true);
         }
     }

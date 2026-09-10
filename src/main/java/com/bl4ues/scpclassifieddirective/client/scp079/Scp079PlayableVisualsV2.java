@@ -14,6 +14,7 @@ import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.client.Camera;
@@ -45,12 +46,18 @@ import java.util.UUID;
 
 /** Second-pass SCP-079 HUD built around mapped rooms instead of arbitrary range. */
 public final class Scp079PlayableVisualsV2 {
-    private static final ResourceLocation DOOR_ICON = resource(
+    private static final ResourceLocation DOOR_OPEN_ICON = resource(
             "textures/gui/scp079/icons/door.png");
+    private static final ResourceLocation DOOR_CLOSE_ICON = resource(
+            "textures/gui/scp079/icons/door_close.png");
+    private static final ResourceLocation DOOR_LOCKED_ICON = resource(
+            "textures/gui/scp079/icons/locked.png");
     private static final ResourceLocation TESLA_ICON = resource(
             "textures/gui/scp079/icons/tesla_gate.png");
     private static final ResourceLocation CAMERA_ICON = resource(
             "textures/gui/scp079/icons/camera.png");
+    private static final ResourceLocation CAMERA_DOME_ICON = resource(
+            "textures/gui/scp079/icons/camera_dome.png");
     // Mirrors the server-side room-edge interaction allowance so visible doors
     // never disappear merely because their structure sits outside the floor fill.
     private static final int ROOM_DEVICE_BORDER = 3;
@@ -463,8 +470,10 @@ public final class Scp079PlayableVisualsV2 {
             int y = Math.round(prompt.screen.y) - size / 2;
             ResourceLocation icon = switch (prompt.kind) {
                 case TESLA -> TESLA_ICON;
-                case CAMERA -> CAMERA_ICON;
-                default -> DOOR_ICON;
+                case CAMERA -> minecraft.level.getBlockState(prompt.pos)
+                        .is(CeilingCameraModule.BLOCK.get())
+                        ? CAMERA_DOME_ICON : CAMERA_ICON;
+                case DOOR -> doorIcon(minecraft, prompt.pos);
             };
             float tint = focused ? 1.0F : 0.76F;
             Scp079UiTheme.blitIcon64(graphics, icon, x, y, size,
@@ -490,6 +499,16 @@ public final class Scp079PlayableVisualsV2 {
                         tx, ty + 18, 1.13F, Scp079UiTheme.TEXT);
             }
         }
+    }
+
+    private static ResourceLocation doorIcon(Minecraft minecraft,
+            BlockPos doorPos) {
+        if (Scp079DoorLockClientState.isLocked(doorPos)) {
+            return DOOR_LOCKED_ICON;
+        }
+        return FacilityModule.isDoorPassable(
+                minecraft.level.getBlockState(doorPos))
+                ? DOOR_CLOSE_ICON : DOOR_OPEN_ICON;
     }
 
     private static InteractionPrompt closestPrompt(ScreenPoint point, double maxDistance) {

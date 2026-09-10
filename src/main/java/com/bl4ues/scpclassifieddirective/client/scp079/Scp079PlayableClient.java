@@ -132,6 +132,7 @@ public final class Scp079PlayableClient {
         }
         if (!active && wasActive) {
             Scp079TrackingClientState.clear();
+            Scp079DoorLockClientState.clear();
             stopCamera(minecraft);
             return;
         }

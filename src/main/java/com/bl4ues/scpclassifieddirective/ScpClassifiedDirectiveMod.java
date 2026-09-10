@@ -44,6 +44,7 @@ import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneSounds;
 import com.bl4ues.scpclassifieddirective.safezone.network.SafeZoneNetwork;
 import com.bl4ues.scpclassifieddirective.sound.GameplaySounds;
+import com.bl4ues.scpclassifieddirective.sound.FacilityAmbientSounds;
 import com.bl4ues.scpclassifieddirective.sound.AchievementSounds;
 import com.bl4ues.scpclassifieddirective.vitals.StaminaItemEffectConfig;
 import com.bl4ues.scpclassifieddirective.init.MainMenuSounds;
@@ -88,6 +89,7 @@ public class ScpClassifiedDirectiveMod {
         Scp131Sounds.REGISTRY.register(bus);
         Scp173Sounds.REGISTRY.register(bus);
         SafeZoneSounds.REGISTRY.register(bus);
+        FacilityAmbientSounds.REGISTRY.register(bus);
         GameplaySounds.REGISTRY.register(bus);
         AchievementSounds.REGISTRY.register(bus);
         ScpClassifiedDirectiveModBlocks.REGISTRY.register(bus);

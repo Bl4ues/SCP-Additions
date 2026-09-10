@@ -308,7 +308,7 @@ public final class Scp079PlayableManager {
         if (door != null && HeavyDoorControlPanelAccess
                 .hasControllableInterface(level, door)) {
             return action == ManualAction.LOCK
-                    ? lockDoor(level, door) : toggleDoor(level, door);
+                    ? lockDoor(player, level, door) : toggleDoor(level, door);
         }
 
         BlockPos tesla = nearestTracked(level,
@@ -339,7 +339,8 @@ public final class Scp079PlayableManager {
         return true;
     }
 
-    private static boolean lockDoor(ServerLevel level, BlockPos door) {
+    private static boolean lockDoor(ServerPlayer player, ServerLevel level,
+            BlockPos door) {
         if (!HeavyDoorControlPanelAccess.hasDeniableInterface(level, door)
                 || !Scp079PlayerPower.trySpend(level, DOOR_LOCK_COST)) {
             return false;
@@ -356,6 +357,8 @@ public final class Scp079PlayableManager {
                 Scp079ProcessingManager.adjustedActionCost(level,
                         DOOR_LOCK_COST),
                 "manual SCP-079 lock · " + DOOR_LOCK_TICKS / 20.0D + "s");
+        Scp079PlayableNetwork.sendDoorLockState(player, door,
+                level.getGameTime() + DOOR_LOCK_TICKS);
         return true;
     }
 

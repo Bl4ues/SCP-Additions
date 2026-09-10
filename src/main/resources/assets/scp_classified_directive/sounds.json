@@ -1720,5 +1720,41 @@
         "volume": 1.0
       }
     ]
+  },
+  "coreroom_ambient": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:coreroom_ambient",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "sl1_ambient": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:sl1_ambient",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "sl2_ambient": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:sl2_ambient",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
+  },
+  "sl3_ambient": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:sl3_ambient",
+        "stream": true,
+        "volume": 1.0
+      }
+    ]
   }
 }

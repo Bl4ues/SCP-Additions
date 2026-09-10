@@ -174,6 +174,7 @@
 - Active Intercoms route every valid Speaker in their mapped room, remain active while a living player stays within two blocks, refresh room endpoints continuously, and shut down when abandoned or when no mapped Speaker remains available;
 - With Simple Voice Chat available, active Intercoms capture ordinary player speech within five blocks of the microphone position and relay a filtered positional copy through the facility Speakers;
 - The shared source-to-Speaker routing layer serves both playable SCP-079 and Intercoms, keeping room endpoints, activation state, audio presentation, and voice filtering consistent between the two sources;
+- Camera-feed interaction prompts now distinguish wall-mounted Surveillance Cameras from Ceiling Cameras, show separate open and close door icons, and use a locked icon only for doors temporarily denied by the playable SCP-079 rather than decorative locked panels;
 - Added optional Debug Tools displays for SCP-079's power, and its recent decisions.
 
 ## SCP-079 auxiliary isolation and SCiPNET reindexing
@@ -355,6 +356,11 @@
 - Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters.
 
 ## Audio and presentation
+
+- Added low-volume facility ambience driven by Facility Mapping, with dedicated loops for Core Rooms and Light Containment Zone Sublevels 1, 2, and 3;
+- Facility ambience is independent from music, so Safe Zone tracks, discovery cues, SCP encounter music, and chase music can play over it without stopping the environmental layer;
+- Ambience crossfades between mapped areas and softly carries beyond room boundaries, becoming quieter with distance and louder again when approaching a mapped room instead of cutting off at the edge;
+- Prepared mapped-area ambience routing for Entrance Zone, Heavy Containment Zone, and Super Heavy Containment Zone; their audio tracks are not included yet.
 
 - Added a default-enabled client-side **Custom Item Interaction Sounds** preference, active only for SCP Inventory actions: custom prompt pickups and equipment use randomized pickup cues, while CONSUMABLE rules can select **Food** or **Drink** feedback in the item-category editor; vanilla interaction paths remain untouched and disabling the preference restores vanilla local pickup/eat/drink feedback;
 - Reintroduced and updated the world-entry sound and added a General & Modules option to disable it;

@@ -44,8 +44,12 @@ public final class Scp079ActionCooldownClient {
     public static float iconBrightness(ResourceLocation icon) {
         if (icon == null) return 1.0F;
         String path = icon.getPath();
-        if (path.endsWith("camera.png")) return 1.0F;
-        boolean door = path.endsWith("door.png");
+        if (path.endsWith("camera.png") || path.endsWith("camera_dome.png")) {
+            return 1.0F;
+        }
+        boolean door = path.endsWith("door.png")
+                || path.endsWith("door_close.png")
+                || path.endsWith("locked.png");
         boolean tesla = path.endsWith("tesla_gate.png");
         if (tesla && blocked(true, false)) return 0.38F;
         if (door && (blocked(true, false) || blocked(false, true))) return 0.38F;

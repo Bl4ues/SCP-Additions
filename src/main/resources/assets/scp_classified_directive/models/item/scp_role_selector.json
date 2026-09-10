@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "scp_classified_directive:screens/logo"
+    "layer0": "scp_classified_directive:item/scp_role_selector"
   }
 }

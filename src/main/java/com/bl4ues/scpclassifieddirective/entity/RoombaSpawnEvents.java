@@ -34,12 +34,12 @@ import java.util.UUID;
 /**
  * Sparse SCP: Unity-inspired Roomba encounters driven by Facility Mapping.
  *
- * <p>Only unnamed mapped rooms which do not overlap a Safe Zone are eligible.
- * Standard Light Containment Zone floor labels follow Unity's documented
- * distribution: Roombas are primarily an SL1 sight, can occasionally appear on
- * SL2, and do not naturally appear on SL3. Custom floor layouts instead favor
- * the highest mapped elevations so the system remains useful without requiring
- * SCP: Unity's exact zone names.</p>
+ * <p>Unnamed mapped rooms are eligible by default, while rooms explicitly named
+ * as corridors or hallways remain eligible and receive a small selection bias.
+ * Safe Zones, Sublevel 3, Heavy Containment and Super Heavy Containment are
+ * always excluded. Standard LCZ labels keep the Unity-style SL1/SL2 split,
+ * Entrance Zone uses the same frequency tier as SL1, and other layouts fall
+ * back to a height-based preference for upper mapped floors.</p>
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -54,6 +54,7 @@ public final class RoombaSpawnEvents {
      */
     private static final int PRIMARY_CHANCE_SCALE = 320;
     private static final int MAX_FREQUENCY_WEIGHT = 4;
+    private static final int CORRIDOR_SELECTION_MULTIPLIER = 2;
     private static final int PAIR_CHANCE_BOUND = 64;
     private static final int SEARCH_ATTEMPTS = 48;
     private static final int PAIR_SEARCH_ATTEMPTS = 28;
@@ -160,6 +161,8 @@ public final class RoombaSpawnEvents {
                 customElevationWeights(eligibleRooms);
         List<WeightedPatch> result = new ArrayList<>();
         for (FacilityRoomSnapshot room : eligibleRooms) {
+            int roomMultiplier = isCorridorOrHallway(room.name())
+                    ? CORRIDOR_SELECTION_MULTIPLIER : 1;
             for (FacilityFloorPatch patch : room.patches()) {
                 int frequencyWeight = frequencyWeight(room, patch,
                         customElevationWeights);
@@ -170,8 +173,8 @@ public final class RoombaSpawnEvents {
                     continue;
                 }
                 long area = Math.max(1L, Math.min(96L, patch.area()));
-                result.add(new WeightedPatch(room, patch, area,
-                        frequencyWeight));
+                result.add(new WeightedPatch(room, patch,
+                        area * roomMultiplier, frequencyWeight));
             }
         }
         return result;
@@ -179,9 +182,16 @@ public final class RoombaSpawnEvents {
 
     private static boolean isEligibleRoom(ServerLevel level,
             FacilityRoomSnapshot room) {
-        return room != null && !room.patches().isEmpty()
-                && room.name().isBlank()
-                && !intersectsSafeZone(level, room);
+        if (room == null || room.patches().isEmpty()
+                || intersectsSafeZone(level, room)) {
+            return false;
+        }
+
+        String labels = floorLabels(room);
+        if (isExcludedLocation(labels)) return false;
+
+        String name = room.name() == null ? "" : room.name().strip();
+        return name.isBlank() || isCorridorOrHallway(name);
     }
 
     /**
@@ -203,8 +213,10 @@ public final class RoombaSpawnEvents {
     private static int frequencyWeight(FacilityRoomSnapshot room,
             FacilityFloorPatch patch, Map<Integer, Integer> customWeights) {
         String labels = floorLabels(room);
+        if (isExcludedLocation(labels)) return 0;
+        if (isEntranceZone(labels)) return MAX_FREQUENCY_WEIGHT;
         if (isStandardLcz(labels)) {
-            if (matchesSublevel(labels, 1)) return 4;
+            if (matchesSublevel(labels, 1)) return MAX_FREQUENCY_WEIGHT;
             if (matchesSublevel(labels, 2)) return 1;
             return 0;
         }
@@ -212,14 +224,17 @@ public final class RoombaSpawnEvents {
     }
 
     /**
-     * For non-LCZ maps, distinct floor elevations form four frequency tiers:
-     * highest = 4, next = 3, next = 2, and every lower floor = 1.
+     * For non-LCZ/non-EZ maps, distinct floor elevations form four frequency
+     * tiers: highest = 4, next = 3, next = 2, and every lower floor = 1.
      */
     private static Map<Integer, Integer> customElevationWeights(
             List<FacilityRoomSnapshot> rooms) {
         Set<Integer> elevations = new LinkedHashSet<>();
         rooms.stream()
-                .filter(room -> !isStandardLcz(floorLabels(room)))
+                .filter(room -> {
+                    String labels = floorLabels(room);
+                    return !isStandardLcz(labels) && !isEntranceZone(labels);
+                })
                 .flatMap(room -> room.patches().stream())
                 .map(FacilityFloorPatch::y)
                 .distinct()
@@ -306,9 +321,35 @@ public final class RoombaSpawnEvents {
         return isStandardLcz(labels) && matchesSublevel(labels, 1);
     }
 
+    private static boolean isExcludedLocation(String labels) {
+        return matchesSublevel(labels, 3)
+                || isHeavyContainmentZone(labels)
+                || isSuperHeavyContainmentZone(labels);
+    }
+
     private static boolean isStandardLcz(String labels) {
         return labels.contains("light containment zone")
                 || token(labels, "lcz");
+    }
+
+    private static boolean isEntranceZone(String labels) {
+        return labels.contains("entrance zone") || token(labels, "ez");
+    }
+
+    private static boolean isHeavyContainmentZone(String labels) {
+        return labels.contains("heavy containment zone")
+                || token(labels, "hcz");
+    }
+
+    private static boolean isSuperHeavyContainmentZone(String labels) {
+        return labels.contains("super heavy containment zone")
+                || token(labels, "shcz");
+    }
+
+    private static boolean isCorridorOrHallway(String roomName) {
+        if (roomName == null || roomName.isBlank()) return false;
+        String name = roomName.toLowerCase(Locale.ROOT);
+        return name.contains("corridor") || name.contains("hallway");
     }
 
     private static String floorLabels(FacilityRoomSnapshot room) {

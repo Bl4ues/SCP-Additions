@@ -26,12 +26,10 @@ public abstract class Scp079PlayableActionAudioMixin {
 
     @Inject(method = "lockDoor", at = @At("RETURN"), remap = false)
     private static void scpclassifieddirective$doorLockSucceeded(
-            ServerLevel level, BlockPos door,
+            ServerPlayer player, ServerLevel level, BlockPos door,
             CallbackInfoReturnable<Boolean> cir) {
-        if (!cir.getReturnValueZ() || level == null) return;
-        ServerPlayer controller = Scp079PlayableManager.controller(
-                level.getServer());
-        Scp079ActionAudioNetwork.send(controller,
+        if (!cir.getReturnValueZ() || player == null) return;
+        Scp079ActionAudioNetwork.send(player,
                 Scp079ActionAudioNetwork.Cue.LOCK_OR_TESLA);
     }
 }

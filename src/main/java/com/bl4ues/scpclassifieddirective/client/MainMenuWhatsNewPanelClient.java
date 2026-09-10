@@ -31,7 +31,7 @@ public final class MainMenuWhatsNewPanelClient {
 
     // Keep this list aligned with CHANGELOG.md -> SCP: Classified Directive 4.0.0 -> Highlights.
     private static final List<String> HIGHLIGHTS = List.of(
-            "SCP: Classified Directive rebrand (formerly SCP Additions)",
+            "SCP Additions rebrand to SCP: Classified Directive",
             "SCP-106",
             "SCP-939",
             "SCP-1576",

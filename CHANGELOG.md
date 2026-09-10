@@ -351,8 +351,7 @@
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106|scp939>`, and `/roamerForceSpawn <scp173|scp106|scp939>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
 - Added sparse natural Roomba encounters on approved facility flooring;
-- Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters;
-- Renamed the Configuration Center's mixed inventory hub to **Items, Entities & Codex** and added a **Roomba Spawning** editor.
+- Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters.
 
 ## Audio and presentation
 

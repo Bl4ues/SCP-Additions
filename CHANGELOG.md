@@ -227,7 +227,7 @@
 - Added a default-enabled client-side preference that keeps vanilla chat behavior while making it a stylized console;
 - Reanchored dropped-item pickup prompts to the interpolated center of the actual ItemEntity instead of a floor/shadow offset, using the hand pickup prompt artwork's contact point as the visual hotspot so the icon and its labels follow moved or physics-adjusted drops together;
 - Added an SCP Inventory-style interface for plain slot-only storage containers while the custom inventory is enabled, replacing supported chest, barrel, shulker, hopper, dispenser, and compatible modded storage screens with responsive Backpack/Keys/Codex and container lists;
-- Added reversible **Enable/Disable** controls for compatible multi-entry Configuration Center lists; disabled entries remain visible but dimmed and can be restored without recreating them, including integrated and custom Roomba spawn floors, SCP-173 targets, hidden status effects, item rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
+- Added reversible **Enable/Disable** controls for compatible multi-entry Configuration Center lists; disabled entries remain visible but dimmed and can be restored without recreating them, including SCP-173 targets, hidden status effects, item rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes;
 - Fixed Configuration Center presentation regressions from reversible entry toggles;
 - Added an optional SCP: Unity-inspired custom crosshair, enabled by default, with independent in-game visibility settings;
 - Added default-enabled modules that hide empty first-person hands and remove the vanilla experience bar, level indicator, experience-orb rendering, and XP pickup and level-up sounds;
@@ -350,7 +350,8 @@
 - SCP-106 and SCP-173 stop their matching spawn timer while active and restart it after dying or despawning, while SCP-939 keeps checking with its existing population penalty so overlapping SCP-939 encounters remain possible;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106|scp939>`, and `/roamerForceSpawn <scp173|scp106|scp939>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
-- Added sparse natural Roomba encounters on approved facility flooring;
+- Natural Roomba encounters now use Facility Mapping instead of floor block whitelists: only unnamed mapped rooms outside Safe Zones are eligible;
+- Standard Light Containment Zone mappings follow SCP: Unity's documented distribution, strongly favoring Sublevel 1 over Sublevel 2, excluding Sublevel 3, and retaining a rare second-Roomba spawn in eligible Sublevel 1 rooms; custom maps without standard LCZ labels instead favor higher mapped floors over lower ones;
 - Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters.
 
 ## Audio and presentation

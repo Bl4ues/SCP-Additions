@@ -262,7 +262,7 @@ public final class ConfigCenterService {
 
     private static void validateInventory(JsonObject root, List<String> errors, List<String> warnings) {
         for (String key : List.of("item_rules", "item_effects", "hidden_status_effects",
-                "codex_documents", "scp_173_targets", "roomba_spawn_blocks")) {
+                "codex_documents", "scp_173_targets")) {
             requireArray(root, key, errors);
         }
         validateObjectIds(root, "item_rules", "id", errors, warnings, true);
@@ -298,7 +298,6 @@ public final class ConfigCenterService {
         }
         validateSimpleIds(root, "hidden_status_effects", errors, warnings, false);
         validateSimpleIds(root, "scp_173_targets", errors, warnings, true);
-        validateSimpleIds(root, "roomba_spawn_blocks", errors, warnings, false);
     }
 
     private static void validateConsumableTypes(JsonObject root,
@@ -532,7 +531,7 @@ public final class ConfigCenterService {
     }
 
     private static JsonObject defaultInventory() {
-        return JsonParser.parseString("{\"item_rules\":[],\"item_effects\":[],\"hidden_status_effects\":[],\"codex_documents\":[],\"scp_173_targets\":[],\"roomba_spawn_blocks\":[]}").getAsJsonObject();
+        return JsonParser.parseString("{\"item_rules\":[],\"item_effects\":[],\"hidden_status_effects\":[],\"codex_documents\":[],\"scp_173_targets\":[]}").getAsJsonObject();
     }
 
     private static JsonObject defaultContext() {

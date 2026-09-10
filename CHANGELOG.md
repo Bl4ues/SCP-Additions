@@ -10,7 +10,8 @@
 - SCP-106
 - SCP-939
 - SCP-1576
-- Reworked SCP-079 facility control
+- Playable SCP-079 and reworked facility control
+- Hacking Device and physical security hacking
 - Core Room Elevator
 - Reworked survival systems
 - Custom hotbar and oxygen HUD
@@ -80,6 +81,13 @@
 - Added Item #006, Vol. I as the first Log of Anomalous Items entry;
 - Item #006's **Glowing Rock** now emits a soft light when placed.
 
+## SCP-294
+
+- Reworked SCP-294 around its physical machine controls instead of a separate drawn interface: the payment slot and keyboard are independent contextual targets on the authored model;
+- Inserting the $0.50 coin enables the keyboard interaction, which focuses the physical console while typed orders and machine status remain on the in-world readout rather than being redrawn as a 2D GUI;
+- Added persistent world-space readout states for payment, order entry, out-of-range and pouring feedback, plus a temporary physical cup in the dispenser while a drink is being prepared;
+- SCP-294 accepts the configured coin through both SCP Inventory and vanilla inventory paths, preserving Creative/testing and alternative inventory use.
+
 ## SCP-914
 
 - Completely rebuilt SCP-914 as a single large machine;
@@ -137,8 +145,9 @@
 
 ## SCP-079
 
-- Replaced redstone-based facility access with a powered Facility Diagnostic Terminal and a Auxiliary Power Unit;
+- Replaced redstone-based facility access with a powered Facility Diagnostic Terminal and an Auxiliary Power Unit;
 - SCP-079 now requires a physical computer in the world, begins hidden protocol discovery only after a powered diagnostic scan, learns faster from door use and Tesla activity, and gains AP regeneration only after completing access discovery;
+- Rebuilt the Facility Diagnostic Terminal as a persistent physical **SCiPNET** CRT: the technician explicitly runs an analysis from the placed machine, the synchronized diagnostic snapshot remains visible without keeping a GUI open, and another analysis or remote-session cache purge updates the display;
 - Added a processing-power system that limits how often SCP-079 can interfere with the facility and forces it to choose its actions more carefully;
 - Added difficulty-scaled processing costs: SCP-079 actions consume more AP on Thaumiel and Safe, use their authored baseline cost on Euclid, and consume less AP on Keter;
 - Added a strategic expenditure model that protects emergency reserves, tracks recent spending and repeated tactical lanes, permits brief high-power bursts, becomes increasingly conservative below 60% power, and reserves sub-30% expenditure for exceptional traps or critical device opportunities;
@@ -152,17 +161,21 @@
 - Playable SCP-079 now begins at a stripped-down **Local Host** view without camera-frame corners or the Auxiliary Power meter; the first surveillance-network access in each control session runs an animated EXITY terminal boot sequence with staged status/error text and audio cues, then uses the normal camera interference transition into a camera in the host room when one exists or falls back to the Facility Map otherwise;
 - Added an SCP-079 surveillance HUD and facility map built from persistent authored room floors, including floor selection, room/camera switching, AP and network state, lifeform counts, SCP tracking, target labels, low-light enhancement, scanline treatment, and interference during feed changes;
 - The SCP-079 facility map now marks the physical local host with a white **079** marker, visually dims rooms without surveillance cameras, and prevents those offline rooms from being selected;
-- Added map-topology-based **WASD** camera navigation with `GO TO` room labels and disabled `NO CAMERA` routes; connected camera switches cost 3 AP on Euclid and follow the existing difficulty cost scaling on Safe, Keter, and Thaumiel;
+- Added map-topology-based **WASD** camera navigation with `GO TO` room labels and disabled `NO CAMERA` routes; on Euclid the base camera-transfer cost is 3 AP on the same floor, 6 AP across floors in one zone, and 9 AP across zones, before the existing Safe/Keter/Thaumiel difficulty scaling; cross-floor and cross-zone hand-offs remain masked by longer authored interference instead of visibly snapping between feeds;
+- Added server-authoritative signal-interruption states that temporarily block SCP-079's remote-control packets while a feed is unavailable; a disabled active camera enters a short no-signal transition before control is returned away from the failed feed;
+- Destroying SCP-079's physical host while a player is controlling it now triggers a two-second no-signal failure before killing the controller and handing the result to the normal death/spectating flow;
 - Added room **Blackout**, disabling redstone-powered lights in the active mapped room for 10 seconds at a 40 AP Euclid baseline, doubled on Surface before difficulty scaling;
 - Added room **Lockdown**, consuming exactly 100 AP to close and deny every controllable door in the active mapped room for 7 seconds, with a 10-second cooldown and AP regeneration paused while active;
 - Playable SCP-079 can manually open, close, and temporarily deny connected heavy-door controls and suppress Tesla Gates from a camera feed, with all actions consuming the same processing-power resource;
 - Added the Creative-only **Facility Mapping Tool** for defining persistent, irregular room floors and associating them with configured Core Room Floor Stations for surveillance and future CCTV systems;
-- Added the Creative-only **SCP Role Selector** placeholder in **Tools & Utility**; while SCP-079 is the only implemented playable role, right-clicking it assumes or releases SCP-079 through the nearest registered computer in the current dimension;
+- Added the Creative-only **SCP Role Selector** in **Tools & Utility**, with an animated administrative role database showing the selected anomaly, containment class, role description and abilities before confirmation; SCP-079 is currently the only implemented playable role, and assuming it binds the player to the nearest valid registered SCP-079 computer in the current dimension while releasing the role restores personnel control;
 - Added a functional **Surveillance Camera** placeholder in the Facility **Functional** section; placed cameras persist in the shared surveillance registry, inherit room membership from the mapped floor beneath them, and reserve the stable `surveillance_camera` registry ID for the future animated GeckoLib replacement;
 - Added the ceiling-mounted **Ceiling Camera** beside the Surveillance Camera in Facility **Functional**; it joins the same mapped-room surveillance network, supports full 360° pan with pitch from horizontal to straight down, performs randomized idle dome scans, and mirrors playable or autonomous SCP-079 aiming through its physical lens;
 - Added wall-mounted **Speakers** beside Surveillance Cameras in the Facility **Functional** section; playable SCP-079 can use a dedicated rebindable shortcut to begin or stop room-wide broadcasts without aiming at the device;
 - Active Speakers play positional startup, shutdown, and continuous static audio, and optionally relay SCP-079's Simple Voice Chat microphone through a deliberately narrow-band, distorted radio filter without adding synthetic noise;
 - SCP-079 Speaker broadcasts now add a separate deterministic robotic filter chain on top of the shared PA/radio coloration, while physical Intercom sources retain the normal human voice filter path;
+- Added terminal-style speech for playable SCP-079: ordinary typed lines are kept in its local terminal history instead of being sent as normal chat, synthesized by a deterministic offline retro speech engine, and routed positionally through the physical host or through Speakers in the currently controlled camera room;
+- Remote SCP-079 camera speech requires a mapped room Speaker and does not silently fall back to the physical host, while local-host speech originates from SCP-079's actual computer;
 - Added an animated desk-mounted **Intercom** to the Facility **Functional** section; its physical contextual button toggles the authored turn-on/turn-off animation, indicator state, and local on/off/loop audio;
 - Active Intercoms route every valid Speaker in their mapped room, remain active while a living player stays within two blocks, refresh room endpoints continuously, and shut down when abandoned or when no mapped Speaker remains available;
 - With Simple Voice Chat available, active Intercoms capture ordinary player speech within five blocks of the authored microphone position and relay a filtered positional copy through the room Speakers; nearby server-side world sounds are relayed independently through the same Speaker coloration;
@@ -172,10 +185,20 @@
 ## SCP-079 auxiliary isolation and SCiPNET reindexing
 
 - Auxiliary generators require redstone, and contribute 0.1 AP/s each to cumulative SCP-079 regeneration;
-- Updated terminal and generator tooltips for the new power, cache, and telemetry behavior.
+- Updated terminal and generator tooltips for the new power, cache, and telemetry behavior;
 - Auxiliary power isolation suspends SCP-079 actions and drains AP toward 25 without erasing learned facility access;
 - Remote-session cache purge is now the sole operation that clears learned access and forces a five-minute SCiPNET index rebuild;
 - Added gradual reconstruction telemetry, a compact technician-session warning, and a subtle unusual-network-activity advisory after SCP-079 gains access.
+
+## Hacking Device and keycard security
+
+- Added the **Hacking Device** to Access & Security as a handheld Chaos Insurgency access-bypass tool built around a compromised SCiPNET-style field interface;
+- The Hacking Device physically seats onto Level 1–6 keycard readers and Object Containment Units through contextual interaction, takes control of the camera around its own CRT, and keeps the entire hacking interface on the placed device instead of opening a conventional fullscreen minigame;
+- Added five server-authored breach challenges — **Circuit Path**, **Visual Checksum**, **Firewall Windows**, **Hold Signal**, and **Frequency Lock** — with the next challenge always changing after either a success or a failure;
+- Hacking difficulty scales directly with reader level: Levels 1–2 require one successful challenge, Levels 3–4 require two, and Levels 5–6 require three, while each challenge independently becomes less forgiving across Levels 1–6; three failed challenges abort the breach;
+- Successful normal reader hacks return the device to the player's hand and leave a five-second passage window displayed as a large live countdown on its physical CRT, while a successful Object Containment Unit hack opens the unit and returns the device without a passage timer;
+- Reworked keycard authentication into a physical swipe sequence: accepted and denied cards visibly travel through the authored keycard-reader or Object Containment Unit slot before the server-authoritative access result resolves;
+- The Hacking Device uses positional filtered interaction audio and a deliberately improvised Chaos/SCiPNET presentation, including forged, stolen, cached and unsigned system telemetry rather than a clean Foundation terminal aesthetic.
 
 ## Achievements
 
@@ -243,6 +266,8 @@
 - Added **Simple Voice Chat** integration for multiplayer death and spectating: living players keep normal voice-chat behavior, while dead players share a non-positional dead-only call that cannot be heard by living players;
 - Live Personnel Feed observers also receive the voice-chat audio heard by their selected surviving player, including that survivor's own microphone, while remaining isolated from ordinary proximity and group routing at the dead observer's server-side position;
 - Extended the Simple Voice Chat integration to SCP-939: living speech now produces acoustic evidence for its hearing system, while explicit session consent can additionally provide temporary in-memory voice fragments for SCP-939 mimicry without writing captured audio to disk;
+- Extended Simple Voice Chat integration to playable SCP-079 as the optional positional transport for its generated retro speech and for live microphone routing through mapped Speakers and Intercoms;
+- Simple Voice Chat remains an optional dependency: when it is absent or the integration is disabled, voice-dependent relays and audible SCP-079 TTS are unavailable without disabling the corresponding non-voice gameplay systems or turning Simple Voice Chat into a hard requirement;
 - Added the first integration for **MineZero / Return by Death**, replacing its automatic death rewind with the SCP: Classified Directive death/spectate flow while using SCP: Classified Directive saves as MineZero checkpoints;
 - MineZero-integrated multiplayer sessions keep dead players in the spectate flow while survivors remain; after a team wipe, dead players vote before the latest valid checkpoint rewinds the session;
 - With MineZero integration active, SCP-714's terminal coma becomes recoverable while another living player remains: the wearer is forced into an attackable sleeping state on the floor, and another living player can use the **Remove / SCP-714** contextual prompt to take the ring and wake them immediately; if the comatose wearer becomes the last living player, the coma becomes fatal normally;
@@ -271,6 +296,7 @@
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;
+- Rebuilt the **Tesla Gate Terminal** as an immersive physical computer: its interface remains rendered on the placed CRT, interaction smoothly focuses the camera on that screen, and cursor/input use the same terminal pixel-space without redrawing the old interface as a conventional 2D panel;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;
 - Added the per-player, per-world `coreroomdiscovery.ogg` cue, played once when that player first sees a Core Room Floor Station;
 - Added a construction preview for Core Room elevators: holding a Floor Station or Pulley displays a vertical green/red particle guide for valid range and obstruction checks, while structural beams are generated only after a valid Pulley closes the column and are removed when that connection becomes invalid;

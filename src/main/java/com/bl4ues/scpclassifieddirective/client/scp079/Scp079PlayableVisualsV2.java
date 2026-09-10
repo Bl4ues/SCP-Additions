@@ -488,15 +488,25 @@ public final class Scp079PlayableVisualsV2 {
                 case CAMERA -> "SWITCH CAMERA  [LMB]";
             };
             int tx = x + size + 8;
-            int ty = y + 2;
-            Scp079UiTheme.draw(graphics, minecraft.font, primary,
-                    tx, ty, 1.17F, Scp079UiTheme.TEXT);
-            if (prompt.kind == TargetKind.DOOR
+            boolean hasSecondary = prompt.kind == TargetKind.DOOR
                     && !Scp079DoorControlPolicy.hasKeycardReader(
-                            minecraft.level, prompt.pos)) {
+                            minecraft.level, prompt.pos);
+            float primaryScale = 1.17F;
+            float secondaryScale = 1.13F;
+            float primaryHeight = minecraft.font.lineHeight * primaryScale;
+            float secondaryHeight = hasSecondary
+                    ? minecraft.font.lineHeight * secondaryScale : 0.0F;
+            float lineGap = hasSecondary ? 6.0F : 0.0F;
+            float blockHeight = primaryHeight + secondaryHeight + lineGap;
+            float ty = y + (size - blockHeight) * 0.5F + 2.0F;
+
+            Scp079UiTheme.draw(graphics, minecraft.font, primary,
+                    tx, ty, primaryScale, Scp079UiTheme.TEXT);
+            if (hasSecondary) {
                 Scp079UiTheme.draw(graphics, minecraft.font,
                         "LOCK  [RMB]  " + cost(12.0D, minecraft),
-                        tx, ty + 18, 1.13F, Scp079UiTheme.TEXT);
+                        tx, ty + primaryHeight + lineGap,
+                        secondaryScale, Scp079UiTheme.TEXT);
             }
         }
     }

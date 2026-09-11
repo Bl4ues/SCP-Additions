@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import com.bl4ues.scpclassifieddirective.effect.Scp714ProtectionAccess;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.HeavyDoorControlPanelAccess;
 import com.bl4ues.scpclassifieddirective.facility.Scp079DecisionLog;
 import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
@@ -88,8 +89,7 @@ public final class Scp012DoorAccess {
 
                         DoorMatch match = matchClosedDoor(level, pos);
                         if (match == null
-                                || !HeavyDoorControlPanelAccess
-                                .hasControllableInterface(level, pos)
+                                || !canManipulate(level, match)
                                 || !liesOnRoute(match.state(), pos,
                                 playerPosition, targetPosition)) {
                             continue;
@@ -145,10 +145,34 @@ public final class Scp012DoorAccess {
         if (!Scp079ProcessingManager.trySpend(level, best.cost())) return false;
 
         BlockState current = level.getBlockState(best.match().pos());
-        if (current.getBlock() != best.match().family().closed().get()
-                || !current.hasProperty(HorizontalDirectionalBlock.FACING)
-                || HeavyDoorControlPanelAccess.openConnectedControls(level,
-                best.match().pos()) <= 0) {
+        boolean opened;
+        if (BlastDoorModule.isController(current)) {
+            opened = current.getValue(BlastDoorModule.PHASE)
+                    == BlastDoorModule.Phase.CLOSED
+                    && BlastDoorModule.setRemoteOpen(level,
+                    best.match().pos(), true);
+        } else {
+            FacilityModule.DoorFamily family = best.match().family();
+            opened = family != null
+                    && current.getBlock() == family.closed().get()
+                    && current.hasProperty(HorizontalDirectionalBlock.FACING)
+                    && HeavyDoorControlPanelAccess.openConnectedControls(level,
+                    best.match().pos()) > 0;
+            if (opened) {
+                Direction facing = current.getValue(
+                        HorizontalDirectionalBlock.FACING);
+                level.playSound(null, best.match().pos(),
+                        family.openingSound().get(),
+                        SoundSource.BLOCKS, 1.0F, 1.0F);
+                Block firstOpeningStage = family.opening().get(0).get();
+                level.setBlock(best.match().pos(),
+                        firstOpeningStage.defaultBlockState()
+                                .setValue(HorizontalDirectionalBlock.FACING,
+                                        facing),
+                        Block.UPDATE_ALL);
+            }
+        }
+        if (!opened) {
             Scp079ProcessingManager.refund(level, best.cost());
             Scp079DecisionLog.record(level,
                     Scp079DecisionLog.DecisionType.ABORTED_ACTION,
@@ -158,14 +182,6 @@ public final class Scp012DoorAccess {
             return false;
         }
 
-        Direction facing = current.getValue(HorizontalDirectionalBlock.FACING);
-        level.playSound(null, best.match().pos(),
-                best.match().family().openingSound().get(),
-                SoundSource.BLOCKS, 1.0F, 1.0F);
-        Block firstOpeningStage = best.match().family().opening().get(0).get();
-        level.setBlock(best.match().pos(), firstOpeningStage.defaultBlockState()
-                .setValue(HorizontalDirectionalBlock.FACING, facing),
-                Block.UPDATE_ALL);
         emitOverrideParticles(level, best.match().pos());
 
         ContestState previous = best.previous();
@@ -279,8 +295,22 @@ public final class Scp012DoorAccess {
                 2, 0.35D, 0.30D, 0.35D, 0.01D);
     }
 
+    private static boolean canManipulate(ServerLevel level,
+            DoorMatch match) {
+        return BlastDoorModule.isController(match.state())
+                ? BlastDoorModule.hasRedstoneConnection(level, match.pos())
+                : HeavyDoorControlPanelAccess.hasControllableInterface(
+                        level, match.pos());
+    }
+
     private static DoorMatch matchClosedDoor(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
+        if (BlastDoorModule.isController(state)
+                && state.getValue(BlastDoorModule.PHASE)
+                == BlastDoorModule.Phase.CLOSED) {
+            return new DoorMatch(pos, state, null);
+        }
+
         FacilityModule.DoorFamily[] families = {
                 FacilityModule.DEFAULT_DOOR,
                 FacilityModule.YELLOW_DOOR,

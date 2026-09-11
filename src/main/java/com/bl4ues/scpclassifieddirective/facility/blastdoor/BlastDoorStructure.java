@@ -182,20 +182,47 @@ public final class BlastDoorStructure {
         Direction facing = controllerState.getValue(BlastDoorModule.FACING);
         List<BlockPos> positions = structurePositions(controller, facing);
         Set<BlockPos> owned = new HashSet<>(positions);
+
+        // First handle the exact vanilla-door case: any part of the
+        // multiblock can receive power directly, including from below.
         for (BlockPos pos : positions) {
-            for (Direction direction : Direction.values()) {
-                BlockPos neighborPos = pos.relative(direction);
-                if (owned.contains(neighborPos)
-                        || !level.hasChunkAt(neighborPos)) {
-                    continue;
-                }
-                BlockState neighbor = level.getBlockState(neighborPos);
-                if (neighbor.isSignalSource()
-                        || level.getSignal(neighborPos,
-                        direction.getOpposite()) > 0
-                        || level.getDirectSignal(neighborPos,
-                        direction.getOpposite()) > 0) {
-                    return true;
+            if (level.hasNeighborSignal(pos)) return true;
+        }
+
+        // Facility buttons/readers are commonly mounted on the wall or frame
+        // immediately beside a large doorway rather than directly touching
+        // the controller cell. Search a tight two-block shell around the
+        // structure for a real redstone source/wire. This keeps the door
+        // hackable while such a physical control is installed, even when the
+        // control is currently unpowered.
+        Set<BlockPos> visited = new HashSet<>();
+        for (BlockPos pos : positions) {
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dy = -2; dy <= 2; dy++) {
+                    for (int dz = -2; dz <= 2; dz++) {
+                        if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 2) {
+                            continue;
+                        }
+                        BlockPos candidate = pos.offset(dx, dy, dz);
+                        if (owned.contains(candidate)
+                                || !visited.add(candidate)
+                                || !level.hasChunkAt(candidate)) {
+                            continue;
+                        }
+                        BlockState neighbor = level.getBlockState(candidate);
+                        if (neighbor.isSignalSource()
+                                || neighbor.is(Blocks.REDSTONE_WIRE)) {
+                            return true;
+                        }
+                        for (Direction direction : Direction.values()) {
+                            if (level.getSignal(candidate,
+                                    direction.getOpposite()) > 0
+                                    || level.getDirectSignal(candidate,
+                                    direction.getOpposite()) > 0) {
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
         }

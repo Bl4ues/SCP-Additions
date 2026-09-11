@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -30,7 +31,6 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -41,6 +41,8 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
 public final class BlastDoorClient {
     private static final ResourceLocation GEO = id(
             "geo/block/blast_door.geo.json");
+    private static final ResourceLocation ITEM_GEO = id(
+            "geo/item/blast_door.geo.json");
     private static final ResourceLocation TEXTURE = id(
             "textures/block/blast_door.png");
     private static final ResourceLocation ANIMATION = id(
@@ -60,16 +62,6 @@ public final class BlastDoorClient {
 
     private static ResourceLocation id(String path) {
         return new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path);
-    }
-
-    private static void hideAuthoredMimics(GeoModel<?> model) {
-        software.bernie.geckolib.core.animatable.model.CoreGeoBone bone =
-                model.getAnimationProcessor().getBone("mimics");
-        if (bone == null) return;
-        bone.setHidden(true);
-        bone.setScaleX(0.0F);
-        bone.setScaleY(0.0F);
-        bone.setScaleZ(0.0F);
     }
 
     private static final class BlockModel
@@ -92,14 +84,6 @@ public final class BlastDoorClient {
             return ANIMATION;
         }
 
-        @Override
-        public void setCustomAnimations(
-                BlastDoorModule.BlastDoorBlockEntity animatable,
-                long instanceId,
-                AnimationState<BlastDoorModule.BlastDoorBlockEntity> state) {
-            super.setCustomAnimations(animatable, instanceId, state);
-            hideAuthoredMimics(this);
-        }
     }
 
     private static final class BodyRenderer
@@ -200,7 +184,7 @@ public final class BlastDoorClient {
                 .getBlockModel(sourceState);
         int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(
                 level, sourcePos);
-        VertexConsumer consumer = buffers.getBuffer(RenderType.cutout());
+        VertexConsumer consumer = buffers.getBuffer(Sheets.cutoutBlockSheet());
         PoseStack.Pose pose = poseStack.last();
 
         double x1 = rightSide ? 32.0D : -40.0D;
@@ -494,7 +478,7 @@ public final class BlastDoorClient {
         @Override
         public ResourceLocation getModelResource(
                 BlastDoorModule.BlastDoorItem animatable) {
-            return GEO;
+            return ITEM_GEO;
         }
 
         @Override
@@ -509,13 +493,6 @@ public final class BlastDoorClient {
             return ANIMATION;
         }
 
-        @Override
-        public void setCustomAnimations(BlastDoorModule.BlastDoorItem animatable,
-                long instanceId,
-                AnimationState<BlastDoorModule.BlastDoorItem> state) {
-            super.setCustomAnimations(animatable, instanceId, state);
-            hideAuthoredMimics(this);
-        }
     }
 
     public static final class ItemRenderer

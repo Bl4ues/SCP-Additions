@@ -181,9 +181,6 @@ public final class BlastDoorClient {
 
         BlockPos targetPos = BlastDoorStructure.partPosition(
                 door.getBlockPos(), facing, rightSide ? 2 : -2, 2);
-        int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(
-                level, targetPos);
-
         BakedModel model = Minecraft.getInstance().getBlockRenderer()
                 .getBlockModel(sourceState);
         VertexConsumer consumer = buffers.getBuffer(Sheets.cutoutBlockSheet());
@@ -211,8 +208,8 @@ public final class BlastDoorClient {
         float hAtX2 = rightAxisPositive ? sourceH1 : sourceH0;
 
         renderFrontBackFace(consumer, pose, model, sourceState, level,
-                sourcePos, front, facing, x1, x2, y1, y2,
-                hAtX1, hAtX2, sourceV0, sourceV1, light);
+                sourcePos, targetPos, front, facing, x1, x2, y1, y2,
+                hAtX1, hAtX2, sourceV0, sourceV1);
 
         Direction innerFace = rightSide
                 ? right.getOpposite() : right;
@@ -222,8 +219,8 @@ public final class BlastDoorClient {
         float hAtFront = forwardAxisPositive ? 1.0F : 0.0F;
         double innerX = rightSide ? x1 : x2;
         renderInnerFace(consumer, pose, model, sourceState, level,
-                sourcePos, facing, innerFace, innerX, y1, y2,
-                hAtBack, hAtFront, sourceV0, sourceV1, light, rightSide);
+                sourcePos, targetPos, facing, innerFace, innerX, y1, y2,
+                hAtBack, hAtFront, sourceV0, sourceV1, rightSide);
     }
 
     private static void renderUpperWallMimics(
@@ -284,9 +281,10 @@ public final class BlastDoorClient {
 
     private static void renderFrontBackFace(VertexConsumer consumer,
             PoseStack.Pose pose, BakedModel model, BlockState sourceState,
-            Level level, BlockPos sourcePos, Direction front, Direction back,
+            Level level, BlockPos sourcePos, BlockPos targetPos,
+            Direction front, Direction back,
             double x1, double x2, double y1, double y2,
-            float hAtX1, float hAtX2, float v0, float v1, int light) {
+            float hAtX1, float hAtX2, float v0, float v1) {
         FaceUv frontUv = faceUv(model, sourceState, level, sourcePos,
                 front, Math.min(hAtX1, hAtX2), Math.max(hAtX1, hAtX2),
                 v0, v1);
@@ -303,7 +301,9 @@ public final class BlastDoorClient {
                     point(back, x2, y1, MIMIC_SURFACE),
                     point(back, x2, y2, MIMIC_SURFACE),
                     point(back, x1, y2, MIMIC_SURFACE),
-                    front, a, b, cc, d, light);
+                    front, a, b, cc, d,
+                    faceLight(level, targetPos, front),
+                    faceColor(level, sourceState, sourcePos, frontUv, front));
         }
         if (backUv != null) {
             Uv a = backUv.sample(hAtX2, v0);
@@ -315,15 +315,18 @@ public final class BlastDoorClient {
                     point(back, x1, y1, -MIMIC_SURFACE),
                     point(back, x1, y2, -MIMIC_SURFACE),
                     point(back, x2, y2, -MIMIC_SURFACE),
-                    back, a, b, cc, d, light);
+                    back, a, b, cc, d,
+                    faceLight(level, targetPos, back),
+                    faceColor(level, sourceState, sourcePos, backUv, back));
         }
     }
 
     private static void renderInnerFace(VertexConsumer consumer,
             PoseStack.Pose pose, BakedModel model, BlockState sourceState,
-            Level level, BlockPos sourcePos, Direction facing,
-            Direction innerFace, double x, double y1, double y2,
-            float hAtBack, float hAtFront, float v0, float v1, int light,
+            Level level, BlockPos sourcePos, BlockPos targetPos,
+            Direction facing, Direction innerFace,
+            double x, double y1, double y2,
+            float hAtBack, float hAtFront, float v0, float v1,
             boolean rightSide) {
         FaceUv uv = faceUv(model, sourceState, level, sourcePos,
                 innerFace, 0.0F, 1.0F, v0, v1);
@@ -339,7 +342,9 @@ public final class BlastDoorClient {
                     uv.sample(hAtBack, v0),
                     uv.sample(hAtFront, v0),
                     uv.sample(hAtFront, v1),
-                    uv.sample(hAtBack, v1), light);
+                    uv.sample(hAtBack, v1),
+                    faceLight(level, targetPos, innerFace),
+                    faceColor(level, sourceState, sourcePos, uv, innerFace));
         } else {
             emitFace(consumer, pose,
                     point(facing, x, y1, MIMIC_SURFACE),
@@ -350,8 +355,33 @@ public final class BlastDoorClient {
                     uv.sample(hAtFront, v0),
                     uv.sample(hAtBack, v0),
                     uv.sample(hAtBack, v1),
-                    uv.sample(hAtFront, v1), light);
+                    uv.sample(hAtFront, v1),
+                    faceLight(level, targetPos, innerFace),
+                    faceColor(level, sourceState, sourcePos, uv, innerFace));
         }
+    }
+
+    private static int faceLight(Level level, BlockPos targetPos,
+            Direction face) {
+        // Match vanilla block-face lighting: a visible face samples the light
+        // in the neighbouring cell on that side, not the invisible placeholder
+        // cell occupied by the multiblock itself.
+        return net.minecraft.client.renderer.LevelRenderer.getLightColor(
+                level, targetPos.relative(face));
+    }
+
+    private static int faceColor(Level level, BlockState state,
+            BlockPos sourcePos, FaceUv uv, Direction face) {
+        int tint = 0xFFFFFF;
+        if (uv.tintIndex() >= 0) {
+            tint = Minecraft.getInstance().getBlockColors().getColor(
+                    state, level, sourcePos, uv.tintIndex());
+        }
+        float shade = uv.shade() ? level.getShade(face, true) : 1.0F;
+        int red = Math.round(((tint >> 16) & 0xFF) * shade);
+        int green = Math.round(((tint >> 8) & 0xFF) * shade);
+        int blue = Math.round((tint & 0xFF) * shade);
+        return (red << 16) | (green << 8) | blue;
     }
 
     private static FaceUv faceUv(BakedModel model, BlockState state,
@@ -403,21 +433,22 @@ public final class BlastDoorClient {
 
     private static void emitFace(VertexConsumer consumer, PoseStack.Pose pose,
             Vec3 a, Vec3 b, Vec3 cc, Vec3 d, Direction normal,
-            Uv uvA, Uv uvB, Uv uvC, Uv uvD, int light) {
+            Uv uvA, Uv uvB, Uv uvC, Uv uvD, int light, int color) {
         Matrix4f matrix = pose.pose();
         Matrix3f normalMatrix = pose.normal();
-        vertex(consumer, matrix, normalMatrix, a, normal, uvA, light);
-        vertex(consumer, matrix, normalMatrix, b, normal, uvB, light);
-        vertex(consumer, matrix, normalMatrix, cc, normal, uvC, light);
-        vertex(consumer, matrix, normalMatrix, d, normal, uvD, light);
+        vertex(consumer, matrix, normalMatrix, a, normal, uvA, light, color);
+        vertex(consumer, matrix, normalMatrix, b, normal, uvB, light, color);
+        vertex(consumer, matrix, normalMatrix, cc, normal, uvC, light, color);
+        vertex(consumer, matrix, normalMatrix, d, normal, uvD, light, color);
     }
 
     private static void vertex(VertexConsumer consumer, Matrix4f pose,
             Matrix3f normalMatrix, Vec3 point, Direction normal,
-            Uv uv, int light) {
+            Uv uv, int light, int color) {
         consumer.vertex(pose, (float) point.x, (float) point.y,
                         (float) point.z)
-                .color(255, 255, 255, 255)
+                .color((color >> 16) & 0xFF, (color >> 8) & 0xFF,
+                        color & 0xFF, 255)
                 .uv(uv.u(), uv.v())
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(light)
@@ -430,7 +461,8 @@ public final class BlastDoorClient {
     }
 
     private record FaceUv(float minH, float maxH, float minV, float maxV,
-            Uv lowLow, Uv highLow, Uv highHigh, Uv lowHigh) {
+            Uv lowLow, Uv highLow, Uv highHigh, Uv lowHigh,
+            int tintIndex, boolean shade) {
         private static FaceUv from(BakedQuad quad, Direction face) {
             if (face.getAxis().isVertical()) return null;
 
@@ -487,7 +519,8 @@ public final class BlastDoorClient {
                 return null;
             }
             return new FaceUv(minH, maxH, minV, maxV,
-                    lowLow, highLow, highHigh, lowHigh);
+                    lowLow, highLow, highHigh, lowHigh,
+                    quad.getTintIndex(), quad.isShade());
         }
 
         private static FaceUv fullSprite(TextureAtlasSprite sprite) {
@@ -495,7 +528,8 @@ public final class BlastDoorClient {
                     new Uv(sprite.getU(0.0F), sprite.getV(16.0F)),
                     new Uv(sprite.getU(16.0F), sprite.getV(16.0F)),
                     new Uv(sprite.getU(16.0F), sprite.getV(0.0F)),
-                    new Uv(sprite.getU(0.0F), sprite.getV(0.0F)));
+                    new Uv(sprite.getU(0.0F), sprite.getV(0.0F)),
+                    -1, true);
         }
 
         private boolean covers(float h0, float h1, float v0, float v1) {

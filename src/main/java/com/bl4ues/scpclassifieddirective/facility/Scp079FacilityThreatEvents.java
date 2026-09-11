@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+
 import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
 
 import net.minecraft.core.BlockPos;
@@ -306,8 +308,7 @@ public final class Scp079FacilityThreatEvents {
                             DoorMatch match = matchDoor(level, pos);
                             if (match == null
                                     || match.stage() != DoorStage.OPEN
-                                    || !HeavyDoorControlPanelAccess
-                                    .hasDeniableInterface(level, pos)
+                                    || !isDeniable(level, match)
                                     || !separatesFollowerAndScp173(match.state(),
                                     pos, player.position(), follower.position(),
                                     scp173.position())) {
@@ -366,8 +367,7 @@ public final class Scp079FacilityThreatEvents {
         double threatPressure = Math.max(0.0D, 12.0D - pursuerDistance);
 
         if (ahead.closed() != null && profile.canDenyAccess()
-                && HeavyDoorControlPanelAccess.hasDeniableInterface(level,
-                ahead.closed().pos())
+                && isDeniable(level, ahead.closed())
                 && pursuerDistance >= profile.minimumLockDistance()) {
             double doorDistance = Math.sqrt(player.distanceToSqr(
                     Vec3.atCenterOf(ahead.closed().pos())));
@@ -386,8 +386,7 @@ public final class Scp079FacilityThreatEvents {
             double commitment = Math.max(0.0D,
                     FLEE_DOOR_RADIUS - doorDistance);
             boolean canFollowWithLock = profile.canDenyAccess()
-                    && HeavyDoorControlPanelAccess.hasDeniableInterface(level,
-                    ahead.open().pos());
+                    && isDeniable(level, ahead.open());
             candidates.add(new Action(ActionType.CLOSE, ahead.open(),
                     74.0D + commitment * 2.25D + threatPressure
                             + profile.closeBias(), CLOSE_AHEAD_COST,
@@ -592,9 +591,7 @@ public final class Scp079FacilityThreatEvents {
                             continue;
                         }
                         DoorMatch match = matchDoor(level, pos);
-                        if (match == null
-                                || !HeavyDoorControlPanelAccess
-                                .hasControllableInterface(level, pos)) {
+                        if (match == null || !canManipulate(level, match)) {
                             continue;
                         }
 
@@ -648,8 +645,7 @@ public final class Scp079FacilityThreatEvents {
                         }
                         DoorMatch match = matchDoor(level, pos);
                         if (match == null || match.stage() != DoorStage.CLOSED
-                                || !HeavyDoorControlPanelAccess
-                                .hasControllableInterface(level, pos)
+                                || !canManipulate(level, match)
                                 || !oppositeSides(match.state(), pos,
                                 pursuer.position(), player.position())) {
                             continue;
@@ -700,9 +696,17 @@ public final class Scp079FacilityThreatEvents {
             return false;
         }
 
+        if (BlastDoorModule.isController(current)) {
+            if (!BlastDoorModule.setRemoteOpen(level, match.pos(), true)) {
+                return false;
+            }
+            emitOverrideParticles(level, match.pos());
+            return true;
+        }
+
         int controlCount = HeavyDoorControlPanelAccess.openConnectedControls(
                 level, match.pos());
-        if (controlCount <= 0) return false;
+        if (controlCount <= 0 || fresh.family() == null) return false;
 
         Direction facing = current.getValue(HorizontalDirectionalBlock.FACING);
         Block target = fresh.family().opening().get(0).get();
@@ -723,6 +727,14 @@ public final class Scp079FacilityThreatEvents {
             return false;
         }
 
+        if (BlastDoorModule.isController(current)) {
+            if (!BlastDoorModule.setRemoteOpen(level, match.pos(), false)) {
+                return false;
+            }
+            emitOverrideParticles(level, match.pos());
+            return true;
+        }
+
         int controlCount = HeavyDoorControlPanelAccess.closeConnectedControls(
                 level, match.pos());
         if (controlCount <= 0) return false;
@@ -733,6 +745,7 @@ public final class Scp079FacilityThreatEvents {
             return false;
         }
 
+        if (fresh.family() == null) return false;
         Direction facing = current.getValue(HorizontalDirectionalBlock.FACING);
         Block target = fresh.family().closing().get(0).get();
         level.playSound(null, match.pos(), fresh.family().closingSound().get(),
@@ -752,6 +765,16 @@ public final class Scp079FacilityThreatEvents {
 
     private static DoorMatch matchDoor(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
+        if (BlastDoorModule.isController(state)) {
+            DoorStage stage = switch (state.getValue(BlastDoorModule.PHASE)) {
+                case CLOSED -> DoorStage.CLOSED;
+                case OPENING -> DoorStage.OPENING;
+                case OPEN -> DoorStage.OPEN;
+                case CLOSING -> DoorStage.CLOSING;
+            };
+            return new DoorMatch(pos, state, null, stage);
+        }
+
         Block block = state.getBlock();
         FacilityModule.DoorFamily[] families = {
                 FacilityModule.DEFAULT_DOOR,
@@ -776,6 +799,20 @@ public final class Scp079FacilityThreatEvents {
             }
         }
         return null;
+    }
+
+    private static boolean canManipulate(ServerLevel level,
+            DoorMatch match) {
+        return BlastDoorModule.isController(match.state())
+                ? BlastDoorModule.hasRedstoneConnection(level, match.pos())
+                : HeavyDoorControlPanelAccess.hasControllableInterface(
+                        level, match.pos());
+    }
+
+    private static boolean isDeniable(ServerLevel level, DoorMatch match) {
+        return !BlastDoorModule.isController(match.state())
+                && HeavyDoorControlPanelAccess.hasDeniableInterface(
+                        level, match.pos());
     }
 
     private static boolean onCooldown(ServerLevel level, BlockPos pos,

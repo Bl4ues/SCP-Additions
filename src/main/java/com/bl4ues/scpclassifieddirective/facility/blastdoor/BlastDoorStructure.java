@@ -155,12 +155,9 @@ public final class BlastDoorStructure {
     }
 
     public static BlockPos mimicSource(BlockPos controller, Direction facing,
-            boolean rightSide) {
-        // The authored 8x8x16 mimic occupies the upper half of the
-        // outermost door cell. Its texture comes from the adjacent full wall
-        // block, three blocks sideways from the controller and on the third
-        // vertical block (Y + 2).
-        return partPosition(controller, facing, rightSide ? 3 : -3, 2);
+            boolean rightSide, boolean upperLayer) {
+        return partPosition(controller, facing, rightSide ? 3 : -3,
+                upperLayer ? 3 : 2);
     }
 
     public static boolean hasNeighborSignal(Level level,
@@ -262,7 +259,7 @@ public final class BlastDoorStructure {
         VoxelShape canonical = Shapes.empty();
         canonical = addModelBox(canonical, side, height,
                 -32.5D, 32.5D, 3.75D + lift, 47.5D + lift,
-                -8.0D, 8.0D);
+                -7.75D, 7.75D);
         canonical = addModelBox(canonical, side, height,
                 -40.0D, -32.5D, 0.0D, 40.0D, -8.0D, 8.0D);
         canonical = addModelBox(canonical, side, height,
@@ -270,7 +267,7 @@ public final class BlastDoorStructure {
         canonical = addModelBox(canonical, side, height,
                 -40.0D, 40.0D, 40.0D, 60.0D, -8.0D, 8.0D);
         canonical = addModelBox(canonical, side, height,
-                -32.5D, 32.5D, 0.0D, 1.5D, -8.0D, 8.0D);
+                -32.5D, 32.5D, 0.0D, 1.5D, -7.75D, 7.75D);
 
         return rotateFromNorth(canonical, facing);
     }

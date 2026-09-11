@@ -628,29 +628,34 @@ public final class BlastDoorModule {
             long now = level == null ? phaseStarted : level.getGameTime();
             double t = Math.max(0.0D, Math.min(1.0D,
                     (now - phaseStarted) / (double) TRANSITION_TICKS));
+            double progress = mechanicalProgress(t);
             return switch (phase) {
                 case CLOSED -> 0.0D;
                 case OPEN -> MAX_LIFT_PIXELS;
-                case OPENING -> MAX_LIFT_PIXELS * easeInOutCirc(t);
-                case CLOSING -> MAX_LIFT_PIXELS
-                        * (1.0D - Math.max(0.0D,
-                        Math.min(1.0D, easeOutElastic(t))));
+                case OPENING -> MAX_LIFT_PIXELS * progress;
+                case CLOSING -> MAX_LIFT_PIXELS * (1.0D - progress);
             };
         }
 
-        private static double easeInOutCirc(double x) {
-            return x < 0.5D
-                    ? (1.0D - Math.sqrt(1.0D - Math.pow(2.0D * x, 2.0D))) / 2.0D
-                    : (Math.sqrt(1.0D - Math.pow(-2.0D * x + 2.0D, 2.0D))
-                    + 1.0D) / 2.0D;
-        }
-
-        private static double easeOutElastic(double x) {
+        /**
+         * Short motor ramp-up, long constant travel and controlled braking.
+         * This is deliberately non-elastic: a blast door should look like
+         * several hundred kilograms of metal, not an agitated slime block.
+         */
+        private static double mechanicalProgress(double x) {
+            final double ramp = 0.18D;
+            final double normalization = 1.0D - ramp;
             if (x <= 0.0D) return 0.0D;
             if (x >= 1.0D) return 1.0D;
-            double c4 = 2.0D * Math.PI / 3.0D;
-            return Math.pow(2.0D, -10.0D * x)
-                    * Math.sin((x * 10.0D - 0.75D) * c4) + 1.0D;
+            if (x < ramp) {
+                return (x * x) / (2.0D * ramp * normalization);
+            }
+            if (x > 1.0D - ramp) {
+                double remaining = 1.0D - x;
+                return 1.0D - (remaining * remaining)
+                        / (2.0D * ramp * normalization);
+            }
+            return (ramp * 0.5D + x - ramp) / normalization;
         }
 
         private software.bernie.geckolib.core.object.PlayState animate(

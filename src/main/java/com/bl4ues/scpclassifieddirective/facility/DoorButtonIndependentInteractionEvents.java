@@ -13,6 +13,8 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -116,14 +118,47 @@ public final class DoorButtonIndependentInteractionEvents {
         }
 
         Set<BlockPos> panelPositions = new LinkedHashSet<>();
-        for (int yOffset = 0; yOffset <= 2; yOffset++) {
-            BlockPos probe = doorPos.above(yOffset);
-            for (Direction direction : Direction.values()) {
-                BlockPos candidate = probe.relative(direction);
-                BlockState candidateState = level.getBlockState(candidate);
-                if (isFunctional(candidateState.getBlock())
-                        && candidateState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                    panelPositions.add(candidate.immutable());
+        BlockState doorState = level.getBlockState(doorPos);
+        if (BlastDoorModule.isController(doorState)) {
+            Direction facing = doorState.getValue(BlastDoorModule.FACING);
+            Set<BlockPos> structure = new LinkedHashSet<>(
+                    BlastDoorStructure.structurePositions(doorPos, facing));
+            Set<BlockPos> visited = new LinkedHashSet<>();
+            for (BlockPos structurePos : structure) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    for (int dy = -2; dy <= 2; dy++) {
+                        for (int dz = -2; dz <= 2; dz++) {
+                            if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 2) {
+                                continue;
+                            }
+                            BlockPos candidate = structurePos.offset(dx, dy, dz);
+                            if (structure.contains(candidate)
+                                    || !visited.add(candidate)
+                                    || !level.hasChunkAt(candidate)) {
+                                continue;
+                            }
+                            BlockState candidateState =
+                                    level.getBlockState(candidate);
+                            if (isFunctional(candidateState.getBlock())
+                                    && candidateState.hasProperty(
+                                    HorizontalDirectionalBlock.FACING)) {
+                                panelPositions.add(candidate.immutable());
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for (int yOffset = 0; yOffset <= 2; yOffset++) {
+                BlockPos probe = doorPos.above(yOffset);
+                for (Direction direction : Direction.values()) {
+                    BlockPos candidate = probe.relative(direction);
+                    BlockState candidateState = level.getBlockState(candidate);
+                    if (isFunctional(candidateState.getBlock())
+                            && candidateState.hasProperty(
+                            HorizontalDirectionalBlock.FACING)) {
+                        panelPositions.add(candidate.immutable());
+                    }
                 }
             }
         }

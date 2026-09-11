@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.facility.blastdoor;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.BlastDoorClient;
 import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
+import com.bl4ues.scpclassifieddirective.facility.DoorButtonIndependentInteractionEvents;
 import com.bl4ues.scpclassifieddirective.facility.StructurePlacementFeedback;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -610,6 +611,13 @@ public final class BlastDoorModule {
                     && state.getValue(PHASE) != next) {
                 server.setBlock(worldPosition, state.setValue(PHASE, next),
                         Block.UPDATE_CLIENTS);
+            }
+            if (next == Phase.OPENING || next == Phase.CLOSING) {
+                // Keep every functional panel physically connected to this
+                // five-block-wide structure in the same visual/output state,
+                // matching the existing heavy-door behaviour.
+                DoorButtonIndependentInteractionEvents.synchronizeDoorPanels(
+                        server, worldPosition, next == Phase.OPENING);
             }
             if (playTransitionSound) {
                 if (next == Phase.OPENING) {

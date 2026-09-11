@@ -285,6 +285,7 @@
 
 ## Facility construction
 
+- Added a redstone-operated **Blast Door** for large secure facility entrances;
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;

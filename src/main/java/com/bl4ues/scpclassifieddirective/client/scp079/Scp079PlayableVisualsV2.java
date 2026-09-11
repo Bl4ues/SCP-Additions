@@ -9,6 +9,7 @@ import com.bl4ues.scpclassifieddirective.entity.Scp131BEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp173Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.Scp079DoorControlPolicy;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
@@ -268,8 +269,11 @@ public final class Scp079PlayableVisualsV2 {
             if (attack) {
                 Scp079PlayableNetwork.requestAction(
                         Scp079PlayableManager.ManualAction.PRIMARY, prompt.pos);
-            } else if (use && !Scp079DoorControlPolicy.hasKeycardReader(
-                    minecraft.level, prompt.pos)) {
+            } else if (use
+                    && !BlastDoorModule.isController(
+                            minecraft.level.getBlockState(prompt.pos))
+                    && !Scp079DoorControlPolicy.hasKeycardReader(
+                            minecraft.level, prompt.pos)) {
                 Scp079PlayableNetwork.requestAction(
                         Scp079PlayableManager.ManualAction.LOCK, prompt.pos);
             }
@@ -404,6 +408,16 @@ public final class Scp079PlayableVisualsV2 {
                             addTarget(result, new WorldTarget(TargetKind.CAMERA, pos.immutable()));
                         } else if (includeFacilityDevices && TeslaGateStructure.isController(state)) {
                             addTarget(result, new WorldTarget(TargetKind.TESLA, pos.immutable()));
+                        } else if (includeFacilityDevices
+                                && BlastDoorModule.isStructureState(state)) {
+                            BlockPos controller = BlastDoorModule.controllerPosition(
+                                    minecraft.level, pos, state);
+                            if (controller != null
+                                    && BlastDoorModule.hasRedstoneConnection(
+                                            minecraft.level, controller)) {
+                                addTarget(result, new WorldTarget(
+                                        TargetKind.DOOR, controller.immutable()));
+                            }
                         } else if (includeFacilityDevices && FacilityModule.isFacilityDoor(state)) {
                             addTarget(result, new WorldTarget(TargetKind.DOOR, pos.immutable()));
                         }
@@ -481,14 +495,15 @@ public final class Scp079PlayableVisualsV2 {
                     focused ? 1.0F : 0.80F);
             if (!focused) continue;
             String primary = switch (prompt.kind) {
-                case DOOR -> (FacilityModule.isDoorPassable(
-                        minecraft.level.getBlockState(prompt.pos)) ? "CLOSE" : "OPEN")
+                case DOOR -> (doorPassable(minecraft, prompt.pos) ? "CLOSE" : "OPEN")
                         + "  [LMB]  " + cost(5.0D, minecraft);
                 case TESLA -> "SUPPRESS  [LMB]  " + cost(12.0D, minecraft);
                 case CAMERA -> "SWITCH CAMERA  [LMB]";
             };
             int tx = x + size + 8;
             boolean hasSecondary = prompt.kind == TargetKind.DOOR
+                    && !BlastDoorModule.isController(
+                            minecraft.level.getBlockState(prompt.pos))
                     && !Scp079DoorControlPolicy.hasKeycardReader(
                             minecraft.level, prompt.pos);
             float primaryScale = 1.17F;
@@ -511,13 +526,20 @@ public final class Scp079PlayableVisualsV2 {
         }
     }
 
+    private static boolean doorPassable(Minecraft minecraft,
+            BlockPos doorPos) {
+        BlockState state = minecraft.level.getBlockState(doorPos);
+        return BlastDoorModule.isController(state)
+                ? BlastDoorModule.isPassableState(state)
+                : FacilityModule.isDoorPassable(state);
+    }
+
     private static ResourceLocation doorIcon(Minecraft minecraft,
             BlockPos doorPos) {
         if (Scp079DoorLockClientState.isLocked(doorPos)) {
             return DOOR_LOCKED_ICON;
         }
-        return FacilityModule.isDoorPassable(
-                minecraft.level.getBlockState(doorPos))
+        return doorPassable(minecraft, doorPos)
                 ? DOOR_CLOSE_ICON : DOOR_OPEN_ICON;
     }
 
@@ -554,8 +576,13 @@ public final class Scp079PlayableVisualsV2 {
 
     private static Vec3 anchor(WorldTarget target) {
         Vec3 center = Vec3.atCenterOf(target.pos);
-        return target.kind == TargetKind.DOOR
-                ? center.add(0.0D, 0.22D, 0.0D) : center;
+        if (target.kind != TargetKind.DOOR) return center;
+        if (Minecraft.getInstance().level != null
+                && BlastDoorModule.isController(Minecraft.getInstance().level
+                        .getBlockState(target.pos))) {
+            return center.add(0.0D, 1.35D, 0.0D);
+        }
+        return center.add(0.0D, 0.22D, 0.0D);
     }
 
     private static FacilityRoomSnapshot roomAt(BlockPos pos) {
@@ -620,8 +647,13 @@ public final class Scp079PlayableVisualsV2 {
             return true;
         }
         BlockPos hitPos = hit.getBlockPos();
-        return FacilityModule.isFacilityDoor(
-                minecraft.level.getBlockState(hitPos))
+        BlockState hitState = minecraft.level.getBlockState(hitPos);
+        if (BlastDoorModule.isStructureState(hitState)) {
+            BlockPos controller = BlastDoorModule.controllerPosition(
+                    minecraft.level, hitPos, hitState);
+            return targetPos.equals(controller);
+        }
+        return FacilityModule.isFacilityDoor(hitState)
                 && hitPos.distSqr(targetPos) <= 9.0D;
     }
 

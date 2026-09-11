@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
@@ -305,6 +307,11 @@ public final class Scp079PlayableManager {
         BlockPos door = nearestTracked(level,
                 Scp079FacilityAccessSavedData.get(player.server).doors(),
                 aimedPos, 3.5D);
+        if (door != null && BlastDoorModule.isController(
+                level.getBlockState(door))) {
+            return action == ManualAction.PRIMARY
+                    && toggleBlastDoor(level, door);
+        }
         if (door != null && HeavyDoorControlPanelAccess
                 .hasControllableInterface(level, door)) {
             return action == ManualAction.LOCK
@@ -316,6 +323,27 @@ public final class Scp079PlayableManager {
                 aimedPos, 5.0D);
         return action == ManualAction.PRIMARY && tesla != null
                 && Scp079TeslaSuppression.tryPlayerSuppress(level, tesla);
+    }
+
+    private static boolean toggleBlastDoor(ServerLevel level,
+            BlockPos door) {
+        if (!BlastDoorModule.hasRedstoneConnection(level, door)
+                || !Scp079PlayerPower.trySpend(level, DOOR_ACTION_COST)) {
+            return false;
+        }
+        boolean open = !BlastDoorModule.isOpenOrOpening(level, door);
+        if (!BlastDoorModule.setRemoteOpen(level, door, open)) {
+            Scp079PlayerPower.refund(level, DOOR_ACTION_COST);
+            return false;
+        }
+        Scp079DecisionLog.record(level,
+                open ? Scp079DecisionLog.DecisionType.OPEN_DOOR
+                        : Scp079DecisionLog.DecisionType.CLOSE_DOOR,
+                Scp079DecisionLog.DecisionOutcome.EXECUTED, door,
+                Scp079ProcessingManager.adjustedActionCost(level,
+                        DOOR_ACTION_COST),
+                "manual SCP-079 camera control");
+        return true;
     }
 
     private static boolean toggleDoor(ServerLevel level, BlockPos door) {

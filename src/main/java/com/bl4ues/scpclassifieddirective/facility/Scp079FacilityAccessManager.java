@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
@@ -461,7 +463,7 @@ public final class Scp079FacilityAccessManager {
                         Scp079FacilityAccessSavedData.TrackedPosition tracked =
                                 tracked(level, pos);
                         if (isScp079(state.getBlock())) data.hosts().add(tracked);
-                        if (FacilityModule.isFacilityDoor(state)) data.doors().add(tracked);
+                        if (FacilityModule.isFacilityDoor(state) || BlastDoorModule.isController(state)) data.doors().add(tracked);
                         if (TeslaGateStructure.isController(state)) data.teslaGates().add(tracked);
                         if (state.getBlock()
                                 == ScpClassifiedDirectiveModBlocks.SCP_079_AUXILIARY_POWER.get()) {
@@ -488,6 +490,7 @@ public final class Scp079FacilityAccessManager {
     private static boolean isTracked(BlockState state) {
         Block block = state.getBlock();
         return isScp079(block) || FacilityModule.isFacilityDoor(state)
+                || BlastDoorModule.isController(state)
                 || TeslaGateStructure.isController(state)
                 || block == ScpClassifiedDirectiveModBlocks.SCP_079_AUXILIARY_POWER.get();
     }
@@ -509,7 +512,9 @@ public final class Scp079FacilityAccessManager {
             Scp079FacilityAccessSavedData data) {
         boolean changed = prune(server, data.hosts(), state ->
                 isScp079(state.getBlock()));
-        changed |= prune(server, data.doors(), FacilityModule::isFacilityDoor);
+        changed |= prune(server, data.doors(), state ->
+                FacilityModule.isFacilityDoor(state)
+                        || BlastDoorModule.isController(state));
         changed |= prune(server, data.teslaGates(),
                 TeslaGateStructure::isController);
         changed |= prune(server, data.auxiliaryUnits(), state ->

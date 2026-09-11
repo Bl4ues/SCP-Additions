@@ -20,6 +20,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -175,8 +176,13 @@ public final class BlastDoorClient {
         if (!level.hasChunkAt(sourcePos)) return;
 
         BlockState sourceState = level.getBlockState(sourcePos);
+        // Facility wall blocks are often authored/non-full models and therefore
+        // legitimately report isSolidRender=false. The mimic cares about a
+        // visible neighbouring wall surface, not vanilla's full-cube occlusion
+        // flag, so do not discard those blocks.
         if (sourceState.isAir()
-                || !sourceState.isSolidRender(level, sourcePos)) {
+                || sourceState.getRenderShape() == RenderShape.INVISIBLE
+                || BlastDoorModule.isStructureState(sourceState)) {
             return;
         }
 

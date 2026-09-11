@@ -1,5 +1,9 @@
 package com.bl4ues.scpclassifieddirective.facility.blastdoor;
 
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.LeftDoorButtons;
+import com.bl4ues.scpclassifieddirective.facility.MirroredDoorButtons;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -210,8 +214,10 @@ public final class BlastDoorStructure {
                             continue;
                         }
                         BlockState neighbor = level.getBlockState(candidate);
+                        Block neighborBlock = neighbor.getBlock();
                         if (neighbor.isSignalSource()
-                                || neighbor.is(Blocks.REDSTONE_WIRE)) {
+                                || neighbor.is(Blocks.REDSTONE_WIRE)
+                                || isFacilityControlPanel(neighborBlock)) {
                             return true;
                         }
                         for (Direction direction : Direction.values()) {
@@ -227,6 +233,20 @@ public final class BlastDoorStructure {
             }
         }
         return false;
+    }
+
+    private static boolean isFacilityControlPanel(Block block) {
+        // Functional Unity-style door buttons are not signal sources while
+        // visually CLOSED, even though pressing them is exactly what powers a
+        // door. Treat every functional state as a persistent physical control
+        // connection so SCP-079 gets its hacking icon before the player presses
+        // the panel.
+        return block == FacilityModule.BUTTON_CLOSED.get()
+                || block == FacilityModule.BUTTON_OPENING.get()
+                || block == FacilityModule.BUTTON_OPEN.get()
+                || block == FacilityModule.BUTTON_CLOSING.get()
+                || LeftDoorButtons.isFunctional(block)
+                || MirroredDoorButtons.isFunctional(block);
     }
 
     public static List<BlockPos> structurePositions(BlockPos controller,

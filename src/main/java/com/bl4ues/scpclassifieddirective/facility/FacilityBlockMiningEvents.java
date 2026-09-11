@@ -21,6 +21,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 
 import java.util.Collections;
@@ -149,6 +150,8 @@ public final class FacilityBlockMiningEvents {
                 addRegistered(blocks, CoreRoomElevatorModule.BLOCKS);
                 addRegistered(blocks, ObjectContainmentUnitModule.BLOCKS);
                 blocks.add(DocumentHolderModule.block());
+                blocks.add(BlastDoorModule.BLOCK.get());
+                blocks.add(BlastDoorModule.PART.get());
                 addGeneratedFacilityBlocks(blocks);
                 addRegisteredBlock(blocks, "tesla_gate_collision");
                 addRegisteredBlock(blocks, "decontamination_collision");

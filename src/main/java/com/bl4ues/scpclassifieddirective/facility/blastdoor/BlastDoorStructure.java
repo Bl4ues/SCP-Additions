@@ -11,6 +11,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
@@ -356,8 +357,38 @@ public final class BlastDoorStructure {
                 -40.0D, 40.0D, 40.0D, 60.0D, -8.0D, 8.0D);
         canonical = addModelBox(canonical, side, height,
                 -32.5D, 32.5D, 0.0D, 1.5D, -7.75D, 7.75D);
+        canonical = Shapes.or(canonical, mimicShapeAt(level, controller,
+                facing, side, height));
 
         return rotateFromNorth(canonical, facing);
+    }
+
+    private static VoxelShape mimicShapeAt(BlockGetter level,
+            BlockPos controller, Direction facing, int side, int height) {
+        if (Math.abs(side) != 2 || (height != 2 && height != 3)) {
+            return Shapes.empty();
+        }
+        boolean rightSide = side > 0;
+        BlockPos sourcePos = mimicSource(controller, facing, rightSide,
+                height == 3);
+        BlockState source = level.getBlockState(sourcePos);
+        if (source.isAir()
+                || source.getRenderShape() == RenderShape.INVISIBLE
+                || BlastDoorModule.isStructureState(source)) {
+            return Shapes.empty();
+        }
+
+        if (height == 3) {
+            // The upper copycat is a complete wall cell. This makes the visual
+            // fill, collision and SCP-173 occlusion agree.
+            return Block.box(0.0D, 0.0D, 0.0D,
+                    16.0D, 16.0D, 16.0D);
+        }
+
+        // The original lower mimic is only the exposed outer/top quarter.
+        return rightSide
+                ? Block.box(8.0D, 8.0D, 0.0D, 16.0D, 16.0D, 16.0D)
+                : Block.box(0.0D, 8.0D, 0.0D, 8.0D, 16.0D, 16.0D);
     }
 
     private static VoxelShape addModelBox(VoxelShape shape, int side,

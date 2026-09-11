@@ -186,27 +186,39 @@ public final class BlastDoorClient {
             return;
         }
 
-        BakedModel model = Minecraft.getInstance().getBlockRenderer()
-                .getBlockModel(sourceState);
         BlockPos targetPos = BlastDoorStructure.partPosition(
                 door.getBlockPos(), facing, rightSide ? 2 : -2,
                 upperLayer ? 3 : 2);
         int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(
                 level, targetPos);
+
+        if (upperLayer) {
+            // This is an actual full copycat wall cell. Let Minecraft render
+            // the copied block model itself so tinting, atlas selection, PBR
+            // hooks and shader-specific block render types remain identical to
+            // the real neighbouring wall. The door frame sits in front of it,
+            // naturally leaving only the portions that should be visible.
+            poseStack.pushPose();
+            poseStack.translate(
+                    targetPos.getX() - door.getBlockPos().getX(),
+                    targetPos.getY() - door.getBlockPos().getY(),
+                    targetPos.getZ() - door.getBlockPos().getZ());
+            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(
+                    sourceState, poseStack, buffers, light,
+                    OverlayTexture.NO_OVERLAY);
+            poseStack.popPose();
+            return;
+        }
+
+        BakedModel model = Minecraft.getInstance().getBlockRenderer()
+                .getBlockModel(sourceState);
         VertexConsumer consumer = buffers.getBuffer(Sheets.cutoutBlockSheet());
         PoseStack.Pose pose = poseStack.last();
 
-        // The original authored corner mimic is only 8x8. The row above is
-        // different: it must behave like a complete copycat wall block so the
-        // facility wall remains sealed behind the sloped frame.
-        double x1 = upperLayer
-                ? (rightSide ? 24.0D : -40.0D)
-                : (rightSide ? 32.0D : -40.0D);
-        double x2 = upperLayer
-                ? (rightSide ? 40.0D : -24.0D)
-                : (rightSide ? 40.0D : -32.0D);
-        double y1 = upperLayer ? 48.0D : 40.0D;
-        double y2 = upperLayer ? 64.0D : 48.0D;
+        double x1 = rightSide ? 32.0D : -40.0D;
+        double x2 = rightSide ? 40.0D : -32.0D;
+        double y1 = 40.0D;
+        double y2 = 48.0D;
 
         Direction right = facing.getClockWise();
         Direction front = facing.getOpposite();
@@ -219,11 +231,9 @@ public final class BlastDoorClient {
         boolean rightAxisPositive =
                 right == Direction.EAST || right == Direction.SOUTH;
         boolean takeHighHalf = rightSide == rightAxisPositive;
-        float sourceH0 = upperLayer
-                ? 0.0F : (takeHighHalf ? 0.5F : 0.0F);
-        float sourceH1 = upperLayer
-                ? 1.0F : (takeHighHalf ? 1.0F : 0.5F);
-        float sourceV0 = upperLayer ? 0.0F : 0.5F;
+        float sourceH0 = takeHighHalf ? 0.5F : 0.0F;
+        float sourceH1 = takeHighHalf ? 1.0F : 0.5F;
+        float sourceV0 = 0.5F;
         float sourceV1 = 1.0F;
 
         float hAtX1 = rightAxisPositive ? sourceH0 : sourceH1;

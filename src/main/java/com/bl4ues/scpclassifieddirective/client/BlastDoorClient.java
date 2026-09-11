@@ -188,13 +188,23 @@ public final class BlastDoorClient {
 
         BakedModel model = Minecraft.getInstance().getBlockRenderer()
                 .getBlockModel(sourceState);
+        BlockPos targetPos = BlastDoorStructure.partPosition(
+                door.getBlockPos(), facing, rightSide ? 2 : -2,
+                upperLayer ? 3 : 2);
         int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(
-                level, sourcePos);
+                level, targetPos);
         VertexConsumer consumer = buffers.getBuffer(Sheets.cutoutBlockSheet());
         PoseStack.Pose pose = poseStack.last();
 
-        double x1 = rightSide ? 32.0D : -40.0D;
-        double x2 = rightSide ? 40.0D : -32.0D;
+        // The original authored corner mimic is only 8x8. The row above is
+        // different: it must behave like a complete copycat wall block so the
+        // facility wall remains sealed behind the sloped frame.
+        double x1 = upperLayer
+                ? (rightSide ? 24.0D : -40.0D)
+                : (rightSide ? 32.0D : -40.0D);
+        double x2 = upperLayer
+                ? (rightSide ? 40.0D : -24.0D)
+                : (rightSide ? 40.0D : -32.0D);
         double y1 = upperLayer ? 48.0D : 40.0D;
         double y2 = upperLayer ? 64.0D : 48.0D;
 
@@ -209,8 +219,10 @@ public final class BlastDoorClient {
         boolean rightAxisPositive =
                 right == Direction.EAST || right == Direction.SOUTH;
         boolean takeHighHalf = rightSide == rightAxisPositive;
-        float sourceH0 = takeHighHalf ? 0.5F : 0.0F;
-        float sourceH1 = takeHighHalf ? 1.0F : 0.5F;
+        float sourceH0 = upperLayer
+                ? 0.0F : (takeHighHalf ? 0.5F : 0.0F);
+        float sourceH1 = upperLayer
+                ? 1.0F : (takeHighHalf ? 1.0F : 0.5F);
         float sourceV0 = upperLayer ? 0.0F : 0.5F;
         float sourceV1 = 1.0F;
 

@@ -77,6 +77,22 @@ public final class DoorButtonIndependentInteractionEvents {
         }
 
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+
+        BlockPos blastDoor = BlastDoorStructure.connectedControllerForControl(
+                level, pos);
+        if (blastDoor != null) {
+            boolean opening = phase == Phase.CLOSED;
+            int synchronizedPanels = synchronizeDoorPanels(
+                    level, blastDoor, opening);
+            if (synchronizedPanels > 0) {
+                if (level.getBlockEntity(blastDoor)
+                        instanceof BlastDoorModule.BlastDoorBlockEntity door) {
+                    door.refreshImmediately(level);
+                }
+                return true;
+            }
+        }
+
         BlockPos counterpartPos = pos.relative(facing.getOpposite(), 2);
         BlockState counterpartState = level.getBlockState(counterpartPos);
         boolean linked = isFunctional(counterpartState.getBlock())
@@ -121,29 +137,23 @@ public final class DoorButtonIndependentInteractionEvents {
         BlockState doorState = level.getBlockState(doorPos);
         if (BlastDoorModule.isController(doorState)) {
             Direction facing = doorState.getValue(BlastDoorModule.FACING);
-            Set<BlockPos> structure = new LinkedHashSet<>(
-                    BlastDoorStructure.structurePositions(doorPos, facing));
             Set<BlockPos> visited = new LinkedHashSet<>();
-            for (BlockPos structurePos : structure) {
-                for (int dx = -2; dx <= 2; dx++) {
-                    for (int dy = -2; dy <= 2; dy++) {
-                        for (int dz = -2; dz <= 2; dz++) {
-                            if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 2) {
-                                continue;
-                            }
-                            BlockPos candidate = structurePos.offset(dx, dy, dz);
-                            if (structure.contains(candidate)
-                                    || !visited.add(candidate)
-                                    || !level.hasChunkAt(candidate)) {
-                                continue;
-                            }
-                            BlockState candidateState =
-                                    level.getBlockState(candidate);
-                            if (isFunctional(candidateState.getBlock())
-                                    && candidateState.hasProperty(
-                                    HorizontalDirectionalBlock.FACING)) {
-                                panelPositions.add(candidate.immutable());
-                            }
+            for (int dx = -5; dx <= 5; dx++) {
+                for (int dy = -4; dy <= 4; dy++) {
+                    for (int dz = -5; dz <= 5; dz++) {
+                        BlockPos candidate = doorPos.offset(dx, dy, dz);
+                        if (!visited.add(candidate)
+                                || !level.hasChunkAt(candidate)
+                                || !BlastDoorStructure.isNearStructure(
+                                candidate, doorPos, facing, 2)) {
+                            continue;
+                        }
+                        BlockState candidateState =
+                                level.getBlockState(candidate);
+                        if (isFunctional(candidateState.getBlock())
+                                && candidateState.hasProperty(
+                                HorizontalDirectionalBlock.FACING)) {
+                            panelPositions.add(candidate.immutable());
                         }
                     }
                 }

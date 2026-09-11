@@ -249,6 +249,47 @@ public final class BlastDoorStructure {
                 || MirroredDoorButtons.isFunctional(block);
     }
 
+    @javax.annotation.Nullable
+    public static BlockPos connectedControllerForControl(Level level,
+            BlockPos controlPos) {
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (int dx = -5; dx <= 5; dx++) {
+            for (int dy = -4; dy <= 4; dy++) {
+                for (int dz = -5; dz <= 5; dz++) {
+                    BlockPos candidate = controlPos.offset(dx, dy, dz);
+                    if (!level.hasChunkAt(candidate)
+                            || !BlastDoorModule.isController(
+                            level.getBlockState(candidate))) {
+                        continue;
+                    }
+                    Direction facing = level.getBlockState(candidate)
+                            .getValue(BlastDoorModule.FACING);
+                    if (!isNearStructure(controlPos, candidate, facing, 2)) {
+                        continue;
+                    }
+                    double distance = candidate.distSqr(controlPos);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        best = candidate.immutable();
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    public static boolean isNearStructure(BlockPos pos,
+            BlockPos controller, Direction facing, int maxManhattanDistance) {
+        for (BlockPos structurePos : structurePositions(controller, facing)) {
+            int distance = Math.abs(pos.getX() - structurePos.getX())
+                    + Math.abs(pos.getY() - structurePos.getY())
+                    + Math.abs(pos.getZ() - structurePos.getZ());
+            if (distance <= maxManhattanDistance) return true;
+        }
+        return false;
+    }
+
     public static List<BlockPos> structurePositions(BlockPos controller,
             Direction facing) {
         List<BlockPos> result = new ArrayList<>();

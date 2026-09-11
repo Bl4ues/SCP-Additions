@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.mixin;
 
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
 import net.minecraft.core.BlockPos;
@@ -57,16 +58,27 @@ public abstract class Scp079PlayableRoomRangeMixin {
                 for (int z = aimedPos.getZ() - reach;
                         z <= aimedPos.getZ() + reach; z++) {
                     BlockPos candidate = new BlockPos(x, y, z);
-                    double distance = candidate.distSqr(aimedPos);
-                    if (distance > radiusSqr || distance >= bestDistance
-                            || !level.hasChunkAt(candidate)
-                            || !FacilityModule.isFacilityDoor(
-                                    level.getBlockState(candidate))
-                            || !Scp079RoomInteractionPolicy.allows(
-                                    player, candidate)) {
+                    if (!level.hasChunkAt(candidate)) continue;
+                    net.minecraft.world.level.block.state.BlockState state =
+                            level.getBlockState(candidate);
+                    BlockPos resolved = candidate;
+                    boolean door = FacilityModule.isFacilityDoor(state);
+                    if (BlastDoorModule.isStructureState(state)) {
+                        resolved = BlastDoorModule.controllerPosition(
+                                level, candidate, state);
+                        door = resolved != null;
+                    }
+                    if (!door || resolved == null
+                            || !level.hasChunkAt(resolved)) {
                         continue;
                     }
-                    best = candidate.immutable();
+                    double distance = resolved.distSqr(aimedPos);
+                    if (distance > radiusSqr || distance >= bestDistance
+                            || !Scp079RoomInteractionPolicy.allows(
+                                    player, resolved)) {
+                        continue;
+                    }
+                    best = resolved.immutable();
                     bestDistance = distance;
                 }
             }

@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.block.TeslaGateStructure;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
@@ -44,11 +45,22 @@ public final class Scp079InteractionScopeClient {
         }
 
         BlockState state = minecraft.level.getBlockState(target);
+        BlockPos resolvedTarget = target;
         boolean door = FacilityModule.isFacilityDoor(state);
+        if (BlastDoorModule.isStructureState(state)) {
+            BlockPos controller = BlastDoorModule.controllerPosition(
+                    minecraft.level, target, state);
+            if (controller != null) {
+                resolvedTarget = controller;
+                door = BlastDoorModule.hasRedstoneConnection(
+                        minecraft.level, controller);
+            }
+        }
         boolean tesla = TeslaGateStructure.isController(state);
         if (!door && !tesla) return false;
 
-        FacilityRoomSnapshot owner = owningRoom(rooms, target, current);
+        FacilityRoomSnapshot owner = owningRoom(
+                rooms, resolvedTarget, current);
         return owner != null && current.id().equals(owner.id());
     }
 

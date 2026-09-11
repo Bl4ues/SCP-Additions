@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.entity.Scp131BEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp173Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
@@ -734,8 +735,17 @@ public final class Scp079PlayableClient {
         }
         for (BlockPos cursor : BlockPos.betweenClosed(hit.offset(-3, -3, -3),
                 hit.offset(3, 3, 3))) {
-            if (FacilityModule.isFacilityDoor(
-                    minecraft.level.getBlockState(cursor))) return TargetKind.DOOR;
+            BlockState state = minecraft.level.getBlockState(cursor);
+            if (FacilityModule.isFacilityDoor(state)) return TargetKind.DOOR;
+            if (BlastDoorModule.isStructureState(state)) {
+                BlockPos controller = BlastDoorModule.controllerPosition(
+                        minecraft.level, cursor, state);
+                if (controller != null
+                        && BlastDoorModule.hasRedstoneConnection(
+                                minecraft.level, controller)) {
+                    return TargetKind.DOOR;
+                }
+            }
         }
         return TargetKind.NONE;
     }

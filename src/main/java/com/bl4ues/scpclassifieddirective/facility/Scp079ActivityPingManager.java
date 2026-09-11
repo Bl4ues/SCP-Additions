@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.network.Scp079ActivityPingNetwork;
 import net.minecraft.core.BlockPos;
@@ -88,7 +89,8 @@ public final class Scp079ActivityPingManager {
 
     private static boolean isFacilityActivityDevice(BlockState state) {
         if (state == null || state.isAir()) return false;
-        if (FacilityModule.isFacilityDoor(state)) return true;
+        if (FacilityModule.isFacilityDoor(state)
+                || BlastDoorModule.isStructureState(state)) return true;
         ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
         if (id == null || !ScpClassifiedDirectiveMod.MODID.equals(
                 id.getNamespace())) return false;

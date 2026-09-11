@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -90,8 +91,16 @@ public abstract class Scp079DoorPromptVisibilityMixin {
             }
 
             BlockPos hitPos = hit.getBlockPos();
-            if (FacilityModule.isFacilityDoor(
-                    minecraft.level.getBlockState(hitPos))
+            BlockState hitState = minecraft.level.getBlockState(hitPos);
+            if (BlastDoorModule.isStructureState(hitState)) {
+                BlockPos controller = BlastDoorModule.controllerPosition(
+                        minecraft.level, hitPos, hitState);
+                if (targetPos.equals(controller)) {
+                    cir.setReturnValue(true);
+                    return;
+                }
+            }
+            if (FacilityModule.isFacilityDoor(hitState)
                     && hitPos.distSqr(targetPos) <= 9.0D) {
                 cir.setReturnValue(true);
                 return;

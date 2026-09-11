@@ -42,6 +42,8 @@ import com.bl4ues.scpclassifieddirective.advancement.ScpAdvancementAwards;
 import com.bl4ues.scpclassifieddirective.client.BlinkClient;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
 import com.bl4ues.scpclassifieddirective.network.Scp173ObservationPacket;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 
@@ -686,7 +688,9 @@ public class Scp173Entity extends BlinkWatcherEntity {
             BlockState hitState = level().getBlockState(hitPos);
             // Facility doors use a dedicated model-accurate visual shape above.
             // Real glass, panes and leaves remain intentionally transparent.
-            if (!FacilityModule.isFacilityDoor(hitState) && !isVisionTransparent(hitState)) return false;
+            if (!FacilityModule.isFacilityDoor(hitState)
+                    && !BlastDoorModule.isStructureState(hitState)
+                    && !isVisionTransparent(hitState)) return false;
 
             Vec3 advanced = advancePastBlock(hit.getLocation(), direction, hitPos);
             if (advanced.distanceToSqr(cursor) <= RAY_ADVANCE_EPSILON * RAY_ADVANCE_EPSILON) return false;
@@ -716,10 +720,16 @@ public class Scp173Entity extends BlinkWatcherEntity {
 
     private boolean blocksFacilityDoorVision(BlockPos pos, Vec3 start, Vec3 end) {
         BlockState state = level().getBlockState(pos);
-        if (!FacilityModule.isFacilityDoor(state)) return false;
-
-        VoxelShape visualShape = FacilityModule.doorVisualOcclusionShape(state);
-        return !visualShape.isEmpty() && visualShape.clip(start, end, pos) != null;
+        VoxelShape visualShape;
+        if (BlastDoorModule.isStructureState(state)) {
+            visualShape = BlastDoorStructure.shapeAt(level(), pos, state);
+        } else if (FacilityModule.isFacilityDoor(state)) {
+            visualShape = FacilityModule.doorVisualOcclusionShape(state);
+        } else {
+            return false;
+        }
+        return !visualShape.isEmpty()
+                && visualShape.clip(start, end, pos) != null;
     }
 
     private boolean isVisionTransparent(BlockState state) {

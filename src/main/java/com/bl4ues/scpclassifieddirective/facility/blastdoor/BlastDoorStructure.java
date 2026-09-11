@@ -21,8 +21,8 @@ import java.util.Set;
 
 /** Placement, ownership, redstone relay and model-derived collision for a Blast Door. */
 public final class BlastDoorStructure {
-    public static final int MIN_SIDE = -3;
-    public static final int MAX_SIDE = 3;
+    public static final int MIN_SIDE = -2;
+    public static final int MAX_SIDE = 2;
     public static final int MAX_HEIGHT = 3;
 
     private BlastDoorStructure() {
@@ -156,7 +156,11 @@ public final class BlastDoorStructure {
 
     public static BlockPos mimicSource(BlockPos controller, Direction facing,
             boolean rightSide) {
-        return partPosition(controller, facing, rightSide ? 3 : -3, 3);
+        // The authored 8x8x16 mimic occupies the upper half of the
+        // outermost door cell. Its texture comes from the adjacent full wall
+        // block, three blocks sideways from the controller and on the third
+        // vertical block (Y + 2).
+        return partPosition(controller, facing, rightSide ? 3 : -3, 2);
     }
 
     public static boolean hasNeighborSignal(Level level,
@@ -352,8 +356,7 @@ public final class BlastDoorStructure {
                 || height < 0 || height > MAX_HEIGHT) {
             return false;
         }
-        if (side == 0 && height == 0) return false;
-        return !(Math.abs(side) == 3 && height == 3);
+        return !(side == 0 && height == 0);
     }
 
     private static List<PartAddress> parts() {

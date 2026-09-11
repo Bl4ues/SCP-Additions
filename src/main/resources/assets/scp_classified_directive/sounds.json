@@ -1756,5 +1756,16 @@
         "volume": 1.0
       }
     ]
+  },
+  "blast_door_open": {
+    "sounds": [
+      "scp_classified_directive:blast_door_open"
+    ]
+  },
+  "blast_door_close": {
+    "sounds": [
+      "scp_classified_directive:blast_door_close"
+    ]
   }
+
 }

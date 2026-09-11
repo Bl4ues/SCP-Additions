@@ -56,6 +56,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -319,6 +320,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(functional, "default_door");
         addFacilityCreativeItem(functional, "yellow_closed");
         addFacilityCreativeItem(functional, "black_closed");
+        addExternalCreativeItem(functional, BlastDoorModule.ITEM.get());
         addFacilityCreativeItem(functional, "sign_support");
         addFacilityCreativeItem(functional, "door_sign");
         addFacilityCreativeItem(functional, "normal_door");

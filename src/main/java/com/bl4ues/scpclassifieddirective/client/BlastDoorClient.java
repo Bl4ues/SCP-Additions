@@ -59,12 +59,13 @@ public final class BlastDoorClient {
     }
 
     private static void hideAuthoredMimics(GeoModel<?> model) {
-        model.getAnimationProcessor().getBone("mimics").ifPresent(bone -> {
-            bone.setHidden(true);
-            bone.setScaleX(0.0F);
-            bone.setScaleY(0.0F);
-            bone.setScaleZ(0.0F);
-        });
+        software.bernie.geckolib.core.animatable.model.CoreGeoBone bone =
+                model.getAnimationProcessor().getBone("mimics");
+        if (bone == null) return;
+        bone.setHidden(true);
+        bone.setScaleX(0.0F);
+        bone.setScaleY(0.0F);
+        bone.setScaleZ(0.0F);
     }
 
     private static final class BlockModel

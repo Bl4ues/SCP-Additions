@@ -142,8 +142,9 @@ public final class BlastDoorClient {
                 int packedOverlay) {
             body.render(door, partialTick, poseStack, bufferSource,
                     packedLight, packedOverlay);
-            renderMimic(door, poseStack, bufferSource, false);
-            renderMimic(door, poseStack, bufferSource, true);
+            renderLowerMimic(door, poseStack, bufferSource, false);
+            renderLowerMimic(door, poseStack, bufferSource, true);
+            renderUpperWallMimics(door, poseStack, bufferSource);
         }
 
         @Override
@@ -153,18 +154,10 @@ public final class BlastDoorClient {
         }
     }
 
-    private static void renderMimic(
+    private static void renderLowerMimic(
             BlastDoorModule.BlastDoorBlockEntity door,
             PoseStack poseStack, MultiBufferSource buffers,
             boolean rightSide) {
-        renderMimicLayer(door, poseStack, buffers, rightSide, false);
-        renderMimicLayer(door, poseStack, buffers, rightSide, true);
-    }
-
-    private static void renderMimicLayer(
-            BlastDoorModule.BlastDoorBlockEntity door,
-            PoseStack poseStack, MultiBufferSource buffers,
-            boolean rightSide, boolean upperLayer) {
         Level level = door.getLevel();
         if (level == null) return;
         BlockState doorState = door.getBlockState();
@@ -172,7 +165,7 @@ public final class BlastDoorClient {
 
         Direction facing = doorState.getValue(BlastDoorModule.FACING);
         BlockPos sourcePos = BlastDoorStructure.mimicSource(
-                door.getBlockPos(), facing, rightSide, upperLayer);
+                door.getBlockPos(), facing, rightSide, false);
         if (!level.hasChunkAt(sourcePos)) return;
 
         BlockState sourceState = level.getBlockState(sourcePos);
@@ -187,28 +180,9 @@ public final class BlastDoorClient {
         }
 
         BlockPos targetPos = BlastDoorStructure.partPosition(
-                door.getBlockPos(), facing, rightSide ? 2 : -2,
-                upperLayer ? 3 : 2);
+                door.getBlockPos(), facing, rightSide ? 2 : -2, 2);
         int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(
                 level, targetPos);
-
-        if (upperLayer) {
-            // This is an actual full copycat wall cell. Let Minecraft render
-            // the copied block model itself so tinting, atlas selection, PBR
-            // hooks and shader-specific block render types remain identical to
-            // the real neighbouring wall. The door frame sits in front of it,
-            // naturally leaving only the portions that should be visible.
-            poseStack.pushPose();
-            poseStack.translate(
-                    targetPos.getX() - door.getBlockPos().getX(),
-                    targetPos.getY() - door.getBlockPos().getY(),
-                    targetPos.getZ() - door.getBlockPos().getZ());
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(
-                    sourceState, poseStack, buffers, light,
-                    OverlayTexture.NO_OVERLAY);
-            poseStack.popPose();
-            return;
-        }
 
         BakedModel model = Minecraft.getInstance().getBlockRenderer()
                 .getBlockModel(sourceState);
@@ -224,10 +198,7 @@ public final class BlastDoorClient {
         Direction front = facing.getOpposite();
 
         // Preserve the exact orientation of the source block's baked face.
-        // The outer horizontal half is copied on each side; the lower mimic
-        // takes only the upper half of its source block. The new upper mimic
-        // takes the complete block above and the metal frame masks the hidden
-        // portion naturally in front of it.
+        // This lower mimic is the original exposed 8x8 outer/top quarter.
         boolean rightAxisPositive =
                 right == Direction.EAST || right == Direction.SOUTH;
         boolean takeHighHalf = rightSide == rightAxisPositive;
@@ -253,6 +224,62 @@ public final class BlastDoorClient {
         renderInnerFace(consumer, pose, model, sourceState, level,
                 sourcePos, facing, innerFace, innerX, y1, y2,
                 hAtBack, hAtFront, sourceV0, sourceV1, light, rightSide);
+    }
+
+    private static void renderUpperWallMimics(
+            BlastDoorModule.BlastDoorBlockEntity door,
+            PoseStack poseStack, MultiBufferSource buffers) {
+        Level level = door.getLevel();
+        if (level == null) return;
+        BlockState doorState = door.getBlockState();
+        if (!BlastDoorModule.isController(doorState)) return;
+
+        Direction facing = doorState.getValue(BlastDoorModule.FACING);
+        Minecraft minecraft = Minecraft.getInstance();
+
+        // The entire Y+3 row is reserved by the multiblock but visually belongs
+        // to the facility wall. Each cell copies the real block immediately
+        // above itself (Y+4), which closes the opening across the full five-block
+        // width instead of only patching the two outer corners.
+        for (int side = BlastDoorStructure.MIN_SIDE;
+                side <= BlastDoorStructure.MAX_SIDE; side++) {
+            BlockPos sourcePos = BlastDoorStructure.topMimicSource(
+                    door.getBlockPos(), facing, side);
+            BlockPos targetPos = BlastDoorStructure.partPosition(
+                    door.getBlockPos(), facing, side, 3);
+            if (!level.hasChunkAt(sourcePos)) continue;
+
+            BlockState sourceState = level.getBlockState(sourcePos);
+            if (sourceState.isAir()
+                    || sourceState.getRenderShape() == RenderShape.INVISIBLE
+                    || BlastDoorModule.isStructureState(sourceState)) {
+                continue;
+            }
+
+            BakedModel model = minecraft.getBlockRenderer()
+                    .getBlockModel(sourceState);
+            ModelData modelData = model.getModelData(level, sourcePos,
+                    sourceState, ModelData.EMPTY);
+            long seed = sourceState.getSeed(sourcePos);
+
+            poseStack.pushPose();
+            poseStack.translate(
+                    targetPos.getX() - door.getBlockPos().getX(),
+                    targetPos.getY() - door.getBlockPos().getY(),
+                    targetPos.getZ() - door.getBlockPos().getZ());
+
+            // Use the normal world block tessellator, not renderSingleBlock.
+            // That restores per-face/ambient-occlusion lighting and keeps Forge
+            // render layers/PBR hooks consistent with the surrounding wall.
+            for (RenderType renderType : model.getRenderTypes(sourceState,
+                    RandomSource.create(seed), modelData)) {
+                minecraft.getBlockRenderer().renderBatched(
+                        sourceState, targetPos, level, poseStack,
+                        buffers.getBuffer(renderType), false,
+                        RandomSource.create(seed));
+            }
+            poseStack.popPose();
+        }
     }
 
     private static void renderFrontBackFace(VertexConsumer consumer,

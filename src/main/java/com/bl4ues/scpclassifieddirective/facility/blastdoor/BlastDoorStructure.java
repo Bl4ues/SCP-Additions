@@ -165,6 +165,13 @@ public final class BlastDoorStructure {
                 upperLayer ? 3 : 2);
     }
 
+    public static BlockPos topMimicSource(BlockPos controller,
+            Direction facing, int side) {
+        // Every reserved block in the top row copies the wall block directly
+        // above it. This makes the copycat row continuous across the doorway.
+        return partPosition(controller, facing, side, 4);
+    }
+
     public static boolean hasNeighborSignal(Level level,
             BlockPos controller) {
         BlockState controllerState = level.getBlockState(controller);
@@ -365,12 +372,15 @@ public final class BlastDoorStructure {
 
     private static VoxelShape mimicShapeAt(BlockGetter level,
             BlockPos controller, Direction facing, int side, int height) {
-        if (Math.abs(side) != 2 || (height != 2 && height != 3)) {
+        BlockPos sourcePos;
+        if (height == 3 && side >= MIN_SIDE && side <= MAX_SIDE) {
+            sourcePos = topMimicSource(controller, facing, side);
+        } else if (height == 2 && Math.abs(side) == 2) {
+            sourcePos = mimicSource(controller, facing, side > 0, false);
+        } else {
             return Shapes.empty();
         }
-        boolean rightSide = side > 0;
-        BlockPos sourcePos = mimicSource(controller, facing, rightSide,
-                height == 3);
+
         BlockState source = level.getBlockState(sourcePos);
         if (source.isAir()
                 || source.getRenderShape() == RenderShape.INVISIBLE
@@ -379,14 +389,14 @@ public final class BlastDoorStructure {
         }
 
         if (height == 3) {
-            // The upper copycat is a complete wall cell. This makes the visual
-            // fill, collision and SCP-173 occlusion agree.
+            // All five top-row placeholders become full wall cells whenever a
+            // real wall block exists directly above them.
             return Block.box(0.0D, 0.0D, 0.0D,
                     16.0D, 16.0D, 16.0D);
         }
 
         // The original lower mimic is only the exposed outer/top quarter.
-        return rightSide
+        return side > 0
                 ? Block.box(8.0D, 8.0D, 0.0D, 16.0D, 16.0D, 16.0D)
                 : Block.box(0.0D, 8.0D, 0.0D, 8.0D, 16.0D, 16.0D);
     }

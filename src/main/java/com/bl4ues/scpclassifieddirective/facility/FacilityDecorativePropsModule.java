@@ -97,7 +97,7 @@ public final class FacilityDecorativePropsModule {
             registerStatic("twin_emergency_light",
                     () -> new SupportedPropBlock(Placement.WALL,
                             Block.box(4.0D, 4.5D, 13.8D,
-                                    12.0D, 9.5D, 16.0D), 15));
+                                    12.0D, 9.5D, 16.0D), 11));
 
     public static final RegistryObject<CeilingVentilationBlock>
             CEILING_VENTILATION = BLOCKS.register("ceiling_ventilation",

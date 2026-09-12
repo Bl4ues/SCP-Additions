@@ -298,6 +298,7 @@
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
 - Added decorative Emergency Button, Fire Extinguisher, Wet Floor Sign, Non-potable Water Faucet facility props, Tesla Gate Terminal Table, Archivist's Table, and Archivist's Chair;
+- Added Electrical Panel, High Voltage Electrical Box, Electrical Cabinet, Ceiling Ventilation, and Twin Emergency Light facility props, with local ambient loops for Ceiling Ventilation and Heater;
 - Added clear tooltips to facility props that have no gameplay function;
 - Standardized wall-mounted signs, props, door buttons, and keycard readers so they follow the clicked surface, require solid wall support, and break when that support is removed;
 - Added dedicated inventory textures for enabled and disabled Tesla Gate Terminals, renamed the disabled variant, and made Screwdriver use switch between their visual states;

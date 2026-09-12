@@ -516,5 +516,12 @@
   "key.scp_classified_directive.scp_079_speaker": "Use Speaker",
   "subtitles.scp_classified_directive.speaker_on": "Speaker switches on",
   "subtitles.scp_classified_directive.speaker_off": "Speaker switches off",
-  "subtitles.scp_classified_directive.speaker_loop": "Speaker emits static"
+  "subtitles.scp_classified_directive.speaker_loop": "Speaker emits static",
+  "block.scp_classified_directive.electrical_panel": "Electrical Panel",
+  "block.scp_classified_directive.high_voltage_electrical_box": "High Voltage Electrical Box",
+  "block.scp_classified_directive.electrical_cabinet": "Electrical Cabinet",
+  "block.scp_classified_directive.ceiling_ventilation": "Ceiling Ventilation",
+  "block.scp_classified_directive.twin_emergency_light": "Twin Emergency Light",
+  "subtitles.scp_classified_directive.heater": "Heater hums",
+  "subtitles.scp_classified_directive.ceiling_ventilation": "Ceiling ventilation hums"
 }

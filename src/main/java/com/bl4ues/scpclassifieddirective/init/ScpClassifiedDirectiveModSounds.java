@@ -91,4 +91,6 @@ public class ScpClassifiedDirectiveModSounds {
 	public static final RegistryObject<SoundEvent> LAMP_LOOP = REGISTRY.register("lamp_loop", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "lamp_loop")));
 	public static final RegistryObject<SoundEvent> LAMP_ON = REGISTRY.register("lamp_on", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "lamp_on")));
 	public static final RegistryObject<SoundEvent> LAMP_OFF = REGISTRY.register("lamp_off", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation("scp_classified_directive", "lamp_off")));
+	public static final RegistryObject<SoundEvent> HEATER_LOOP = REGISTRY.register("heater", () -> SoundEvent.createFixedRangeEvent(new ResourceLocation("scp_classified_directive", "heater"), 5.0F));
+	public static final RegistryObject<SoundEvent> CEILING_VENTILATION_LOOP = REGISTRY.register("ceiling_ventilation", () -> SoundEvent.createFixedRangeEvent(new ResourceLocation("scp_classified_directive", "ceiling_ventilation"), 8.0F));
 }

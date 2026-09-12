@@ -143,6 +143,7 @@ public final class FacilityBlockMiningEvents {
                 Set<Block> blocks = Collections.newSetFromMap(
                         new IdentityHashMap<>());
                 addRegistered(blocks, FacilityModule.BLOCKS);
+                addRegistered(blocks, FacilityDecorativePropsModule.BLOCKS);
                 addRegistered(blocks, UBlocksModule.BLOCKS);
                 addRegistered(blocks, TeslaGateTerminalTableModule.BLOCKS);
                 addRegistered(blocks, MirroredDoorButtons.BLOCKS);

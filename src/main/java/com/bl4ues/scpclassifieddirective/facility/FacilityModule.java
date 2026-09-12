@@ -334,6 +334,16 @@ public final class FacilityModule {
         List<ItemStack> props = new ArrayList<>();
         addFacilityCreativeItem(props, "walllight");
         addFacilityCreativeItem(props, "heater");
+        addExternalCreativeItem(props,
+                FacilityDecorativePropsModule.ceilingVentilationItem());
+        addExternalCreativeItem(props,
+                FacilityDecorativePropsModule.twinEmergencyLightItem());
+        addExternalCreativeItem(props,
+                FacilityDecorativePropsModule.electricalPanelItem());
+        addExternalCreativeItem(props,
+                FacilityDecorativePropsModule.highVoltageElectricalBoxItem());
+        addExternalCreativeItem(props,
+                FacilityDecorativePropsModule.electricalCabinetItem());
         addFacilityCreativeItem(props, "emergency_button");
         addFacilityCreativeItem(props, "fire_extinguisher");
         addFacilityCreativeItem(props, "water_faucet");

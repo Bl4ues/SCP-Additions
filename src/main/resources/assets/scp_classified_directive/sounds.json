@@ -1773,7 +1773,7 @@
       {
         "name": "scp_classified_directive:heater",
         "stream": false,
-        "volume": 1
+        "volume": 2
       }
     ]
   },
@@ -1783,7 +1783,7 @@
       {
         "name": "scp_classified_directive:ceiling_ventilation",
         "stream": false,
-        "volume": 1
+        "volume": 2
       }
     ]
   }

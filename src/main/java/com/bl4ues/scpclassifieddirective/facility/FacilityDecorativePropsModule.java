@@ -295,7 +295,7 @@ public final class FacilityDecorativePropsModule {
             super(BlockBehaviour.Properties.of()
                     .sound(SoundType.METAL)
                     .strength(1.5F, 12.0F)
-                    .lightLevel(state -> 12)
+                    .lightLevel(state -> 15)
                     .noOcclusion()
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any()

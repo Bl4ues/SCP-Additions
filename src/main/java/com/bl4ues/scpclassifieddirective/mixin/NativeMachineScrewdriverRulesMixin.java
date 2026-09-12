@@ -15,19 +15,18 @@ import java.util.List;
 public abstract class NativeMachineScrewdriverRulesMixin {
     @Redirect(method = "registerNativeScrewdriverRules",
             at = @At(value = "INVOKE",
-                    target = "Ljava/util/List;of(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/List;"),
+                    target = "Ljava/util/List;of(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/List;"),
             require = 1)
     private static List<?> scpClassifiedDirective$addMachineTargets(Object first,
             Object second, Object third, Object fourth, Object fifth,
-            Object sixth, Object seventh) {
-        List<Object> targets = new ArrayList<>(12);
+            Object sixth) {
+        List<Object> targets = new ArrayList<>(11);
         targets.add(first);
         targets.add(second);
         targets.add(third);
         targets.add(fourth);
         targets.add(fifth);
         targets.add(sixth);
-        targets.add(seventh);
         targets.add("scp_294");
         targets.add("scp_914");
         targets.add("scp_914_reservation");

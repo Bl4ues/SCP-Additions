@@ -97,7 +97,7 @@ public final class FacilityDecorativePropsModule {
             registerStatic("twin_emergency_light",
                     () -> new SupportedPropBlock(Placement.WALL,
                             Block.box(4.0D, 4.5D, 13.8D,
-                                    12.0D, 9.5D, 16.0D)));
+                                    12.0D, 9.5D, 16.0D), 15));
 
     public static final RegistryObject<CeilingVentilationBlock>
             CEILING_VENTILATION = BLOCKS.register("ceiling_ventilation",
@@ -174,9 +174,15 @@ public final class FacilityDecorativePropsModule {
         private final VoxelShape northShape;
 
         private SupportedPropBlock(Placement placement, VoxelShape northShape) {
+            this(placement, northShape, 0);
+        }
+
+        private SupportedPropBlock(Placement placement, VoxelShape northShape,
+                int lightLevel) {
             super(BlockBehaviour.Properties.of()
                     .sound(SoundType.METAL)
                     .strength(1.0F, 10.0F)
+                    .lightLevel(state -> lightLevel)
                     .noOcclusion()
                     .isRedstoneConductor((state, level, pos) -> false));
             this.placement = placement;
@@ -289,6 +295,7 @@ public final class FacilityDecorativePropsModule {
             super(BlockBehaviour.Properties.of()
                     .sound(SoundType.METAL)
                     .strength(1.5F, 12.0F)
+                    .lightLevel(state -> 12)
                     .noOcclusion()
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any()

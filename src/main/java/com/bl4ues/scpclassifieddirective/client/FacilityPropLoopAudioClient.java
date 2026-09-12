@@ -51,7 +51,7 @@ public final class FacilityPropLoopAudioClient {
         heaterLoop = updateLoop(minecraft.level, minecraft.player.blockPosition(),
                 heaterLoop, FacilityModule.HEATER.get(),
                 ScpClassifiedDirectiveModSounds.HEATER_LOOP.get(),
-                5, 4, 1.0F);
+                5, 4, 0.5F);
 
         ventilationLoop = updateLoop(minecraft.level,
                 minecraft.player.blockPosition(), ventilationLoop,

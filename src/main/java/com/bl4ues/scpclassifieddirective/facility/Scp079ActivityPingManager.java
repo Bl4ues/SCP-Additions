@@ -1,14 +1,17 @@
 package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.network.Scp079ActivityPingNetwork;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -38,7 +41,7 @@ public final class Scp079ActivityPingManager {
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         BlockPos pos = event.getPos();
-        if (isFacilityActivityDevice(level.getBlockState(pos))) {
+        if (isFacilityActivityDevice(level, pos, level.getBlockState(pos))) {
             emit(level, pos);
         }
     }
@@ -51,27 +54,51 @@ public final class Scp079ActivityPingManager {
     @SubscribeEvent
     public static void onNeighborNotify(BlockEvent.NeighborNotifyEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (isFacilityActivityDevice(event.getState())) {
+        if (isFacilityActivityDevice(level, event.getPos(), event.getState())) {
             emit(level, event.getPos());
         }
     }
 
     public static void emit(ServerLevel level, BlockPos pos) {
-        if (level == null || pos == null || level.getServer() == null) return;
+        if (level == null || pos == null) return;
+        emitAt(level, pos, pos, pos.getX() + 0.5D, pos.getZ() + 0.5D);
+    }
+
+    /**
+     * Reports an actual decontamination cycle at the physical centre of the
+     * chamber model. The checkpoint's two permanently powered doors are
+     * intentionally excluded from generic activity pings.
+     */
+    public static void emitDecontaminationCycle(ServerLevel level,
+            BlockPos controllerPos, Direction facing) {
+        if (level == null || controllerPos == null || facing == null) return;
+        Vec3 center = DecontaminationStructure.chamberBox(
+                controllerPos, facing).getCenter();
+        emitAt(level, BlockPos.containing(center), controllerPos,
+                center.x, center.z);
+    }
+
+    private static void emitAt(ServerLevel level, BlockPos roomProbe,
+            BlockPos debouncePos, double x, double z) {
+        if (level == null || roomProbe == null || debouncePos == null
+                || level.getServer() == null) {
+            return;
+        }
         ServerPlayer operator = Scp079PlayableManager.controller(level.getServer());
         if (operator == null || !Scp079PlayableManager.isController(operator)) return;
 
-        FacilityRoomSnapshot room = roomAt(level, pos);
+        FacilityRoomSnapshot room = roomAt(level, roomProbe);
         if (room == null) return;
         long now = level.getGameTime();
-        DeviceKey key = new DeviceKey(level.dimension().location(), pos.asLong());
+        DeviceKey key = new DeviceKey(level.dimension().location(),
+                debouncePos.asLong());
         Long previous = LAST_PING.put(key, now);
         if (previous != null && now - previous < SAME_DEVICE_DEBOUNCE_TICKS) {
             return;
         }
 
         Scp079ActivityPingNetwork.send(operator, level.dimension().location(),
-                room.id(), pos.getX() + 0.5D, pos.getZ() + 0.5D);
+                room.id(), x, z);
     }
 
     private static FacilityRoomSnapshot roomAt(ServerLevel level, BlockPos pos) {
@@ -86,10 +113,29 @@ public final class Scp079ActivityPingManager {
         return null;
     }
 
-    private static boolean isFacilityActivityDevice(BlockState state) {
+    private static boolean isFacilityActivityDevice(ServerLevel level,
+            BlockPos pos, BlockState state) {
         if (state == null || state.isAir()) return false;
-        if (FacilityModule.isFacilityDoor(state)) return true;
+
+        // Decontamination is one composite machine. Its entrance/exit doors are
+        // deliberately held open by redstone while idle, so their neighbour
+        // updates are not meaningful activity. The machine emits one explicit
+        // ping only when a player actually starts a cycle.
+        if (DecontaminationStructure.isController(state)
+                || DecontaminationStructure.isOwnedDoor(level, pos, state)) {
+            return false;
+        }
+
         ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+        if (id != null && ScpClassifiedDirectiveMod.MODID.equals(
+                id.getNamespace())) {
+            String path = id.getPath();
+            if (path.contains("decon") || path.contains("decontamination")) {
+                return false;
+            }
+        }
+
+        if (FacilityModule.isFacilityDoor(state)) return true;
         if (id == null || !ScpClassifiedDirectiveMod.MODID.equals(
                 id.getNamespace())) return false;
         String path = id.getPath();
@@ -98,7 +144,6 @@ public final class Scp079ActivityPingManager {
                 || path.contains("terminal")
                 || path.contains("elevator")
                 || path.contains("tesla")
-                || path.contains("decon")
                 || path.contains("speaker")
                 || path.contains("camera")
                 || path.contains("checkpoint");

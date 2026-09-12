@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.block.entity.DecontaminationBlockEntity
 import com.bl4ues.scpclassifieddirective.effect.EyeProtectionAccess;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityStructureBreakGuard;
+import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModMobEffects;
@@ -86,6 +87,8 @@ public final class DecontaminationCheckpointController {
 
         LATCHED_UNTIL_EXIT.add(key);
         if (!blockEntity.beginSequence()) return;
+        Scp079ActivityPingManager.emitDecontaminationCycle(
+                level, pos, facing(state));
         beginDoorClosure(level, pos, state);
     }
 
@@ -100,6 +103,8 @@ public final class DecontaminationCheckpointController {
 
         CheckpointKey key = new CheckpointKey(level.dimension(), pos.immutable());
         LATCHED_UNTIL_EXIT.add(key);
+        Scp079ActivityPingManager.emitDecontaminationCycle(
+                level, pos, facing(state));
         beginDoorClosure(level, pos, state);
     }
 

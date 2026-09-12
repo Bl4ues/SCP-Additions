@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.TeslaGateStructure;
+import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
 import com.bl4ues.scpclassifieddirective.entity.Scp106Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp131AEntity;
@@ -418,8 +419,12 @@ public final class Scp079PlayableVisualsV2 {
                                 addTarget(result, new WorldTarget(
                                         TargetKind.DOOR, controller.immutable()));
                             }
-                        } else if (includeFacilityDevices && FacilityModule.isFacilityDoor(state)) {
-                            addTarget(result, new WorldTarget(TargetKind.DOOR, pos.immutable()));
+                        } else if (includeFacilityDevices
+                                && FacilityModule.isFacilityDoor(state)
+                                && !DecontaminationStructure.isOwnedDoor(
+                                        minecraft.level, pos, state)) {
+                            addTarget(result, new WorldTarget(
+                                    TargetKind.DOOR, pos.immutable()));
                         }
                     }
                 }

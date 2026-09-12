@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.registries.ForgeRegistries;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 
 import java.util.LinkedHashSet;
@@ -247,6 +248,14 @@ public final class HeavyDoorControlPanelAccess {
     }
 
     private static ControlSnapshot inspect(ServerLevel level, BlockPos doorPos) {
+        BlockState doorState = level.getBlockState(doorPos);
+        if (DecontaminationStructure.isOwnedDoor(level, doorPos, doorState)) {
+            // These doors are part of the checkpoint machine itself. Their
+            // redstone is synthetic and must remain exclusively under the
+            // decontamination sequence controller, never SCP-079.
+            return new ControlSnapshot(Set.of(), Set.of(), Set.of());
+        }
+
         Set<BlockPos> buttons = new LinkedHashSet<>();
         Set<BlockPos> readers = new LinkedHashSet<>();
         Set<BlockPos> legacyNodes = new LinkedHashSet<>();

@@ -23,6 +23,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.DocumentHolderBlockEntity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityLargePropStructure;
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityPropPartBlock;
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
@@ -34,6 +35,7 @@ import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.bl4ues.scpclassifieddirective.integration.PlayerItemAccess;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
+import com.bl4ues.scpclassifieddirective.scp914.Scp914Structure;
 
 import java.io.File;
 import java.io.FileReader;

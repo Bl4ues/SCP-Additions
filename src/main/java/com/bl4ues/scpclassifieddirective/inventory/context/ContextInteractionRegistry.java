@@ -449,8 +449,7 @@ public final class ContextInteractionRegistry {
 
         for (String path : List.of("tesla_terminal_block",
                 "tesla_terminal_off", "core_room_elevator_station",
-                "sign_support", "core_room_sign", "door_sign",
-                "facility_prop_part")) {
+                "sign_support", "core_room_sign", "door_sign")) {
             String action = path.contains("sign") ? "Edit"
                     : path.contains("elevator") ? "Configure Display"
                     : "Configure";
@@ -911,6 +910,26 @@ public final class ContextInteractionRegistry {
 
         public String blockName(BlockState state) {
             if (!autoName) return name;
+
+            // Never leak internal multiblock helper IDs into player-facing
+            // prompts. SCP-914 deliberately keeps helper-side screwdriver
+            // rules so the entire large machine remains configurable from its
+            // physical shell, but every one of those cells is still SCP-914.
+            if (Scp914Structure.isHelper(state)) {
+                ItemStack machine = new ItemStack(Scp914Module.SCP_914_ITEM.get());
+                return machine.getHoverName().getString();
+            }
+            if (state != null
+                    && state.getBlock() == FacilityModule.FACILITY_PROP_PART.get()
+                    && state.hasProperty(FacilityPropPartBlock.PART)) {
+                Block semantic = FacilityLargePropStructure.controllerBlock(
+                        state.getValue(FacilityPropPartBlock.PART).kind());
+                ItemStack semanticStack = new ItemStack(semantic.asItem());
+                return !semanticStack.isEmpty()
+                        ? semanticStack.getHoverName().getString()
+                        : semantic.getName().getString();
+            }
+
             ItemStack stack = new ItemStack(state.getBlock().asItem());
             return !stack.isEmpty() ? stack.getHoverName().getString()
                     : state.getBlock().getName().getString();

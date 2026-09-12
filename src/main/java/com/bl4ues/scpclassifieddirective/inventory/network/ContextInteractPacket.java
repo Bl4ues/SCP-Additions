@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.inventory.network;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
+import com.bl4ues.scpclassifieddirective.inventory.context.ContextBlockTargetResolver;
 import com.bl4ues.scpclassifieddirective.inventory.context.HackingDeviceContextDefaults;
 import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSoundFeedback;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
@@ -178,7 +179,11 @@ public class ContextInteractPacket {
             String interactionKey) {
         Level level = player.level();
         if (!level.isLoaded(pos)) return;
-        BlockState state = level.getBlockState(pos);
+        ContextBlockTargetResolver.ResolvedBlock resolved =
+                ContextBlockTargetResolver.resolve(level, pos);
+        if (resolved == null) return;
+        pos = resolved.pos();
+        BlockState state = resolved.state();
         List<ContextInteractionRegistry.Rule> rules =
                 ContextInteractionRegistry.getBlockRules(state.getBlock());
         ContextInteractionRegistry.Rule rule = selectedRule(rules,

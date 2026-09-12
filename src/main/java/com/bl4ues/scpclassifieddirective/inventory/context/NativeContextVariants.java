@@ -33,12 +33,8 @@ public final class NativeContextVariants {
             Map.entry("sign_support", "Edit"),
             Map.entry("core_room_sign", "Edit"),
             Map.entry("door_sign", "Edit"),
-            Map.entry("facility_prop_part", "Edit"),
             Map.entry("scp_294", "Configure"),
-            Map.entry("scp_914", "Configure"),
-            Map.entry("scp_914_reservation", "Configure"),
-            Map.entry("scp_914_collision", "Configure"),
-            Map.entry("scp_914_door_collision", "Configure"));
+            Map.entry("scp_914", "Configure"));
 
     private static final Set<String> TOOL_ENTITIES = Set.of(
             "scp_131_a", "scp_131_b", "roomba");

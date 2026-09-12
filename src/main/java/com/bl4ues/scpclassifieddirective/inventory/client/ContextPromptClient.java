@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
+import com.bl4ues.scpclassifieddirective.inventory.context.ContextBlockTargetResolver;
 import com.bl4ues.scpclassifieddirective.inventory.network.ContextInteractPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -207,19 +208,11 @@ public final class ContextPromptClient {
                 playerPos.offset(-radius, -radius, -radius),
                 playerPos.offset(radius, radius, radius))) {
             BlockPos scannedPos = mutable.immutable();
-            BlockState scannedState = player.level().getBlockState(scannedPos);
-            BlockPos rulePos = scannedPos;
-            BlockState ruleState = scannedState;
-            if (player.level().getBlockEntity(scannedPos)
-                    instanceof CoreRoomElevatorModule.StructurePartBlockEntity part) {
-                BlockPos master = part.masterPos();
-                BlockState masterState = player.level().getBlockState(master);
-                if (masterState.getBlock()
-                        instanceof CoreRoomElevatorModule.StationBlock) {
-                    rulePos = master;
-                    ruleState = masterState;
-                }
-            }
+            ContextBlockTargetResolver.ResolvedBlock resolved =
+                    ContextBlockTargetResolver.resolve(player.level(), scannedPos);
+            if (resolved == null) continue;
+            BlockPos rulePos = resolved.pos();
+            BlockState ruleState = resolved.state();
             List<ContextInteractionRegistry.Rule> rules =
                     ContextInteractionRegistry.getBlockRules(ruleState.getBlock());
             if (rules.isEmpty()) continue;
@@ -339,10 +332,9 @@ public final class ContextPromptClient {
 
     private static boolean hitBelongsTo(BlockPos hitPos, BlockPos master,
             LocalPlayer player) {
-        if (hitPos.equals(master)) return true;
-        return player.level().getBlockEntity(hitPos)
-                instanceof CoreRoomElevatorModule.StructurePartBlockEntity part
-                && part.masterPos().equals(master);
+        return hitPos != null && master != null
+                && ContextBlockTargetResolver.belongsTo(
+                        player.level(), hitPos, master);
     }
 
     private static boolean isCurrentBlockTarget(BlockPos pos, String key) {
@@ -362,11 +354,9 @@ public final class ContextPromptClient {
         BlockHitResult obstruction = player.level().clip(new ClipContext(
                 eye, anchor, ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE, player));
-        if (obstruction.getType() == HitResult.Type.MISS
-                || obstruction.getBlockPos().equals(targetPos)) return true;
-        return player.level().getBlockEntity(obstruction.getBlockPos())
-                instanceof CoreRoomElevatorModule.StructurePartBlockEntity part
-                && part.masterPos().equals(targetPos);
+        if (obstruction.getType() == HitResult.Type.MISS) return true;
+        return ContextBlockTargetResolver.belongsTo(player.level(),
+                obstruction.getBlockPos(), targetPos);
     }
 
     private static boolean hasEntityLineOfSight(LocalPlayer player, Vec3 eye,

@@ -61,22 +61,25 @@ public final class AlarmClient {
             "textures/block/alarm_glowmask.png");
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
+    private static final ResourceLocation SPLASH_BLOOM = id(
+            "textures/effect/alarm_light_bloom.png");
     private static final ResourceLocation ANIMATION = id(
             "animations/block/alarm.animation.json");
 
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double MIN_SPLASH_RADIUS = 0.035D;
-    private static final double MAX_SPLASH_RADIUS = 3.55D;
+    private static final double MIN_SPLASH_RADIUS = 0.025D;
+    private static final double MAX_SPLASH_RADIUS = 3.80D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0030D;
+    private static final double BLOOM_SURFACE_EPSILON = 0.0008D;
     private static final double PLANE_EPSILON = 0.022D;
-    private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
-    private static final int BASE_MESH_CELLS = 8;
-    private static final int ADAPTIVE_SUBDIVISIONS = 2;
+    private static final double MAX_TRIANGLE_EDGE_SQR = 0.95D;
+    private static final int BASE_MESH_CELLS = 10;
+    private static final int ADAPTIVE_SUBDIVISIONS = 3;
     private static final int MESH_RESOLUTION =
             BASE_MESH_CELLS << ADAPTIVE_SUBDIVISIONS;
     private static final int BASE_MESH_STEP =
@@ -265,6 +268,8 @@ public final class AlarmClient {
     public static final class BlockRenderer
             implements BlockEntityRenderer<AlarmModule.AlarmBlockEntity> {
         private final BaseRenderer base = new BaseRenderer();
+        private final LampRenderer lamp = new LampRenderer(false);
+        private final LampRenderer lampGlow = new LampRenderer(true);
         private final CoverRenderer cover = new CoverRenderer();
 
         public BlockRenderer(BlockEntityRendererProvider.Context context) {
@@ -290,12 +295,24 @@ public final class AlarmClient {
             poseStack.popPose();
 
             if (active) {
-                // Render the authored lit cube manually from its exact model
-                // coordinates. This pass has no GeckoLib model state to leak
-                // between block entities, so a single Alarm behaves identically
-                // to two Alarms facing opposite sides of the same wall.
-                renderLitLamp(alarm, poseStack, bufferSource,
-                        angle, mountYOffset);
+                /*
+                 * Use the authored lamp-only GeckoLib geometry for both the
+                 * visible lamp and its glow mask. The previous manual cube
+                 * duplicated Blockbench UVs by hand and the glow-mask pass
+                 * could therefore miss the actual lit texels. These renderers
+                 * each own an isolated GeoModel, so there is no shared item /
+                 * block model state to leak between Alarms.
+                 */
+                poseStack.pushPose();
+                poseStack.translate(0.0D, mountYOffset, 0.0D);
+                lamp.render(alarm, partialTick, poseStack, bufferSource,
+                        FULL_BRIGHT, packedOverlay);
+                flush(bufferSource,
+                        RenderType.entityTranslucentEmissive(TEXTURE));
+                lampGlow.render(alarm, partialTick, poseStack, bufferSource,
+                        FULL_BRIGHT, packedOverlay);
+                flush(bufferSource, RenderType.eyes(GLOWMASK));
+                poseStack.popPose();
             }
 
             poseStack.pushPose();
@@ -464,22 +481,34 @@ public final class AlarmClient {
         if (cache == null || cache.triangles.isEmpty()) return;
 
         /*
-         * A single continuous translucent-emissive pass is deliberate.
+         * One surface mesh, two deliberately different passes:
          *
-         * The previous implementation stamped hundreds of radial quads over
-         * each other and then submitted the same footprints again through the
-         * eyes/bloom program. On shader packs the overlap accumulated into the
-         * nearly-solid yellow beacon seen in-game. This mesh covers every
-         * surface point only once. It is still full-bright/emissive, but no
-         * longer asks BSL for an additional HDR bloom pass.
+         *  1) a faint translucent/full-bright footprint that supplies the
+         *     visible amber gradient;
+         *  2) a much weaker eyes-program copy, offset by less than a pixel,
+         *     solely so shader packs such as BSL classify the cone as actual
+         *     emissive/HDR light instead of ordinary transparent paint.
+         *
+         * Every surface point is still submitted only once per pass, so this
+         * does not revive the old overlap-amplification bug.
          */
+        BlockPos origin = alarm.getBlockPos();
+
         RenderType lightType = RenderType.entityTranslucentEmissive(SPLASH);
         VertexConsumer light = buffers.getBuffer(lightType);
-        BlockPos origin = alarm.getBlockPos();
         for (ProjectedTriangle triangle : cache.triangles) {
-            emitProjectionTriangle(light, poseStack, origin, triangle);
+            emitProjectionTriangle(light, poseStack, origin,
+                    triangle, false);
         }
         flush(buffers, lightType);
+
+        RenderType bloomType = RenderType.eyes(SPLASH_BLOOM);
+        VertexConsumer bloom = buffers.getBuffer(bloomType);
+        for (ProjectedTriangle triangle : cache.triangles) {
+            emitProjectionTriangle(bloom, poseStack, origin,
+                    triangle, true);
+        }
+        flush(buffers, bloomType);
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -618,15 +647,17 @@ public final class AlarmClient {
             double t = v01;
 
             double radius = MIN_SPLASH_RADIUS
-                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS)
-                    * Math.pow(t, 1.04D);
+                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * t;
 
-            // Preserve the approved overall silhouette: narrow root, quickly
-            // widening pear/fan body and a gently rounded far cap.
-            double growth = smoothStep(0.0F, 0.24F, (float) t);
-            double lobe = Math.sin(Math.PI * 0.70D * t);
-            lobe = Math.pow(Math.max(0.0D, lobe), 0.56D);
-            double halfWidth = 0.025D + 1.52D * growth * lobe;
+            /*
+             * Reference-matched pear profile. The Unity-style beacon does not
+             * grow as a simple spotlight triangle: it opens quickly, carries a
+             * broad rounded belly around the middle/far-middle, then narrows
+             * again before the almost invisible cap. Keeping this geometry
+             * separate from the alpha profile is what makes the footprint read
+             * like a rotating wall splash instead of a projector cone.
+             */
+            double halfWidth = footprintHalfWidth(t);
 
             Vec3 intended = wallOrigin
                     .add(tangent.scale(radius))
@@ -746,42 +777,119 @@ public final class AlarmClient {
 
     private static void emitProjectionTriangle(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
-            ProjectedTriangle triangle) {
-        projectionVertex(consumer, poseStack, blockOrigin, triangle.a);
-        projectionVertex(consumer, poseStack, blockOrigin, triangle.b);
-        projectionVertex(consumer, poseStack, blockOrigin, triangle.c);
-        // entityTranslucentEmissive uses QUADS. Repeating the last corner forms
+            ProjectedTriangle triangle, boolean bloomPass) {
+        projectionVertex(consumer, poseStack, blockOrigin,
+                triangle.a, bloomPass);
+        projectionVertex(consumer, poseStack, blockOrigin,
+                triangle.b, bloomPass);
+        projectionVertex(consumer, poseStack, blockOrigin,
+                triangle.c, bloomPass);
+        // Both selected render types use QUADS. Repeating the last corner forms
         // a degenerate quad with the exact visible area of the triangle.
-        projectionVertex(consumer, poseStack, blockOrigin, triangle.c);
+        projectionVertex(consumer, poseStack, blockOrigin,
+                triangle.c, bloomPass);
     }
 
     private static void projectionVertex(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
-            ProjectedSample sample) {
-        Vec3 point = local(sample.position, blockOrigin);
+            ProjectedSample sample, boolean bloomPass) {
         Vec3 normal = direction(sample.face);
+        Vec3 worldPoint = bloomPass
+                ? sample.position.add(normal.scale(BLOOM_SURFACE_EPSILON))
+                : sample.position;
+        Vec3 point = local(worldPoint, blockOrigin);
 
-        // Keep the approved bfb98c2 silhouette and brightness profile.
-        // The previous 13% fade was not merely softening the near boundary:
-        // it erased enough of the footprint to make the light look like a
-        // narrow spotlight growing directly out of the bulb. Feather only the
-        // actual edge instead. At the current 3.55-block range this 5.5% band
-        // is about 0.20 block deep, just enough to blur the straight cutoff;
-        // immediately after it the original alpha/intensity is fully restored.
-        float rootEdgeFeather = smoothStep(0.0F, 0.055F, sample.v);
-        int alpha = Math.max(0, Math.min(255,
-                Math.round(150.0F * rootEdgeFeather)));
+        float side = Math.abs(sample.u * 2.0F - 1.0F);
+
+        /*
+         * Reference intensity profile:
+         *  - a hot but compact pool directly beside the lamp;
+         *  - a noticeably dimmer centre through the middle of the footprint;
+         *  - brighter shoulders close to the side edges;
+         *  - a long, weak far lobe that dissolves rather than ending in a line.
+         *
+         * The outer 31% of each side is a true alpha feather. This is the
+         * important difference from the old uniformly-opaque mesh: the cone
+         * silhouette no longer exposes straight polygon borders.
+         */
+        float edgeFeather = 1.0F
+                - smoothStep(0.69F, 1.0F, side);
+        float farFeather = 1.0F
+                - smoothStep(0.72F, 1.0F, sample.v);
+
+        // Do not erase the root. The reference is already luminous beside the
+        // bulb; only the first ~1.5% gets a tiny anti-cutoff blend.
+        float rootFeather = 0.62F
+                + 0.38F * smoothStep(0.0F, 0.015F, sample.v);
+
+        float sourcePeak = 0.48F * gaussian(sample.v, 0.055F, 0.080F);
+        float farShoulder = 0.10F * gaussian(sample.v, 0.62F, 0.23F);
+        float centreDip = 0.055F * gaussian(sample.v, 0.38F, 0.18F)
+                * (1.0F - side);
+        float edgeRim = 0.24F * gaussian(side, 0.73F, 0.15F);
+
+        float intensity = 0.23F + sourcePeak + farShoulder
+                + edgeRim - centreDip;
+        intensity = Math.max(0.0F, Math.min(0.88F, intensity));
+
+        float baseAlpha = 150.0F * intensity
+                * edgeFeather * farFeather * rootFeather;
+        if (bloomPass) {
+            // The bloom copy is intentionally weaker. Its job is shader HDR
+            // classification, not to repaint the footprint a second time.
+            baseAlpha *= 0.38F;
+        }
+        int alpha = Math.max(0, Math.min(255, Math.round(baseAlpha)));
 
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 190, 96, alpha)
-                .uv(sample.u, sample.v)
+                .color(255, 188, 82, alpha)
+                .uv(0.5F, 0.5F)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
                 .normal(poseStack.last().normal(),
                         (float) normal.x, (float) normal.y,
                         (float) normal.z)
                 .endVertex();
+    }
+
+    private static double footprintHalfWidth(double t) {
+        if (t <= 0.06D) {
+            return smoothLerp(0.08D, 0.28D, t / 0.06D);
+        }
+        if (t <= 0.16D) {
+            return smoothLerp(0.28D, 0.58D,
+                    (t - 0.06D) / 0.10D);
+        }
+        if (t <= 0.32D) {
+            return smoothLerp(0.58D, 1.06D,
+                    (t - 0.16D) / 0.16D);
+        }
+        if (t <= 0.50D) {
+            return smoothLerp(1.06D, 1.43D,
+                    (t - 0.32D) / 0.18D);
+        }
+        if (t <= 0.64D) {
+            return smoothLerp(1.43D, 1.62D,
+                    (t - 0.50D) / 0.14D);
+        }
+        if (t <= 0.82D) {
+            return smoothLerp(1.62D, 1.50D,
+                    (t - 0.64D) / 0.18D);
+        }
+        return smoothLerp(1.50D, 0.92D,
+                (t - 0.82D) / 0.18D);
+    }
+
+    private static double smoothLerp(double from, double to, double t) {
+        double x = Math.max(0.0D, Math.min(1.0D, t));
+        double smooth = x * x * (3.0D - 2.0D * x);
+        return from + (to - from) * smooth;
+    }
+
+    private static float gaussian(float value, float center, float sigma) {
+        float delta = (value - center) / sigma;
+        return (float) Math.exp(-0.5F * delta * delta);
     }
 
     private static float smoothStep(float edge0, float edge1, float value) {

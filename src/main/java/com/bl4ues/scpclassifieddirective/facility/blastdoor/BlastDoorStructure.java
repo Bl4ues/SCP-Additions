@@ -403,8 +403,22 @@ public final class BlastDoorStructure {
             return null;
         }
 
-        Vec3 start = worldToModel(controller, facing, worldStart);
-        Vec3 end = worldToModel(controller, facing, worldEnd);
+        /*
+         * Optical clipping is intentionally evaluated at the PROJECTED WALL
+         * POINT, not by casting a 3-D shadow from the frame toward that point.
+         *
+         * The Alarm gets raised by 6.25 model pixels when mounted on the Blast
+         * Door top row. A volumetric ray test makes the protruding frame cast a
+         * parallax shadow upward and visually recreates the old, lower Alarm
+         * placement. That is exactly the cut visible in the screenshots.
+         *
+         * For this projected-light use case the desired rule is simpler and
+         * matches what the player sees: the wash continues over the copied wall
+         * until its wall-space point actually enters visible Blast Door metal.
+         * The moving slab is treated the same way, so it still blocks the wash
+         * wherever the door itself visually covers the wall.
+         */
+        Vec3 target = worldToModel(controller, facing, worldEnd);
 
         double lift = 0.0D;
         if (level.getBlockEntity(controller)
@@ -418,67 +432,45 @@ public final class BlastDoorStructure {
                     ? 33.0D : 0.0D;
         }
 
-        double best = Double.POSITIVE_INFINITY;
+        boolean blocked =
+                // Moving door slab.
+                pointInModelRect(target,
+                        -32.5D, 3.75D + lift,
+                        32.5D, 47.5D + lift,
+                        0.0D, 0.0D, 0.0D)
+                // Left and right vertical posts.
+                || pointInModelRect(target,
+                        -40.0D, 0.0D, -32.5D, 40.0D,
+                        0.0D, 0.0D, 0.0D)
+                || pointInModelRect(target,
+                        32.5D, 0.0D, 40.0D, 40.0D,
+                        0.0D, 0.0D, 0.0D)
+                // Sloped shoulders from the authored Blockbench geometry.
+                || pointInModelRect(target,
+                        32.8125D, 39.1875D, 40.3125D, 60.3125D,
+                        39.0625D, 39.1875D, -45.0D)
+                || pointInModelRect(target,
+                        -40.3125D, 39.1875D, -32.8125D, 60.3125D,
+                        -39.0625D, 39.1875D, 45.0D)
+                // Rotated top beam.
+                || pointInModelRect(target,
+                        -40.0D, 67.5D, -32.5D, 117.5D,
+                        -38.75D, 53.75D, 90.0D)
+                // Bottom threshold.
+                || pointInModelRect(target,
+                        -32.5D, 0.0D, 32.5D, 1.5D,
+                        0.0D, 0.0D, 0.0D);
 
-        /*
-         * For the fixed frame, optical clipping follows the model's silhouette
-         * on the wall plane rather than the full front-to-back extrusion.
-         * The physical frame sticks far out from the wall; raycasting that depth
-         * literally casts a large parallax shadow ABOVE the visible frame, which
-         * is the "invisible wall" seen by the Alarm projector. A thin optical
-         * slice keeps the cutoff aligned with the metal the player can actually
-         * see. The moving door slab remains volumetric because it really closes
-         * the opening and must block the beam from either side.
-         */
-        final double frameOpticalHalfDepth = 1.25D;
+        return blocked ? worldEnd : null;
+    }
 
-        // Moving opaque slab. The small decorative fins below it are omitted;
-        // the slab itself is the meaningful optical blocker.
-        best = Math.min(best, segmentModelBox(start, end,
-                -32.5D, 3.75D + lift, -7.75D,
-                32.5D, 47.5D + lift, 7.75D,
-                0.0D, 0.0D, 0.0D));
-
-        // Left and right vertical frame posts.
-        best = Math.min(best, segmentModelBox(start, end,
-                -40.0D, 0.0D, -frameOpticalHalfDepth,
-                -32.5D, 40.0D, frameOpticalHalfDepth,
-                0.0D, 0.0D, 0.0D));
-        best = Math.min(best, segmentModelBox(start, end,
-                32.5D, 0.0D, -frameOpticalHalfDepth,
-                40.0D, 40.0D, frameOpticalHalfDepth,
-                0.0D, 0.0D, 0.0D));
-
-        // Authored sloped shoulders. Blockbench/GeckoLib's Z rotation is the
-        // opposite mathematical sign, so segmentModelBox applies the JSON angle
-        // as the inverse transform before the AABB test.
-        best = Math.min(best, segmentModelBox(start, end,
-                32.8125D, 39.1875D, -frameOpticalHalfDepth,
-                40.3125D, 60.3125D, frameOpticalHalfDepth,
-                39.0625D, 39.1875D, -45.0D));
-        best = Math.min(best, segmentModelBox(start, end,
-                -40.3125D, 39.1875D, -frameOpticalHalfDepth,
-                -32.8125D, 60.3125D, frameOpticalHalfDepth,
-                -39.0625D, 39.1875D, 45.0D));
-
-        // Top beam. Its strange source coordinates are exactly what is authored
-        // in blast_door.geo.json; the 90-degree rotation puts it horizontally
-        // between the two sloped shoulders.
-        best = Math.min(best, segmentModelBox(start, end,
-                -40.0D, 67.5D, -frameOpticalHalfDepth,
-                -32.5D, 117.5D, frameOpticalHalfDepth,
-                -38.75D, 53.75D, 90.0D));
-
-        // Thin bottom threshold/frame strip.
-        best = Math.min(best, segmentModelBox(start, end,
-                -32.5D, 0.0D, -frameOpticalHalfDepth,
-                32.5D, 1.5D, frameOpticalHalfDepth,
-                0.0D, 0.0D, 0.0D));
-
-        if (!Double.isFinite(best) || best < 0.0D || best > 1.0D) {
-            return null;
-        }
-        return worldStart.lerp(worldEnd, best);
+    private static boolean pointInModelRect(Vec3 point,
+            double minX, double minY, double maxX, double maxY,
+            double pivotX, double pivotY, double jsonRotationZ) {
+        Vec3 local = inverseModelRotation(point,
+                pivotX, pivotY, jsonRotationZ);
+        return local.x >= minX && local.x <= maxX
+                && local.y >= minY && local.y <= maxY;
     }
 
     private static Vec3 worldToModel(BlockPos controller,

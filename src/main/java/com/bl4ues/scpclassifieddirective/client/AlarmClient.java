@@ -761,14 +761,16 @@ public final class AlarmClient {
         Vec3 point = local(sample.position, blockOrigin);
         Vec3 normal = direction(sample.face);
 
-        // Preserve the approved cone profile and texture everywhere else, but
-        // feather the first ~13% of its length. The texture already has a soft
-        // far cap; this matching near-root fade removes the conspicuously hard
-        // straight cut where the projected mesh begins without changing the
-        // body, brightness profile or outer silhouette that already look right.
-        float rootFade = smoothStep(0.0F, 0.13F, sample.v);
+        // Keep the approved bfb98c2 silhouette and brightness profile.
+        // The previous 13% fade was not merely softening the near boundary:
+        // it erased enough of the footprint to make the light look like a
+        // narrow spotlight growing directly out of the bulb. Feather only the
+        // actual edge instead. At the current 3.55-block range this 5.5% band
+        // is about 0.20 block deep, just enough to blur the straight cutoff;
+        // immediately after it the original alpha/intensity is fully restored.
+        float rootEdgeFeather = smoothStep(0.0F, 0.055F, sample.v);
         int alpha = Math.max(0, Math.min(255,
-                Math.round(150.0F * rootFade)));
+                Math.round(150.0F * rootEdgeFeather)));
 
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)

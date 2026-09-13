@@ -81,8 +81,8 @@ public final class AlarmClient {
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
     private static final double MIN_SPLASH_RADIUS = 0.06D;
-    private static final double MAX_SPLASH_RADIUS = 2.82D;
-    private static final double MAX_SPLASH_HALF_WIDTH = 1.74D;
+    private static final double MAX_SPLASH_RADIUS = 3.58D;
+    private static final double MAX_SPLASH_HALF_WIDTH = 1.72D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
@@ -966,14 +966,26 @@ public final class AlarmClient {
              */
             double radius = MIN_SPLASH_RADIUS
                     + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * v01;
-            Vec3 intended = wallOrigin
+
+            /*
+             * The reference beam is not a dome. It leaves the beacon relatively
+             * narrow, opens quickly, then keeps travelling before the distant
+             * feather disappears. The alpha texture still owns the soft edge,
+             * but a mild geometric fan prevents the same mask from reading as a
+             * round blob once stretched over a wall.
+             */
+            double widthScale = 0.55D
+                    + 0.45D * Math.sqrt(Math.max(0.0D, v01));
+            Vec3 wallSurface = wallOrigin
                     .add(tangent.scale(radius))
                     .add(fanSide.scale(
-                            MAX_SPLASH_HALF_WIDTH * lateral))
-                    .add(inward.scale(RAY_OVERSHOOT));
+                            MAX_SPLASH_HALF_WIDTH * widthScale * lateral));
+            Vec3 intended = wallSurface.add(
+                    inward.scale(RAY_OVERSHOOT));
 
             ProjectedHit hit = cast(level, context, alarmPos,
-                    rayStart, intended);
+                    rayStart, intended, wallSurface,
+                    alarm.getBlockState().getValue(AlarmModule.FACING));
             ProjectedSample sample = hit == null ? null
                     : new ProjectedSample(hit.position, hit.face,
                             u01, v01, hit.bloomAllowed,
@@ -1007,7 +1019,8 @@ public final class AlarmClient {
     }
 
     private static ProjectedHit cast(ClientLevel level, Entity context,
-            BlockPos alarmPos, Vec3 start, Vec3 end) {
+            BlockPos alarmPos, Vec3 start, Vec3 end,
+            Vec3 wallSurface, Direction wallFace) {
         Vec3 ray = end.subtract(start);
         if (ray.lengthSqr() < 1.0E-8D) return null;
         Vec3 rayDirection = ray.normalize();
@@ -1049,17 +1062,37 @@ public final class AlarmClient {
                 /*
                  * The gameplay collision envelope is intentionally conservative
                  * and includes reserved/mimic cells above the visible frame.
-                 * Using that shape directly made the projector stop at an
-                 * invisible wall. Re-test the segment against the actual
-                 * authored GeckoLib frame/slab geometry instead. If this coarse
-                 * multiblock cell contains no visible metal, skip it and keep
-                 * tracing until the wall or the real protruding frame is hit.
+                 * The visual test below is silhouette-based, so a top-mounted
+                 * Alarm only loses light where the projected point actually
+                 * enters visible Blast Door metal. This matters because that
+                 * Alarm is raised by BLAST_DOOR_TOP_MOUNT_Y_OFFSET; using a
+                 * volumetric/parallax shadow makes the cutoff look exactly like
+                 * the lamp were still in its old, lower position.
                  */
                 Vec3 visualHit = BlastDoorStructure.visualOcclusionHit(
                         level, hitPos, hitState, cursor, end);
                 if (visualHit != null) {
                     return new ProjectedHit(visualHit,
                             hit.getDirection(), false, true);
+                }
+
+                /*
+                 * The complete Y+3 Blast Door row is a rendered wall mimic.
+                 * There is no real wall block for level.clip() to hit there:
+                 * skipping the placeholder cell therefore punched a rectangular
+                 * hole in the Alarm projection. Recreate the visible wall
+                 * receiver on the projector plane, but only for that full mimic
+                 * row. The metal frame test above still wins whenever the point
+                 * actually lies on the protruding frame.
+                 */
+                if (BlastDoorModule.isPart(hitState)
+                        && hitState.hasProperty(BlastDoorModule.HEIGHT)
+                        && hitState.getValue(BlastDoorModule.HEIGHT)
+                                == BlastDoorStructure.MAX_HEIGHT) {
+                    Vec3 normal = direction(wallFace);
+                    return new ProjectedHit(
+                            wallSurface.add(normal.scale(SURFACE_EPSILON)),
+                            wallFace, true, false);
                 }
 
                 cursor = skipPastBlockCell(hit.getLocation(),

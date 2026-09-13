@@ -58,22 +58,25 @@ public final class AlarmClient {
             "animations/block/alarm.animation.json");
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
+    private static final ResourceLocation SPLASH_BLOOM = id(
+            "textures/effect/alarm_light_bloom.png");
     private static final ResourceLocation SOURCE_GLOW = id(
             "textures/effect/alarm_source_glow.png");
 
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double MIN_SPLASH_RADIUS = 0.12D;
-    private static final double MAX_SPLASH_RADIUS = 3.75D;
+    private static final double MIN_SPLASH_RADIUS = 0.08D;
+    private static final double MAX_SPLASH_RADIUS = 2.85D;
     private static final double SPLASH_HALF_ANGLE =
-            Math.toRadians(35.0D);
-    private static final double PROJECTOR_OUTSET = 0.24D;
+            Math.toRadians(24.5D);
+    private static final double PROJECTOR_OUTSET = 0.20D;
     private static final double WALL_PLANE_INSET = 0.0625D;
-    private static final double RAY_OVERSHOOT = 0.06D;
+    private static final double RAY_OVERSHOOT = 0.05D;
     private static final double SURFACE_EPSILON = 0.0035D;
-    private static final int RADIAL_RINGS = 9;
-    private static final int ANGULAR_SAMPLES = 15;
+    private static final double MAX_TRIANGLE_EDGE_SQR = 0.34D;
+    private static final int RADIAL_RINGS = 11;
+    private static final int ANGULAR_SAMPLES = 21;
     private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 64.0D;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
@@ -251,7 +254,9 @@ public final class AlarmClient {
         Vec3 center = modelPointToWorld(alarm.getBlockPos(), facing,
                 0.0D, 8.0D, 8.0D, mountYOffset)
                 .add(normal.scale(SURFACE_EPSILON * 1.5D));
-        double half = 0.42D;
+        // Only a tiny bloom around the lens itself. The rotating projected
+        // splash is the visual focus; this merely sells the emitting source.
+        double half = 0.115D;
 
         Vec3 topLeft = center.add(right.scale(-half)).add(up.scale(half));
         Vec3 topRight = center.add(right.scale(half)).add(up.scale(half));
@@ -277,7 +282,7 @@ public final class AlarmClient {
             PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 184, 76, 72)
+                .color(196, 126, 48, 42)
                 .uv(u, v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
@@ -307,23 +312,52 @@ public final class AlarmClient {
                 cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
         if (cache == null) return;
 
+        // Keep transparency and shader emission separate. The soft pass owns
+        // the visible gradient; the extremely restrained eyes pass only gives
+        // BSL/Iris/Oculus an HDR-emissive signal for subtle bloom.
         VertexConsumer soft = buffers.getBuffer(
-                RenderType.entityTranslucentEmissive(SPLASH));
-        VertexConsumer bloom = buffers.getBuffer(RenderType.eyes(SPLASH));
+                RenderType.entityTranslucent(SPLASH, true));
+        VertexConsumer bloom = buffers.getBuffer(
+                RenderType.eyes(SPLASH_BLOOM));
         BlockPos originBlock = alarm.getBlockPos();
 
-        for (int ring = 0; ring < RADIAL_RINGS; ring++) {
-            for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
-                ProjectedHit hit = cache.samples[ring][slice];
-                if (hit == null || hit.intensity <= 0.001F) continue;
+        for (int ring = 0; ring < RADIAL_RINGS - 1; ring++) {
+            for (int slice = 0; slice < ANGULAR_SAMPLES - 1; slice++) {
+                ProjectedHit a = cache.samples[ring][slice];
+                ProjectedHit b = cache.samples[ring][slice + 1];
+                ProjectedHit cHit = cache.samples[ring + 1][slice + 1];
+                ProjectedHit d = cache.samples[ring + 1][slice];
 
-                // Overlapping radial splats avoid the hard polygon boundary of
-                // the old connected fan. At corners each ray simply paints the
-                // surface it actually hit, so wall-to-ceiling folds stay soft.
-                renderSplat(soft, poseStack, originBlock, hit,
-                        Math.min(1.0F, hit.intensity * 0.42F), false);
-                renderSplat(bloom, poseStack, originBlock, hit,
-                        Math.min(1.0F, hit.intensity * 0.24F), true);
+                float u0 = slice / (float) (ANGULAR_SAMPLES - 1);
+                float u1 = (slice + 1)
+                        / (float) (ANGULAR_SAMPLES - 1);
+                float v0 = ring / (float) (RADIAL_RINGS - 1);
+                float v1 = (ring + 1)
+                        / (float) (RADIAL_RINGS - 1);
+
+                // Triangles let the projection fold naturally from wall onto a
+                // ceiling. Only the tiny triangle crossing the geometric seam
+                // is omitted instead of chopping out an entire square patch.
+                if (compatibleTriangle(a, b, cHit)) {
+                    emitProjectionTriangle(soft, poseStack, originBlock,
+                            a, b, cHit,
+                            u0, v0, u1, v0, u1, v1,
+                            255, 193, 108, 150);
+                    emitProjectionTriangle(bloom, poseStack, originBlock,
+                            a, b, cHit,
+                            u0, v0, u1, v0, u1, v1,
+                            72, 46, 18, 34);
+                }
+                if (compatibleTriangle(a, cHit, d)) {
+                    emitProjectionTriangle(soft, poseStack, originBlock,
+                            a, cHit, d,
+                            u0, v0, u1, v1, u0, v1,
+                            255, 193, 108, 150);
+                    emitProjectionTriangle(bloom, poseStack, originBlock,
+                            a, cHit, d,
+                            u0, v0, u1, v1, u0, v1,
+                            72, 46, 18, 34);
+                }
             }
         }
     }
@@ -347,10 +381,8 @@ public final class AlarmClient {
         Vec3 right = direction(facing.getClockWise());
         Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
 
-        // The visible reflector and projector use the same evaluated rotor bone.
-        // In the dormant pose the reflector points up, so its opposite-facing
-        // light exits down. Negative Z rotation is the authored CCW one-second
-        // revolution.
+        // The reflector and projector share the exact evaluated rotor angle.
+        // At rest the opposite face of the reflector points down.
         double rotorRadians = rotorAngle;
         Vec3 tangent = right.scale(Math.sin(rotorRadians))
                 .add(up.scale(-Math.cos(rotorRadians))).normalize();
@@ -360,8 +392,7 @@ public final class AlarmClient {
 
         Vec3 rotorCenter = modelPointToWorld(pos, facing,
                 0.0D, 8.0D, 7.0D, mountYOffset);
-        Vec3 wallOrigin = rotorCenter.add(
-                inward.scale(WALL_PLANE_INSET));
+        Vec3 wallOrigin = rotorCenter.add(inward.scale(WALL_PLANE_INSET));
         Vec3 rayStart = wallOrigin
                 .add(tangent.scale(MIN_SPLASH_RADIUS))
                 .add(outward.scale(PROJECTOR_OUTSET));
@@ -369,47 +400,24 @@ public final class AlarmClient {
         ProjectedHit[][] samples =
                 new ProjectedHit[RADIAL_RINGS][ANGULAR_SAMPLES];
         double tanHalfAngle = Math.tan(SPLASH_HALF_ANGLE);
-        double radialStep = (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS)
-                / (RADIAL_RINGS - 1.0D);
 
         for (int ring = 0; ring < RADIAL_RINGS; ring++) {
             double ringT = ring / (RADIAL_RINGS - 1.0D);
             double radius = MIN_SPLASH_RADIUS
                     + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * ringT;
-            double halfWidth = 0.045D + radius * tanHalfAngle;
+            // Reference shape: already visible at the lamp, then widens
+            // gradually rather than exploding into a floodlight.
+            double halfWidth = 0.085D + radius * tanHalfAngle;
             Vec3 ringCenter = wallOrigin.add(tangent.scale(radius));
 
             for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
                 double u = -1.0D
                         + 2.0D * slice / (ANGULAR_SAMPLES - 1.0D);
-                double side = Math.abs(u);
-
-                // Match the reference profile: a hot root, weak body, a subtle
-                // brighter ridge near both outer edges, then a very soft fade.
-                double hotRoot = 0.16D + 0.84D
-                        * Math.exp(-Math.pow(ringT / 0.15D, 2.0D));
-                double edgeRidge = 0.68D + 0.78D
-                        * Math.exp(-Math.pow((side - 0.70D) / 0.19D, 2.0D));
-                double sideFade = 1.0D - smoothstep(0.78D, 1.0D, side);
-                double farFade = 1.0D - smoothstep(0.70D, 1.0D, ringT);
-                float intensity = (float) Math.max(0.0D, Math.min(1.0D,
-                        hotRoot * edgeRidge * sideFade * farFade));
-
                 Vec3 intendedSurface = ringCenter.add(
                         fanSide.scale(halfWidth * u));
-                Vec3 end = intendedSurface.add(
-                        inward.scale(RAY_OVERSHOOT));
-                ProjectedHit hit = cast(level, camera, pos,
+                Vec3 end = intendedSurface.add(inward.scale(RAY_OVERSHOOT));
+                samples[ring][slice] = cast(level, camera, pos,
                         rayStart, end);
-                if (hit == null) continue;
-
-                double angularStep = (2.0D * halfWidth)
-                        / (ANGULAR_SAMPLES - 1.0D);
-                float halfSize = (float) Math.min(0.36D,
-                        Math.max(0.16D,
-                                Math.max(radialStep, angularStep) * 0.72D));
-                samples[ring][slice] = new ProjectedHit(
-                        hit.position, hit.face, intensity, halfSize);
             }
         }
 
@@ -431,59 +439,44 @@ public final class AlarmClient {
         Vec3 normal = direction(face);
         Vec3 position = hit.getLocation().add(
                 normal.scale(SURFACE_EPSILON));
-        return new ProjectedHit(position, face, 1.0F, 0.2F);
+        return new ProjectedHit(position, face);
     }
 
-    private static double smoothstep(double edge0, double edge1,
-            double value) {
-        if (edge0 == edge1) return value < edge0 ? 0.0D : 1.0D;
-        double t = Math.max(0.0D, Math.min(1.0D,
-                (value - edge0) / (edge1 - edge0)));
-        return t * t * (3.0D - 2.0D * t);
+    private static boolean compatibleTriangle(ProjectedHit a,
+            ProjectedHit b, ProjectedHit c) {
+        if (a == null || b == null || c == null) return false;
+        if (a.face != b.face || a.face != c.face) return false;
+        return a.position.distanceToSqr(b.position)
+                        <= MAX_TRIANGLE_EDGE_SQR
+                && b.position.distanceToSqr(c.position)
+                        <= MAX_TRIANGLE_EDGE_SQR
+                && c.position.distanceToSqr(a.position)
+                        <= MAX_TRIANGLE_EDGE_SQR;
     }
 
-    private static void renderSplat(VertexConsumer consumer,
-            PoseStack poseStack, BlockPos blockOrigin, ProjectedHit hit,
-            float passIntensity, boolean bloomPass) {
-        Vec3 normal = direction(hit.face);
-        Vec3 axisU;
-        Vec3 axisV;
-
-        if (hit.face.getAxis() == Direction.Axis.Y) {
-            axisU = new Vec3(1.0D, 0.0D, 0.0D);
-            axisV = new Vec3(0.0D, 0.0D, 1.0D);
-        } else {
-            axisV = new Vec3(0.0D, 1.0D, 0.0D);
-            axisU = axisV.cross(normal).normalize();
-        }
-
-        double half = hit.halfSize;
-        Vec3 a = hit.position.add(axisU.scale(-half))
-                .add(axisV.scale(half));
-        Vec3 b = hit.position.add(axisU.scale(half))
-                .add(axisV.scale(half));
-        Vec3 d = hit.position.add(axisU.scale(-half))
-                .add(axisV.scale(-half));
-        Vec3 c = hit.position.add(axisU.scale(half))
-                .add(axisV.scale(-half));
-
-        int alpha = Math.max(0, Math.min(255, Math.round(
-                passIntensity * (bloomPass ? 120.0F : 150.0F))));
-        int red = bloomPass ? 255 : 255;
-        int green = bloomPass ? 198 : 188;
-        int blue = bloomPass ? 104 : 82;
-
-        splatVertex(consumer, poseStack, local(a, blockOrigin),
-                normal, 0.0F, 0.0F, red, green, blue, alpha);
-        splatVertex(consumer, poseStack, local(b, blockOrigin),
-                normal, 1.0F, 0.0F, red, green, blue, alpha);
-        splatVertex(consumer, poseStack, local(c, blockOrigin),
-                normal, 1.0F, 1.0F, red, green, blue, alpha);
-        splatVertex(consumer, poseStack, local(d, blockOrigin),
-                normal, 0.0F, 1.0F, red, green, blue, alpha);
+    private static void emitProjectionTriangle(VertexConsumer consumer,
+            PoseStack poseStack, BlockPos blockOrigin,
+            ProjectedHit a, ProjectedHit b, ProjectedHit c,
+            float ua, float va, float ub, float vb, float uc, float vc,
+            int red, int green, int blue, int alpha) {
+        Vec3 normal = direction(a.face);
+        projectionVertex(consumer, poseStack,
+                local(a.position, blockOrigin), normal,
+                ua, va, red, green, blue, alpha);
+        projectionVertex(consumer, poseStack,
+                local(b.position, blockOrigin), normal,
+                ub, vb, red, green, blue, alpha);
+        projectionVertex(consumer, poseStack,
+                local(c.position, blockOrigin), normal,
+                uc, vc, red, green, blue, alpha);
+        // Entity render types consume quads. Degenerate the final corner to
+        // keep triangle topology without inventing geometry across a fold.
+        projectionVertex(consumer, poseStack,
+                local(c.position, blockOrigin), normal,
+                uc, vc, red, green, blue, alpha);
     }
 
-    private static void splatVertex(VertexConsumer consumer,
+    private static void projectionVertex(VertexConsumer consumer,
             PoseStack poseStack, Vec3 point, Vec3 normal,
             float u, float v, int red, int green, int blue, int alpha) {
         consumer.vertex(poseStack.last().pose(),
@@ -521,8 +514,7 @@ public final class AlarmClient {
                 direction.getStepY(), direction.getStepZ());
     }
 
-    private record ProjectedHit(Vec3 position, Direction face,
-            float intensity, float halfSize) {
+    private record ProjectedHit(Vec3 position, Direction face) {
     }
 
     private record ProjectionCache(long tick, ProjectedHit[][] samples) {

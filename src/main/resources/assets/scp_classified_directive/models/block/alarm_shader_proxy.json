@@ -5,8 +5,8 @@
   },
   "elements": [
     {
-      "from": [7.0, 7.0, 16.01],
-      "to": [9.0, 9.0, 16.25],
+      "from": [7.0, 7.0, 15.80],
+      "to": [9.0, 9.0, 15.95],
       "shade": false,
       "faces": {
         "north": {"texture": "#proxy"},

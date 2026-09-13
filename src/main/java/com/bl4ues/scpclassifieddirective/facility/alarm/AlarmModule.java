@@ -157,7 +157,14 @@ public final class AlarmModule {
 
         @Override
         public RenderShape getRenderShape(BlockState state) {
-            return RenderShape.ENTITYBLOCK_ANIMATED;
+            /*
+             * Keep a tiny baked-model proxy in the chunk mesh while the actual
+             * Alarm remains a GeckoLib block entity. Shader packs such as BSL
+             * classify colored block light from terrain/block.properties data;
+             * ENTITYBLOCK_ANIMATED supplied no terrain vertices, so
+             * alarm:active=true could never reach that pipeline.
+             */
+            return RenderShape.MODEL;
         }
 
         @Override

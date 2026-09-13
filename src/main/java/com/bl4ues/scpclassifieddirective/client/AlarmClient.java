@@ -788,7 +788,7 @@ public final class AlarmClient {
                 outward.scale(PROJECTOR_OUTSET));
 
         ProjectionBuilder builder = new ProjectionBuilder(level, camera, pos,
-                rayStart, wallOrigin, tangent, fanSide, inward);
+                rayStart, wallOrigin, tangent, fanSide, inward, facing);
         List<ProjectedTriangle> triangles = builder.build();
 
         ProjectionCache fresh = new ProjectionCache(tick,
@@ -816,11 +816,13 @@ public final class AlarmClient {
         private final Vec3 tangent;
         private final Vec3 fanSide;
         private final Vec3 inward;
+        private final Direction wallFace;
         private final Map<Integer, ProjectedSample> samples = new HashMap<>();
 
         private ProjectionBuilder(ClientLevel level, Entity context,
                 BlockPos alarmPos, Vec3 rayStart, Vec3 wallOrigin,
-                Vec3 tangent, Vec3 fanSide, Vec3 inward) {
+                Vec3 tangent, Vec3 fanSide, Vec3 inward,
+                Direction wallFace) {
             this.level = level;
             this.context = context;
             this.alarmPos = alarmPos;
@@ -829,6 +831,7 @@ public final class AlarmClient {
             this.tangent = tangent;
             this.fanSide = fanSide;
             this.inward = inward;
+            this.wallFace = wallFace;
         }
 
         private List<ProjectedTriangle> build() {
@@ -984,8 +987,7 @@ public final class AlarmClient {
                     inward.scale(RAY_OVERSHOOT));
 
             ProjectedHit hit = cast(level, context, alarmPos,
-                    rayStart, intended, wallSurface,
-                    alarm.getBlockState().getValue(AlarmModule.FACING));
+                    rayStart, intended, wallSurface, wallFace);
             ProjectedSample sample = hit == null ? null
                     : new ProjectedSample(hit.position, hit.face,
                             u01, v01, hit.bloomAllowed,

@@ -23,6 +23,7 @@ import java.util.Map;
  */
 public final class AlarmAudioClient {
     private static final double MAX_DISTANCE = 12.0D;
+    private static final long LOOP_TICKS = 40L;
     private static final Map<Key, AlarmLoop> LOOPS = new HashMap<>();
 
     private AlarmAudioClient() {
@@ -34,9 +35,17 @@ public final class AlarmAudioClient {
 
         Key key = new Key(client, pos.immutable());
         Minecraft minecraft = Minecraft.getInstance();
-        if (!active || minecraft.player == null
-                || minecraft.level != client) {
+        AlarmLoop existing = LOOPS.get(key);
+
+        if (minecraft.player == null || minecraft.level != client) {
             stop(key);
+            return;
+        }
+
+        if (!active) {
+            if (existing != null && !existing.isFinished()) {
+                existing.finishCurrentCycle();
+            }
             return;
         }
 
@@ -47,8 +56,10 @@ public final class AlarmAudioClient {
             return;
         }
 
-        AlarmLoop existing = LOOPS.get(key);
-        if (existing != null && !existing.isFinished()) return;
+        if (existing != null && !existing.isFinished()) {
+            existing.cancelPendingFinish();
+            return;
+        }
 
         AlarmLoop loop = new AlarmLoop(client, pos);
         LOOPS.put(key, loop);
@@ -76,13 +87,17 @@ public final class AlarmAudioClient {
             extends AbstractTickableSoundInstance {
         private final ClientLevel level;
         private final BlockPos pos;
+        private final long startedAtTick;
         private boolean finished;
+        private boolean finishRequested;
+        private long finishAtTick = Long.MAX_VALUE;
 
         private AlarmLoop(ClientLevel level, BlockPos pos) {
             super(AlarmModule.LOOP.get(), SoundSource.BLOCKS,
                     RandomSource.create());
             this.level = level;
             this.pos = pos.immutable();
+            this.startedAtTick = level.getGameTime();
             this.looping = true;
             this.delay = 0;
             this.pitch = 1.0F;
@@ -107,8 +122,20 @@ public final class AlarmAudioClient {
             }
 
             BlockState state = level.getBlockState(pos);
-            if (state.getBlock() != AlarmModule.BLOCK.get()
-                    || !state.getValue(AlarmModule.ACTIVE)) {
+            if (state.getBlock() != AlarmModule.BLOCK.get()) {
+                finish();
+                return;
+            }
+
+            boolean active = state.getValue(AlarmModule.ACTIVE);
+            if (!active) {
+                finishCurrentCycle();
+            } else {
+                cancelPendingFinish();
+            }
+
+            if (finishRequested
+                    && level.getGameTime() >= finishAtTick) {
                 finish();
                 return;
             }
@@ -123,6 +150,21 @@ public final class AlarmAudioClient {
             this.volume = Mth.clamp(
                     (float) (1.0D - distance / MAX_DISTANCE),
                     0.001F, 1.0F);
+        }
+
+        private void finishCurrentCycle() {
+            if (finished || finishRequested) return;
+            long elapsed = Math.max(0L,
+                    level.getGameTime() - startedAtTick);
+            long phase = Math.floorMod(elapsed, LOOP_TICKS);
+            long remaining = LOOP_TICKS - phase;
+            finishRequested = true;
+            finishAtTick = level.getGameTime() + remaining;
+        }
+
+        private void cancelPendingFinish() {
+            finishRequested = false;
+            finishAtTick = Long.MAX_VALUE;
         }
 
         private boolean isFinished() {

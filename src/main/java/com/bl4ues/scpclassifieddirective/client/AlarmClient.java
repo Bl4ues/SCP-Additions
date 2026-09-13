@@ -25,13 +25,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
-import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -158,25 +156,6 @@ public final class AlarmClient {
             extends GeoBlockRenderer<AlarmModule.AlarmBlockEntity> {
         private BodyRenderer() {
             super(new BlockModel());
-            addRenderLayer(new GeoRenderLayer<>(this) {
-                @Override
-                public void render(PoseStack poseStack,
-                        AlarmModule.AlarmBlockEntity animatable,
-                        BakedGeoModel bakedModel, RenderType renderType,
-                        MultiBufferSource bufferSource, VertexConsumer buffer,
-                        float partialTick, int packedLight, int packedOverlay) {
-                    if (!animatable.getBlockState()
-                            .getValue(AlarmModule.ACTIVE)) {
-                        return;
-                    }
-                    RenderType emissive = RenderType.eyes(GLOWMASK);
-                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
-                            animatable, emissive,
-                            bufferSource.getBuffer(emissive), partialTick,
-                            FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-                            1.0F, 1.0F, 1.0F, 1.0F);
-                }
-            });
         }
 
         private float rotorAngle() {
@@ -229,10 +208,13 @@ public final class AlarmClient {
             poseStack.popPose();
 
             if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
+                float rotorAngle = body.rotorAngle();
+                renderLampEmissive(alarm, poseStack, bufferSource,
+                        rotorAngle, mountYOffset);
                 renderSourceGlow(alarm, poseStack, bufferSource,
                         mountYOffset);
                 renderProjection(alarm, poseStack, bufferSource,
-                        body.rotorAngle(), mountYOffset);
+                        rotorAngle, mountYOffset);
             }
         }
 
@@ -241,6 +223,66 @@ public final class AlarmClient {
                 AlarmModule.AlarmBlockEntity blockEntity) {
             return true;
         }
+    }
+
+    /**
+     * Render the authored lit lens as its own emissive surface instead of
+     * re-rendering the complete GeckoLib model with a coplanar glowmask pass.
+     * Shader packs can move the two vertex paths by tiny amounts, causing the
+     * latter to lose the depth test entirely. This quad samples the exact
+     * north-face UV of the authored 'lit' cube from alarm_glowmask.png and is
+     * nudged a fraction outward, so the bulb is unambiguously HDR/emissive.
+     */
+    private static void renderLampEmissive(
+            AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
+            MultiBufferSource buffers, float rotorAngle,
+            double mountYOffset) {
+        Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
+        Vec3 normal = direction(facing);
+        BlockPos origin = alarm.getBlockPos();
+
+        Vec3 a = rotatedModelPointToWorld(origin, facing,
+                -0.70D, 8.70D, 6.25D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+        Vec3 b = rotatedModelPointToWorld(origin, facing,
+                0.70D, 8.70D, 6.25D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+        Vec3 d = rotatedModelPointToWorld(origin, facing,
+                -0.70D, 7.30D, 6.25D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+        Vec3 cPoint = rotatedModelPointToWorld(origin, facing,
+                0.70D, 7.30D, 6.25D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+
+        // Authored lit north face: UV [0,10] size [1.5,1.5] on a 32x32
+        // Blockbench texture grid. The actual PNG is 64x64, but GeckoLib's
+        // normalized UVs are still based on the declared 32x32 grid.
+        float u0 = 0.0F;
+        float v0 = 10.0F / 32.0F;
+        float u1 = 1.5F / 32.0F;
+        float v1 = 11.5F / 32.0F;
+
+        RenderType emissive = RenderType.eyes(GLOWMASK);
+        VertexConsumer consumer = buffers.getBuffer(emissive);
+        lampVertex(consumer, poseStack, local(a, origin), normal, u0, v0);
+        lampVertex(consumer, poseStack, local(b, origin), normal, u1, v0);
+        lampVertex(consumer, poseStack, local(cPoint, origin), normal, u1, v1);
+        lampVertex(consumer, poseStack, local(d, origin), normal, u0, v1);
+        flush(buffers, emissive);
+    }
+
+    private static void lampVertex(VertexConsumer consumer,
+            PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
+        consumer.vertex(poseStack.last().pose(),
+                        (float) point.x, (float) point.y, (float) point.z)
+                .color(255, 255, 255, 255)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(FULL_BRIGHT)
+                .normal(poseStack.last().normal(),
+                        (float) normal.x, (float) normal.y,
+                        (float) normal.z)
+                .endVertex();
     }
 
     private static void renderSourceGlow(
@@ -265,8 +307,9 @@ public final class AlarmClient {
         Vec3 bottomLeft = center.add(right.scale(-half))
                 .add(up.scale(-half));
 
-        VertexConsumer consumer = buffers.getBuffer(
-                RenderType.eyes(SOURCE_GLOW));
+        RenderType glowType =
+                RenderType.entityTranslucentEmissive(SOURCE_GLOW);
+        VertexConsumer consumer = buffers.getBuffer(glowType);
         BlockPos origin = alarm.getBlockPos();
         sourceGlowVertex(consumer, poseStack,
                 local(topLeft, origin), normal, 0.0F, 0.0F);
@@ -276,13 +319,14 @@ public final class AlarmClient {
                 local(bottomRight, origin), normal, 1.0F, 1.0F);
         sourceGlowVertex(consumer, poseStack,
                 local(bottomLeft, origin), normal, 0.0F, 1.0F);
+        flush(buffers, glowType);
     }
 
     private static void sourceGlowVertex(VertexConsumer consumer,
             PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(196, 126, 48, 42)
+                .color(255, 179, 76, 58)
                 .uv(u, v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
@@ -312,13 +356,14 @@ public final class AlarmClient {
                 cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
         if (cache == null) return;
 
-        // Keep transparency and shader emission separate. The soft pass owns
-        // the visible gradient; the extremely restrained eyes pass only gives
-        // BSL/Iris/Oculus an HDR-emissive signal for subtle bloom.
-        VertexConsumer soft = buffers.getBuffer(
-                RenderType.entityTranslucent(SPLASH, true));
-        VertexConsumer bloom = buffers.getBuffer(
-                RenderType.eyes(SPLASH_BLOOM));
+        // The main pass must itself be emissive. A normal translucent entity
+        // pass becomes almost invisible in dark shader scenes, which is why the
+        // previous revision appeared to delete the cone entirely.
+        RenderType softType =
+                RenderType.entityTranslucentEmissive(SPLASH);
+        RenderType bloomType = RenderType.eyes(SPLASH_BLOOM);
+        VertexConsumer soft = buffers.getBuffer(softType);
+        VertexConsumer bloom = buffers.getBuffer(bloomType);
         BlockPos originBlock = alarm.getBlockPos();
 
         for (int ring = 0; ring < RADIAL_RINGS - 1; ring++) {
@@ -342,24 +387,26 @@ public final class AlarmClient {
                     emitProjectionTriangle(soft, poseStack, originBlock,
                             a, b, cHit,
                             u0, v0, u1, v0, u1, v1,
-                            255, 193, 108, 150);
+                            255, 196, 112, 104);
                     emitProjectionTriangle(bloom, poseStack, originBlock,
                             a, b, cHit,
                             u0, v0, u1, v0, u1, v1,
-                            72, 46, 18, 34);
+                            92, 58, 20, 28);
                 }
                 if (compatibleTriangle(a, cHit, d)) {
                     emitProjectionTriangle(soft, poseStack, originBlock,
                             a, cHit, d,
                             u0, v0, u1, v1, u0, v1,
-                            255, 193, 108, 150);
+                            255, 196, 112, 104);
                     emitProjectionTriangle(bloom, poseStack, originBlock,
                             a, cHit, d,
                             u0, v0, u1, v1, u0, v1,
-                            72, 46, 18, 34);
+                            92, 58, 20, 28);
                 }
             }
         }
+        flush(buffers, softType);
+        flush(buffers, bloomType);
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -489,6 +536,25 @@ public final class AlarmClient {
                         (float) normal.x, (float) normal.y,
                         (float) normal.z)
                 .endVertex();
+    }
+
+    private static Vec3 rotatedModelPointToWorld(BlockPos pos,
+            Direction facing, double modelX, double modelY, double modelZ,
+            float rotorAngle, double mountYOffset) {
+        double dx = modelX;
+        double dy = modelY - 8.0D;
+        double cos = Math.cos(rotorAngle);
+        double sin = Math.sin(rotorAngle);
+        double rotatedX = dx * cos - dy * sin;
+        double rotatedY = 8.0D + dx * sin + dy * cos;
+        return modelPointToWorld(pos, facing, rotatedX, rotatedY,
+                modelZ, mountYOffset);
+    }
+
+    private static void flush(MultiBufferSource buffers, RenderType type) {
+        if (buffers instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch(type);
+        }
     }
 
     private static Vec3 modelPointToWorld(BlockPos pos, Direction facing,

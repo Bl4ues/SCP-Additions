@@ -1046,15 +1046,27 @@ public final class AlarmClient {
             BlockState hitState = level.getBlockState(hitPos);
             if (BlastDoorModule.isStructureState(hitState)) {
                 /*
-                 * Clip at the ACTUAL authored Blast Door collision surface.
-                 * BlastDoorStructure.shapeAt() builds that shape from the model
-                 * envelope, including the moving slab. We retain the exact hit
-                 * as a non-renderable occluder sample so adaptive tessellation
-                 * can follow the real frame/door edge, but no wash/bloom is ever
-                 * submitted on the translucent GeckoLib body itself.
+                 * The gameplay collision envelope is intentionally conservative
+                 * and includes reserved/mimic cells above the visible frame.
+                 * Using that shape directly made the projector stop at an
+                 * invisible wall. Re-test the segment against the actual
+                 * authored GeckoLib frame/slab geometry instead. If this coarse
+                 * multiblock cell contains no visible metal, skip it and keep
+                 * tracing until the wall or the real protruding frame is hit.
                  */
-                return new ProjectedHit(hit.getLocation(),
-                        hit.getDirection(), false, true);
+                Vec3 visualHit = BlastDoorStructure.visualOcclusionHit(
+                        level, hitPos, hitState, cursor, end);
+                if (visualHit != null) {
+                    return new ProjectedHit(visualHit,
+                            hit.getDirection(), false, true);
+                }
+
+                cursor = skipPastBlockCell(hit.getLocation(),
+                        rayDirection, hitPos);
+                if (!rayCursorStillValid(cursor, start, end, ray)) {
+                    return null;
+                }
+                continue;
             }
 
             if (letsProjectedLightPass(hitState)) {

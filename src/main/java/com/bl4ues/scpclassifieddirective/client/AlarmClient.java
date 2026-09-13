@@ -71,18 +71,18 @@ public final class AlarmClient {
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double MIN_SPLASH_RADIUS = 0.08D;
-    private static final double MAX_SPLASH_RADIUS = 3.60D;
-    private static final double MAX_SPLASH_HALF_WIDTH = 1.78D;
+    private static final double MIN_SPLASH_RADIUS = 0.06D;
+    private static final double MAX_SPLASH_RADIUS = 2.85D;
+    private static final double MAX_SPLASH_HALF_WIDTH = 1.28D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0030D;
-    private static final double PLANE_EPSILON = 0.022D;
+    private static final double PLANE_EPSILON = 0.018D;
     private static final double BLOOM_SURFACE_EPSILON = 0.0016D;
-    private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
-    private static final int BASE_MESH_CELLS = 8;
-    private static final int ADAPTIVE_SUBDIVISIONS = 1;
+    private static final double MAX_TRIANGLE_EDGE_SQR = 0.24D;
+    private static final int BASE_MESH_CELLS = 10;
+    private static final int ADAPTIVE_SUBDIVISIONS = 2;
     private static final int MESH_RESOLUTION =
             BASE_MESH_CELLS << ADAPTIVE_SUBDIVISIONS;
     private static final int BASE_MESH_STEP =
@@ -461,14 +461,45 @@ public final class AlarmClient {
     private static void renderProjection(AlarmModule.AlarmBlockEntity alarm,
             PoseStack poseStack, MultiBufferSource buffers,
             float rotorAngle, double mountYOffset) {
-        // The old approach stretched one large texture across a tessellated
-        // footprint. Even with adaptive subdivision, the silhouette still
-        // advertised the mesh and folds produced visibly geometric cuts.
-        // Independent soft surface splats remove that entire failure mode:
-        // every sample is clipped by real world geometry, but no polygon edge
-        // defines the visible boundary of the light.
-        AlarmLightSplatRenderer.render(alarm, poseStack, buffers,
-                rotorAngle, mountYOffset);
+        if (!(alarm.getLevel() instanceof ClientLevel level)) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        Entity camera = minecraft.getCameraEntity();
+        if (camera == null) return;
+
+        Vec3 center = Vec3.atCenterOf(alarm.getBlockPos());
+        double cameraDistanceSqr = camera.position().distanceToSqr(center);
+        if (cameraDistanceSqr > PROJECTOR_DISTANCE_SQR) return;
+
+        /*
+         * One continuous mask is projected over an adaptive, surface-clipped
+         * mesh. Samples describe geometry only; they are not separate light
+         * sources. This is what removes the honeycomb pattern while retaining
+         * real occlusion by walls, ceilings, pillars and door structure.
+         */
+        ProjectionCache projected = projection(level, alarm, camera,
+                rotorAngle, mountYOffset,
+                cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
+        if (projected.triangles.isEmpty()) return;
+
+        RenderType washType = RenderType.entityTranslucent(SPLASH, true);
+        VertexConsumer wash = buffers.getBuffer(washType);
+        for (ProjectedTriangle triangle : projected.triangles) {
+            emitProjectionTriangle(wash, poseStack, alarm.getBlockPos(),
+                    triangle, false);
+        }
+        flush(buffers, washType);
+
+        // Separate, deliberately weak shader-emissive copy. The texture itself
+        // carries a much lower alpha than the visible wash, so BSL receives a
+        // soft bloom signal instead of another opaque cone.
+        RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
+        VertexConsumer bloom = buffers.getBuffer(bloomType);
+        for (ProjectedTriangle triangle : projected.triangles) {
+            emitProjectionTriangle(bloom, poseStack, alarm.getBlockPos(),
+                    triangle, true);
+        }
+        flush(buffers, bloomType);
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -517,11 +548,12 @@ public final class AlarmClient {
     /**
      * Adaptive surface tessellation for the alarm footprint.
      *
-     * A flat 1x1 wall is resolved with only the coarse 8x8 lattice. Cells that
-     * cross a VoxelShape discontinuity (door frame, ceiling fold, pillar, etc.)
-     * are subdivided locally once, for an effective 16x16 boundary only where
-     * geometry actually needs it. This keeps the fold smoothing without turning
-     * one rotating Alarm into hundreds or thousands of raycasts per frame.
+     * Flat surfaces use a coarse 10x10 topology, but every accepted cell probes
+     * its center and edge midpoints first. Cells that cross a collision-depth or
+     * face discontinuity are subdivided twice, for an effective 40x40 boundary
+     * only where geometry needs it. The extra probes are important for narrow
+     * Blast Door beams: four corners alone can all hit the same plane while the
+     * middle of the cell is actually open space or a different surface.
      */
     private static final class ProjectionBuilder {
         private final ClientLevel level;
@@ -566,7 +598,8 @@ public final class AlarmClient {
             ProjectedSample c = sample(u1, v1);
             ProjectedSample d = sample(u0, v1);
 
-            if (compatibleQuad(a, b, c, d)) {
+            if (compatibleQuad(a, b, c, d)
+                    && cellBelongsToOneSurface(u0, v0, u1, v1, a)) {
                 addTriangle(result, a, b, c);
                 addTriangle(result, a, c, d);
                 return;
@@ -626,6 +659,29 @@ public final class AlarmClient {
                             u01, v01);
             samples.put(key, sample);
             return sample;
+        }
+
+        /**
+         * Corners are insufficient around thin collision geometry. Probe the
+         * center and four edge midpoints before allowing a coarse cell to span
+         * one surface. All probes are cached on the same integer lattice, so the
+         * cost is shared by neighbouring cells.
+         */
+        private boolean cellBelongsToOneSurface(int u0, int v0,
+                int u1, int v1, ProjectedSample reference) {
+            int spanU = u1 - u0;
+            int spanV = v1 - v0;
+            if (spanU < 2 || spanV < 2) {
+                return true;
+            }
+
+            int um = (u0 + u1) >>> 1;
+            int vm = (v0 + v1) >>> 1;
+            return sameSurface(reference, sample(um, vm))
+                    && sameSurface(reference, sample(um, v0))
+                    && sameSurface(reference, sample(u1, vm))
+                    && sameSurface(reference, sample(um, v1))
+                    && sameSurface(reference, sample(u0, vm));
         }
     }
 
@@ -699,6 +755,13 @@ public final class AlarmClient {
             ProjectedSample b, ProjectedSample c, ProjectedSample d) {
         return compatibleTriangle(a, b, c)
                 && compatibleTriangle(a, c, d);
+    }
+
+    private static boolean sameSurface(ProjectedSample a,
+            ProjectedSample b) {
+        if (a == null || b == null || a.face != b.face) return false;
+        return Math.abs(planeCoordinate(a.position, a.face)
+                - planeCoordinate(b.position, b.face)) <= PLANE_EPSILON;
     }
 
     private static boolean compatibleTriangle(ProjectedSample a,

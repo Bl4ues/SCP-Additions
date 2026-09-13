@@ -2,10 +2,12 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -75,7 +77,7 @@ public final class AlarmClient {
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
     private static final double MIN_SPLASH_RADIUS = 0.06D;
     private static final double MAX_SPLASH_RADIUS = 2.85D;
-    private static final double MAX_SPLASH_HALF_WIDTH = 1.28D;
+    private static final double MAX_SPLASH_HALF_WIDTH = 1.55D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
@@ -754,25 +756,46 @@ public final class AlarmClient {
         Vec3 rayDirection = ray.normalize();
         Vec3 cursor = start;
 
-        // Only the Alarm itself is transparent to its projector. The old code
-        // advanced by 0.012 blocks after hitting the Alarm and tried only three
-        // times. Rays crossing more than ~0.036 blocks of the Alarm collision
-        // therefore became null samples, producing the little fixed "bites"
-        // near the cone root as it rotated. Skip the Alarm's whole block cell
-        // in one deterministic step instead, then let every other collider
-        // receive/occlude the light normally.
-        for (int attempt = 0; attempt < 2; attempt++) {
+        /*
+         * The Alarm body itself and genuinely translucent block render layers
+         * do not terminate the projected light. This makes ordinary glass,
+         * stained glass, panes, ice and other translucent blocks behave like
+         * optical media instead of opaque walls. We advance past the complete
+         * block cell, not a tiny epsilon, so a row of glass panes cannot trap a
+         * ray in repeated self-hits.
+         *
+         * Blast Door structure is deliberately different. Its visible body is
+         * a large translucent GeckoLib render even though the metal is physically
+         * opaque. Drawing an emissive projection on its collision face lets BSL
+         * composite that projection through the model and creates the white
+         * see-through artifact. Treat the structure as a pure occluder: a ray
+         * that reaches it stops there and contributes no surface polygon.
+         */
+        for (int attempt = 0; attempt < 16; attempt++) {
             BlockHitResult hit = level.clip(new ClipContext(cursor, end,
                     ClipContext.Block.COLLIDER,
                     ClipContext.Fluid.NONE, context));
             if (hit.getType() != HitResult.Type.BLOCK) return null;
 
-            if (hit.getBlockPos().equals(alarmPos)) {
+            BlockPos hitPos = hit.getBlockPos();
+            if (hitPos.equals(alarmPos)) {
                 cursor = skipPastBlockCell(hit.getLocation(),
-                        rayDirection, alarmPos);
-                if (cursor.distanceToSqr(end) < 1.0E-6D
-                        || cursor.subtract(start).dot(ray) < 0.0D
-                        || cursor.subtract(end).dot(ray) > 0.0D) {
+                        rayDirection, hitPos);
+                if (!rayCursorStillValid(cursor, start, end, ray)) {
+                    return null;
+                }
+                continue;
+            }
+
+            BlockState hitState = level.getBlockState(hitPos);
+            if (BlastDoorModule.isStructureState(hitState)) {
+                return null;
+            }
+
+            if (letsProjectedLightPass(hitState)) {
+                cursor = skipPastBlockCell(hit.getLocation(),
+                        rayDirection, hitPos);
+                if (!rayCursorStillValid(cursor, start, end, ray)) {
                     return null;
                 }
                 continue;
@@ -785,6 +808,23 @@ public final class AlarmClient {
             return new ProjectedHit(position, face);
         }
         return null;
+    }
+
+    private static boolean letsProjectedLightPass(BlockState state) {
+        if (state.isAir()) return true;
+        // Vanilla and Forge register glass/ice/panes on the translucent chunk
+        // layer. Using the render layer rather than collision/occlusion flags is
+        // important: slabs, stairs and fences may be non-occluding but are still
+        // opaque material and must cast a real shadow.
+        return ItemBlockRenderTypes.getChunkRenderType(state)
+                == RenderType.translucent();
+    }
+
+    private static boolean rayCursorStillValid(Vec3 cursor, Vec3 start,
+            Vec3 end, Vec3 ray) {
+        return cursor.distanceToSqr(end) >= 1.0E-6D
+                && cursor.subtract(start).dot(ray) >= 0.0D
+                && cursor.subtract(end).dot(ray) <= 0.0D;
     }
 
     private static Vec3 skipPastBlockCell(Vec3 point, Vec3 direction,

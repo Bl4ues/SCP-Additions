@@ -523,5 +523,8 @@
   "block.scp_classified_directive.ceiling_ventilation": "Ceiling Ventilation",
   "block.scp_classified_directive.twin_emergency_light": "Twin Emergency Light",
   "subtitles.scp_classified_directive.heater": "Heater hums",
-  "subtitles.scp_classified_directive.ceiling_ventilation": "Ceiling ventilation hums"
+  "subtitles.scp_classified_directive.ceiling_ventilation": "Ceiling ventilation hums",
+  "block.scp_classified_directive.alarm": "Alarm",
+  "tooltip.scp_classified_directive.alarm": "Activated by redstone or nearby open electric doors",
+  "subtitles.scp_classified_directive.alarm": "Facility alarm sounds"
 }

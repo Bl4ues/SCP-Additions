@@ -31,6 +31,7 @@ import com.bl4ues.scpclassifieddirective.facility.AreaUnderConstructionSignModul
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityDecorativePropsModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.TeslaGateTerminalTableModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.network.FacilityMappingNetwork;
@@ -111,6 +112,7 @@ public class ScpClassifiedDirectiveMod {
         UBlocksModule.register(bus);
         FacilityModule.register(bus);
         FacilityDecorativePropsModule.register(bus);
+        AlarmModule.register(bus);
         BlastDoorModule.register(bus);
         TeslaGateTerminalTableModule.register(bus);
         AreaUnderConstructionSignModule.register(bus);

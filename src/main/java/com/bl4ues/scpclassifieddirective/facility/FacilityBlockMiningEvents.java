@@ -22,6 +22,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 
 import java.util.Collections;
@@ -144,6 +145,7 @@ public final class FacilityBlockMiningEvents {
                         new IdentityHashMap<>());
                 addRegistered(blocks, FacilityModule.BLOCKS);
                 addRegistered(blocks, FacilityDecorativePropsModule.BLOCKS);
+                addRegistered(blocks, AlarmModule.BLOCKS);
                 addRegistered(blocks, UBlocksModule.BLOCKS);
                 addRegistered(blocks, TeslaGateTerminalTableModule.BLOCKS);
                 addRegistered(blocks, MirroredDoorButtons.BLOCKS);

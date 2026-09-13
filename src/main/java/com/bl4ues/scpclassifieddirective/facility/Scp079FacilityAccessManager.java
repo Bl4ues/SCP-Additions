@@ -263,6 +263,32 @@ public final class Scp079FacilityAccessManager {
         if (data.doors().remove(tracked(level, pos))) data.markChanged();
     }
 
+    /**
+     * Read-only spatial view over the already maintained facility door index.
+     * Consumers such as Alarm can react to nearby doors without repeatedly
+     * scanning every world block in a cube.
+     */
+    public static List<BlockPos> nearbyDoorPositions(ServerLevel level,
+            BlockPos center, double radius) {
+        if (level == null || center == null || radius < 0.0D) {
+            return List.of();
+        }
+        String dimension = level.dimension().location().toString();
+        double radiusSqr = radius * radius;
+        List<BlockPos> result = new ArrayList<>();
+        for (Scp079FacilityAccessSavedData.TrackedPosition tracked :
+                List.copyOf(data(level.getServer()).doors())) {
+            if (!dimension.equals(tracked.dimension())) continue;
+            BlockPos pos = BlockPos.of(tracked.packedPos());
+            if (!level.hasChunkAt(pos)
+                    || pos.distSqr(center) > radiusSqr) {
+                continue;
+            }
+            result.add(pos);
+        }
+        return List.copyOf(result);
+    }
+
     public static void registerTeslaGate(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null) return;
         Scp079FacilityAccessSavedData data = data(level.getServer());

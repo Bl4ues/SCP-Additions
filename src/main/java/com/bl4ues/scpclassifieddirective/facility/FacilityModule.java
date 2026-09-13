@@ -57,6 +57,7 @@ import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModBlocks;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -272,6 +273,19 @@ public final class FacilityModule {
         return state != null && state.getBlock() instanceof AnimatedDoorBlock door && door.passable();
     }
 
+    /**
+     * True only for the redstone/panel-driven heavy door families while they
+     * are opening or fully open. Direct-use doors are intentionally excluded:
+     * Alarm is facility equipment, not a notification for every office door.
+     */
+    public static boolean isElectricDoorOpenOrOpening(BlockState state) {
+        return state != null
+                && state.getBlock() instanceof AnimatedDoorBlock door
+                && !door.family().directUse()
+                && (door.stage == DoorStage.OPENING
+                        || door.stage == DoorStage.OPEN);
+    }
+
     public static boolean isWindowedDoor(BlockState state) {
         if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)) return false;
         return "normal".equals(door.familyId) || "office".equals(door.familyId);
@@ -321,6 +335,7 @@ public final class FacilityModule {
         addFacilityCreativeItem(functional, "yellow_closed");
         addFacilityCreativeItem(functional, "black_closed");
         addExternalCreativeItem(functional, BlastDoorModule.ITEM.get());
+        addExternalCreativeItem(functional, AlarmModule.ITEM.get());
         addFacilityCreativeItem(functional, "sign_support");
         addFacilityCreativeItem(functional, "door_sign");
         addFacilityCreativeItem(functional, "normal_door");

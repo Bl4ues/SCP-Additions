@@ -1786,5 +1786,15 @@
         "volume": 2
       }
     ]
+  },
+  "alarm": {
+    "subtitle": "subtitles.scp_classified_directive.alarm",
+    "sounds": [
+      {
+        "name": "scp_classified_directive:alarm",
+        "stream": false,
+        "volume": 1
+      }
+    ]
   }
 }

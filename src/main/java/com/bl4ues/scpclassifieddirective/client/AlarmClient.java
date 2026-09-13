@@ -59,15 +59,20 @@ public final class AlarmClient {
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
 
-    private static final double PROJECTION_RANGE = 4.0D;
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double WALL_BIAS = 0.12D;
-    private static final double CONE_SPREAD = Math.tan(Math.toRadians(22.0D));
+    private static final double MIN_SPLASH_RADIUS = 0.28D;
+    private static final double MAX_SPLASH_RADIUS = 2.35D;
+    private static final double SPLASH_HALF_ANGLE =
+            Math.toRadians(26.0D);
+    private static final double PROJECTOR_OUTSET = 0.24D;
+    private static final double WALL_PLANE_INSET = 0.0625D;
+    private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0035D;
-    private static final double MAX_PATCH_EDGE_SQR = 2.25D;
-    private static final int GRID = 4;
+    private static final double MAX_PATCH_EDGE_SQR = 1.35D;
+    private static final int RADIAL_RINGS = 6;
+    private static final int ANGULAR_SAMPLES = 9;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
             PROJECTIONS = new WeakHashMap<>();
@@ -168,7 +173,7 @@ public final class AlarmClient {
                 float partialTick) {
             // Block and item use isolated GeoModels, matching the Intercom fix
             // that prevents inventory render state from corrupting placed blocks.
-            return RenderType.entityCutoutNoCull(texture);
+            return RenderType.entityTranslucent(texture, true);
         }
 
         @Override
@@ -233,18 +238,20 @@ public final class AlarmClient {
                 RenderType.entityTranslucentEmissive(SPLASH));
         BlockPos originBlock = alarm.getBlockPos();
 
-        for (int row = 0; row < GRID - 1; row++) {
-            for (int col = 0; col < GRID - 1; col++) {
-                ProjectedHit a = cache.samples[row][col];
-                ProjectedHit b = cache.samples[row][col + 1];
-                ProjectedHit c = cache.samples[row + 1][col + 1];
-                ProjectedHit d = cache.samples[row + 1][col];
+        for (int ring = 0; ring < RADIAL_RINGS - 1; ring++) {
+            for (int slice = 0; slice < ANGULAR_SAMPLES - 1; slice++) {
+                ProjectedHit a = cache.samples[ring][slice];
+                ProjectedHit b = cache.samples[ring][slice + 1];
+                ProjectedHit c = cache.samples[ring + 1][slice + 1];
+                ProjectedHit d = cache.samples[ring + 1][slice];
                 if (!compatible(a, b, c, d)) continue;
 
-                float u0 = col / (float) (GRID - 1);
-                float u1 = (col + 1) / (float) (GRID - 1);
-                float v0 = row / (float) (GRID - 1);
-                float v1 = (row + 1) / (float) (GRID - 1);
+                float u0 = slice / (float) (ANGULAR_SAMPLES - 1);
+                float u1 = (slice + 1)
+                        / (float) (ANGULAR_SAMPLES - 1);
+                float v0 = ring / (float) (RADIAL_RINGS - 1);
+                float v1 = (ring + 1)
+                        / (float) (RADIAL_RINGS - 1);
                 emitProjectionQuad(consumer, poseStack, originBlock,
                         a, b, c, d, u0, v0, u1, v1);
             }
@@ -270,42 +277,49 @@ public final class AlarmClient {
         Vec3 right = direction(facing.getClockWise());
         Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
 
-        // Read the actual GeckoLib bone after animation evaluation. The authored
-        // rotor pivot is [0, 8, 7], its reflector sits above the bulb at rest,
-        // and the beam leaves the opposite side, so zero rotation points DOWN.
-        // This makes projector and model share one source of truth even if the
-        // authored animation is retimed later.
+        // Read the actual GeckoLib bone after animation evaluation. The
+        // reflector sits above the bulb at rest, while the emitted cone leaves
+        // the opposite side, so zero rotation projects DOWN. The authored
+        // animation is counter-clockwise and reaches -360 degrees in one second.
         double rotorRadians = rotorAngle;
         Vec3 tangent = right.scale(Math.sin(rotorRadians))
                 .add(up.scale(-Math.cos(rotorRadians))).normalize();
+        Vec3 fanSide = outward.cross(tangent);
+        if (fanSide.lengthSqr() < 1.0E-6D) fanSide = right;
+        fanSide = fanSide.normalize();
 
         Vec3 rotorCenter = modelPointToWorld(pos, facing,
                 0.0D, 8.0D, 7.0D);
-        // Start just beyond the compact housing in the current beam direction.
-        // That prevents the Alarm from clipping its own projection.
-        Vec3 start = rotorCenter.add(tangent.scale(0.14D))
-                .add(outward.scale(0.025D));
-        Vec3 beam = tangent.add(inward.scale(WALL_BIAS)).normalize();
+        Vec3 wallOrigin = rotorCenter.add(
+                inward.scale(WALL_PLANE_INSET));
 
-        // Circular cone basis. One axis remains mostly in the wall plane while
-        // the other includes wall-normal spread, allowing a patch to naturally
-        // split onto a ceiling or corner when those surfaces are actually hit.
-        Vec3 coneX = outward.cross(beam);
-        if (coneX.lengthSqr() < 1.0E-6D) coneX = right;
-        coneX = coneX.normalize();
-        Vec3 coneY = beam.cross(coneX).normalize();
+        // Project a tapered fan toward the real architectural surface. Each
+        // sample aims at the support-wall plane, but the world's collision
+        // geometry gets final say: walls, ceilings and pillars can receive the
+        // patch; empty space receives nothing.
+        ProjectedHit[][] samples =
+                new ProjectedHit[RADIAL_RINGS][ANGULAR_SAMPLES];
+        double tanHalfAngle = Math.tan(SPLASH_HALF_ANGLE);
+        Vec3 rayStart = wallOrigin
+                .add(tangent.scale(MIN_SPLASH_RADIUS))
+                .add(outward.scale(PROJECTOR_OUTSET));
 
-        ProjectedHit[][] samples = new ProjectedHit[GRID][GRID];
-        for (int row = 0; row < GRID; row++) {
-            double v = -1.0D + 2.0D * row / (GRID - 1.0D);
-            for (int col = 0; col < GRID; col++) {
-                double u = -1.0D + 2.0D * col / (GRID - 1.0D);
-                Vec3 direction = beam
-                        .add(coneX.scale(u * CONE_SPREAD))
-                        .add(coneY.scale(v * CONE_SPREAD))
-                        .normalize();
-                samples[row][col] = cast(level, camera, pos,
-                        start, direction);
+        for (int ring = 0; ring < RADIAL_RINGS; ring++) {
+            double ringT = ring / (RADIAL_RINGS - 1.0D);
+            double radius = MIN_SPLASH_RADIUS
+                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * ringT;
+            double halfWidth = 0.055D + radius * tanHalfAngle;
+            Vec3 ringCenter = wallOrigin.add(tangent.scale(radius));
+
+            for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
+                double u = -1.0D
+                        + 2.0D * slice / (ANGULAR_SAMPLES - 1.0D);
+                Vec3 intendedSurface = ringCenter.add(
+                        fanSide.scale(halfWidth * u));
+                Vec3 end = intendedSurface.add(
+                        inward.scale(RAY_OVERSHOOT));
+                samples[ring][slice] = cast(level, camera, pos,
+                        rayStart, end);
             }
         }
 
@@ -315,8 +329,7 @@ public final class AlarmClient {
     }
 
     private static ProjectedHit cast(ClientLevel level, Entity context,
-            BlockPos alarmPos, Vec3 start, Vec3 direction) {
-        Vec3 end = start.add(direction.scale(PROJECTION_RANGE));
+            BlockPos alarmPos, Vec3 start, Vec3 end) {
         BlockHitResult hit = level.clip(new ClipContext(start, end,
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, context));
         if (hit.getType() != HitResult.Type.BLOCK
@@ -363,7 +376,7 @@ public final class AlarmClient {
             Vec3 point, Vec3 normal, float u, float v) {
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 105, 20, 225)
+                .color(255, 182, 78, 108)
                 .uv(u, v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
@@ -443,7 +456,7 @@ public final class AlarmClient {
         public RenderType getRenderType(AlarmModule.AlarmItem animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityCutoutNoCull(texture);
+            return RenderType.entityTranslucent(texture, true);
         }
     }
 }

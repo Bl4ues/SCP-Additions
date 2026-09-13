@@ -653,7 +653,14 @@ public final class AlarmClient {
             ProjectedSample c = sample(u1, v1);
             ProjectedSample d = sample(u0, v1);
 
-            if (compatibleQuad(a, b, c, d)) {
+            // Even on a perfectly flat wall, refine the first radial
+            // strip once. That gives the circular near edge sixteen segments
+            // instead of eight without increasing the resolution of the whole
+            // 3.55-block footprint. The rest stays on the cheap coarse lattice
+            // unless real world geometry actually requires subdivision.
+            boolean refineCircularRoot =
+                    depth < ADAPTIVE_SUBDIVISIONS && v0 == 0;
+            if (compatibleQuad(a, b, c, d) && !refineCircularRoot) {
                 addTriangle(result, a, b, c);
                 addTriangle(result, a, c, d);
                 return;

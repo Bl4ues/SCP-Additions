@@ -26,15 +26,15 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Surface-aware alarm light renderer based on overlapping soft emissive splats.
+ * Surface-aware alarm light renderer. Raycasts describe one continuous light
+ * field; the small soft patches are only reconstruction samples, not independent
+ * lamps.
  *
- * <p>The previous implementation stretched one large projected texture over a
- * tessellated mesh. That guaranteed geometric-looking boundaries and ugly seams
- * when the footprint crossed a wall/ceiling fold. This renderer instead samples
- * the desired footprint at a few points and paints independent soft light blobs
- * onto the real surface hit by each ray. Because every blob fades to transparent
- * before its quad edge, folds and missing samples disappear softly instead of
- * revealing straight polygon cuts.</p>
+ * <p>The important distinction is energy conservation. Earlier versions gave
+ * every sample its own sizeable alpha, so overlapping samples accumulated into
+ * an opaque rectangular panel. Here the requested field opacity is divided by
+ * the expected overlap of neighbouring samples. Increasing sampling density can
+ * therefore improve geometry without making the light brighter.</p>
  */
 final class AlarmLightSplatRenderer {
     private static final ResourceLocation SPLAT = id(
@@ -51,13 +51,19 @@ final class AlarmLightSplatRenderer {
     private static final double SURFACE_EPSILON = 0.0032D;
     private static final double BLOOM_EPSILON = 0.0015D;
 
-    private static final int RINGS = 9;
-    private static final double[] LANES = {
-            -0.78D, -0.38D, 0.0D, 0.38D, 0.78D
+    private static final int RINGS = 8;
+    private static final double[] BODY_LANES = {
+            -0.82D, -0.42D, 0.0D, 0.42D, 0.82D
     };
-    private static final double MIN_DISTANCE = 0.16D;
-    private static final double MAX_DISTANCE = 3.85D;
-    private static final double MAX_HALF_WIDTH = 1.52D;
+    private static final double[] ROOT_LANES = {
+            -0.50D, 0.0D, 0.50D
+    };
+    private static final double[] SINGLE_LANE = {0.0D};
+    private static final double MIN_DISTANCE = 0.10D;
+    private static final double MAX_DISTANCE = 2.70D;
+    private static final double MAX_HALF_WIDTH = 1.02D;
+    private static final double RING_STEP =
+            (MAX_DISTANCE - MIN_DISTANCE) / (RINGS - 1.0D);
 
     private static final Map<ClientLevel, Map<BlockPos, SplatCache>> CACHE =
             new WeakHashMap<>();
@@ -82,7 +88,11 @@ final class AlarmLightSplatRenderer {
                 cameraDistanceSqr <= PER_FRAME_DISTANCE_SQR);
         if (splats.isEmpty()) return;
 
-        RenderType baseType = RenderType.entityTranslucentEmissive(SPLAT);
+        // The visible amber wash is deliberately ordinary translucent geometry.
+        // FULL_BRIGHT keeps it light-like; only the second, much weaker pass is
+        // allowed to feed the shader emissive path. This avoids double-counting
+        // bloom before the samples are even composited.
+        RenderType baseType = RenderType.entityTranslucent(SPLAT, true);
         VertexConsumer base = buffers.getBuffer(baseType);
         for (Splat splat : splats) {
             emitSplat(base, poseStack, alarm.getBlockPos(),
@@ -131,28 +141,67 @@ final class AlarmLightSplatRenderer {
         Vec3 wallOrigin = rotorCenter.add(inward.scale(WALL_PLANE_INSET));
         Vec3 rayStart = wallOrigin.add(outward.scale(PROJECTOR_OUTSET));
 
-        List<Splat> result = new ArrayList<>(RINGS * LANES.length);
+        List<Splat> result = new ArrayList<>(RINGS * BODY_LANES.length);
         for (int ring = 0; ring < RINGS; ring++) {
             double t = ring / (RINGS - 1.0D);
             double along = MIN_DISTANCE
                     + (MAX_DISTANCE - MIN_DISTANCE) * t;
 
-            // Fast initial spread, then a broad rounded outer body like the
-            // reference. Individual blobs provide the final soft silhouette.
-            // Pear/teardrop profile from the reference: narrow near the
-            // beacon, widest before the far end, then slightly pinched again
-            // so the final soft splats create a rounded cap rather than a
-            // ruler-straight terminus.
-            double widthPhase = 0.05D + 0.65D * Math.pow(t, 0.82D);
-            double widthT = Math.sin(Math.PI * widthPhase);
-            double halfWidth = 0.035D + MAX_HALF_WIDTH * widthT;
+            // Reference-shaped field: very narrow at the beacon, opens quickly
+            // into a broad body, then loses energy before the geometric end so
+            // the final texture falloff makes a round cap instead of a line.
+            double spreadPhase = 0.025D
+                    + 0.62D * Math.pow(t, 0.88D);
+            double spread = Math.pow(Math.sin(Math.PI * spreadPhase),
+                    0.86D);
+            double farPinch = 1.0D
+                    - 0.10D * smoothStep(0.78D, 1.0D, t);
+            double halfWidth = 0.055D
+                    + MAX_HALF_WIDTH * spread * farPinch;
 
-            double sourceHot = Math.exp(-6.2D * t);
-            double middleDip = 1.0D - 0.50D * Math.exp(
-                    -Math.pow((t - 0.52D) / 0.24D, 2.0D));
-            double endFade = 1.0D - smoothStep(0.80D, 1.0D, t);
+            // Five almost-coincident blobs at the root were a major source of
+            // the old hotspot/rectangle. Use one sample at the source, three
+            // while opening (and at the cap), then five only through the body.
+            double[] lanes;
+            double normalizedLaneStep;
+            if (t < 0.13D) {
+                lanes = SINGLE_LANE;
+                normalizedLaneStep = 2.0D;
+            } else if (t < 0.30D || t > 0.87D) {
+                lanes = ROOT_LANES;
+                normalizedLaneStep = 0.50D;
+            } else {
+                lanes = BODY_LANES;
+                normalizedLaneStep = 0.40D;
+            }
 
-            for (double lane : LANES) {
+            double sourceHot = Math.exp(-9.0D * t);
+            double middleDip = 1.0D - 0.35D * Math.exp(
+                    -Math.pow((t - 0.52D) / 0.22D, 2.0D));
+            double endFade = 1.0D - smoothStep(0.76D, 1.0D, t);
+            if (endFade <= 1.0E-4D) {
+                continue;
+            }
+
+            // Patch dimensions track sample spacing. They overlap enough to hide
+            // seams, but no longer span several logical cells at once.
+            double halfAlong = RING_STEP * (0.61D + 0.07D * t);
+            double halfSide = lanes.length == 1
+                    ? Math.max(0.11D, halfWidth * 0.92D)
+                    : Math.max(0.10D,
+                            halfWidth * normalizedLaneStep * 0.78D);
+
+            double alongOverlap = Math.max(1.0D,
+                    (2.0D * halfAlong) / RING_STEP);
+            double sideStep = lanes.length == 1
+                    ? 2.0D * halfSide
+                    : Math.max(0.055D,
+                            halfWidth * normalizedLaneStep);
+            double sideOverlap = Math.max(1.0D,
+                    (2.0D * halfSide) / sideStep);
+            double expectedOverlap = alongOverlap * sideOverlap;
+
+            for (double lane : lanes) {
                 double lateral = halfWidth * lane;
                 Vec3 intended = wallOrigin
                         .add(tangent.scale(along))
@@ -164,16 +213,21 @@ final class AlarmLightSplatRenderer {
                 if (hit == null) continue;
 
                 double laneAbs = Math.abs(lane);
-                double laneGain = 0.80D
-                        + 0.46D * Math.pow(laneAbs, 1.75D);
-                double intensity = (0.11D + 0.31D * sourceHot)
-                        * middleDip * endFade * laneGain;
-                double bloomIntensity = (0.045D + 0.11D * sourceHot)
-                        * endFade
-                        * (0.78D + 0.44D * laneAbs);
+                double edgePresence = 0.96D
+                        + 0.14D * Math.pow(laneAbs, 1.7D);
 
-                double halfAlong = 0.34D + 0.18D * t;
-                double halfSide = 0.38D + 0.30D * t;
+                // These are desired opacity levels for the reconstructed field,
+                // not per-sprite alpha values. compositedSampleAlpha() converts
+                // them to the contribution of one overlapping sample.
+                double targetAlpha = (0.045D + 0.115D * sourceHot)
+                        * middleDip * endFade * edgePresence;
+                double targetBloom = (0.009D + 0.030D * sourceHot)
+                        * endFade
+                        * (0.98D + 0.08D * laneAbs);
+                double intensity = compositedSampleAlpha(
+                        targetAlpha, expectedOverlap);
+                double bloomIntensity = compositedSampleAlpha(
+                        targetBloom, expectedOverlap);
 
                 Vec3 surfaceNormal = direction(hit.face);
                 Vec3 surfaceAlong = tangent.subtract(surfaceNormal.scale(
@@ -196,8 +250,8 @@ final class AlarmLightSplatRenderer {
                 result.add(new Splat(hit.position, hit.face,
                         surfaceAlong, surfaceSide,
                         halfAlong, halfSide,
-                        (float) Math.min(1.0D, intensity),
-                        (float) Math.min(1.0D, bloomIntensity)));
+                        (float) intensity,
+                        (float) bloomIntensity));
             }
         }
 
@@ -310,6 +364,19 @@ final class AlarmLightSplatRenderer {
                 ? new Vec3(0.0D, 1.0D, 0.0D)
                 : new Vec3(1.0D, 0.0D, 0.0D);
         return normal.cross(candidate).normalize();
+    }
+
+    /**
+     * Alpha needed from one reconstruction sample so N overlapping samples
+     * converge on the requested field opacity instead of summing N light
+     * sources. For normal source-over blending:
+     * target = 1 - (1 - sampleAlpha)^N.
+     */
+    private static double compositedSampleAlpha(double target,
+            double expectedOverlap) {
+        double clampedTarget = Math.max(0.0D, Math.min(0.95D, target));
+        double overlap = Math.max(1.0D, expectedOverlap);
+        return 1.0D - Math.pow(1.0D - clampedTarget, 1.0D / overlap);
     }
 
     private static double smoothStep(double edge0, double edge1,

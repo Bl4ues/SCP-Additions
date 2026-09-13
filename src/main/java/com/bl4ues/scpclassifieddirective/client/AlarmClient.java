@@ -2,8 +2,6 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
-import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
-import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -34,7 +32,9 @@ import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -61,8 +61,6 @@ public final class AlarmClient {
             "textures/block/alarm_glowmask.png");
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
-    private static final ResourceLocation BLOOM = id(
-            "textures/effect/alarm_light_bloom.png");
     private static final ResourceLocation ANIMATION = id(
             "animations/block/alarm.animation.json");
 
@@ -74,9 +72,15 @@ public final class AlarmClient {
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
-    private static final double SURFACE_EPSILON = 0.0040D;
-    private static final int RADIAL_RINGS = 13;
-    private static final int ANGULAR_SAMPLES = 13;
+    private static final double SURFACE_EPSILON = 0.0030D;
+    private static final double PLANE_EPSILON = 0.022D;
+    private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
+    private static final int BASE_MESH_CELLS = 8;
+    private static final int ADAPTIVE_SUBDIVISIONS = 2;
+    private static final int MESH_RESOLUTION =
+            BASE_MESH_CELLS << ADAPTIVE_SUBDIVISIONS;
+    private static final int BASE_MESH_STEP =
+            MESH_RESOLUTION / BASE_MESH_CELLS;
     private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 64.0D;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
@@ -457,46 +461,25 @@ public final class AlarmClient {
         ProjectionCache cache = projection(level, alarm, camera,
                 rotorAngle, mountYOffset,
                 cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
-        if (cache == null) return;
+        if (cache == null || cache.triangles.isEmpty()) return;
 
-        BlockPos origin = alarm.getBlockPos();
-
-        // First pass: soft full-bright amber footprints. They are textured
-        // radial splats, so there is no polygon edge to expose as the beam folds
-        // from a wall onto a ceiling.
+        /*
+         * A single continuous translucent-emissive pass is deliberate.
+         *
+         * The previous implementation stamped hundreds of radial quads over
+         * each other and then submitted the same footprints again through the
+         * eyes/bloom program. On shader packs the overlap accumulated into the
+         * nearly-solid yellow beacon seen in-game. This mesh covers every
+         * surface point only once. It is still full-bright/emissive, but no
+         * longer asks BSL for an additional HDR bloom pass.
+         */
         RenderType lightType = RenderType.entityTranslucentEmissive(SPLASH);
         VertexConsumer light = buffers.getBuffer(lightType);
-        for (int ring = 0; ring < RADIAL_RINGS; ring++) {
-            float v = ring / (float) (RADIAL_RINGS - 1);
-            for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
-                float u = slice / (float) (ANGULAR_SAMPLES - 1);
-                ProjectedHit hit = cache.samples[ring][slice];
-                if (hit != null) {
-                    projectionSplat(light, poseStack, origin, hit,
-                            u, v, projectionAlpha(u, v));
-                }
-            }
+        BlockPos origin = alarm.getBlockPos();
+        for (ProjectedTriangle triangle : cache.triangles) {
+            emitProjectionTriangle(light, poseStack, origin, triangle);
         }
         flush(buffers, lightType);
-
-        // Second pass: shader-recognized emissive bloom on the exact same
-        // surface footprints. BSL/Oculus sees this through the same eyes path
-        // already used by the project's working emissive renderers.
-        RenderType bloomType = RenderType.eyes(BLOOM);
-        VertexConsumer bloom = buffers.getBuffer(bloomType);
-        for (int ring = 0; ring < RADIAL_RINGS; ring++) {
-            float v = ring / (float) (RADIAL_RINGS - 1);
-            for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
-                float u = slice / (float) (ANGULAR_SAMPLES - 1);
-                ProjectedHit hit = cache.samples[ring][slice];
-                if (hit != null) {
-                    int alpha = Math.round(projectionAlpha(u, v) * 0.82F);
-                    projectionSplat(bloom, poseStack, origin, hit,
-                            u, v, alpha);
-                }
-            }
-        }
-        flush(buffers, bloomType);
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -527,65 +510,157 @@ public final class AlarmClient {
 
         Vec3 rotorCenter = modelPointToWorld(pos, facing,
                 0.0D, 8.0D, 7.0D, mountYOffset);
-        Vec3 wallOrigin = rotorCenter.add(inward.scale(WALL_PLANE_INSET));
+        Vec3 wallOrigin = rotorCenter.add(
+                inward.scale(WALL_PLANE_INSET));
         Vec3 rayStart = wallOrigin
                 .add(tangent.scale(MIN_SPLASH_RADIUS))
                 .add(outward.scale(PROJECTOR_OUTSET));
-        BlockPos ignoredBlastDoor =
-                AlarmModule.blastDoorTopMountController(level, pos, state);
 
-        ProjectedHit[][] samples =
-                new ProjectedHit[RADIAL_RINGS][ANGULAR_SAMPLES];
+        ProjectionBuilder builder = new ProjectionBuilder(level, camera, pos,
+                rayStart, wallOrigin, tangent, fanSide, inward);
+        List<ProjectedTriangle> triangles = builder.build();
 
-        for (int ring = 0; ring < RADIAL_RINGS; ring++) {
-            double t = ring / (RADIAL_RINGS - 1.0D);
-            double radius = MIN_SPLASH_RADIUS
-                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS)
-                    * Math.pow(t, 1.04D);
-
-            // The reference is a broad pear/fan rather than a strict cone:
-            // narrow at the source, rapidly opening, fattest around 70% of
-            // the throw, then only gently rounding into the far cap.
-            double growth = smoothStep(0.0F, 0.24F, (float) t);
-            double lobe = Math.sin(Math.PI * 0.70D * t);
-            lobe = Math.pow(Math.max(0.0D, lobe), 0.56D);
-            double halfWidth = 0.025D + 1.52D * growth * lobe;
-            Vec3 ringCenter = wallOrigin.add(tangent.scale(radius));
-
-            for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
-                double u = -1.0D
-                        + 2.0D * slice / (ANGULAR_SAMPLES - 1.0D);
-                Vec3 intendedSurface = ringCenter.add(
-                        fanSide.scale(halfWidth * u));
-                Vec3 end = intendedSurface.add(inward.scale(RAY_OVERSHOOT));
-                samples[ring][slice] = cast(level, camera, pos,
-                        ignoredBlastDoor, rayStart, end);
-            }
-        }
-
-        ProjectionCache fresh = new ProjectionCache(tick, samples);
+        ProjectionCache fresh = new ProjectionCache(tick,
+                List.copyOf(triangles));
         byPos.put(pos.immutable(), fresh);
         return fresh;
     }
 
+    /**
+     * Adaptive surface tessellation for the alarm footprint.
+     *
+     * A flat 1x1 wall is resolved with only the coarse 8x8 lattice. Cells that
+     * cross a VoxelShape discontinuity (door frame, ceiling fold, pillar, etc.)
+     * are subdivided locally up to two more times. That gives an effective
+     * 32x32 boundary resolution only where the geometry actually needs it,
+     * instead of paying for a thousand raycasts on every ordinary wall.
+     */
+    private static final class ProjectionBuilder {
+        private final ClientLevel level;
+        private final Entity context;
+        private final BlockPos alarmPos;
+        private final Vec3 rayStart;
+        private final Vec3 wallOrigin;
+        private final Vec3 tangent;
+        private final Vec3 fanSide;
+        private final Vec3 inward;
+        private final Map<Integer, ProjectedSample> samples = new HashMap<>();
+
+        private ProjectionBuilder(ClientLevel level, Entity context,
+                BlockPos alarmPos, Vec3 rayStart, Vec3 wallOrigin,
+                Vec3 tangent, Vec3 fanSide, Vec3 inward) {
+            this.level = level;
+            this.context = context;
+            this.alarmPos = alarmPos;
+            this.rayStart = rayStart;
+            this.wallOrigin = wallOrigin;
+            this.tangent = tangent;
+            this.fanSide = fanSide;
+            this.inward = inward;
+        }
+
+        private List<ProjectedTriangle> build() {
+            List<ProjectedTriangle> result = new ArrayList<>();
+            for (int v = 0; v < MESH_RESOLUTION; v += BASE_MESH_STEP) {
+                for (int u = 0; u < MESH_RESOLUTION;
+                        u += BASE_MESH_STEP) {
+                    subdivide(u, v, u + BASE_MESH_STEP,
+                            v + BASE_MESH_STEP, 0, result);
+                }
+            }
+            return result;
+        }
+
+        private void subdivide(int u0, int v0, int u1, int v1,
+                int depth, List<ProjectedTriangle> result) {
+            ProjectedSample a = sample(u0, v0);
+            ProjectedSample b = sample(u1, v0);
+            ProjectedSample c = sample(u1, v1);
+            ProjectedSample d = sample(u0, v1);
+
+            if (compatibleQuad(a, b, c, d)) {
+                addTriangle(result, a, b, c);
+                addTriangle(result, a, c, d);
+                return;
+            }
+
+            if (depth < ADAPTIVE_SUBDIVISIONS) {
+                int um = (u0 + u1) >>> 1;
+                int vm = (v0 + v1) >>> 1;
+                subdivide(u0, v0, um, vm, depth + 1, result);
+                subdivide(um, v0, u1, vm, depth + 1, result);
+                subdivide(um, vm, u1, v1, depth + 1, result);
+                subdivide(u0, vm, um, v1, depth + 1, result);
+                return;
+            }
+
+            // At the finest local resolution retain whichever triangle really
+            // belongs to a single physical surface. This produces a small,
+            // smooth seam around folds rather than a whole missing square.
+            addTriangle(result, a, b, c);
+            addTriangle(result, a, c, d);
+        }
+
+        private void addTriangle(List<ProjectedTriangle> result,
+                ProjectedSample a, ProjectedSample b, ProjectedSample c) {
+            if (compatibleTriangle(a, b, c)) {
+                result.add(new ProjectedTriangle(a, b, c));
+            }
+        }
+
+        private ProjectedSample sample(int uIndex, int vIndex) {
+            int key = (vIndex << 16) | uIndex;
+            if (samples.containsKey(key)) return samples.get(key);
+
+            float u01 = uIndex / (float) MESH_RESOLUTION;
+            float v01 = vIndex / (float) MESH_RESOLUTION;
+            double lateral = -1.0D + 2.0D * u01;
+            double t = v01;
+
+            double radius = MIN_SPLASH_RADIUS
+                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS)
+                    * Math.pow(t, 1.04D);
+
+            // Preserve the approved overall silhouette: narrow root, quickly
+            // widening pear/fan body and a gently rounded far cap.
+            double growth = smoothStep(0.0F, 0.24F, (float) t);
+            double lobe = Math.sin(Math.PI * 0.70D * t);
+            lobe = Math.pow(Math.max(0.0D, lobe), 0.56D);
+            double halfWidth = 0.025D + 1.52D * growth * lobe;
+
+            Vec3 intended = wallOrigin
+                    .add(tangent.scale(radius))
+                    .add(fanSide.scale(halfWidth * lateral))
+                    .add(inward.scale(RAY_OVERSHOOT));
+            ProjectedHit hit = cast(level, context, alarmPos,
+                    rayStart, intended);
+
+            ProjectedSample sample = hit == null ? null
+                    : new ProjectedSample(hit.position, hit.face,
+                            u01, v01);
+            samples.put(key, sample);
+            return sample;
+        }
+    }
+
     private static ProjectedHit cast(ClientLevel level, Entity context,
-            BlockPos alarmPos, BlockPos ignoredBlastDoor,
-            Vec3 start, Vec3 end) {
+            BlockPos alarmPos, Vec3 start, Vec3 end) {
         Vec3 ray = end.subtract(start);
         if (ray.lengthSqr() < 1.0E-8D) return null;
         Vec3 advance = ray.normalize().scale(0.012D);
         Vec3 cursor = start;
 
-        for (int attempt = 0; attempt < 8; attempt++) {
+        // Only the Alarm itself is transparent to its projector. Every other
+        // collider, including the Blast Door's dynamic VoxelShape, is a real
+        // receiving/occluding surface. This is what makes the light wrap around
+        // its frame instead of painting straight through it.
+        for (int attempt = 0; attempt < 3; attempt++) {
             BlockHitResult hit = level.clip(new ClipContext(cursor, end,
                     ClipContext.Block.COLLIDER,
                     ClipContext.Fluid.NONE, context));
             if (hit.getType() != HitResult.Type.BLOCK) return null;
 
-            BlockPos hitPos = hit.getBlockPos();
-            if (hitPos.equals(alarmPos)
-                    || isIgnoredBlastDoorCell(
-                            level, hitPos, ignoredBlastDoor)) {
+            if (hit.getBlockPos().equals(alarmPos)) {
                 cursor = hit.getLocation().add(advance);
                 if (cursor.distanceToSqr(end) < 1.0E-6D) return null;
                 continue;
@@ -600,88 +675,67 @@ public final class AlarmClient {
         return null;
     }
 
-    private static boolean isIgnoredBlastDoorCell(ClientLevel level,
-            BlockPos pos, BlockPos controller) {
-        if (controller == null) return false;
-        BlockState state = level.getBlockState(pos);
-        if (BlastDoorModule.isController(state)) {
-            return pos.equals(controller);
-        }
-        return BlastDoorModule.isPart(state)
-                && BlastDoorStructure.isValidPart(level, pos, state)
-                && BlastDoorStructure.controllerPosition(pos, state)
-                        .equals(controller);
+    private static boolean compatibleQuad(ProjectedSample a,
+            ProjectedSample b, ProjectedSample c, ProjectedSample d) {
+        return compatibleTriangle(a, b, c)
+                && compatibleTriangle(a, c, d);
     }
 
-    private static void projectionSplat(VertexConsumer consumer,
-            PoseStack poseStack, BlockPos blockOrigin, ProjectedHit hit,
-            float u, float v, int alpha) {
-        if (alpha <= 0) return;
+    private static boolean compatibleTriangle(ProjectedSample a,
+            ProjectedSample b, ProjectedSample c) {
+        if (a == null || b == null || c == null) return false;
+        if (a.face != b.face || a.face != c.face) return false;
 
-        Vec3 axisA;
-        Vec3 axisB;
-        if (hit.face.getAxis() == Direction.Axis.Y) {
-            axisA = new Vec3(1.0D, 0.0D, 0.0D);
-            axisB = new Vec3(0.0D, 0.0D, 1.0D);
-        } else if (hit.face.getAxis() == Direction.Axis.X) {
-            axisA = new Vec3(0.0D, 1.0D, 0.0D);
-            axisB = new Vec3(0.0D, 0.0D, 1.0D);
-        } else {
-            axisA = new Vec3(1.0D, 0.0D, 0.0D);
-            axisB = new Vec3(0.0D, 1.0D, 0.0D);
+        double planeA = planeCoordinate(a.position, a.face);
+        if (Math.abs(planeA - planeCoordinate(b.position, b.face))
+                        > PLANE_EPSILON
+                || Math.abs(planeA - planeCoordinate(c.position, c.face))
+                        > PLANE_EPSILON) {
+            return false;
         }
 
-        double radius = 0.19D + 0.14D * v;
-        Vec3 center = local(hit.position, blockOrigin);
-        Vec3 a = center.add(axisA.scale(-radius))
-                .add(axisB.scale(radius));
-        Vec3 b = center.add(axisA.scale(radius))
-                .add(axisB.scale(radius));
-        Vec3 cc = center.add(axisA.scale(radius))
-                .add(axisB.scale(-radius));
-        Vec3 d = center.add(axisA.scale(-radius))
-                .add(axisB.scale(-radius));
-        Vec3 normal = direction(hit.face);
-
-        splatVertex(consumer, poseStack, a, normal, 0.0F, 0.0F, alpha);
-        splatVertex(consumer, poseStack, b, normal, 1.0F, 0.0F, alpha);
-        splatVertex(consumer, poseStack, cc, normal, 1.0F, 1.0F, alpha);
-        splatVertex(consumer, poseStack, d, normal, 0.0F, 1.0F, alpha);
+        return a.position.distanceToSqr(b.position)
+                        <= MAX_TRIANGLE_EDGE_SQR
+                && b.position.distanceToSqr(c.position)
+                        <= MAX_TRIANGLE_EDGE_SQR
+                && c.position.distanceToSqr(a.position)
+                        <= MAX_TRIANGLE_EDGE_SQR;
     }
 
-    private static void splatVertex(VertexConsumer consumer,
-            PoseStack poseStack, Vec3 point, Vec3 normal,
-            float u, float v, int alpha) {
+    private static double planeCoordinate(Vec3 point, Direction face) {
+        return switch (face.getAxis()) {
+            case X -> point.x;
+            case Y -> point.y;
+            case Z -> point.z;
+        };
+    }
+
+    private static void emitProjectionTriangle(VertexConsumer consumer,
+            PoseStack poseStack, BlockPos blockOrigin,
+            ProjectedTriangle triangle) {
+        projectionVertex(consumer, poseStack, blockOrigin, triangle.a);
+        projectionVertex(consumer, poseStack, blockOrigin, triangle.b);
+        projectionVertex(consumer, poseStack, blockOrigin, triangle.c);
+        // entityTranslucentEmissive uses QUADS. Repeating the last corner forms
+        // a degenerate quad with the exact visible area of the triangle.
+        projectionVertex(consumer, poseStack, blockOrigin, triangle.c);
+    }
+
+    private static void projectionVertex(VertexConsumer consumer,
+            PoseStack poseStack, BlockPos blockOrigin,
+            ProjectedSample sample) {
+        Vec3 point = local(sample.position, blockOrigin);
+        Vec3 normal = direction(sample.face);
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 198, 108, alpha)
-                .uv(u, v)
+                .color(255, 190, 96, 150)
+                .uv(sample.u, sample.v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
                 .normal(poseStack.last().normal(),
                         (float) normal.x, (float) normal.y,
                         (float) normal.z)
                 .endVertex();
-    }
-
-    private static int projectionAlpha(float u, float v) {
-        float lateral = Math.abs(u * 2.0F - 1.0F);
-        float edgeFade = 1.0F - smoothStep(0.70F, 1.0F, lateral);
-        float endFade = 1.0F - smoothStep(0.80F, 1.0F, v);
-
-        float nearHot = 0.225F * (float) Math.exp(-v / 0.105F);
-        float body = 0.044F - 0.010F * v;
-        float shoulder = 0.092F * (float) Math.exp(
-                -Math.pow((lateral - 0.69F) / 0.19F, 2.0D))
-                * (0.92F - 0.22F * v);
-        float middleDip = 1.0F - 0.42F
-                * (float) Math.exp(-Math.pow((v - 0.46F) / 0.25F, 2.0D))
-                * (float) Math.exp(-Math.pow(lateral / 0.44F, 2.0D));
-
-        float opacity = (nearHot + body + shoulder)
-                * edgeFade * endFade * middleDip;
-        return Math.max(0, Math.min(96,
-                Math.round(opacity * 255.0F)));
     }
 
     private static float smoothStep(float edge0, float edge1, float value) {
@@ -723,7 +777,16 @@ public final class AlarmClient {
     private record ProjectedHit(Vec3 position, Direction face) {
     }
 
-    private record ProjectionCache(long tick, ProjectedHit[][] samples) {
+    private record ProjectedSample(Vec3 position, Direction face,
+            float u, float v) {
+    }
+
+    private record ProjectedTriangle(ProjectedSample a,
+            ProjectedSample b, ProjectedSample c) {
+    }
+
+    private record ProjectionCache(long tick,
+            List<ProjectedTriangle> triangles) {
     }
 
     private static final class ItemModel

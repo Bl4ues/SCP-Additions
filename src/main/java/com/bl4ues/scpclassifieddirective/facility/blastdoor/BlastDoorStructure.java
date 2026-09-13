@@ -420,6 +420,18 @@ public final class BlastDoorStructure {
 
         double best = Double.POSITIVE_INFINITY;
 
+        /*
+         * For the fixed frame, optical clipping follows the model's silhouette
+         * on the wall plane rather than the full front-to-back extrusion.
+         * The physical frame sticks far out from the wall; raycasting that depth
+         * literally casts a large parallax shadow ABOVE the visible frame, which
+         * is the "invisible wall" seen by the Alarm projector. A thin optical
+         * slice keeps the cutoff aligned with the metal the player can actually
+         * see. The moving door slab remains volumetric because it really closes
+         * the opening and must block the beam from either side.
+         */
+        final double frameOpticalHalfDepth = 1.25D;
+
         // Moving opaque slab. The small decorative fins below it are omitted;
         // the slab itself is the meaningful optical blocker.
         best = Math.min(best, segmentModelBox(start, end,
@@ -429,38 +441,38 @@ public final class BlastDoorStructure {
 
         // Left and right vertical frame posts.
         best = Math.min(best, segmentModelBox(start, end,
-                -40.0D, 0.0D, -11.25D,
-                -32.5D, 40.0D, 11.25D,
+                -40.0D, 0.0D, -frameOpticalHalfDepth,
+                -32.5D, 40.0D, frameOpticalHalfDepth,
                 0.0D, 0.0D, 0.0D));
         best = Math.min(best, segmentModelBox(start, end,
-                32.5D, 0.0D, -11.25D,
-                40.0D, 40.0D, 11.25D,
+                32.5D, 0.0D, -frameOpticalHalfDepth,
+                40.0D, 40.0D, frameOpticalHalfDepth,
                 0.0D, 0.0D, 0.0D));
 
         // Authored sloped shoulders. Blockbench/GeckoLib's Z rotation is the
         // opposite mathematical sign, so segmentModelBox applies the JSON angle
         // as the inverse transform before the AABB test.
         best = Math.min(best, segmentModelBox(start, end,
-                32.8125D, 39.1875D, -11.125D,
-                40.3125D, 60.3125D, 11.0D,
+                32.8125D, 39.1875D, -frameOpticalHalfDepth,
+                40.3125D, 60.3125D, frameOpticalHalfDepth,
                 39.0625D, 39.1875D, -45.0D));
         best = Math.min(best, segmentModelBox(start, end,
-                -40.3125D, 39.1875D, -11.125D,
-                -32.8125D, 60.3125D, 11.125D,
+                -40.3125D, 39.1875D, -frameOpticalHalfDepth,
+                -32.8125D, 60.3125D, frameOpticalHalfDepth,
                 -39.0625D, 39.1875D, 45.0D));
 
         // Top beam. Its strange source coordinates are exactly what is authored
         // in blast_door.geo.json; the 90-degree rotation puts it horizontally
         // between the two sloped shoulders.
         best = Math.min(best, segmentModelBox(start, end,
-                -40.0D, 67.5D, -11.25D,
-                -32.5D, 117.5D, 11.25D,
+                -40.0D, 67.5D, -frameOpticalHalfDepth,
+                -32.5D, 117.5D, frameOpticalHalfDepth,
                 -38.75D, 53.75D, 90.0D));
 
         // Thin bottom threshold/frame strip.
         best = Math.min(best, segmentModelBox(start, end,
-                -32.5D, 0.0D, -7.75D,
-                32.5D, 1.5D, 7.75D,
+                -32.5D, 0.0D, -frameOpticalHalfDepth,
+                32.5D, 1.5D, frameOpticalHalfDepth,
                 0.0D, 0.0D, 0.0D));
 
         if (!Double.isFinite(best) || best < 0.0D || best > 1.0D) {

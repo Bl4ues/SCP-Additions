@@ -90,6 +90,7 @@ public final class AlarmAudioClient {
         private final long startedAtTick;
         private boolean finished;
         private boolean finishRequested;
+        private long fadeStartTick = Long.MAX_VALUE;
         private long finishAtTick = Long.MAX_VALUE;
 
         private AlarmLoop(ClientLevel level, BlockPos pos) {
@@ -147,9 +148,24 @@ public final class AlarmAudioClient {
                 return;
             }
 
-            this.volume = Mth.clamp(
+            float distanceVolume = Mth.clamp(
                     (float) (1.0D - distance / MAX_DISTANCE),
                     0.001F, 1.0F);
+
+            if (finishRequested) {
+                long total = Math.max(1L, finishAtTick - fadeStartTick);
+                float raw = Mth.clamp(
+                        (level.getGameTime() - fadeStartTick)
+                                / (float) total,
+                        0.0F, 1.0F);
+                // Smoothstep avoids the audible corner of a linear envelope.
+                float fade = raw * raw * (3.0F - 2.0F * raw);
+                this.volume = distanceVolume * (1.0F - fade);
+                this.pitch = Mth.lerp(fade, 1.0F, 0.52F);
+            } else {
+                this.volume = distanceVolume;
+                this.pitch = 1.0F;
+            }
         }
 
         private void finishCurrentCycle() {
@@ -159,12 +175,15 @@ public final class AlarmAudioClient {
             long phase = Math.floorMod(elapsed, LOOP_TICKS);
             long remaining = LOOP_TICKS - phase;
             finishRequested = true;
+            fadeStartTick = level.getGameTime();
             finishAtTick = level.getGameTime() + remaining;
         }
 
         private void cancelPendingFinish() {
             finishRequested = false;
+            fadeStartTick = Long.MAX_VALUE;
             finishAtTick = Long.MAX_VALUE;
+            pitch = 1.0F;
         }
 
         private boolean isFinished() {

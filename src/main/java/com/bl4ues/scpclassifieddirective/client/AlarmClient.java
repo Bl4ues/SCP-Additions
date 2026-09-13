@@ -59,6 +59,8 @@ public final class AlarmClient {
             "textures/block/alarm.png");
     private static final ResourceLocation GLOWMASK = id(
             "textures/block/alarm_glowmask.png");
+    private static final ResourceLocation LAMP_EMISSIVE = id(
+            "textures/effect/alarm_lamp_emissive.png");
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
     private static final ResourceLocation SPLASH_EMISSIVE = id(
@@ -332,9 +334,16 @@ public final class AlarmClient {
                 mountYOffset);
         flush(buffers, lampType);
 
-        // The exact same geometry is submitted through the eyes render type.
-        // The first full-bright cutout pass provides stable depth; this second
-        // pass is what shader packs such as BSL recognize as true emissive/bloom.
+        // The authored _glowmask is intentionally sparse. Keep it, but also
+        // submit a dedicated full-lamp emissive mask so shader packs receive a
+        // reliable HDR source from the orange lamp itself rather than depending
+        // on a handful of bright texels.
+        RenderType lampGlowType = RenderType.eyes(LAMP_EMISSIVE);
+        VertexConsumer lampGlow = buffers.getBuffer(lampGlowType);
+        emitLitLampCube(alarm, poseStack, lampGlow, rotorAngle,
+                mountYOffset);
+        flush(buffers, lampGlowType);
+
         RenderType glowType = RenderType.eyes(GLOWMASK);
         VertexConsumer glow = buffers.getBuffer(glowType);
         emitLitLampCube(alarm, poseStack, glow, rotorAngle,
@@ -452,45 +461,14 @@ public final class AlarmClient {
     private static void renderProjection(AlarmModule.AlarmBlockEntity alarm,
             PoseStack poseStack, MultiBufferSource buffers,
             float rotorAngle, double mountYOffset) {
-        if (!(alarm.getLevel() instanceof ClientLevel level)) return;
-        Minecraft minecraft = Minecraft.getInstance();
-        Entity camera = minecraft.getCameraEntity();
-        if (camera == null) return;
-
-        Vec3 alarmCenter = Vec3.atCenterOf(alarm.getBlockPos());
-        double cameraDistanceSqr =
-                camera.position().distanceToSqr(alarmCenter);
-        if (cameraDistanceSqr > PROJECTOR_DISTANCE_SQR) return;
-
-        ProjectionCache cache = projection(level, alarm, camera,
-                rotorAngle, mountYOffset,
-                cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
-        if (cache == null || cache.triangles.isEmpty()) return;
-
-        /*
-         * The cone is a projected light texture, not a geometric silhouette.
-         * The first texture contains the complete soft pear/fan profile from
-         * the reference. A second, much weaker texture contains only the hot
-         * source and soft edge rim and is submitted through eyes so BSL/Iris
-         * see HDR emission without turning the whole wash into a solid beacon.
-         */
-        BlockPos origin = alarm.getBlockPos();
-
-        RenderType lightType = RenderType.entityTranslucentEmissive(SPLASH);
-        VertexConsumer light = buffers.getBuffer(lightType);
-        for (ProjectedTriangle triangle : cache.triangles) {
-            emitProjectionTriangle(light, poseStack, origin,
-                    triangle, false);
-        }
-        flush(buffers, lightType);
-
-        RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
-        VertexConsumer bloom = buffers.getBuffer(bloomType);
-        for (ProjectedTriangle triangle : cache.triangles) {
-            emitProjectionTriangle(bloom, poseStack, origin,
-                    triangle, true);
-        }
-        flush(buffers, bloomType);
+        // The old approach stretched one large texture across a tessellated
+        // footprint. Even with adaptive subdivision, the silhouette still
+        // advertised the mesh and folds produced visibly geometric cuts.
+        // Independent soft surface splats remove that entire failure mode:
+        // every sample is clipped by real world geometry, but no polygon edge
+        // defines the visible boundary of the light.
+        AlarmLightSplatRenderer.render(alarm, poseStack, buffers,
+                rotorAngle, mountYOffset);
     }
 
     private static ProjectionCache projection(ClientLevel level,

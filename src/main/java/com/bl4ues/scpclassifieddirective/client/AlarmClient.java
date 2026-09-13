@@ -2,10 +2,17 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -25,13 +32,13 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
-import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
+
+import org.joml.Matrix4f;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,8 +53,12 @@ import java.util.WeakHashMap;
         bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class AlarmClient {
     private static final int FULL_BRIGHT = LightTexture.FULL_BRIGHT;
-    private static final ResourceLocation BLOCK_GEO = id(
-            "geo/block/alarm.geo.json");
+    private static final ResourceLocation BASE_GEO = id(
+            "geo/block/alarm_base.geo.json");
+    private static final ResourceLocation LAMP_GEO = id(
+            "geo/block/alarm_lamp.geo.json");
+    private static final ResourceLocation COVER_GEO = id(
+            "geo/block/alarm_cover.geo.json");
     private static final ResourceLocation ITEM_GEO = id(
             "geo/item/alarm.geo.json");
     private static final ResourceLocation TEXTURE = id(
@@ -56,26 +67,20 @@ public final class AlarmClient {
             "textures/block/alarm_glowmask.png");
     private static final ResourceLocation ANIMATION = id(
             "animations/block/alarm.animation.json");
-    private static final ResourceLocation SPLASH = id(
-            "textures/effect/alarm_light_splash.png");
-    private static final ResourceLocation SPLASH_BLOOM = id(
-            "textures/effect/alarm_light_bloom.png");
 
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double MIN_SPLASH_RADIUS = 0.08D;
-    private static final double MAX_SPLASH_RADIUS = 3.20D;
-    private static final double SPLASH_HALF_ANGLE =
-            Math.toRadians(29.0D);
+    private static final double MIN_SPLASH_RADIUS = 0.045D;
+    private static final double MAX_SPLASH_RADIUS = 3.05D;
     private static final double PROJECTOR_OUTSET = 0.30D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.05D;
-    private static final double SURFACE_EPSILON = 0.0035D;
-    private static final double MAX_TRIANGLE_EDGE_SQR = 0.34D;
-    private static final int RADIAL_RINGS = 11;
-    private static final int ANGULAR_SAMPLES = 21;
-    private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 64.0D;
+    private static final double SURFACE_EPSILON = 0.0040D;
+    private static final double MAX_TRIANGLE_EDGE_SQR = 0.30D;
+    private static final int RADIAL_RINGS = 12;
+    private static final int ANGULAR_SAMPLES = 23;
+    private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 144.0D;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
             PROJECTIONS = new WeakHashMap<>();
@@ -103,12 +108,18 @@ public final class AlarmClient {
         bone.setScaleZ(scale);
     }
 
-    private static final class BlockModel
+    private static float rotorAngle(
+            AlarmModule.AlarmBlockEntity animatable, float partialTick) {
+        return (float) (-animatable.projectionPhase(partialTick)
+                * Math.PI * 2.0D);
+    }
+
+    private static final class BaseModel
             extends GeoModel<AlarmModule.AlarmBlockEntity> {
         @Override
         public ResourceLocation getModelResource(
                 AlarmModule.AlarmBlockEntity animatable) {
-            return BLOCK_GEO;
+            return BASE_GEO;
         }
 
         @Override
@@ -126,185 +137,136 @@ public final class AlarmClient {
         @Override
         public void setCustomAnimations(AlarmModule.AlarmBlockEntity animatable,
                 long instanceId,
-                AnimationState<AlarmModule.AlarmBlockEntity> animationState) {
-            super.setCustomAnimations(animatable, instanceId, animationState);
-
-            // Like the Intercom, the authored lit/unlit meshes occupy exactly
-            // the same space. Explicitly restore their state per block entity
-            // so GeckoLib model reuse cannot leak a previous Alarm's scale.
+                AnimationState<AlarmModule.AlarmBlockEntity> state) {
+            super.setCustomAnimations(animatable, instanceId, state);
             boolean active = animatable.getBlockState()
                     .getValue(AlarmModule.ACTIVE);
-            forceLamp(getAnimationProcessor().getBone("lit"), active);
             forceLamp(getAnimationProcessor().getBone("unlit"), !active);
-
-            // Do not trust GeckoLib's controller clock for the rotor after a
-            // client pause/resume. The visible rotor and projected light share
-            // this deterministic world-time phase instead, so both resume
-            // cleanly and remain locked to the authored one-second CCW turn.
             CoreGeoBone rotor = getAnimationProcessor().getBone("rotor");
             if (rotor != null) {
-                float phase = active
-                        ? animatable.projectionPhase(
-                                animationState.getPartialTick())
-                        : 0.0F;
-                rotor.setRotZ((float) (-phase * Math.PI * 2.0D));
+                rotor.setRotZ(rotorAngle(animatable, state.getPartialTick()));
             }
-            prepareBasePass(active);
-        }
-
-        private void prepareBasePass(boolean active) {
-            setVisible("backplate", true);
-            setVisible("cover", false);
-            setVisible("reflector", true);
-            // While active the lit cube is rendered only by the emissive pass.
-            // That avoids a coplanar normal-texture depth write swallowing the
-            // exact same cube when it is drawn again through RenderType.eyes.
-            setVisible("lit", false);
-            setVisible("unlit", !active);
-        }
-
-        private void prepareEmissivePass() {
-            setVisible("backplate", false);
-            setVisible("cover", false);
-            setVisible("reflector", false);
-            setVisible("unlit", false);
-            setVisible("lit", true);
-        }
-
-        private void prepareGlassPass() {
-            setVisible("backplate", false);
-            setVisible("cover", true);
-            setVisible("reflector", false);
-            setVisible("unlit", false);
-            setVisible("lit", false);
-        }
-
-        private void setVisible(String boneName, boolean visible) {
-            CoreGeoBone bone = getAnimationProcessor().getBone(boneName);
-            if (bone == null) return;
-            bone.setHidden(!visible);
-            float scale = visible ? 1.0F : 0.0F;
-            bone.setScaleX(scale);
-            bone.setScaleY(scale);
-            bone.setScaleZ(scale);
         }
     }
 
-    private static final class BodyRenderer
+    private static class LampModel
+            extends GeoModel<AlarmModule.AlarmBlockEntity> {
+        private final ResourceLocation texture;
+
+        private LampModel(ResourceLocation texture) {
+            this.texture = texture;
+        }
+
+        @Override
+        public ResourceLocation getModelResource(
+                AlarmModule.AlarmBlockEntity animatable) {
+            return LAMP_GEO;
+        }
+
+        @Override
+        public ResourceLocation getTextureResource(
+                AlarmModule.AlarmBlockEntity animatable) {
+            return texture;
+        }
+
+        @Override
+        public ResourceLocation getAnimationResource(
+                AlarmModule.AlarmBlockEntity animatable) {
+            return ANIMATION;
+        }
+
+        @Override
+        public void setCustomAnimations(AlarmModule.AlarmBlockEntity animatable,
+                long instanceId,
+                AnimationState<AlarmModule.AlarmBlockEntity> state) {
+            super.setCustomAnimations(animatable, instanceId, state);
+            forceLamp(getAnimationProcessor().getBone("lit"), true);
+            CoreGeoBone rotor = getAnimationProcessor().getBone("rotor");
+            if (rotor != null) {
+                rotor.setRotZ(rotorAngle(animatable, state.getPartialTick()));
+            }
+        }
+    }
+
+    private static final class CoverModel
+            extends GeoModel<AlarmModule.AlarmBlockEntity> {
+        @Override
+        public ResourceLocation getModelResource(
+                AlarmModule.AlarmBlockEntity animatable) {
+            return COVER_GEO;
+        }
+
+        @Override
+        public ResourceLocation getTextureResource(
+                AlarmModule.AlarmBlockEntity animatable) {
+            return TEXTURE;
+        }
+
+        @Override
+        public ResourceLocation getAnimationResource(
+                AlarmModule.AlarmBlockEntity animatable) {
+            return ANIMATION;
+        }
+    }
+
+    private static final class BaseRenderer
             extends GeoBlockRenderer<AlarmModule.AlarmBlockEntity> {
-        private final BlockModel alarmModel;
-
-        private BodyRenderer() {
-            this(new BlockModel());
-        }
-
-        private BodyRenderer(BlockModel model) {
-            super(model);
-            this.alarmModel = model;
-
-            // First render the actual lamp as emissive while the translucent
-            // orange cover is still absent. This is the same explicit glowmask
-            // path used by the project's shader-safe GeckoLib blocks.
-            addRenderLayer(new GeoRenderLayer<>(this) {
-                @Override
-                public void render(PoseStack poseStack,
-                        AlarmModule.AlarmBlockEntity animatable,
-                        BakedGeoModel bakedModel, RenderType renderType,
-                        MultiBufferSource bufferSource, VertexConsumer buffer,
-                        float partialTick, int packedLight, int packedOverlay) {
-                    if (!animatable.getBlockState()
-                            .getValue(AlarmModule.ACTIVE)) {
-                        return;
-                    }
-                    alarmModel.prepareEmissivePass();
-                    RenderType lampBase =
-                            RenderType.entityTranslucentEmissive(TEXTURE);
-                    RenderType lampBloom = RenderType.eyes(GLOWMASK);
-                    try {
-                        // Draw the actual lit cube itself at full brightness.
-                        // This is the real rotating internal lamp geometry, not
-                        // a substitute quad on the front of the cover.
-                        getRenderer().reRender(bakedModel, poseStack,
-                                bufferSource, animatable, lampBase,
-                                bufferSource.getBuffer(lampBase), partialTick,
-                                FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-                                1.0F, 1.0F, 1.0F, 1.0F);
-                        flush(bufferSource, lampBase);
-
-                        // Then add the authored glowmask through the shader HDR
-                        // path so Oculus/BSL can bloom the same cube.
-                        getRenderer().reRender(bakedModel, poseStack,
-                                bufferSource, animatable, lampBloom,
-                                bufferSource.getBuffer(lampBloom), partialTick,
-                                FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
-                                1.0F, 1.0F, 1.0F, 1.0F);
-                        flush(bufferSource, lampBloom);
-                    } finally {
-                        alarmModel.prepareBasePass(true);
-                    }
-                }
-            });
-
-            // The orange shell is real translucent geometry. Draw it last,
-            // exactly like DocumentHolder's glass pass, so it tints the lamp
-            // instead of writing depth first and hiding the lamp behind it.
-            addRenderLayer(new GeoRenderLayer<>(this) {
-                @Override
-                public void render(PoseStack poseStack,
-                        AlarmModule.AlarmBlockEntity animatable,
-                        BakedGeoModel bakedModel, RenderType renderType,
-                        MultiBufferSource bufferSource, VertexConsumer buffer,
-                        float partialTick, int packedLight, int packedOverlay) {
-                    boolean active = animatable.getBlockState()
-                            .getValue(AlarmModule.ACTIVE);
-                    alarmModel.prepareGlassPass();
-                    RenderType glass = RenderType.entityTranslucent(
-                            TEXTURE, true);
-                    try {
-                        getRenderer().reRender(bakedModel, poseStack,
-                                bufferSource, animatable, glass,
-                                bufferSource.getBuffer(glass), partialTick,
-                                packedLight, packedOverlay,
-                                1.0F, 1.0F, 1.0F, 1.0F);
-                        flush(bufferSource, glass);
-                    } finally {
-                        alarmModel.prepareBasePass(active);
-                    }
-                }
-            });
-        }
-
-        private float rotorAngle() {
-            CoreGeoBone rotor = getGeoModel().getAnimationProcessor()
-                    .getBone("rotor");
-            return rotor == null ? 0.0F : rotor.getRotZ();
+        private BaseRenderer() {
+            super(new BaseModel());
         }
 
         @Override
         public RenderType getRenderType(AlarmModule.AlarmBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            // Opaque machinery first; the dedicated cover pass owns all
-            // translucency. This prevents the cover from intercepting the
-            // internal emissive lamp in the depth buffer.
             return RenderType.entityCutoutNoCull(texture);
+        }
+    }
+
+    private static final class LampRenderer
+            extends GeoBlockRenderer<AlarmModule.AlarmBlockEntity> {
+        private final boolean glowMask;
+
+        private LampRenderer(boolean glowMask) {
+            super(new LampModel(glowMask ? GLOWMASK : TEXTURE));
+            this.glowMask = glowMask;
         }
 
         @Override
-        public boolean shouldRenderOffScreen(
-                AlarmModule.AlarmBlockEntity blockEntity) {
-            return true;
+        public RenderType getRenderType(AlarmModule.AlarmBlockEntity animatable,
+                ResourceLocation texture, MultiBufferSource bufferSource,
+                float partialTick) {
+            return glowMask
+                    ? RenderType.eyes(texture)
+                    : RenderType.entityTranslucentEmissive(texture);
+        }
+    }
+
+    private static final class CoverRenderer
+            extends GeoBlockRenderer<AlarmModule.AlarmBlockEntity> {
+        private CoverRenderer() {
+            super(new CoverModel());
+        }
+
+        @Override
+        public RenderType getRenderType(AlarmModule.AlarmBlockEntity animatable,
+                ResourceLocation texture, MultiBufferSource bufferSource,
+                float partialTick) {
+            return RenderType.entityTranslucent(texture, true);
         }
     }
 
     /**
-     * Keep the GeckoLib body isolated from the custom world-space projection.
-     * GeoBlockRenderer's 1.20.1 erased render signature cannot safely be
-     * overridden with the concrete block-entity type.
+     * Explicit render ordering is important here:
+     * opaque mechanism -> real lit cube -> glowmask -> translucent orange cover
+     * -> projected surface light. No visibility state is shared between passes.
      */
     public static final class BlockRenderer
             implements BlockEntityRenderer<AlarmModule.AlarmBlockEntity> {
-        private final BodyRenderer body = new BodyRenderer();
+        private final BaseRenderer base = new BaseRenderer();
+        private final LampRenderer lamp = new LampRenderer(false);
+        private final LampRenderer lampGlow = new LampRenderer(true);
+        private final CoverRenderer cover = new CoverRenderer();
 
         public BlockRenderer(BlockEntityRendererProvider.Context context) {
         }
@@ -317,17 +279,37 @@ public final class AlarmClient {
             double mountYOffset = alarm.getLevel() == null ? 0.0D
                     : AlarmModule.visualYOffset(alarm.getLevel(),
                             alarm.getBlockPos(), alarm.getBlockState());
+            boolean active = alarm.getBlockState()
+                    .getValue(AlarmModule.ACTIVE);
 
             poseStack.pushPose();
             poseStack.translate(0.0D, mountYOffset, 0.0D);
-            body.render(alarm, partialTick, poseStack, bufferSource,
+
+            base.render(alarm, partialTick, poseStack, bufferSource,
                     packedLight, packedOverlay);
+            flush(bufferSource, RenderType.entityCutoutNoCull(TEXTURE));
+
+            if (active) {
+                lamp.render(alarm, partialTick, poseStack, bufferSource,
+                        FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                flush(bufferSource,
+                        RenderType.entityTranslucentEmissive(TEXTURE));
+
+                lampGlow.render(alarm, partialTick, poseStack, bufferSource,
+                        FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                flush(bufferSource, RenderType.eyes(GLOWMASK));
+            }
+
+            // Glass is deliberately last so the real emissive cube is seen
+            // through, and tinted by, the authored translucent orange shell.
+            cover.render(alarm, partialTick, poseStack, bufferSource,
+                    packedLight, packedOverlay);
+            flush(bufferSource, RenderType.entityTranslucent(TEXTURE, true));
             poseStack.popPose();
 
-            if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
-                float rotorAngle = body.rotorAngle();
+            if (active) {
                 renderProjection(alarm, poseStack, bufferSource,
-                        rotorAngle, mountYOffset);
+                        rotorAngle(alarm, partialTick), mountYOffset);
             }
         }
 
@@ -347,27 +329,38 @@ public final class AlarmClient {
         if (camera == null) return;
 
         Vec3 alarmCenter = Vec3.atCenterOf(alarm.getBlockPos());
-        if (camera.position().distanceToSqr(alarmCenter)
-                > PROJECTOR_DISTANCE_SQR) {
-            return;
-        }
+        double cameraDistanceSqr =
+                camera.position().distanceToSqr(alarmCenter);
+        if (cameraDistanceSqr > PROJECTOR_DISTANCE_SQR) return;
 
-        double cameraDistanceSqr = camera.position().distanceToSqr(alarmCenter);
         ProjectionCache cache = projection(level, alarm, camera,
                 rotorAngle, mountYOffset,
                 cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
         if (cache == null) return;
 
-        // The main pass must itself be emissive. A normal translucent entity
-        // pass becomes almost invisible in dark shader scenes, which is why the
-        // previous revision appeared to delete the cone entirely.
-        RenderType softType =
-                RenderType.entityTranslucentEmissive(SPLASH);
-        RenderType bloomType = RenderType.eyes(SPLASH_BLOOM);
-        VertexConsumer soft = buffers.getBuffer(softType);
-        VertexConsumer bloom = buffers.getBuffer(bloomType);
-        BlockPos originBlock = alarm.getBlockPos();
+        // Flush queued entity buffers before temporarily switching to an
+        // immediate POSITION_COLOR pass. The projected light is deliberately
+        // independent of Minecraft's lightmap, so it stays luminous in darkness
+        // even without a shader pack.
+        if (buffers instanceof MultiBufferSource.BufferSource source) {
+            source.endBatch();
+        }
 
+        Matrix4f matrix = poseStack.last().pose();
+        BufferBuilder builder = Tesselator.getInstance().getBuilder();
+
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE);
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.disableCull();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+        builder.begin(VertexFormat.Mode.TRIANGLES,
+                DefaultVertexFormat.POSITION_COLOR);
+
+        BlockPos origin = alarm.getBlockPos();
         for (int ring = 0; ring < RADIAL_RINGS - 1; ring++) {
             for (int slice = 0; slice < ANGULAR_SAMPLES - 1; slice++) {
                 ProjectedHit a = cache.samples[ring][slice];
@@ -382,33 +375,25 @@ public final class AlarmClient {
                 float v1 = (ring + 1)
                         / (float) (RADIAL_RINGS - 1);
 
-                // Triangles let the projection fold naturally from wall onto a
-                // ceiling. Only the tiny triangle crossing the geometric seam
-                // is omitted instead of chopping out an entire square patch.
                 if (compatibleTriangle(a, b, cHit)) {
-                    emitProjectionTriangle(soft, poseStack, originBlock,
+                    projectionTriangle(builder, matrix, origin,
                             a, b, cHit,
-                            u0, v0, u1, v0, u1, v1,
-                            255, 214, 150, 205);
-                    emitProjectionTriangle(bloom, poseStack, originBlock,
-                            a, b, cHit,
-                            u0, v0, u1, v0, u1, v1,
-                            255, 255, 255, 255);
+                            u0, v0, u1, v0, u1, v1);
                 }
                 if (compatibleTriangle(a, cHit, d)) {
-                    emitProjectionTriangle(soft, poseStack, originBlock,
+                    projectionTriangle(builder, matrix, origin,
                             a, cHit, d,
-                            u0, v0, u1, v1, u0, v1,
-                            255, 214, 150, 205);
-                    emitProjectionTriangle(bloom, poseStack, originBlock,
-                            a, cHit, d,
-                            u0, v0, u1, v1, u0, v1,
-                            255, 255, 255, 255);
+                            u0, v0, u1, v1, u0, v1);
                 }
             }
         }
-        flush(buffers, softType);
-        flush(buffers, bloomType);
+
+        BufferUploader.drawWithShader(builder.end());
+
+        RenderSystem.enableCull();
+        RenderSystem.depthMask(true);
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -430,8 +415,6 @@ public final class AlarmClient {
         Vec3 right = direction(facing.getClockWise());
         Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
 
-        // The reflector and projector share the exact evaluated rotor angle.
-        // At rest the opposite face of the reflector points down.
         double rotorRadians = rotorAngle;
         Vec3 tangent = right.scale(Math.sin(rotorRadians))
                 .add(up.scale(-Math.cos(rotorRadians))).normalize();
@@ -448,15 +431,18 @@ public final class AlarmClient {
 
         ProjectedHit[][] samples =
                 new ProjectedHit[RADIAL_RINGS][ANGULAR_SAMPLES];
-        double tanHalfAngle = Math.tan(SPLASH_HALF_ANGLE);
 
         for (int ring = 0; ring < RADIAL_RINGS; ring++) {
-            double ringT = ring / (RADIAL_RINGS - 1.0D);
+            double t = ring / (RADIAL_RINGS - 1.0D);
             double radius = MIN_SPLASH_RADIUS
-                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * ringT;
-            // Reference shape: already visible at the lamp, then widens
-            // gradually rather than exploding into a floodlight.
-            double halfWidth = 0.085D + radius * tanHalfAngle;
+                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS)
+                    * Math.pow(t, 1.03D);
+
+            // Rounded beacon footprint: narrow at the lamp, fattest around
+            // two-thirds of the throw, then gently narrows into the soft cap.
+            double lobe = Math.sin(Math.PI * 0.78D * t);
+            lobe = Math.pow(Math.max(0.0D, lobe), 0.72D);
+            double halfWidth = 0.030D + 0.93D * lobe;
             Vec3 ringCenter = wallOrigin.add(tangent.scale(radius));
 
             for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
@@ -492,59 +478,67 @@ public final class AlarmClient {
     }
 
     private static boolean compatibleTriangle(ProjectedHit a,
-            ProjectedHit b, ProjectedHit c) {
-        if (a == null || b == null || c == null) return false;
+            ProjectedHit b, ProjectedHit cHit) {
+        if (a == null || b == null || cHit == null) return false;
         if (a.face == b.face.getOpposite()
-                || a.face == c.face.getOpposite()
-                || b.face == c.face.getOpposite()) {
+                || a.face == cHit.face.getOpposite()
+                || b.face == cHit.face.getOpposite()) {
             return false;
         }
         return a.position.distanceToSqr(b.position)
                         <= MAX_TRIANGLE_EDGE_SQR
-                && b.position.distanceToSqr(c.position)
+                && b.position.distanceToSqr(cHit.position)
                         <= MAX_TRIANGLE_EDGE_SQR
-                && c.position.distanceToSqr(a.position)
+                && cHit.position.distanceToSqr(a.position)
                         <= MAX_TRIANGLE_EDGE_SQR;
     }
 
-    private static void emitProjectionTriangle(VertexConsumer consumer,
-            PoseStack poseStack, BlockPos blockOrigin,
-            ProjectedHit a, ProjectedHit b, ProjectedHit c,
-            float ua, float va, float ub, float vb, float uc, float vc,
-            int red, int green, int blue, int alpha) {
-        Vec3 normal = direction(a.face)
-                .add(direction(b.face))
-                .add(direction(c.face))
-                .normalize();
-        projectionVertex(consumer, poseStack,
-                local(a.position, blockOrigin), normal,
-                ua, va, red, green, blue, alpha);
-        projectionVertex(consumer, poseStack,
-                local(b.position, blockOrigin), normal,
-                ub, vb, red, green, blue, alpha);
-        projectionVertex(consumer, poseStack,
-                local(c.position, blockOrigin), normal,
-                uc, vc, red, green, blue, alpha);
-        // Entity render types consume quads. Degenerate the final corner to
-        // keep triangle topology without inventing geometry across a fold.
-        projectionVertex(consumer, poseStack,
-                local(c.position, blockOrigin), normal,
-                uc, vc, red, green, blue, alpha);
+    private static void projectionTriangle(BufferBuilder builder,
+            Matrix4f matrix, BlockPos blockOrigin,
+            ProjectedHit a, ProjectedHit b, ProjectedHit cHit,
+            float ua, float va, float ub, float vb, float uc, float vc) {
+        projectionVertex(builder, matrix, local(a.position, blockOrigin),
+                ua, va);
+        projectionVertex(builder, matrix, local(b.position, blockOrigin),
+                ub, vb);
+        projectionVertex(builder, matrix, local(cHit.position, blockOrigin),
+                uc, vc);
     }
 
-    private static void projectionVertex(VertexConsumer consumer,
-            PoseStack poseStack, Vec3 point, Vec3 normal,
-            float u, float v, int red, int green, int blue, int alpha) {
-        consumer.vertex(poseStack.last().pose(),
-                        (float) point.x, (float) point.y, (float) point.z)
-                .color(red, green, blue, alpha)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(FULL_BRIGHT)
-                .normal(poseStack.last().normal(),
-                        (float) normal.x, (float) normal.y,
-                        (float) normal.z)
+    private static void projectionVertex(BufferBuilder builder,
+            Matrix4f matrix, Vec3 point, float u, float v) {
+        float lateral = Math.abs(u * 2.0F - 1.0F);
+        float edgeFade = 1.0F - smoothStep(0.76F, 1.0F, lateral);
+        float endFade = 1.0F - smoothStep(0.76F, 1.0F, v);
+
+        // The reference beacon has a hot root, a subdued middle and luminous
+        // shoulders before the fully feathered edge.
+        float nearHot = 0.36F * (float) Math.exp(-v / 0.105F);
+        float body = 0.050F + 0.035F * (1.0F - v);
+        float shoulder = 0.105F * (float) Math.exp(
+                -Math.pow((lateral - 0.68F) / 0.19F, 2.0D))
+                * (0.72F + 0.28F * (1.0F - v));
+        float middleDip = 1.0F - 0.42F
+                * (float) Math.exp(-Math.pow((v - 0.43F) / 0.24F, 2.0D))
+                * (float) Math.exp(-Math.pow(lateral / 0.48F, 2.0D));
+
+        float opacity = (nearHot + body + shoulder)
+                * edgeFade * endFade * middleDip;
+        int alpha = Math.max(0, Math.min(118,
+                Math.round(opacity * 255.0F)));
+        if (alpha == 0) return;
+
+        builder.vertex(matrix, (float) point.x,
+                        (float) point.y, (float) point.z)
+                .color(255, 187, 92, alpha)
                 .endVertex();
+    }
+
+    private static float smoothStep(float edge0, float edge1, float value) {
+        if (edge1 <= edge0) return value >= edge1 ? 1.0F : 0.0F;
+        float x = Math.max(0.0F, Math.min(1.0F,
+                (value - edge0) / (edge1 - edge0)));
+        return x * x * (3.0F - 2.0F * x);
     }
 
     private static void flush(MultiBufferSource buffers, RenderType type) {

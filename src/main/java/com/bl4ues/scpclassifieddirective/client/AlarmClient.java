@@ -63,6 +63,10 @@ public final class AlarmClient {
             "textures/block/alarm_glowmask.png");
     private static final ResourceLocation LAMP_EMISSIVE = id(
             "textures/effect/alarm_lamp_emissive.png");
+    private static final ResourceLocation LAMP_OUTLINE = id(
+            "textures/effect/alarm_lamp_outline.png");
+    private static final ResourceLocation LAMP_OUTLINE_EMISSIVE = id(
+            "textures/effect/alarm_lamp_outline_emissive.png");
     private static final ResourceLocation GLASS_BLOOM = id(
             "textures/effect/alarm_glass_bloom.png");
     private static final ResourceLocation SPLASH = id(
@@ -344,16 +348,35 @@ public final class AlarmClient {
             AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
             MultiBufferSource buffers, float rotorAngle,
             double mountYOffset) {
+        /*
+         * The orange shell is slightly larger than the pale lit cube, but only
+         * its twelve edge bars are submitted. Rendering a complete enclosing
+         * cube would depth-occlude the inner lamp; the edge shell produces the
+         * requested orange outline while keeping the #ffff97 core visually in
+         * front. Both layers share the exact rotor transform.
+         */
+        RenderType outlineType = RenderType.entityCutoutNoCull(LAMP_OUTLINE);
+        VertexConsumer outline = buffers.getBuffer(outlineType);
+        emitLampOutline(alarm, poseStack, outline, rotorAngle,
+                mountYOffset);
+        flush(buffers, outlineType);
+
+        RenderType outlineGlowType = RenderType.eyes(
+                LAMP_OUTLINE_EMISSIVE);
+        VertexConsumer outlineGlow = buffers.getBuffer(outlineGlowType);
+        emitLampOutline(alarm, poseStack, outlineGlow, rotorAngle,
+                mountYOffset);
+        flush(buffers, outlineGlowType);
+
         RenderType lampType = RenderType.entityCutoutNoCull(TEXTURE);
         VertexConsumer lamp = buffers.getBuffer(lampType);
         emitLitLampCube(alarm, poseStack, lamp, rotorAngle,
                 mountYOffset);
         flush(buffers, lampType);
 
-        // The authored _glowmask is intentionally sparse. Keep it, but also
-        // submit a dedicated full-lamp emissive mask so shader packs receive a
-        // reliable HDR source from the orange lamp itself rather than depending
-        // on a handful of bright texels.
+        // Preserve the already-correct inner-lamp HDR path. The new orange
+        // outline uses the same full-bright + eyes strategy, with its own color
+        // and matching alpha strength.
         RenderType lampGlowType = RenderType.eyes(LAMP_EMISSIVE);
         VertexConsumer lampGlow = buffers.getBuffer(lampGlowType);
         emitLitLampCube(alarm, poseStack, lampGlow, rotorAngle,
@@ -415,6 +438,90 @@ public final class AlarmClient {
                         (float) normal.x, (float) normal.y,
                         (float) normal.z)
                 .endVertex();
+    }
+
+    private static void emitLampOutline(
+            AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
+            VertexConsumer consumer, float angle, double mountYOffset) {
+        // Original lit cube:
+        // X [-0.70, 0.70], Y [7.30, 8.70], Z [6.25, 7.75].
+        // The outline shell is centered on the exact same point and grows by
+        // only 0.12 model pixels on every side.
+        final double ox0 = -0.82D, ox1 = 0.82D;
+        final double oy0 = 7.18D, oy1 = 8.82D;
+        final double oz0 = 6.13D, oz1 = 7.87D;
+        final double ix0 = -0.70D, ix1 = 0.70D;
+        final double iy0 = 7.30D, iy1 = 8.70D;
+        final double iz0 = 6.25D, iz1 = 7.75D;
+
+        // Four X edges.
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, oy0, oz0, ox1, iy0, iz0);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, iy1, oz0, ox1, oy1, iz0);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, oy0, iz1, ox1, iy0, oz1);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, iy1, iz1, ox1, oy1, oz1);
+
+        // Four Y edges.
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, iy0, oz0, ix0, iy1, iz0);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ix1, iy0, oz0, ox1, iy1, iz0);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, iy0, iz1, ix0, iy1, oz1);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ix1, iy0, iz1, ox1, iy1, oz1);
+
+        // Four Z edges.
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, oy0, iz0, ix0, iy0, iz1);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ix1, oy0, iz0, ox1, iy0, iz1);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ox0, iy1, iz0, ix0, oy1, iz1);
+        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
+                ix1, iy1, iz0, ox1, oy1, iz1);
+    }
+
+    private static void lampBox(VertexConsumer consumer, PoseStack poseStack,
+            AlarmModule.AlarmBlockEntity alarm, float angle,
+            double mountYOffset, double x0, double y0, double z0,
+            double x1, double y1, double z1) {
+        Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
+        BlockPos origin = alarm.getBlockPos();
+
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y0, z0), new Vec3(x1, y0, z0),
+                new Vec3(x1, y1, z0), new Vec3(x0, y1, z0),
+                new Vec3(0.0D, 0.0D, -1.0D),
+                0.0F, 0.0F, 32.0F, 32.0F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x1, y0, z1), new Vec3(x0, y0, z1),
+                new Vec3(x0, y1, z1), new Vec3(x1, y1, z1),
+                new Vec3(0.0D, 0.0D, 1.0D),
+                0.0F, 0.0F, 32.0F, 32.0F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x1, y0, z0), new Vec3(x1, y0, z1),
+                new Vec3(x1, y1, z1), new Vec3(x1, y1, z0),
+                new Vec3(1.0D, 0.0D, 0.0D),
+                0.0F, 0.0F, 32.0F, 32.0F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y0, z1), new Vec3(x0, y0, z0),
+                new Vec3(x0, y1, z0), new Vec3(x0, y1, z1),
+                new Vec3(-1.0D, 0.0D, 0.0D),
+                0.0F, 0.0F, 32.0F, 32.0F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y1, z0), new Vec3(x1, y1, z0),
+                new Vec3(x1, y1, z1), new Vec3(x0, y1, z1),
+                new Vec3(0.0D, 1.0D, 0.0D),
+                0.0F, 0.0F, 32.0F, 32.0F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y0, z1), new Vec3(x1, y0, z1),
+                new Vec3(x1, y0, z0), new Vec3(x0, y0, z0),
+                new Vec3(0.0D, -1.0D, 0.0D),
+                0.0F, 0.0F, 32.0F, 32.0F);
     }
 
     private static void emitLitLampCube(

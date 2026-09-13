@@ -81,8 +81,8 @@ public final class AlarmClient {
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
     private static final double MIN_SPLASH_RADIUS = 0.06D;
-    private static final double MAX_SPLASH_RADIUS = 2.24D;
-    private static final double MAX_SPLASH_HALF_WIDTH = 1.62D;
+    private static final double MAX_SPLASH_RADIUS = 2.82D;
+    private static final double MAX_SPLASH_HALF_WIDTH = 1.74D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;

@@ -350,10 +350,10 @@ public final class AlarmClient {
             double mountYOffset) {
         /*
          * The orange shell is slightly larger than the pale lit cube, but only
-         * its twelve edge bars are submitted. Rendering a complete enclosing
-         * cube would depth-occlude the inner lamp; the edge shell produces the
-         * requested orange outline while keeping the #ffff97 core visually in
-         * front. Both layers share the exact rotor transform.
+         * the current camera-facing SILHOUETTE is submitted. Shared fold edges
+         * between two visible faces are intentionally omitted; the orange layer
+         * therefore reads as one outline around the whole lamp, not wireframe
+         * around every face. Both layers share the exact rotor transform.
          */
         RenderType outlineType = RenderType.entityCutoutNoCull(LAMP_OUTLINE);
         VertexConsumer outline = buffers.getBuffer(outlineType);
@@ -443,46 +443,117 @@ public final class AlarmClient {
     private static void emitLampOutline(
             AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
             VertexConsumer consumer, float angle, double mountYOffset) {
+        Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
+        BlockPos origin = alarm.getBlockPos();
+        Vec3 cameraPosition = Minecraft.getInstance().gameRenderer
+                .getMainCamera().getPosition();
+
         // Original lit cube:
         // X [-0.70, 0.70], Y [7.30, 8.70], Z [6.25, 7.75].
-        // The outline shell is centered on the exact same point and grows by
-        // only 0.12 model pixels on every side.
-        final double ox0 = -0.82D, ox1 = 0.82D;
-        final double oy0 = 7.18D, oy1 = 8.82D;
-        final double oz0 = 6.13D, oz1 = 7.87D;
+        // Keep the requested larger cube, but make the outline only 0.10 model
+        // pixels thick so it frames rather than cages the pale lamp.
+        final double ox0 = -0.80D, ox1 = 0.80D;
+        final double oy0 = 7.20D, oy1 = 8.80D;
+        final double oz0 = 6.15D, oz1 = 7.85D;
         final double ix0 = -0.70D, ix1 = 0.70D;
         final double iy0 = 7.30D, iy1 = 8.70D;
         final double iz0 = 6.25D, iz1 = 7.75D;
 
-        // Four X edges.
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, oy0, oz0, ox1, iy0, iz0);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, iy1, oz0, ox1, oy1, iz0);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, oy0, iz1, ox1, iy0, oz1);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, iy1, iz1, ox1, oy1, oz1);
+        // A convex cuboid silhouette consists only of edges whose two adjacent
+        // faces have opposite visibility relative to the camera. This is the
+        // crucial difference from the previous wireframe-like twelve-edge pass.
 
-        // Four Y edges.
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, iy0, oz0, ix0, iy1, iz0);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ix1, iy0, oz0, ox1, iy1, iz0);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, iy0, iz1, ix0, iy1, oz1);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ix1, iy0, iz1, ox1, iy1, oz1);
+        // X-axis edges: adjacent +/-Y and +/-Z faces.
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, oy0, oz0, ox1, iy0, iz0,
+                new Vec3(0.0D, -1.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, -1.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, iy1, oz0, ox1, oy1, iz0,
+                new Vec3(0.0D, 1.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, -1.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, oy0, iz1, ox1, iy0, oz1,
+                new Vec3(0.0D, -1.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, 1.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, iy1, iz1, ox1, oy1, oz1,
+                new Vec3(0.0D, 1.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, 1.0D));
 
-        // Four Z edges.
+        // Y-axis edges: adjacent +/-X and +/-Z faces.
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, iy0, oz0, ix0, iy1, iz0,
+                new Vec3(-1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, -1.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ix1, iy0, oz0, ox1, iy1, iz0,
+                new Vec3(1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, -1.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, iy0, iz1, ix0, iy1, oz1,
+                new Vec3(-1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, 1.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ix1, iy0, iz1, ox1, iy1, oz1,
+                new Vec3(1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, 0.0D, 1.0D));
+
+        // Z-axis edges: adjacent +/-X and +/-Y faces.
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, oy0, iz0, ix0, iy0, iz1,
+                new Vec3(-1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, -1.0D, 0.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ix1, oy0, iz0, ox1, iy0, iz1,
+                new Vec3(1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, -1.0D, 0.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ox0, iy1, iz0, ix0, oy1, iz1,
+                new Vec3(-1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, 1.0D, 0.0D));
+        silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
+                cameraPosition, angle, mountYOffset,
+                ix1, iy1, iz0, ox1, oy1, iz1,
+                new Vec3(1.0D, 0.0D, 0.0D),
+                new Vec3(0.0D, 1.0D, 0.0D));
+    }
+
+    private static void silhouetteLampEdge(VertexConsumer consumer,
+            PoseStack poseStack, AlarmModule.AlarmBlockEntity alarm,
+            Direction facing, BlockPos origin, Vec3 cameraPosition,
+            float angle, double mountYOffset,
+            double x0, double y0, double z0,
+            double x1, double y1, double z1,
+            Vec3 adjacentNormalA, Vec3 adjacentNormalB) {
+        Vec3 midpoint = new Vec3((x0 + x1) * 0.5D,
+                (y0 + y1) * 0.5D, (z0 + z1) * 0.5D);
+        Vec3 rotatedMidpoint = rotateModelPoint(midpoint, angle);
+        Vec3 worldMidpoint = modelPointToWorld(origin, facing,
+                rotatedMidpoint.x, rotatedMidpoint.y, rotatedMidpoint.z,
+                mountYOffset);
+        Vec3 toCamera = cameraPosition.subtract(worldMidpoint);
+
+        boolean faceAVisible = rotateModelVector(adjacentNormalA,
+                angle, facing).dot(toCamera) >= 0.0D;
+        boolean faceBVisible = rotateModelVector(adjacentNormalB,
+                angle, facing).dot(toCamera) >= 0.0D;
+
+        if (faceAVisible == faceBVisible) return;
+
         lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, oy0, iz0, ix0, iy0, iz1);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ix1, oy0, iz0, ox1, iy0, iz1);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ox0, iy1, iz0, ix0, oy1, iz1);
-        lampBox(consumer, poseStack, alarm, angle, mountYOffset,
-                ix1, iy1, iz0, ox1, oy1, iz1);
+                x0, y0, z0, x1, y1, z1);
     }
 
     private static void lampBox(VertexConsumer consumer, PoseStack poseStack,

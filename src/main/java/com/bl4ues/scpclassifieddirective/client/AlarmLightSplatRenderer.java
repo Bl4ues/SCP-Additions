@@ -44,15 +44,17 @@ final class AlarmLightSplatRenderer {
 
     private static final int FULL_BRIGHT = LightTexture.FULL_BRIGHT;
     private static final double PROJECTOR_DISTANCE_SQR = 24.0D * 24.0D;
-    private static final double PER_FRAME_DISTANCE_SQR = 8.0D * 8.0D;
+    private static final double PER_FRAME_DISTANCE_SQR = 6.0D * 6.0D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0032D;
     private static final double BLOOM_EPSILON = 0.0015D;
 
-    private static final int RINGS = 10;
-    private static final double[] LANES = {-0.62D, 0.0D, 0.62D};
+    private static final int RINGS = 9;
+    private static final double[] LANES = {
+            -0.78D, -0.38D, 0.0D, 0.38D, 0.78D
+    };
     private static final double MIN_DISTANCE = 0.16D;
     private static final double MAX_DISTANCE = 3.85D;
     private static final double MAX_HALF_WIDTH = 1.52D;
@@ -137,9 +139,13 @@ final class AlarmLightSplatRenderer {
 
             // Fast initial spread, then a broad rounded outer body like the
             // reference. Individual blobs provide the final soft silhouette.
-            double widthT = Math.sin(Math.min(1.0D,
-                    Math.pow(t, 0.78D)) * Math.PI * 0.5D);
-            double halfWidth = 0.055D + MAX_HALF_WIDTH * widthT;
+            // Pear/teardrop profile from the reference: narrow near the
+            // beacon, widest before the far end, then slightly pinched again
+            // so the final soft splats create a rounded cap rather than a
+            // ruler-straight terminus.
+            double widthPhase = 0.05D + 0.65D * Math.pow(t, 0.82D);
+            double widthT = Math.sin(Math.PI * widthPhase);
+            double halfWidth = 0.035D + MAX_HALF_WIDTH * widthT;
 
             double sourceHot = Math.exp(-6.2D * t);
             double middleDip = 1.0D - 0.50D * Math.exp(
@@ -147,7 +153,6 @@ final class AlarmLightSplatRenderer {
             double endFade = 1.0D - smoothStep(0.80D, 1.0D, t);
 
             for (double lane : LANES) {
-                boolean edgeLane = lane != 0.0D;
                 double lateral = halfWidth * lane;
                 Vec3 intended = wallOrigin
                         .add(tangent.scale(along))
@@ -158,14 +163,17 @@ final class AlarmLightSplatRenderer {
                         rayStart, intended);
                 if (hit == null) continue;
 
-                double laneGain = edgeLane ? 1.22D : 0.82D;
+                double laneAbs = Math.abs(lane);
+                double laneGain = 0.80D
+                        + 0.46D * Math.pow(laneAbs, 1.75D);
                 double intensity = (0.11D + 0.31D * sourceHot)
                         * middleDip * endFade * laneGain;
                 double bloomIntensity = (0.045D + 0.11D * sourceHot)
-                        * endFade * (edgeLane ? 1.18D : 0.88D);
+                        * endFade
+                        * (0.78D + 0.44D * laneAbs);
 
                 double halfAlong = 0.34D + 0.18D * t;
-                double halfSide = 0.35D + 0.31D * t;
+                double halfSide = 0.38D + 0.30D * t;
 
                 Vec3 surfaceNormal = direction(hit.face);
                 Vec3 surfaceAlong = tangent.subtract(surfaceNormal.scale(

@@ -5,8 +5,8 @@ import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.client.AlarmAudioClient;
 import com.bl4ues.scpclassifieddirective.client.AlarmClient;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
-import com.bl4ues.scpclassifieddirective.facility.Scp079FacilityAccessManager;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -73,8 +73,14 @@ public final class AlarmModule {
             HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty ACTIVE =
             BooleanProperty.create("active");
-    public static final double DOOR_RADIUS = 6.0D;
     public static final int ACTIVE_LIGHT_LEVEL = 7;
+    /**
+     * The Alarm model spans Y 6.25..9.75 in its block. When attached to the
+     * top row of a Blast Door, raise it just enough for the model top to meet
+     * the top edge of its placement block instead of intersecting the frame.
+     */
+    public static final double BLAST_DOOR_TOP_MOUNT_Y_OFFSET =
+            6.25D / 16.0D;
 
     public static final DeferredRegister<Block> BLOCKS =
             DeferredRegister.create(ForgeRegistries.BLOCKS,
@@ -177,8 +183,9 @@ public final class AlarmModule {
                 BlockPos pos) {
             Direction facing = state.getValue(FACING);
             BlockPos support = pos.relative(facing.getOpposite());
-            return level.getBlockState(support).isFaceSturdy(
-                    level, support, facing);
+            BlockState supportState = level.getBlockState(support);
+            return supportState.isFaceSturdy(level, support, facing)
+                    || isBlastDoorTopSupport(level, support, supportState);
         }
 
         @Override
@@ -220,7 +227,10 @@ public final class AlarmModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return rotateNorthShape(NORTH_SHAPE, state.getValue(FACING));
+            VoxelShape shape = rotateNorthShape(
+                    NORTH_SHAPE, state.getValue(FACING));
+            double offset = visualYOffset(level, pos, state);
+            return offset == 0.0D ? shape : shape.move(0.0D, offset, 0.0D);
         }
 
         @Override
@@ -253,12 +263,8 @@ public final class AlarmModule {
                 RawAnimation.begin().thenLoop("off");
         private static final RawAnimation ON =
                 RawAnimation.begin().thenLoop("on");
-        private static final int DOOR_CHECK_INTERVAL_TICKS = 5;
-
         private final AnimatableInstanceCache animationCache =
                 GeckoLibUtil.createInstanceCache(this);
-        private int doorCheckTicks;
-        private boolean nearbyOpenDoor;
 
         // Client-only presentation clocks are primitives so the common block
         // entity never links client classes on a dedicated server.
@@ -273,12 +279,11 @@ public final class AlarmModule {
         private static void serverTick(Level level, BlockPos pos,
                 BlockState state, AlarmBlockEntity alarm) {
             if (!(level instanceof ServerLevel server)) return;
-            if (++alarm.doorCheckTicks >= DOOR_CHECK_INTERVAL_TICKS) {
-                alarm.doorCheckTicks = 0;
-                alarm.nearbyOpenDoor = alarm.hasNearbyOpenElectricDoor(server);
-            }
-            alarm.applyActive(server,
-                    server.hasNeighborSignal(pos) || alarm.nearbyOpenDoor);
+            // Six adjacent block checks are cheap enough to do every tick and
+            // give the Alarm exact, immediate door behaviour without a broad
+            // room-radius scan.
+            alarm.applyActive(server, server.hasNeighborSignal(pos)
+                    || alarm.hasAdjacentOpenElectricDoor(server));
         }
 
         private static void clientTick(Level level, BlockPos pos,
@@ -288,30 +293,44 @@ public final class AlarmModule {
             AlarmAudioClient.update(level, pos, active);
         }
 
-        private void refresh(ServerLevel server, boolean refreshDoors) {
-            if (refreshDoors) {
-                nearbyOpenDoor = hasNearbyOpenElectricDoor(server);
-                doorCheckTicks = 0;
-            }
+        private void refresh(ServerLevel server,
+                boolean ignoredRefreshDoors) {
             applyActive(server, server.hasNeighborSignal(worldPosition)
-                    || nearbyOpenDoor);
+                    || hasAdjacentOpenElectricDoor(server));
         }
 
-        private boolean hasNearbyOpenElectricDoor(ServerLevel server) {
-            for (BlockPos doorPos :
-                    Scp079FacilityAccessManager.nearbyDoorPositions(
-                            server, worldPosition, DOOR_RADIUS)) {
+        /**
+         * Door activation is deliberately literal: the Alarm must occupy a
+         * block directly next to the electric door structure. No diagonal,
+         * room-wide or several-block-away activation is accepted.
+         */
+        private boolean hasAdjacentOpenElectricDoor(ServerLevel server) {
+            for (Direction direction : Direction.values()) {
+                BlockPos doorPos = worldPosition.relative(direction);
                 BlockState doorState = server.getBlockState(doorPos);
+
                 if (DecontaminationStructure.isOwnedDoor(
                         server, doorPos, doorState)) {
                     continue;
                 }
+
                 if (FacilityModule.isElectricDoorOpenOrOpening(doorState)) {
                     return true;
                 }
-                if (BlastDoorModule.isController(doorState)
+
+                BlockPos controller = null;
+                if (BlastDoorModule.isController(doorState)) {
+                    controller = doorPos;
+                } else if (BlastDoorModule.isPart(doorState)
+                        && BlastDoorStructure.isValidPart(
+                                server, doorPos, doorState)) {
+                    controller = BlastDoorStructure.controllerPosition(
+                            doorPos, doorState);
+                }
+
+                if (controller != null
                         && BlastDoorModule.isOpenOrOpening(
-                                server, doorPos)) {
+                                server, controller)) {
                     return true;
                 }
             }
@@ -378,6 +397,34 @@ public final class AlarmModule {
             // Projected light can land several blocks from the physical lamp.
             return new AABB(worldPosition).inflate(5.0D);
         }
+    }
+
+    public static boolean isBlastDoorTopMounted(BlockGetter level,
+            BlockPos pos, BlockState alarmState) {
+        if (level == null || pos == null || alarmState == null
+                || !alarmState.hasProperty(FACING)) {
+            return false;
+        }
+        Direction facing = alarmState.getValue(FACING);
+        BlockPos support = pos.relative(facing.getOpposite());
+        BlockState supportState = level.getBlockState(support);
+        return isBlastDoorTopSupport(level, support, supportState);
+    }
+
+    public static double visualYOffset(BlockGetter level, BlockPos pos,
+            BlockState alarmState) {
+        return isBlastDoorTopMounted(level, pos, alarmState)
+                ? BLAST_DOOR_TOP_MOUNT_Y_OFFSET : 0.0D;
+    }
+
+    private static boolean isBlastDoorTopSupport(BlockGetter level,
+            BlockPos support, BlockState supportState) {
+        return BlastDoorModule.isPart(supportState)
+                && supportState.hasProperty(BlastDoorModule.HEIGHT)
+                && supportState.getValue(BlastDoorModule.HEIGHT)
+                        == BlastDoorStructure.MAX_HEIGHT
+                && BlastDoorStructure.isValidPart(
+                        level, support, supportState);
     }
 
     public static final class AlarmItem extends BlockItem implements GeoItem {

@@ -58,21 +58,24 @@ public final class AlarmClient {
             "animations/block/alarm.animation.json");
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
+    private static final ResourceLocation SOURCE_GLOW = id(
+            "textures/effect/alarm_source_glow.png");
 
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double MIN_SPLASH_RADIUS = 0.28D;
-    private static final double MAX_SPLASH_RADIUS = 2.35D;
+    private static final double MIN_SPLASH_RADIUS = 0.18D;
+    private static final double MAX_SPLASH_RADIUS = 3.25D;
     private static final double SPLASH_HALF_ANGLE =
-            Math.toRadians(26.0D);
+            Math.toRadians(31.0D);
     private static final double PROJECTOR_OUTSET = 0.24D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0035D;
-    private static final double MAX_PATCH_EDGE_SQR = 1.35D;
-    private static final int RADIAL_RINGS = 6;
-    private static final int ANGULAR_SAMPLES = 9;
+    private static final double MAX_PATCH_EDGE_SQR = 0.90D;
+    private static final int RADIAL_RINGS = 8;
+    private static final int ANGULAR_SAMPLES = 13;
+    private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 64.0D;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
             PROJECTIONS = new WeakHashMap<>();
@@ -133,6 +136,19 @@ public final class AlarmClient {
                     .getValue(AlarmModule.ACTIVE);
             forceLamp(getAnimationProcessor().getBone("lit"), active);
             forceLamp(getAnimationProcessor().getBone("unlit"), !active);
+
+            // Do not trust GeckoLib's controller clock for the rotor after a
+            // client pause/resume. The visible rotor and projected light share
+            // this deterministic world-time phase instead, so both resume
+            // cleanly and remain locked to the authored one-second CCW turn.
+            CoreGeoBone rotor = getAnimationProcessor().getBone("rotor");
+            if (rotor != null) {
+                float phase = active
+                        ? animatable.projectionPhase(
+                                animationState.getPartialTick())
+                        : 0.0F;
+                rotor.setRotZ((float) (-phase * Math.PI * 2.0D));
+            }
         }
     }
 
@@ -151,7 +167,8 @@ public final class AlarmClient {
                             .getValue(AlarmModule.ACTIVE)) {
                         return;
                     }
-                    RenderType emissive = RenderType.eyes(GLOWMASK);
+                    RenderType emissive =
+                            RenderType.entityTranslucentEmissive(GLOWMASK);
                     getRenderer().reRender(bakedModel, poseStack, bufferSource,
                             animatable, emissive,
                             bufferSource.getBuffer(emissive), partialTick,
@@ -200,11 +217,21 @@ public final class AlarmClient {
                 float partialTick, PoseStack poseStack,
                 MultiBufferSource bufferSource, int packedLight,
                 int packedOverlay) {
+            double mountYOffset = alarm.getLevel() == null ? 0.0D
+                    : AlarmModule.visualYOffset(alarm.getLevel(),
+                            alarm.getBlockPos(), alarm.getBlockState());
+
+            poseStack.pushPose();
+            poseStack.translate(0.0D, mountYOffset, 0.0D);
             body.render(alarm, partialTick, poseStack, bufferSource,
                     packedLight, packedOverlay);
+            poseStack.popPose();
+
             if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
+                renderSourceGlow(alarm, poseStack, bufferSource,
+                        mountYOffset);
                 renderProjection(alarm, poseStack, bufferSource,
-                        body.rotorAngle());
+                        body.rotorAngle(), mountYOffset);
             }
         }
 
@@ -215,9 +242,56 @@ public final class AlarmClient {
         }
     }
 
+    private static void renderSourceGlow(
+            AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
+            MultiBufferSource buffers, double mountYOffset) {
+        if (!(alarm.getLevel() instanceof ClientLevel)) return;
+        Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
+        Vec3 normal = direction(facing);
+        Vec3 right = direction(facing.getClockWise());
+        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
+        Vec3 center = modelPointToWorld(alarm.getBlockPos(), facing,
+                0.0D, 8.0D, 8.0D, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 1.5D));
+        double half = 0.42D;
+
+        Vec3 topLeft = center.add(right.scale(-half)).add(up.scale(half));
+        Vec3 topRight = center.add(right.scale(half)).add(up.scale(half));
+        Vec3 bottomRight = center.add(right.scale(half))
+                .add(up.scale(-half));
+        Vec3 bottomLeft = center.add(right.scale(-half))
+                .add(up.scale(-half));
+
+        VertexConsumer consumer = buffers.getBuffer(
+                RenderType.entityTranslucentEmissive(SOURCE_GLOW));
+        BlockPos origin = alarm.getBlockPos();
+        sourceGlowVertex(consumer, poseStack,
+                local(topLeft, origin), normal, 0.0F, 0.0F);
+        sourceGlowVertex(consumer, poseStack,
+                local(topRight, origin), normal, 1.0F, 0.0F);
+        sourceGlowVertex(consumer, poseStack,
+                local(bottomRight, origin), normal, 1.0F, 1.0F);
+        sourceGlowVertex(consumer, poseStack,
+                local(bottomLeft, origin), normal, 0.0F, 1.0F);
+    }
+
+    private static void sourceGlowVertex(VertexConsumer consumer,
+            PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
+        consumer.vertex(poseStack.last().pose(),
+                        (float) point.x, (float) point.y, (float) point.z)
+                .color(255, 174, 67, 82)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(FULL_BRIGHT)
+                .normal(poseStack.last().normal(),
+                        (float) normal.x, (float) normal.y,
+                        (float) normal.z)
+                .endVertex();
+    }
+
     private static void renderProjection(AlarmModule.AlarmBlockEntity alarm,
             PoseStack poseStack, MultiBufferSource buffers,
-            float rotorAngle) {
+            float rotorAngle, double mountYOffset) {
         if (!(alarm.getLevel() instanceof ClientLevel level)) return;
         Minecraft minecraft = Minecraft.getInstance();
         Entity camera = minecraft.getCameraEntity();
@@ -231,7 +305,8 @@ public final class AlarmClient {
 
         double cameraDistanceSqr = camera.position().distanceToSqr(alarmCenter);
         ProjectionCache cache = projection(level, alarm, camera,
-                rotorAngle, cameraDistanceSqr <= 144.0D);
+                rotorAngle, mountYOffset,
+                cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
         if (cache == null) return;
 
         VertexConsumer consumer = buffers.getBuffer(
@@ -244,7 +319,6 @@ public final class AlarmClient {
                 ProjectedHit b = cache.samples[ring][slice + 1];
                 ProjectedHit c = cache.samples[ring + 1][slice + 1];
                 ProjectedHit d = cache.samples[ring + 1][slice];
-                if (!compatible(a, b, c, d)) continue;
 
                 float u0 = slice / (float) (ANGULAR_SAMPLES - 1);
                 float u1 = (slice + 1)
@@ -252,15 +326,27 @@ public final class AlarmClient {
                 float v0 = ring / (float) (RADIAL_RINGS - 1);
                 float v1 = (ring + 1)
                         / (float) (RADIAL_RINGS - 1);
-                emitProjectionQuad(consumer, poseStack, originBlock,
-                        a, b, c, d, u0, v0, u1, v1);
+
+                // Split cells into two triangles. At wall/ceiling folds this
+                // preserves whichever half really belongs to each surface
+                // instead of dropping a whole square and leaving blocky cuts.
+                if (compatibleTriangle(a, b, c)) {
+                    emitProjectionTriangle(consumer, poseStack,
+                            originBlock, a, b, c,
+                            u0, v0, u1, v0, u1, v1);
+                }
+                if (compatibleTriangle(a, c, d)) {
+                    emitProjectionTriangle(consumer, poseStack,
+                            originBlock, a, c, d,
+                            u0, v0, u1, v1, u0, v1);
+                }
             }
         }
     }
 
     private static ProjectionCache projection(ClientLevel level,
             AlarmModule.AlarmBlockEntity alarm, Entity camera,
-            float rotorAngle, boolean perFrame) {
+            float rotorAngle, double mountYOffset, boolean perFrame) {
         Map<BlockPos, ProjectionCache> byPos = PROJECTIONS.computeIfAbsent(
                 level, ignored -> new HashMap<>());
         BlockPos pos = alarm.getBlockPos();
@@ -289,7 +375,7 @@ public final class AlarmClient {
         fanSide = fanSide.normalize();
 
         Vec3 rotorCenter = modelPointToWorld(pos, facing,
-                0.0D, 8.0D, 7.0D);
+                0.0D, 8.0D, 7.0D, mountYOffset);
         Vec3 wallOrigin = rotorCenter.add(
                 inward.scale(WALL_PLANE_INSET));
 
@@ -344,39 +430,39 @@ public final class AlarmClient {
         return new ProjectedHit(position, face);
     }
 
-    private static boolean compatible(ProjectedHit a, ProjectedHit b,
-            ProjectedHit c, ProjectedHit d) {
-        if (a == null || b == null || c == null || d == null) return false;
-        if (a.face != b.face || a.face != c.face || a.face != d.face) {
-            return false;
-        }
+    private static boolean compatibleTriangle(ProjectedHit a,
+            ProjectedHit b, ProjectedHit c) {
+        if (a == null || b == null || c == null) return false;
+        if (a.face != b.face || a.face != c.face) return false;
         return a.position.distanceToSqr(b.position) <= MAX_PATCH_EDGE_SQR
-                && b.position.distanceToSqr(c.position) <= MAX_PATCH_EDGE_SQR
-                && c.position.distanceToSqr(d.position) <= MAX_PATCH_EDGE_SQR
-                && d.position.distanceToSqr(a.position)
+                && b.position.distanceToSqr(c.position)
+                        <= MAX_PATCH_EDGE_SQR
+                && c.position.distanceToSqr(a.position)
                         <= MAX_PATCH_EDGE_SQR;
     }
 
-    private static void emitProjectionQuad(VertexConsumer consumer,
+    private static void emitProjectionTriangle(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
-            ProjectedHit a, ProjectedHit b, ProjectedHit c, ProjectedHit d,
-            float u0, float v0, float u1, float v1) {
+            ProjectedHit a, ProjectedHit b, ProjectedHit c,
+            float ua, float va, float ub, float vb, float uc, float vc) {
         Vec3 normal = direction(a.face);
         vertex(consumer, poseStack, local(a.position, blockOrigin),
-                normal, u0, v0);
+                normal, ua, va);
         vertex(consumer, poseStack, local(b.position, blockOrigin),
-                normal, u1, v0);
+                normal, ub, vb);
         vertex(consumer, poseStack, local(c.position, blockOrigin),
-                normal, u1, v1);
-        vertex(consumer, poseStack, local(d.position, blockOrigin),
-                normal, u0, v1);
+                normal, uc, vc);
+        // entityTranslucentEmissive is a QUADS render type. Repeat the final
+        // corner to make a degenerate quad whose visible area is a triangle.
+        vertex(consumer, poseStack, local(c.position, blockOrigin),
+                normal, uc, vc);
     }
 
     private static void vertex(VertexConsumer consumer, PoseStack poseStack,
             Vec3 point, Vec3 normal, float u, float v) {
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 182, 78, 108)
+                .color(255, 190, 96, 96)
                 .uv(u, v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
@@ -387,13 +473,15 @@ public final class AlarmClient {
     }
 
     private static Vec3 modelPointToWorld(BlockPos pos, Direction facing,
-            double modelX, double modelY, double modelZ) {
+            double modelX, double modelY, double modelZ,
+            double mountYOffset) {
         Vec3 center = Vec3.atCenterOf(pos);
         Vec3 right = direction(facing.getClockWise());
         Vec3 back = direction(facing.getOpposite());
         return center
                 .add(right.scale(modelX / 16.0D))
-                .add(0.0D, (modelY - 8.0D) / 16.0D, 0.0D)
+                .add(0.0D, (modelY - 8.0D) / 16.0D + mountYOffset,
+                        0.0D)
                 .add(back.scale(modelZ / 16.0D));
     }
 

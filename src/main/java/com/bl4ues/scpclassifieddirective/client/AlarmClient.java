@@ -25,11 +25,13 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,9 +67,9 @@ public final class AlarmClient {
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
     private static final double MIN_SPLASH_RADIUS = 0.08D;
-    private static final double MAX_SPLASH_RADIUS = 2.85D;
+    private static final double MAX_SPLASH_RADIUS = 3.20D;
     private static final double SPLASH_HALF_ANGLE =
-            Math.toRadians(24.5D);
+            Math.toRadians(29.0D);
     private static final double PROJECTOR_OUTSET = 0.20D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.05D;
@@ -149,13 +151,115 @@ public final class AlarmClient {
                         : 0.0F;
                 rotor.setRotZ((float) (-phase * Math.PI * 2.0D));
             }
+            prepareBasePass(active);
+        }
+
+        private void prepareBasePass(boolean active) {
+            setVisible("backplate", true);
+            setVisible("cover", false);
+            setVisible("reflector", true);
+            // While active the lit cube is rendered only by the emissive pass.
+            // That avoids a coplanar normal-texture depth write swallowing the
+            // exact same cube when it is drawn again through RenderType.eyes.
+            setVisible("lit", false);
+            setVisible("unlit", !active);
+        }
+
+        private void prepareEmissivePass() {
+            setVisible("backplate", false);
+            setVisible("cover", false);
+            setVisible("reflector", false);
+            setVisible("unlit", false);
+            setVisible("lit", true);
+        }
+
+        private void prepareGlassPass() {
+            setVisible("backplate", false);
+            setVisible("cover", true);
+            setVisible("reflector", false);
+            setVisible("unlit", false);
+            setVisible("lit", false);
+        }
+
+        private void setVisible(String boneName, boolean visible) {
+            CoreGeoBone bone = getAnimationProcessor().getBone(boneName);
+            if (bone == null) return;
+            bone.setHidden(!visible);
+            float scale = visible ? 1.0F : 0.0F;
+            bone.setScaleX(scale);
+            bone.setScaleY(scale);
+            bone.setScaleZ(scale);
         }
     }
 
     private static final class BodyRenderer
             extends GeoBlockRenderer<AlarmModule.AlarmBlockEntity> {
+        private final BlockModel alarmModel;
+
         private BodyRenderer() {
-            super(new BlockModel());
+            this(new BlockModel());
+        }
+
+        private BodyRenderer(BlockModel model) {
+            super(model);
+            this.alarmModel = model;
+
+            // First render the actual lamp as emissive while the translucent
+            // orange cover is still absent. This is the same explicit glowmask
+            // path used by the project's shader-safe GeckoLib blocks.
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        AlarmModule.AlarmBlockEntity animatable,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight, int packedOverlay) {
+                    if (!animatable.getBlockState()
+                            .getValue(AlarmModule.ACTIVE)) {
+                        return;
+                    }
+                    alarmModel.prepareEmissivePass();
+                    RenderType emissive = RenderType.eyes(GLOWMASK);
+                    try {
+                        getRenderer().reRender(bakedModel, poseStack,
+                                bufferSource, animatable, emissive,
+                                bufferSource.getBuffer(emissive), partialTick,
+                                FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                                1.0F, 1.0F, 1.0F, 1.0F);
+                        flush(bufferSource, emissive);
+                    } finally {
+                        alarmModel.prepareBasePass(true);
+                    }
+                }
+            });
+
+            // The orange shell is real translucent geometry. Draw it last,
+            // exactly like DocumentHolder's glass pass, so it tints the lamp
+            // instead of writing depth first and hiding the lamp behind it.
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        AlarmModule.AlarmBlockEntity animatable,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight, int packedOverlay) {
+                    boolean active = animatable.getBlockState()
+                            .getValue(AlarmModule.ACTIVE);
+                    alarmModel.prepareGlassPass();
+                    RenderType glass = RenderType.entityTranslucent(
+                            TEXTURE, true);
+                    try {
+                        getRenderer().reRender(bakedModel, poseStack,
+                                bufferSource, animatable, glass,
+                                bufferSource.getBuffer(glass), partialTick,
+                                packedLight, packedOverlay,
+                                1.0F, 1.0F, 1.0F, 1.0F);
+                        flush(bufferSource, glass);
+                    } finally {
+                        alarmModel.prepareBasePass(active);
+                    }
+                }
+            });
         }
 
         private float rotorAngle() {
@@ -168,9 +272,10 @@ public final class AlarmClient {
         public RenderType getRenderType(AlarmModule.AlarmBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            // Block and item use isolated GeoModels, matching the Intercom fix
-            // that prevents inventory render state from corrupting placed blocks.
-            return RenderType.entityTranslucent(texture, true);
+            // Opaque machinery first; the dedicated cover pass owns all
+            // translucency. This prevents the cover from intercepting the
+            // internal emissive lamp in the depth buffer.
+            return RenderType.entityCutoutNoCull(texture);
         }
 
         @Override
@@ -209,10 +314,8 @@ public final class AlarmClient {
 
             if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
                 float rotorAngle = body.rotorAngle();
-                renderLampEmissive(alarm, poseStack, bufferSource,
+                renderLampTransmissionGlow(alarm, poseStack, bufferSource,
                         rotorAngle, mountYOffset);
-                renderSourceGlow(alarm, poseStack, bufferSource,
-                        mountYOffset);
                 renderProjection(alarm, poseStack, bufferSource,
                         rotorAngle, mountYOffset);
             }
@@ -233,7 +336,7 @@ public final class AlarmClient {
      * north-face UV of the authored 'lit' cube from alarm_glowmask.png and is
      * nudged a fraction outward, so the bulb is unambiguously HDR/emissive.
      */
-    private static void renderLampEmissive(
+    private static void renderLampTransmissionGlow(
             AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
             MultiBufferSource buffers, float rotorAngle,
             double mountYOffset) {
@@ -242,17 +345,17 @@ public final class AlarmClient {
         BlockPos origin = alarm.getBlockPos();
 
         Vec3 a = rotatedModelPointToWorld(origin, facing,
-                -0.70D, 8.70D, 6.25D, rotorAngle, mountYOffset)
-                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+                -0.70D, 8.70D, 4.75D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.5D));
         Vec3 b = rotatedModelPointToWorld(origin, facing,
-                0.70D, 8.70D, 6.25D, rotorAngle, mountYOffset)
-                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+                0.70D, 8.70D, 4.75D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.5D));
         Vec3 d = rotatedModelPointToWorld(origin, facing,
-                -0.70D, 7.30D, 6.25D, rotorAngle, mountYOffset)
-                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+                -0.70D, 7.30D, 4.75D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.5D));
         Vec3 cPoint = rotatedModelPointToWorld(origin, facing,
-                0.70D, 7.30D, 6.25D, rotorAngle, mountYOffset)
-                .add(normal.scale(SURFACE_EPSILON * 2.0D));
+                0.70D, 7.30D, 4.75D, rotorAngle, mountYOffset)
+                .add(normal.scale(SURFACE_EPSILON * 2.5D));
 
         // Authored lit north face: UV [0,10] size [1.5,1.5] on a 32x32
         // Blockbench texture grid. The actual PNG is 64x64, but GeckoLib's
@@ -275,7 +378,7 @@ public final class AlarmClient {
             PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 255, 255, 255)
+                .color(255, 244, 214, 230)
                 .uv(u, v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
@@ -387,21 +490,21 @@ public final class AlarmClient {
                     emitProjectionTriangle(soft, poseStack, originBlock,
                             a, b, cHit,
                             u0, v0, u1, v0, u1, v1,
-                            255, 196, 112, 104);
+                            255, 214, 150, 205);
                     emitProjectionTriangle(bloom, poseStack, originBlock,
                             a, b, cHit,
                             u0, v0, u1, v0, u1, v1,
-                            92, 58, 20, 28);
+                            255, 255, 255, 255);
                 }
                 if (compatibleTriangle(a, cHit, d)) {
                     emitProjectionTriangle(soft, poseStack, originBlock,
                             a, cHit, d,
                             u0, v0, u1, v1, u0, v1,
-                            255, 196, 112, 104);
+                            255, 214, 150, 205);
                     emitProjectionTriangle(bloom, poseStack, originBlock,
                             a, cHit, d,
                             u0, v0, u1, v1, u0, v1,
-                            92, 58, 20, 28);
+                            255, 255, 255, 255);
                 }
             }
         }
@@ -492,7 +595,11 @@ public final class AlarmClient {
     private static boolean compatibleTriangle(ProjectedHit a,
             ProjectedHit b, ProjectedHit c) {
         if (a == null || b == null || c == null) return false;
-        if (a.face != b.face || a.face != c.face) return false;
+        if (a.face == b.face.getOpposite()
+                || a.face == c.face.getOpposite()
+                || b.face == c.face.getOpposite()) {
+            return false;
+        }
         return a.position.distanceToSqr(b.position)
                         <= MAX_TRIANGLE_EDGE_SQR
                 && b.position.distanceToSqr(c.position)
@@ -506,7 +613,10 @@ public final class AlarmClient {
             ProjectedHit a, ProjectedHit b, ProjectedHit c,
             float ua, float va, float ub, float vb, float uc, float vc,
             int red, int green, int blue, int alpha) {
-        Vec3 normal = direction(a.face);
+        Vec3 normal = direction(a.face)
+                .add(direction(b.face))
+                .add(direction(c.face))
+                .normalize();
         projectionVertex(consumer, poseStack,
                 local(a.position, blockOrigin), normal,
                 ua, va, red, green, blue, alpha);

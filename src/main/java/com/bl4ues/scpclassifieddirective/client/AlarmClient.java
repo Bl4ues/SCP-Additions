@@ -61,6 +61,8 @@ public final class AlarmClient {
             "textures/block/alarm_glowmask.png");
     private static final ResourceLocation LAMP_EMISSIVE = id(
             "textures/effect/alarm_lamp_emissive.png");
+    private static final ResourceLocation GLASS_BLOOM = id(
+            "textures/effect/alarm_glass_bloom.png");
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
     private static final ResourceLocation SPLASH_EMISSIVE = id(
@@ -312,6 +314,16 @@ public final class AlarmClient {
             poseStack.popPose();
 
             if (active) {
+                /*
+                 * The physical orange cover is translucent, but shader packs
+                 * composite that glass over the inner HDR lamp and can suppress
+                 * most of its bloom. Re-emit only a soft transmission hotspot on
+                 * the OUTER glass surface. The source lamp remains the real
+                 * emissive object; this pass represents light that made it
+                 * through the cover instead of drawing the lamp through walls.
+                 */
+                renderGlassTransmission(alarm, poseStack, bufferSource,
+                        mountYOffset);
                 renderProjection(alarm, poseStack, bufferSource,
                         angle, mountYOffset);
             }
@@ -349,6 +361,56 @@ public final class AlarmClient {
         emitLitLampCube(alarm, poseStack, glow, rotorAngle,
                 mountYOffset);
         flush(buffers, glowType);
+    }
+
+    private static void renderGlassTransmission(
+            AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
+            MultiBufferSource buffers, double mountYOffset) {
+        Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
+        BlockPos origin = alarm.getBlockPos();
+
+        /*
+         * Front face of the authored cover is model Z=4.75. Put the bloom a
+         * fraction outward (lower model Z) so it survives the translucent cover
+         * depth pass without z-fighting. Its footprint is intentionally smaller
+         * than the 2.9x2.9 glass face.
+         */
+        final double z = 4.72D;
+        Vec3 p0 = modelPointToWorld(origin, facing,
+                -1.15D, 6.85D, z, mountYOffset);
+        Vec3 p1 = modelPointToWorld(origin, facing,
+                1.15D, 6.85D, z, mountYOffset);
+        Vec3 p2 = modelPointToWorld(origin, facing,
+                1.15D, 9.15D, z, mountYOffset);
+        Vec3 p3 = modelPointToWorld(origin, facing,
+                -1.15D, 9.15D, z, mountYOffset);
+        Vec3 normal = direction(facing);
+
+        RenderType type = RenderType.eyes(GLASS_BLOOM);
+        VertexConsumer consumer = buffers.getBuffer(type);
+        glassBloomVertex(consumer, poseStack, local(p0, origin),
+                normal, 0.0F, 1.0F);
+        glassBloomVertex(consumer, poseStack, local(p1, origin),
+                normal, 1.0F, 1.0F);
+        glassBloomVertex(consumer, poseStack, local(p2, origin),
+                normal, 1.0F, 0.0F);
+        glassBloomVertex(consumer, poseStack, local(p3, origin),
+                normal, 0.0F, 0.0F);
+        flush(buffers, type);
+    }
+
+    private static void glassBloomVertex(VertexConsumer consumer,
+            PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
+        consumer.vertex(poseStack.last().pose(),
+                        (float) point.x, (float) point.y, (float) point.z)
+                .color(255, 255, 255, 255)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(FULL_BRIGHT)
+                .normal(poseStack.last().normal(),
+                        (float) normal.x, (float) normal.y,
+                        (float) normal.z)
+                .endVertex();
     }
 
     private static void emitLitLampCube(

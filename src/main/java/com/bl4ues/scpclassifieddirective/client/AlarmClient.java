@@ -76,8 +76,8 @@ public final class AlarmClient {
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
     private static final double MIN_SPLASH_RADIUS = 0.06D;
-    private static final double MAX_SPLASH_RADIUS = 2.85D;
-    private static final double MAX_SPLASH_HALF_WIDTH = 1.55D;
+    private static final double MAX_SPLASH_RADIUS = 1.90D;
+    private static final double MAX_SPLASH_HALF_WIDTH = 1.45D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
@@ -85,13 +85,15 @@ public final class AlarmClient {
     private static final double PLANE_EPSILON = 0.018D;
     private static final double BLOOM_SURFACE_EPSILON = 0.0016D;
     private static final double MAX_TRIANGLE_EDGE_SQR = 0.24D;
-    private static final int BASE_MESH_CELLS = 10;
-    private static final int ADAPTIVE_SUBDIVISIONS = 2;
+    private static final int BASE_MESH_CELLS = 6;
+    private static final int ADAPTIVE_SUBDIVISIONS = 1;
     private static final int MESH_RESOLUTION =
             BASE_MESH_CELLS << ADAPTIVE_SUBDIVISIONS;
     private static final int BASE_MESH_STEP =
             MESH_RESOLUTION / BASE_MESH_CELLS;
-    private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 36.0D;
+    // Projection geometry is rebuilt at Minecraft's 20 Hz world tick rate.
+    // Recasting the complete surface mesh every render frame was the source of
+    // the severe FPS regression, especially with shaders enabled.
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
             PROJECTIONS = new WeakHashMap<>();
@@ -542,8 +544,7 @@ public final class AlarmClient {
          * real occlusion by walls, ceilings, pillars and door structure.
          */
         ProjectionCache projected = projection(level, alarm, camera,
-                rotorAngle, mountYOffset,
-                cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
+                rotorAngle, mountYOffset, false);
         if (projected.triangles.isEmpty()) return;
 
         RenderType washType = RenderType.entityTranslucent(SPLASH, true);
@@ -560,6 +561,7 @@ public final class AlarmClient {
         RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
         VertexConsumer bloom = buffers.getBuffer(bloomType);
         for (ProjectedTriangle triangle : projected.triangles) {
+            if (!triangle.bloomAllowed()) continue;
             emitProjectionTriangle(bloom, poseStack, alarm.getBlockPos(),
                     triangle, true);
         }
@@ -612,12 +614,12 @@ public final class AlarmClient {
     /**
      * Adaptive surface tessellation for the alarm footprint.
      *
-     * Flat surfaces use a coarse 10x10 topology, but every accepted cell probes
-     * its center and edge midpoints first. Cells that cross a collision-depth or
-     * face discontinuity are subdivided twice, for an effective 40x40 boundary
-     * only where geometry needs it. The extra probes are important for narrow
-     * Blast Door beams: four corners alone can all hit the same plane while the
-     * middle of the cell is actually open space or a different surface.
+     * Flat surfaces use a coarse 6x6 topology. Only cells that cross a
+     * collision-depth or face discontinuity subdivide once, for an effective
+     * 12x12 local boundary. Combined with 20 Hz projection caching this keeps
+     * the rotating splash cheap enough for shader use while retaining obstacle
+     * silhouettes. The alpha texture, not tessellation density, carries the
+     * soft visual edge.
      */
     private static final class ProjectionBuilder {
         private final ClientLevel level;
@@ -720,7 +722,7 @@ public final class AlarmClient {
                     rayStart, intended);
             ProjectedSample sample = hit == null ? null
                     : new ProjectedSample(hit.position, hit.face,
-                            u01, v01);
+                            u01, v01, hit.bloomAllowed);
             samples.put(key, sample);
             return sample;
         }
@@ -789,7 +791,18 @@ public final class AlarmClient {
 
             BlockState hitState = level.getBlockState(hitPos);
             if (BlastDoorModule.isStructureState(hitState)) {
-                return null;
+                /*
+                 * Keep the visible wash exactly on the modeled door/frame
+                 * collision surface so the beam reaches the geometry instead of
+                 * disappearing in front of it. Suppress only the HDR bloom copy:
+                 * the Blast Door body is a translucent GeckoLib render and the
+                 * bloom pass can otherwise make the metal look see-through.
+                 */
+                Direction face = hit.getDirection();
+                Vec3 normal = direction(face);
+                Vec3 position = hit.getLocation().add(
+                        normal.scale(SURFACE_EPSILON));
+                return new ProjectedHit(position, face, false);
             }
 
             if (letsProjectedLightPass(hitState)) {
@@ -805,7 +818,7 @@ public final class AlarmClient {
             Vec3 normal = direction(face);
             Vec3 position = hit.getLocation().add(
                     normal.scale(SURFACE_EPSILON));
-            return new ProjectedHit(position, face);
+            return new ProjectedHit(position, face, true);
         }
         return null;
     }
@@ -967,15 +980,19 @@ public final class AlarmClient {
                 direction.getStepY(), direction.getStepZ());
     }
 
-    private record ProjectedHit(Vec3 position, Direction face) {
+    private record ProjectedHit(Vec3 position, Direction face,
+            boolean bloomAllowed) {
     }
 
     private record ProjectedSample(Vec3 position, Direction face,
-            float u, float v) {
+            float u, float v, boolean bloomAllowed) {
     }
 
     private record ProjectedTriangle(ProjectedSample a,
             ProjectedSample b, ProjectedSample c) {
+        private boolean bloomAllowed() {
+            return a.bloomAllowed && b.bloomAllowed && c.bloomAllowed;
+        }
     }
 
     private record ProjectionCache(long tick,

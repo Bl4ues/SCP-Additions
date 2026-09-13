@@ -647,22 +647,30 @@ public final class AlarmClient {
             BlockPos alarmPos, Vec3 start, Vec3 end) {
         Vec3 ray = end.subtract(start);
         if (ray.lengthSqr() < 1.0E-8D) return null;
-        Vec3 advance = ray.normalize().scale(0.012D);
+        Vec3 rayDirection = ray.normalize();
         Vec3 cursor = start;
 
-        // Only the Alarm itself is transparent to its projector. Every other
-        // collider, including the Blast Door's dynamic VoxelShape, is a real
-        // receiving/occluding surface. This is what makes the light wrap around
-        // its frame instead of painting straight through it.
-        for (int attempt = 0; attempt < 3; attempt++) {
+        // Only the Alarm itself is transparent to its projector. The old code
+        // advanced by 0.012 blocks after hitting the Alarm and tried only three
+        // times. Rays crossing more than ~0.036 blocks of the Alarm collision
+        // therefore became null samples, producing the little fixed "bites"
+        // near the cone root as it rotated. Skip the Alarm's whole block cell
+        // in one deterministic step instead, then let every other collider
+        // receive/occlude the light normally.
+        for (int attempt = 0; attempt < 2; attempt++) {
             BlockHitResult hit = level.clip(new ClipContext(cursor, end,
                     ClipContext.Block.COLLIDER,
                     ClipContext.Fluid.NONE, context));
             if (hit.getType() != HitResult.Type.BLOCK) return null;
 
             if (hit.getBlockPos().equals(alarmPos)) {
-                cursor = hit.getLocation().add(advance);
-                if (cursor.distanceToSqr(end) < 1.0E-6D) return null;
+                cursor = skipPastBlockCell(hit.getLocation(),
+                        rayDirection, alarmPos);
+                if (cursor.distanceToSqr(end) < 1.0E-6D
+                        || cursor.subtract(start).dot(ray) < 0.0D
+                        || cursor.subtract(end).dot(ray) > 0.0D) {
+                    return null;
+                }
                 continue;
             }
 
@@ -673,6 +681,32 @@ public final class AlarmClient {
             return new ProjectedHit(position, face);
         }
         return null;
+    }
+
+    private static Vec3 skipPastBlockCell(Vec3 point, Vec3 direction,
+            BlockPos blockPos) {
+        double tx = exitDistance(point.x, direction.x,
+                blockPos.getX(), blockPos.getX() + 1.0D);
+        double ty = exitDistance(point.y, direction.y,
+                blockPos.getY(), blockPos.getY() + 1.0D);
+        double tz = exitDistance(point.z, direction.z,
+                blockPos.getZ(), blockPos.getZ() + 1.0D);
+        double distance = Math.min(tx, Math.min(ty, tz));
+        if (!Double.isFinite(distance)) {
+            return point.add(direction.scale(1.001D));
+        }
+        return point.add(direction.scale(distance + 0.002D));
+    }
+
+    private static double exitDistance(double coordinate, double direction,
+            double min, double max) {
+        if (Math.abs(direction) < 1.0E-9D) {
+            return Double.POSITIVE_INFINITY;
+        }
+        double boundary = direction > 0.0D ? max : min;
+        double distance = (boundary - coordinate) / direction;
+        return distance >= 0.0D
+                ? distance : Double.POSITIVE_INFINITY;
     }
 
     private static boolean compatibleQuad(ProjectedSample a,
@@ -726,9 +760,19 @@ public final class AlarmClient {
             ProjectedSample sample) {
         Vec3 point = local(sample.position, blockOrigin);
         Vec3 normal = direction(sample.face);
+
+        // Preserve the approved cone profile and texture everywhere else, but
+        // feather the first ~13% of its length. The texture already has a soft
+        // far cap; this matching near-root fade removes the conspicuously hard
+        // straight cut where the projected mesh begins without changing the
+        // body, brightness profile or outer silhouette that already look right.
+        float rootFade = smoothStep(0.0F, 0.13F, sample.v);
+        int alpha = Math.max(0, Math.min(255,
+                Math.round(150.0F * rootFade)));
+
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 190, 96, 150)
+                .color(255, 190, 96, alpha)
                 .uv(sample.u, sample.v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)

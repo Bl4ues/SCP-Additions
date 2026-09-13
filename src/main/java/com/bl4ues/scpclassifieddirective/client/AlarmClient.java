@@ -9,6 +9,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
@@ -130,9 +131,9 @@ public final class AlarmClient {
         }
     }
 
-    public static final class BlockRenderer
+    private static final class BodyRenderer
             extends GeoBlockRenderer<AlarmModule.AlarmBlockEntity> {
-        public BlockRenderer(BlockEntityRendererProvider.Context context) {
+        private BodyRenderer() {
             super(new BlockModel());
             addRenderLayer(new GeoRenderLayer<>(this) {
                 @Override
@@ -155,20 +156,10 @@ public final class AlarmClient {
             });
         }
 
-        @Override
-        public void render(AlarmModule.AlarmBlockEntity alarm,
-                float partialTick, PoseStack poseStack,
-                MultiBufferSource bufferSource, int packedLight,
-                int packedOverlay) {
-            super.render(alarm, partialTick, poseStack, bufferSource,
-                    packedLight, packedOverlay);
-            if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
-                CoreGeoBone rotor = getGeoModel().getAnimationProcessor()
-                        .getBone("rotor");
-                float rotorAngle = rotor == null ? 0.0F : rotor.getRotZ();
-                renderProjection(alarm, poseStack, bufferSource,
-                        rotorAngle);
-            }
+        private float rotorAngle() {
+            CoreGeoBone rotor = getGeoModel().getAnimationProcessor()
+                    .getBone("rotor");
+            return rotor == null ? 0.0F : rotor.getRotZ();
         }
 
         @Override
@@ -178,6 +169,38 @@ public final class AlarmClient {
             // Block and item use isolated GeoModels, matching the Intercom fix
             // that prevents inventory render state from corrupting placed blocks.
             return RenderType.entityCutoutNoCull(texture);
+        }
+
+        @Override
+        public boolean shouldRenderOffScreen(
+                AlarmModule.AlarmBlockEntity blockEntity) {
+            return true;
+        }
+    }
+
+    /**
+     * Keep the GeckoLib body isolated from the custom world-space projection.
+     * GeoBlockRenderer's 1.20.1 erased render signature cannot safely be
+     * overridden with the concrete block-entity type.
+     */
+    public static final class BlockRenderer
+            implements BlockEntityRenderer<AlarmModule.AlarmBlockEntity> {
+        private final BodyRenderer body = new BodyRenderer();
+
+        public BlockRenderer(BlockEntityRendererProvider.Context context) {
+        }
+
+        @Override
+        public void render(AlarmModule.AlarmBlockEntity alarm,
+                float partialTick, PoseStack poseStack,
+                MultiBufferSource bufferSource, int packedLight,
+                int packedOverlay) {
+            body.render(alarm, partialTick, poseStack, bufferSource,
+                    packedLight, packedOverlay);
+            if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
+                renderProjection(alarm, poseStack, bufferSource,
+                        body.rotorAngle());
+            }
         }
 
         @Override

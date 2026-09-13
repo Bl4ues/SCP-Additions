@@ -78,8 +78,8 @@ public final class AlarmClient {
     private static final double RAY_OVERSHOOT = 0.05D;
     private static final double SURFACE_EPSILON = 0.0040D;
     private static final double MAX_TRIANGLE_EDGE_SQR = 0.30D;
-    private static final int RADIAL_RINGS = 12;
-    private static final int ANGULAR_SAMPLES = 23;
+    private static final int RADIAL_RINGS = 13;
+    private static final int ANGULAR_SAMPLES = 11;
     private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 144.0D;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
@@ -361,29 +361,13 @@ public final class AlarmClient {
                 DefaultVertexFormat.POSITION_COLOR);
 
         BlockPos origin = alarm.getBlockPos();
-        for (int ring = 0; ring < RADIAL_RINGS - 1; ring++) {
-            for (int slice = 0; slice < ANGULAR_SAMPLES - 1; slice++) {
-                ProjectedHit a = cache.samples[ring][slice];
-                ProjectedHit b = cache.samples[ring][slice + 1];
-                ProjectedHit cHit = cache.samples[ring + 1][slice + 1];
-                ProjectedHit d = cache.samples[ring + 1][slice];
-
-                float u0 = slice / (float) (ANGULAR_SAMPLES - 1);
-                float u1 = (slice + 1)
-                        / (float) (ANGULAR_SAMPLES - 1);
-                float v0 = ring / (float) (RADIAL_RINGS - 1);
-                float v1 = (ring + 1)
-                        / (float) (RADIAL_RINGS - 1);
-
-                if (compatibleTriangle(a, b, cHit)) {
-                    projectionTriangle(builder, matrix, origin,
-                            a, b, cHit,
-                            u0, v0, u1, v0, u1, v1);
-                }
-                if (compatibleTriangle(a, cHit, d)) {
-                    projectionTriangle(builder, matrix, origin,
-                            a, cHit, d,
-                            u0, v0, u1, v1, u0, v1);
+        for (int ring = 0; ring < RADIAL_RINGS; ring++) {
+            float v = ring / (float) (RADIAL_RINGS - 1);
+            for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
+                float u = slice / (float) (ANGULAR_SAMPLES - 1);
+                ProjectedHit hit = cache.samples[ring][slice];
+                if (hit != null) {
+                    projectionSplat(builder, matrix, origin, hit, u, v);
                 }
             }
         }
@@ -477,59 +461,77 @@ public final class AlarmClient {
         return new ProjectedHit(position, face);
     }
 
-    private static boolean compatibleTriangle(ProjectedHit a,
-            ProjectedHit b, ProjectedHit cHit) {
-        if (a == null || b == null || cHit == null) return false;
-        if (a.face == b.face.getOpposite()
-                || a.face == cHit.face.getOpposite()
-                || b.face == cHit.face.getOpposite()) {
-            return false;
+    /**
+     * Draw one tiny radial light footprint directly on the face hit by that
+     * ray. Neighbouring footprints overlap additively. Unlike the old connected
+     * triangle sheet there is no topology to tear when one ray moves from a
+     * wall to a ceiling, so rotation cannot expose diagonal cuts or missing
+     * checkerboard cells at folds.
+     */
+    private static void projectionSplat(BufferBuilder builder,
+            Matrix4f matrix, BlockPos blockOrigin, ProjectedHit hit,
+            float u, float v) {
+        int centerAlpha = projectionAlpha(u, v);
+        if (centerAlpha <= 0) return;
+
+        Vec3 normal = direction(hit.face);
+        Vec3 axisA;
+        Vec3 axisB;
+        if (hit.face.getAxis() == Direction.Axis.Y) {
+            axisA = new Vec3(1.0D, 0.0D, 0.0D);
+            axisB = new Vec3(0.0D, 0.0D, 1.0D);
+        } else if (hit.face.getAxis() == Direction.Axis.X) {
+            axisA = new Vec3(0.0D, 1.0D, 0.0D);
+            axisB = new Vec3(0.0D, 0.0D, 1.0D);
+        } else {
+            axisA = new Vec3(1.0D, 0.0D, 0.0D);
+            axisB = new Vec3(0.0D, 1.0D, 0.0D);
         }
-        return a.position.distanceToSqr(b.position)
-                        <= MAX_TRIANGLE_EDGE_SQR
-                && b.position.distanceToSqr(cHit.position)
-                        <= MAX_TRIANGLE_EDGE_SQR
-                && cHit.position.distanceToSqr(a.position)
-                        <= MAX_TRIANGLE_EDGE_SQR;
+
+        // Slightly larger farther from the beacon, matching the increasingly
+        // diffuse footprint visible in the reference while keeping every splat
+        // small enough to respect nearby architectural edges.
+        double radius = 0.145D + 0.075D * v;
+        Vec3 center = local(hit.position, blockOrigin);
+
+        for (int segment = 0; segment < 8; segment++) {
+            double angle0 = Math.PI * 2.0D * segment / 8.0D;
+            double angle1 = Math.PI * 2.0D * (segment + 1) / 8.0D;
+            Vec3 p0 = center.add(axisA.scale(Math.cos(angle0) * radius))
+                    .add(axisB.scale(Math.sin(angle0) * radius));
+            Vec3 p1 = center.add(axisA.scale(Math.cos(angle1) * radius))
+                    .add(axisB.scale(Math.sin(angle1) * radius));
+
+            projectionColorVertex(builder, matrix, center, centerAlpha);
+            projectionColorVertex(builder, matrix, p0, 0);
+            projectionColorVertex(builder, matrix, p1, 0);
+        }
     }
 
-    private static void projectionTriangle(BufferBuilder builder,
-            Matrix4f matrix, BlockPos blockOrigin,
-            ProjectedHit a, ProjectedHit b, ProjectedHit cHit,
-            float ua, float va, float ub, float vb, float uc, float vc) {
-        projectionVertex(builder, matrix, local(a.position, blockOrigin),
-                ua, va);
-        projectionVertex(builder, matrix, local(b.position, blockOrigin),
-                ub, vb);
-        projectionVertex(builder, matrix, local(cHit.position, blockOrigin),
-                uc, vc);
-    }
-
-    private static void projectionVertex(BufferBuilder builder,
-            Matrix4f matrix, Vec3 point, float u, float v) {
+    private static int projectionAlpha(float u, float v) {
         float lateral = Math.abs(u * 2.0F - 1.0F);
-        float edgeFade = 1.0F - smoothStep(0.76F, 1.0F, lateral);
-        float endFade = 1.0F - smoothStep(0.76F, 1.0F, v);
+        float edgeFade = 1.0F - smoothStep(0.70F, 1.0F, lateral);
+        float endFade = 1.0F - smoothStep(0.74F, 1.0F, v);
 
-        // The reference beacon has a hot root, a subdued middle and luminous
-        // shoulders before the fully feathered edge.
-        float nearHot = 0.36F * (float) Math.exp(-v / 0.105F);
-        float body = 0.050F + 0.035F * (1.0F - v);
-        float shoulder = 0.105F * (float) Math.exp(
-                -Math.pow((lateral - 0.68F) / 0.19F, 2.0D))
+        // Reference profile: a compact hot root, a deliberately weak middle,
+        // and brighter shoulders just inside the feathered boundary.
+        float nearHot = 0.070F * (float) Math.exp(-v / 0.105F);
+        float body = 0.012F + 0.008F * (1.0F - v);
+        float shoulder = 0.032F * (float) Math.exp(
+                -Math.pow((lateral - 0.66F) / 0.18F, 2.0D))
                 * (0.72F + 0.28F * (1.0F - v));
-        float middleDip = 1.0F - 0.42F
+        float middleDip = 1.0F - 0.44F
                 * (float) Math.exp(-Math.pow((v - 0.43F) / 0.24F, 2.0D))
-                * (float) Math.exp(-Math.pow(lateral / 0.48F, 2.0D));
+                * (float) Math.exp(-Math.pow(lateral / 0.47F, 2.0D));
 
         float opacity = (nearHot + body + shoulder)
                 * edgeFade * endFade * middleDip;
-        int alpha = Math.max(0, Math.min(118,
+        return Math.max(0, Math.min(30,
                 Math.round(opacity * 255.0F)));
+    }
 
-        // Keep all three vertices even when one edge has alpha zero. Dropping a
-        // transparent vertex would corrupt TRIANGLES topology and is exactly
-        // the kind of intermittent "cut" this renderer is meant to eliminate.
+    private static void projectionColorVertex(BufferBuilder builder,
+            Matrix4f matrix, Vec3 point, int alpha) {
         builder.vertex(matrix, (float) point.x,
                         (float) point.y, (float) point.z)
                 .color(255, 187, 92, alpha)

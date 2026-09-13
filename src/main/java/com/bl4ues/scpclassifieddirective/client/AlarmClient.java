@@ -80,8 +80,8 @@ public final class AlarmClient {
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
     private static final double MIN_SPLASH_RADIUS = 0.06D;
-    private static final double MAX_SPLASH_RADIUS = 1.90D;
-    private static final double MAX_SPLASH_HALF_WIDTH = 1.45D;
+    private static final double MAX_SPLASH_RADIUS = 2.24D;
+    private static final double MAX_SPLASH_HALF_WIDTH = 1.62D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
@@ -91,8 +91,15 @@ public final class AlarmClient {
     private static final double MAX_TRIANGLE_EDGE_SQR = 0.24D;
     private static final int BASE_MESH_CELLS = 6;
     private static final int ADAPTIVE_SUBDIVISIONS = 1;
+    /*
+     * Only cells that actually straddle Blast Door geometry may refine this
+     * deeply. Using this resolution globally was the cause of the old FPS
+     * collapse; keeping the extra samples on the occluder silhouette gives us
+     * model-faithful clipping without turning every Alarm into a raycast farm.
+     */
+    private static final int BLAST_DOOR_SUBDIVISIONS = 3;
     private static final int MESH_RESOLUTION =
-            BASE_MESH_CELLS << ADAPTIVE_SUBDIVISIONS;
+            BASE_MESH_CELLS << BLAST_DOOR_SUBDIVISIONS;
     private static final int BASE_MESH_STEP =
             MESH_RESOLUTION / BASE_MESH_CELLS;
     // Projection geometry is rebuilt at Minecraft's 20 Hz world tick rate.
@@ -842,6 +849,25 @@ public final class AlarmClient {
             ProjectedSample c = sample(u1, v1);
             ProjectedSample d = sample(u0, v1);
 
+            /*
+             * A Blast Door is rendered through a translucent GeckoLib entity
+             * pass even though its metal is opaque. Never paint the Alarm wash
+             * onto that surface: BSL can then composite the glow through the
+             * door. Instead use the exact collision hit only as an occlusion
+             * boundary. Fully-covered cells disappear immediately; only cells
+             * that CROSS the real door/frame silhouette refine further.
+             */
+            BlastDoorCoverage blastDoor = blastDoorCoverage(
+                    u0, v0, u1, v1, a, b, c, d);
+            if (blastDoor == BlastDoorCoverage.FULL) {
+                return;
+            }
+            if (blastDoor == BlastDoorCoverage.MIXED
+                    && depth < BLAST_DOOR_SUBDIVISIONS) {
+                subdivideChildren(u0, v0, u1, v1, depth, result);
+                return;
+            }
+
             if (compatibleQuad(a, b, c, d)
                     && cellBelongsToOneSurface(u0, v0, u1, v1, a)) {
                 addTriangle(result, a, b, c);
@@ -850,20 +876,69 @@ public final class AlarmClient {
             }
 
             if (depth < ADAPTIVE_SUBDIVISIONS) {
-                int um = (u0 + u1) >>> 1;
-                int vm = (v0 + v1) >>> 1;
-                subdivide(u0, v0, um, vm, depth + 1, result);
-                subdivide(um, v0, u1, vm, depth + 1, result);
-                subdivide(um, vm, u1, v1, depth + 1, result);
-                subdivide(u0, vm, um, v1, depth + 1, result);
+                subdivideChildren(u0, v0, u1, v1, depth, result);
                 return;
             }
 
             // At the finest local resolution retain whichever triangle really
-            // belongs to a single physical surface. This produces a small,
-            // smooth seam around folds rather than a whole missing square.
+            // belongs to a single physical surface. Blast Door samples are
+            // never renderable, so the visible light stops at its silhouette.
             addTriangle(result, a, b, c);
             addTriangle(result, a, c, d);
+        }
+
+        private void subdivideChildren(int u0, int v0, int u1, int v1,
+                int depth, List<ProjectedTriangle> result) {
+            int um = (u0 + u1) >>> 1;
+            int vm = (v0 + v1) >>> 1;
+            subdivide(u0, v0, um, vm, depth + 1, result);
+            subdivide(um, v0, u1, vm, depth + 1, result);
+            subdivide(um, vm, u1, v1, depth + 1, result);
+            subdivide(u0, vm, um, v1, depth + 1, result);
+        }
+
+        private BlastDoorCoverage blastDoorCoverage(
+                int u0, int v0, int u1, int v1,
+                ProjectedSample a, ProjectedSample b,
+                ProjectedSample c, ProjectedSample d) {
+            boolean blocked = isBlastDoorOccluder(a)
+                    || isBlastDoorOccluder(b)
+                    || isBlastDoorOccluder(c)
+                    || isBlastDoorOccluder(d);
+            boolean clear = !isBlastDoorOccluder(a)
+                    || !isBlastDoorOccluder(b)
+                    || !isBlastDoorOccluder(c)
+                    || !isBlastDoorOccluder(d);
+
+            int spanU = u1 - u0;
+            int spanV = v1 - v0;
+            if (spanU >= 2 && spanV >= 2) {
+                int um = (u0 + u1) >>> 1;
+                int vm = (v0 + v1) >>> 1;
+                ProjectedSample center = sample(um, vm);
+                ProjectedSample top = sample(um, v0);
+                ProjectedSample right = sample(u1, vm);
+                ProjectedSample bottom = sample(um, v1);
+                ProjectedSample left = sample(u0, vm);
+                blocked |= isBlastDoorOccluder(center)
+                        || isBlastDoorOccluder(top)
+                        || isBlastDoorOccluder(right)
+                        || isBlastDoorOccluder(bottom)
+                        || isBlastDoorOccluder(left);
+                clear |= !isBlastDoorOccluder(center)
+                        || !isBlastDoorOccluder(top)
+                        || !isBlastDoorOccluder(right)
+                        || !isBlastDoorOccluder(bottom)
+                        || !isBlastDoorOccluder(left);
+            }
+
+            if (!blocked) return BlastDoorCoverage.NONE;
+            return clear ? BlastDoorCoverage.MIXED
+                    : BlastDoorCoverage.FULL;
+        }
+
+        private static boolean isBlastDoorOccluder(ProjectedSample sample) {
+            return sample != null && sample.blastDoorOccluder;
         }
 
         private void addTriangle(List<ProjectedTriangle> result,
@@ -900,7 +975,8 @@ public final class AlarmClient {
                     rayStart, intended);
             ProjectedSample sample = hit == null ? null
                     : new ProjectedSample(hit.position, hit.face,
-                            u01, v01, hit.bloomAllowed);
+                            u01, v01, hit.bloomAllowed,
+                            hit.blastDoorOccluder);
             samples.put(key, sample);
             return sample;
         }
@@ -970,17 +1046,15 @@ public final class AlarmClient {
             BlockState hitState = level.getBlockState(hitPos);
             if (BlastDoorModule.isStructureState(hitState)) {
                 /*
-                 * Keep the visible wash exactly on the modeled door/frame
-                 * collision surface so the beam reaches the geometry instead of
-                 * disappearing in front of it. Suppress only the HDR bloom copy:
-                 * the Blast Door body is a translucent GeckoLib render and the
-                 * bloom pass can otherwise make the metal look see-through.
+                 * Clip at the ACTUAL authored Blast Door collision surface.
+                 * BlastDoorStructure.shapeAt() builds that shape from the model
+                 * envelope, including the moving slab. We retain the exact hit
+                 * as a non-renderable occluder sample so adaptive tessellation
+                 * can follow the real frame/door edge, but no wash/bloom is ever
+                 * submitted on the translucent GeckoLib body itself.
                  */
-                Direction face = hit.getDirection();
-                Vec3 normal = direction(face);
-                Vec3 position = hit.getLocation().add(
-                        normal.scale(SURFACE_EPSILON));
-                return new ProjectedHit(position, face, false);
+                return new ProjectedHit(hit.getLocation(),
+                        hit.getDirection(), false, true);
             }
 
             if (letsProjectedLightPass(hitState)) {
@@ -996,7 +1070,7 @@ public final class AlarmClient {
             Vec3 normal = direction(face);
             Vec3 position = hit.getLocation().add(
                     normal.scale(SURFACE_EPSILON));
-            return new ProjectedHit(position, face, true);
+            return new ProjectedHit(position, face, true, false);
         }
         return null;
     }
@@ -1052,7 +1126,9 @@ public final class AlarmClient {
 
     private static boolean sameSurface(ProjectedSample a,
             ProjectedSample b) {
-        if (a == null || b == null || a.face != b.face) return false;
+        if (a == null || b == null
+                || a.blastDoorOccluder != b.blastDoorOccluder
+                || a.face != b.face) return false;
         return Math.abs(planeCoordinate(a.position, a.face)
                 - planeCoordinate(b.position, b.face)) <= PLANE_EPSILON;
     }
@@ -1060,6 +1136,8 @@ public final class AlarmClient {
     private static boolean compatibleTriangle(ProjectedSample a,
             ProjectedSample b, ProjectedSample c) {
         if (a == null || b == null || c == null) return false;
+        if (a.blastDoorOccluder || b.blastDoorOccluder
+                || c.blastDoorOccluder) return false;
         if (a.face != b.face || a.face != c.face) return false;
 
         double planeA = planeCoordinate(a.position, a.face);
@@ -1158,12 +1236,19 @@ public final class AlarmClient {
                 direction.getStepY(), direction.getStepZ());
     }
 
+    private enum BlastDoorCoverage {
+        NONE,
+        FULL,
+        MIXED
+    }
+
     private record ProjectedHit(Vec3 position, Direction face,
-            boolean bloomAllowed) {
+            boolean bloomAllowed, boolean blastDoorOccluder) {
     }
 
     private record ProjectedSample(Vec3 position, Direction face,
-            float u, float v, boolean bloomAllowed) {
+            float u, float v, boolean bloomAllowed,
+            boolean blastDoorOccluder) {
     }
 
     private record ProjectedTriangle(ProjectedSample a,

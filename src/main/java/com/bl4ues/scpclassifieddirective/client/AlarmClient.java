@@ -526,8 +526,10 @@ public final class AlarmClient {
                 * edgeFade * endFade * middleDip;
         int alpha = Math.max(0, Math.min(118,
                 Math.round(opacity * 255.0F)));
-        if (alpha == 0) return;
 
+        // Keep all three vertices even when one edge has alpha zero. Dropping a
+        // transparent vertex would corrupt TRIANGLES topology and is exactly
+        // the kind of intermittent "cut" this renderer is meant to eliminate.
         builder.vertex(matrix, (float) point.x,
                         (float) point.y, (float) point.z)
                 .color(255, 187, 92, alpha)

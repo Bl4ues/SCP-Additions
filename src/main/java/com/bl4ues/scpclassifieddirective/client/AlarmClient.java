@@ -61,24 +61,23 @@ public final class AlarmClient {
             "textures/block/alarm_glowmask.png");
     private static final ResourceLocation SPLASH = id(
             "textures/effect/alarm_light_splash.png");
-    private static final ResourceLocation LAMP_BLOOM = id(
-            "textures/effect/alarm_lamp_bloom.png");
+    private static final ResourceLocation SPLASH_EMISSIVE = id(
+            "textures/effect/alarm_light_emissive.png");
     private static final ResourceLocation ANIMATION = id(
             "animations/block/alarm.animation.json");
 
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double MIN_SPLASH_RADIUS = 0.035D;
-    private static final double MAX_SPLASH_RADIUS = 3.55D;
+    private static final double MIN_SPLASH_RADIUS = 0.08D;
+    private static final double MAX_SPLASH_RADIUS = 3.60D;
+    private static final double MAX_SPLASH_HALF_WIDTH = 1.78D;
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0030D;
     private static final double PLANE_EPSILON = 0.022D;
     private static final double BLOOM_SURFACE_EPSILON = 0.0016D;
-    private static final double LAMP_BLOOM_HALF_SIZE = 0.19D;
-    private static final double LAMP_BLOOM_MODEL_Z = 4.66D;
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
     private static final int BASE_MESH_CELLS = 8;
     private static final int ADAPTIVE_SUBDIVISIONS = 1;
@@ -311,14 +310,6 @@ public final class AlarmClient {
             poseStack.popPose();
 
             if (active) {
-                /*
-                 * Do not disturb the lamp geometry that is already rendering
-                 * correctly. Add only its optical bloom after the orange glass
-                 * has been drawn, so the translucent cover cannot suppress the
-                 * shader-visible emission before BSL's bloom pass sees it.
-                 */
-                renderLampBloom(alarm, poseStack, bufferSource,
-                        mountYOffset);
                 renderProjection(alarm, poseStack, bufferSource,
                         angle, mountYOffset);
             }
@@ -458,60 +449,6 @@ public final class AlarmClient {
                 .normalize();
     }
 
-    private static void renderLampBloom(
-            AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
-            MultiBufferSource buffers, double mountYOffset) {
-        Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
-        Vec3 normal = direction(facing);
-        Vec3 right = direction(facing.getClockWise());
-        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
-
-        // Cover front is model Z=4.75. This halo sits 0.09 model pixel in
-        // front of it, plus a tiny world epsilon, so it still reads as light
-        // trapped inside the orange lens while remaining visible above the
-        // translucent cover's depth.
-        Vec3 center = modelPointToWorld(alarm.getBlockPos(), facing,
-                0.0D, 8.0D, LAMP_BLOOM_MODEL_Z, mountYOffset)
-                .add(normal.scale(BLOOM_SURFACE_EPSILON));
-        double half = LAMP_BLOOM_HALF_SIZE;
-
-        Vec3 topLeft = center.add(right.scale(-half)).add(up.scale(half));
-        Vec3 topRight = center.add(right.scale(half)).add(up.scale(half));
-        Vec3 bottomRight = center.add(right.scale(half))
-                .add(up.scale(-half));
-        Vec3 bottomLeft = center.add(right.scale(-half))
-                .add(up.scale(-half));
-
-        RenderType bloomType = RenderType.eyes(LAMP_BLOOM);
-        VertexConsumer bloom = buffers.getBuffer(bloomType);
-        BlockPos origin = alarm.getBlockPos();
-        lampBloomVertex(bloom, poseStack, origin, topLeft, normal,
-                0.0F, 0.0F);
-        lampBloomVertex(bloom, poseStack, origin, topRight, normal,
-                1.0F, 0.0F);
-        lampBloomVertex(bloom, poseStack, origin, bottomRight, normal,
-                1.0F, 1.0F);
-        lampBloomVertex(bloom, poseStack, origin, bottomLeft, normal,
-                0.0F, 1.0F);
-        flush(buffers, bloomType);
-    }
-
-    private static void lampBloomVertex(VertexConsumer consumer,
-            PoseStack poseStack, BlockPos blockOrigin, Vec3 world,
-            Vec3 normal, float u, float v) {
-        Vec3 point = local(world, blockOrigin);
-        consumer.vertex(poseStack.last().pose(),
-                        (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 235, 176, 210)
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(FULL_BRIGHT)
-                .normal(poseStack.last().normal(),
-                        (float) normal.x, (float) normal.y,
-                        (float) normal.z)
-                .endVertex();
-    }
-
     private static void renderProjection(AlarmModule.AlarmBlockEntity alarm,
             PoseStack poseStack, MultiBufferSource buffers,
             float rotorAngle, double mountYOffset) {
@@ -531,12 +468,11 @@ public final class AlarmClient {
         if (cache == null || cache.triangles.isEmpty()) return;
 
         /*
-         * The surface mesh is non-overlapping: every footprint point appears
-         * only once. Draw it first as the visible translucent/full-bright amber
-         * wash, then submit that same mesh once through the eyes program at a
-         * tiny fraction of the alpha. The second pass exists only to put the
-         * cone into BSL's HDR/emissive path; it must never become a second
-         * visible solid cone like the old f72bbce implementation did.
+         * The cone is a projected light texture, not a geometric silhouette.
+         * The first texture contains the complete soft pear/fan profile from
+         * the reference. A second, much weaker texture contains only the hot
+         * source and soft edge rim and is submitted through eyes so BSL/Iris
+         * see HDR emission without turning the whole wash into a solid beacon.
          */
         BlockPos origin = alarm.getBlockPos();
 
@@ -548,7 +484,7 @@ public final class AlarmClient {
         }
         flush(buffers, lightType);
 
-        RenderType bloomType = RenderType.eyes(SPLASH);
+        RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
         VertexConsumer bloom = buffers.getBuffer(bloomType);
         for (ProjectedTriangle triangle : cache.triangles) {
             emitProjectionTriangle(bloom, poseStack, origin,
@@ -587,9 +523,8 @@ public final class AlarmClient {
                 0.0D, 8.0D, 7.0D, mountYOffset);
         Vec3 wallOrigin = rotorCenter.add(
                 inward.scale(WALL_PLANE_INSET));
-        Vec3 rayStart = wallOrigin
-                .add(tangent.scale(MIN_SPLASH_RADIUS))
-                .add(outward.scale(PROJECTOR_OUTSET));
+        Vec3 rayStart = wallOrigin.add(
+                outward.scale(PROJECTOR_OUTSET));
 
         ProjectionBuilder builder = new ProjectionBuilder(level, camera, pos,
                 rayStart, wallOrigin, tangent, fanSide, inward);
@@ -653,14 +588,7 @@ public final class AlarmClient {
             ProjectedSample c = sample(u1, v1);
             ProjectedSample d = sample(u0, v1);
 
-            // Even on a perfectly flat wall, refine the first radial
-            // strip once. That gives the circular near edge sixteen segments
-            // instead of eight without increasing the resolution of the whole
-            // 3.55-block footprint. The rest stays on the cheap coarse lattice
-            // unless real world geometry actually requires subdivision.
-            boolean refineCircularRoot =
-                    depth < ADAPTIVE_SUBDIVISIONS && v0 == 0;
-            if (compatibleQuad(a, b, c, d) && !refineCircularRoot) {
+            if (compatibleQuad(a, b, c, d)) {
                 addTriangle(result, a, b, c);
                 addTriangle(result, a, c, d);
                 return;
@@ -699,40 +627,22 @@ public final class AlarmClient {
             double lateral = -1.0D + 2.0D * u01;
 
             /*
-             * The reference footprint starts on a curved circular arc, not at
-             * the bulb. Keep the approved far silhouette, but remap v=0 onto
-             * that arc and v=1 back onto the original far end.
-             *
-             * Radius 2.60 with a unit half-chord gives a 0.20 sagitta:
-             * centre starts at t=0.105 and the two shoulders at t~=0.305.
-             * Because this remaps geometry itself there is literally no cone
-             * mesh in the red-X region from the user's diagram.
+             * Geometry is deliberately boring: a broad rectangular projector
+             * strip. The pear-shaped footprint, wide root, rounded far end,
+             * source hotspot, weak middle and brighter soft rim all live in
+             * alarm_light_splash.png. Keeping shape in alpha rather than in the
+             * mesh is what removes the straight polygon boundary from the cone.
              */
-            double side = Math.abs(lateral);
-            double circleRadius = 2.60D;
-            double innerT = 0.105D + circleRadius
-                    - Math.sqrt(Math.max(0.0D,
-                            circleRadius * circleRadius - side * side));
-            double t = innerT + (1.0D - innerT) * v01;
-
             double radius = MIN_SPLASH_RADIUS
-                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS)
-                    * Math.pow(t, 1.04D);
-
-            // Preserve the approved overall silhouette: narrow root, quickly
-            // widening pear/fan body and a gently rounded far cap.
-            double growth = smoothStep(0.0F, 0.24F, (float) t);
-            double lobe = Math.sin(Math.PI * 0.70D * t);
-            lobe = Math.pow(Math.max(0.0D, lobe), 0.56D);
-            double halfWidth = 0.025D + 1.52D * growth * lobe;
-
+                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * v01;
             Vec3 intended = wallOrigin
                     .add(tangent.scale(radius))
-                    .add(fanSide.scale(halfWidth * lateral))
+                    .add(fanSide.scale(
+                            MAX_SPLASH_HALF_WIDTH * lateral))
                     .add(inward.scale(RAY_OVERSHOOT));
+
             ProjectedHit hit = cast(level, context, alarmPos,
                     rayStart, intended);
-
             ProjectedSample sample = hit == null ? null
                     : new ProjectedSample(hit.position, hit.face,
                             u01, v01);
@@ -866,22 +776,9 @@ public final class AlarmClient {
                 : sample.position;
         Vec3 point = local(worldPoint, blockOrigin);
 
-        // v=0 is now the physical circular arc itself. Feather only the first
-        // few percent beyond that arc so the near edge dissolves softly instead
-        // of exposing a straight triangle or a hard mathematical cutoff.
-        float rootEdgeFeather = smoothStep(0.0F, 0.055F, sample.v);
-        int alpha = Math.max(0, Math.min(255,
-                Math.round(150.0F * rootEdgeFeather)));
-        if (bloomPass) {
-            // Shader classification only. Keep this extremely weak so BSL can
-            // bloom the cone without visually doubling the amber footprint.
-            alpha = Math.max(0, Math.min(255,
-                    Math.round(alpha * 0.10F)));
-        }
-
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 190, 96, alpha)
+                .color(255, 255, 255, 255)
                 .uv(sample.u, sample.v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)

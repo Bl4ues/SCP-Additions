@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -368,6 +369,185 @@ public final class BlastDoorStructure {
                 facing, side, height));
 
         return rotateFromNorth(canonical, facing);
+    }
+
+    /**
+     * Raycasts against the geometry that is ACTUALLY rendered for the Blast
+     * Door, rather than the coarser multiblock collision envelope.
+     *
+     * <p>This exists for projected effects such as the Alarm light. The normal
+     * collision shape intentionally remains a little conservative for gameplay,
+     * but using it for optical clipping creates an invisible rectangular wall
+     * above the doorway. These boxes mirror the authored GeckoLib model:
+     * vertical posts, rotated corner braces, top beam and moving door slab.
+     * Mimic/reserved cells are deliberately not included here.</p>
+     */
+    @javax.annotation.Nullable
+    public static Vec3 visualOcclusionHit(BlockGetter level,
+            BlockPos structurePos, BlockState state,
+            Vec3 worldStart, Vec3 worldEnd) {
+        BlockPos controller;
+        Direction facing;
+        BlockState controllerState;
+
+        if (BlastDoorModule.isController(state)) {
+            controller = structurePos;
+            facing = state.getValue(BlastDoorModule.FACING);
+            controllerState = state;
+        } else if (BlastDoorModule.isPart(state)) {
+            controller = controllerPosition(structurePos, state);
+            controllerState = level.getBlockState(controller);
+            if (!BlastDoorModule.isController(controllerState)) return null;
+            facing = controllerState.getValue(BlastDoorModule.FACING);
+        } else {
+            return null;
+        }
+
+        Vec3 start = worldToModel(controller, facing, worldStart);
+        Vec3 end = worldToModel(controller, facing, worldEnd);
+
+        double lift = 0.0D;
+        if (level.getBlockEntity(controller)
+                instanceof BlastDoorModule.BlastDoorBlockEntity door) {
+            lift = door.doorLiftPixels();
+        } else {
+            BlastDoorModule.Phase phase =
+                    controllerState.getValue(BlastDoorModule.PHASE);
+            lift = phase == BlastDoorModule.Phase.OPEN
+                    || phase == BlastDoorModule.Phase.CLOSING
+                    ? 33.0D : 0.0D;
+        }
+
+        double best = Double.POSITIVE_INFINITY;
+
+        // Moving opaque slab. The small decorative fins below it are omitted;
+        // the slab itself is the meaningful optical blocker.
+        best = Math.min(best, segmentModelBox(start, end,
+                -32.5D, 3.75D + lift, -7.75D,
+                32.5D, 47.5D + lift, 7.75D,
+                0.0D, 0.0D, 0.0D));
+
+        // Left and right vertical frame posts.
+        best = Math.min(best, segmentModelBox(start, end,
+                -40.0D, 0.0D, -11.25D,
+                -32.5D, 40.0D, 11.25D,
+                0.0D, 0.0D, 0.0D));
+        best = Math.min(best, segmentModelBox(start, end,
+                32.5D, 0.0D, -11.25D,
+                40.0D, 40.0D, 11.25D,
+                0.0D, 0.0D, 0.0D));
+
+        // Authored sloped shoulders. Blockbench/GeckoLib's Z rotation is the
+        // opposite mathematical sign, so segmentModelBox applies the JSON angle
+        // as the inverse transform before the AABB test.
+        best = Math.min(best, segmentModelBox(start, end,
+                32.8125D, 39.1875D, -11.125D,
+                40.3125D, 60.3125D, 11.0D,
+                39.0625D, 39.1875D, -45.0D));
+        best = Math.min(best, segmentModelBox(start, end,
+                -40.3125D, 39.1875D, -11.125D,
+                -32.8125D, 60.3125D, 11.125D,
+                -39.0625D, 39.1875D, 45.0D));
+
+        // Top beam. Its strange source coordinates are exactly what is authored
+        // in blast_door.geo.json; the 90-degree rotation puts it horizontally
+        // between the two sloped shoulders.
+        best = Math.min(best, segmentModelBox(start, end,
+                -40.0D, 67.5D, -11.25D,
+                -32.5D, 117.5D, 11.25D,
+                -38.75D, 53.75D, 90.0D));
+
+        // Thin bottom threshold/frame strip.
+        best = Math.min(best, segmentModelBox(start, end,
+                -32.5D, 0.0D, -7.75D,
+                32.5D, 1.5D, 7.75D,
+                0.0D, 0.0D, 0.0D));
+
+        if (!Double.isFinite(best) || best < 0.0D || best > 1.0D) {
+            return null;
+        }
+        return worldStart.lerp(worldEnd, best);
+    }
+
+    private static Vec3 worldToModel(BlockPos controller,
+            Direction facing, Vec3 world) {
+        double dx = (world.x - (controller.getX() + 0.5D)) * 16.0D;
+        double dy = (world.y - controller.getY()) * 16.0D;
+        double dz = (world.z - (controller.getZ() + 0.5D)) * 16.0D;
+
+        return switch (facing) {
+            case EAST -> new Vec3(dz, dy, -dx);
+            case SOUTH -> new Vec3(-dx, dy, -dz);
+            case WEST -> new Vec3(-dz, dy, dx);
+            default -> new Vec3(dx, dy, dz);
+        };
+    }
+
+    /**
+     * Intersects one authored cube. jsonRotationZ is the value from the
+     * Blockbench geometry. Rotating the segment by +jsonRotationZ is the inverse
+     * of GeckoLib's rendered transform, leaving the cube axis-aligned.
+     */
+    private static double segmentModelBox(Vec3 start, Vec3 end,
+            double minX, double minY, double minZ,
+            double maxX, double maxY, double maxZ,
+            double pivotX, double pivotY, double jsonRotationZ) {
+        Vec3 localStart = inverseModelRotation(start,
+                pivotX, pivotY, jsonRotationZ);
+        Vec3 localEnd = inverseModelRotation(end,
+                pivotX, pivotY, jsonRotationZ);
+        return segmentAabbParameter(localStart, localEnd,
+                minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    private static Vec3 inverseModelRotation(Vec3 point,
+            double pivotX, double pivotY, double jsonRotationZ) {
+        if (Math.abs(jsonRotationZ) < 1.0E-9D) return point;
+
+        double radians = Math.toRadians(jsonRotationZ);
+        double cos = Math.cos(radians);
+        double sin = Math.sin(radians);
+        double x = point.x - pivotX;
+        double y = point.y - pivotY;
+        return new Vec3(
+                pivotX + x * cos - y * sin,
+                pivotY + x * sin + y * cos,
+                point.z);
+    }
+
+    private static double segmentAabbParameter(Vec3 start, Vec3 end,
+            double minX, double minY, double minZ,
+            double maxX, double maxY, double maxZ) {
+        Vec3 delta = end.subtract(start);
+        double tMin = 0.0D;
+        double tMax = 1.0D;
+
+        double[] s = { start.x, start.y, start.z };
+        double[] d = { delta.x, delta.y, delta.z };
+        double[] min = { minX, minY, minZ };
+        double[] max = { maxX, maxY, maxZ };
+
+        for (int axis = 0; axis < 3; axis++) {
+            if (Math.abs(d[axis]) < 1.0E-9D) {
+                if (s[axis] < min[axis] || s[axis] > max[axis]) {
+                    return Double.POSITIVE_INFINITY;
+                }
+                continue;
+            }
+
+            double t1 = (min[axis] - s[axis]) / d[axis];
+            double t2 = (max[axis] - s[axis]) / d[axis];
+            if (t1 > t2) {
+                double swap = t1;
+                t1 = t2;
+                t2 = swap;
+            }
+            tMin = Math.max(tMin, t1);
+            tMax = Math.min(tMax, t2);
+            if (tMax < tMin) return Double.POSITIVE_INFINITY;
+        }
+
+        return tMin;
     }
 
     private static VoxelShape mimicShapeAt(BlockGetter level,

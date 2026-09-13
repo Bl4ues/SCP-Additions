@@ -2,17 +2,12 @@ package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -38,7 +33,6 @@ import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
-import org.joml.Matrix4f;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,22 +59,25 @@ public final class AlarmClient {
             "textures/block/alarm.png");
     private static final ResourceLocation GLOWMASK = id(
             "textures/block/alarm_glowmask.png");
+    private static final ResourceLocation SPLASH = id(
+            "textures/effect/alarm_light_splash.png");
+    private static final ResourceLocation BLOOM = id(
+            "textures/effect/alarm_light_bloom.png");
     private static final ResourceLocation ANIMATION = id(
             "animations/block/alarm.animation.json");
 
     private static final double PROJECTOR_DISTANCE = 24.0D;
     private static final double PROJECTOR_DISTANCE_SQR =
             PROJECTOR_DISTANCE * PROJECTOR_DISTANCE;
-    private static final double MIN_SPLASH_RADIUS = 0.045D;
-    private static final double MAX_SPLASH_RADIUS = 3.05D;
-    private static final double PROJECTOR_OUTSET = 0.30D;
+    private static final double MIN_SPLASH_RADIUS = 0.035D;
+    private static final double MAX_SPLASH_RADIUS = 3.55D;
+    private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
-    private static final double RAY_OVERSHOOT = 0.05D;
+    private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0040D;
-    private static final double MAX_TRIANGLE_EDGE_SQR = 0.30D;
     private static final int RADIAL_RINGS = 13;
-    private static final int ANGULAR_SAMPLES = 11;
-    private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 144.0D;
+    private static final int ANGULAR_SAMPLES = 13;
+    private static final double PER_FRAME_PROJECTOR_DISTANCE_SQR = 64.0D;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
             PROJECTIONS = new WeakHashMap<>();
@@ -264,8 +261,6 @@ public final class AlarmClient {
     public static final class BlockRenderer
             implements BlockEntityRenderer<AlarmModule.AlarmBlockEntity> {
         private final BaseRenderer base = new BaseRenderer();
-        private final LampRenderer lamp = new LampRenderer(false);
-        private final LampRenderer lampGlow = new LampRenderer(true);
         private final CoverRenderer cover = new CoverRenderer();
 
         public BlockRenderer(BlockEntityRendererProvider.Context context) {
@@ -281,27 +276,26 @@ public final class AlarmClient {
                             alarm.getBlockPos(), alarm.getBlockState());
             boolean active = alarm.getBlockState()
                     .getValue(AlarmModule.ACTIVE);
+            float angle = rotorAngle(alarm, partialTick);
 
             poseStack.pushPose();
             poseStack.translate(0.0D, mountYOffset, 0.0D);
-
             base.render(alarm, partialTick, poseStack, bufferSource,
                     packedLight, packedOverlay);
             flush(bufferSource, RenderType.entityCutoutNoCull(TEXTURE));
+            poseStack.popPose();
 
             if (active) {
-                lamp.render(alarm, partialTick, poseStack, bufferSource,
-                        FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-                flush(bufferSource,
-                        RenderType.entityTranslucentEmissive(TEXTURE));
-
-                lampGlow.render(alarm, partialTick, poseStack, bufferSource,
-                        FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-                flush(bufferSource, RenderType.eyes(GLOWMASK));
+                // Render the authored lit cube manually from its exact model
+                // coordinates. This pass has no GeckoLib model state to leak
+                // between block entities, so a single Alarm behaves identically
+                // to two Alarms facing opposite sides of the same wall.
+                renderLitLamp(alarm, poseStack, bufferSource,
+                        angle, mountYOffset);
             }
 
-            // Glass is deliberately last so the real emissive cube is seen
-            // through, and tinted by, the authored translucent orange shell.
+            poseStack.pushPose();
+            poseStack.translate(0.0D, mountYOffset, 0.0D);
             cover.render(alarm, partialTick, poseStack, bufferSource,
                     packedLight, packedOverlay);
             flush(bufferSource, RenderType.entityTranslucent(TEXTURE, true));
@@ -309,7 +303,7 @@ public final class AlarmClient {
 
             if (active) {
                 renderProjection(alarm, poseStack, bufferSource,
-                        rotorAngle(alarm, partialTick), mountYOffset);
+                        angle, mountYOffset);
             }
         }
 
@@ -318,6 +312,133 @@ public final class AlarmClient {
                 AlarmModule.AlarmBlockEntity blockEntity) {
             return true;
         }
+    }
+
+    private static void renderLitLamp(
+            AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
+            MultiBufferSource buffers, float rotorAngle,
+            double mountYOffset) {
+        RenderType lampType = RenderType.entityCutoutNoCull(TEXTURE);
+        VertexConsumer lamp = buffers.getBuffer(lampType);
+        emitLitLampCube(alarm, poseStack, lamp, rotorAngle,
+                mountYOffset);
+        flush(buffers, lampType);
+
+        // The exact same geometry is submitted through the eyes render type.
+        // The first full-bright cutout pass provides stable depth; this second
+        // pass is what shader packs such as BSL recognize as true emissive/bloom.
+        RenderType glowType = RenderType.eyes(GLOWMASK);
+        VertexConsumer glow = buffers.getBuffer(glowType);
+        emitLitLampCube(alarm, poseStack, glow, rotorAngle,
+                mountYOffset);
+        flush(buffers, glowType);
+    }
+
+    private static void emitLitLampCube(
+            AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
+            VertexConsumer consumer, float angle, double mountYOffset) {
+        Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
+        BlockPos origin = alarm.getBlockPos();
+
+        final double x0 = -0.7D, x1 = 0.7D;
+        final double y0 = 7.3D, y1 = 8.7D;
+        final double z0 = 6.25D, z1 = 7.75D;
+
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y0, z0), new Vec3(x1, y0, z0),
+                new Vec3(x1, y1, z0), new Vec3(x0, y1, z0),
+                new Vec3(0.0D, 0.0D, -1.0D),
+                0.0F, 10.0F, 1.5F, 11.5F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x1, y0, z1), new Vec3(x0, y0, z1),
+                new Vec3(x0, y1, z1), new Vec3(x1, y1, z1),
+                new Vec3(0.0D, 0.0D, 1.0D),
+                6.0F, 12.0F, 7.5F, 13.5F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x1, y0, z0), new Vec3(x1, y0, z1),
+                new Vec3(x1, y1, z1), new Vec3(x1, y1, z0),
+                new Vec3(1.0D, 0.0D, 0.0D),
+                3.0F, 12.0F, 4.5F, 13.5F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y0, z1), new Vec3(x0, y0, z0),
+                new Vec3(x0, y1, z0), new Vec3(x0, y1, z1),
+                new Vec3(-1.0D, 0.0D, 0.0D),
+                9.0F, 12.0F, 10.5F, 13.5F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y1, z0), new Vec3(x1, y1, z0),
+                new Vec3(x1, y1, z1), new Vec3(x0, y1, z1),
+                new Vec3(0.0D, 1.0D, 0.0D),
+                12.0F, 12.0F, 13.5F, 13.5F);
+        lampFace(consumer, poseStack, origin, facing, angle, mountYOffset,
+                new Vec3(x0, y0, z1), new Vec3(x1, y0, z1),
+                new Vec3(x1, y0, z0), new Vec3(x0, y0, z0),
+                new Vec3(0.0D, -1.0D, 0.0D),
+                0.0F, 14.5F, 1.5F, 13.0F);
+    }
+
+    private static void lampFace(VertexConsumer consumer, PoseStack poseStack,
+            BlockPos blockOrigin, Direction facing, float angle,
+            double mountYOffset, Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3,
+            Vec3 normal, float u0, float v0, float u1, float v1) {
+        Vec3 rp0 = rotateModelPoint(p0, angle);
+        Vec3 rp1 = rotateModelPoint(p1, angle);
+        Vec3 rp2 = rotateModelPoint(p2, angle);
+        Vec3 rp3 = rotateModelPoint(p3, angle);
+        Vec3 worldNormal = rotateModelVector(normal, angle, facing);
+
+        lampVertex(consumer, poseStack,
+                local(modelPointToWorld(blockOrigin, facing,
+                        rp0.x, rp0.y, rp0.z, mountYOffset), blockOrigin),
+                worldNormal, u0 / 32.0F, v1 / 32.0F);
+        lampVertex(consumer, poseStack,
+                local(modelPointToWorld(blockOrigin, facing,
+                        rp1.x, rp1.y, rp1.z, mountYOffset), blockOrigin),
+                worldNormal, u1 / 32.0F, v1 / 32.0F);
+        lampVertex(consumer, poseStack,
+                local(modelPointToWorld(blockOrigin, facing,
+                        rp2.x, rp2.y, rp2.z, mountYOffset), blockOrigin),
+                worldNormal, u1 / 32.0F, v0 / 32.0F);
+        lampVertex(consumer, poseStack,
+                local(modelPointToWorld(blockOrigin, facing,
+                        rp3.x, rp3.y, rp3.z, mountYOffset), blockOrigin),
+                worldNormal, u0 / 32.0F, v0 / 32.0F);
+    }
+
+    private static void lampVertex(VertexConsumer consumer,
+            PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
+        consumer.vertex(poseStack.last().pose(),
+                        (float) point.x, (float) point.y, (float) point.z)
+                .color(255, 255, 255, 255)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(FULL_BRIGHT)
+                .normal(poseStack.last().normal(),
+                        (float) normal.x, (float) normal.y,
+                        (float) normal.z)
+                .endVertex();
+    }
+
+    private static Vec3 rotateModelPoint(Vec3 point, float angle) {
+        double dx = point.x;
+        double dy = point.y - 8.0D;
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        return new Vec3(dx * cos - dy * sin,
+                8.0D + dx * sin + dy * cos, point.z);
+    }
+
+    private static Vec3 rotateModelVector(Vec3 vector, float angle,
+            Direction facing) {
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        double rx = vector.x * cos - vector.y * sin;
+        double ry = vector.x * sin + vector.y * cos;
+        Vec3 right = direction(facing.getClockWise());
+        Vec3 back = direction(facing.getOpposite());
+        return right.scale(rx)
+                .add(0.0D, ry, 0.0D)
+                .add(back.scale(vector.z))
+                .normalize();
     }
 
     private static void renderProjection(AlarmModule.AlarmBlockEntity alarm,
@@ -338,46 +459,44 @@ public final class AlarmClient {
                 cameraDistanceSqr <= PER_FRAME_PROJECTOR_DISTANCE_SQR);
         if (cache == null) return;
 
-        // Flush queued entity buffers before temporarily switching to an
-        // immediate POSITION_COLOR pass. The projected light is deliberately
-        // independent of Minecraft's lightmap, so it stays luminous in darkness
-        // even without a shader pack.
-        if (buffers instanceof MultiBufferSource.BufferSource source) {
-            source.endBatch();
-        }
-
-        Matrix4f matrix = poseStack.last().pose();
-        BufferBuilder builder = Tesselator.getInstance().getBuilder();
-
-        RenderSystem.enableBlend();
-        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,
-                GlStateManager.DestFactor.ONE);
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.disableCull();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        builder.begin(VertexFormat.Mode.TRIANGLES,
-                DefaultVertexFormat.POSITION_COLOR);
-
         BlockPos origin = alarm.getBlockPos();
+
+        // First pass: soft full-bright amber footprints. They are textured
+        // radial splats, so there is no polygon edge to expose as the beam folds
+        // from a wall onto a ceiling.
+        RenderType lightType = RenderType.entityTranslucentEmissive(SPLASH);
+        VertexConsumer light = buffers.getBuffer(lightType);
         for (int ring = 0; ring < RADIAL_RINGS; ring++) {
             float v = ring / (float) (RADIAL_RINGS - 1);
             for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
                 float u = slice / (float) (ANGULAR_SAMPLES - 1);
                 ProjectedHit hit = cache.samples[ring][slice];
                 if (hit != null) {
-                    projectionSplat(builder, matrix, origin, hit, u, v);
+                    projectionSplat(light, poseStack, origin, hit,
+                            u, v, projectionAlpha(u, v));
                 }
             }
         }
+        flush(buffers, lightType);
 
-        BufferUploader.drawWithShader(builder.end());
-
-        RenderSystem.enableCull();
-        RenderSystem.depthMask(true);
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableBlend();
+        // Second pass: shader-recognized emissive bloom on the exact same
+        // surface footprints. BSL/Oculus sees this through the same eyes path
+        // already used by the project's working emissive renderers.
+        RenderType bloomType = RenderType.eyes(BLOOM);
+        VertexConsumer bloom = buffers.getBuffer(bloomType);
+        for (int ring = 0; ring < RADIAL_RINGS; ring++) {
+            float v = ring / (float) (RADIAL_RINGS - 1);
+            for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
+                float u = slice / (float) (ANGULAR_SAMPLES - 1);
+                ProjectedHit hit = cache.samples[ring][slice];
+                if (hit != null) {
+                    int alpha = Math.round(projectionAlpha(u, v) * 0.82F);
+                    projectionSplat(bloom, poseStack, origin, hit,
+                            u, v, alpha);
+                }
+            }
+        }
+        flush(buffers, bloomType);
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -412,6 +531,8 @@ public final class AlarmClient {
         Vec3 rayStart = wallOrigin
                 .add(tangent.scale(MIN_SPLASH_RADIUS))
                 .add(outward.scale(PROJECTOR_OUTSET));
+        BlockPos ignoredBlastDoor =
+                AlarmModule.blastDoorTopMountController(level, pos, state);
 
         ProjectedHit[][] samples =
                 new ProjectedHit[RADIAL_RINGS][ANGULAR_SAMPLES];
@@ -420,13 +541,15 @@ public final class AlarmClient {
             double t = ring / (RADIAL_RINGS - 1.0D);
             double radius = MIN_SPLASH_RADIUS
                     + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS)
-                    * Math.pow(t, 1.03D);
+                    * Math.pow(t, 1.04D);
 
-            // Rounded beacon footprint: narrow at the lamp, fattest around
-            // two-thirds of the throw, then gently narrows into the soft cap.
-            double lobe = Math.sin(Math.PI * 0.78D * t);
-            lobe = Math.pow(Math.max(0.0D, lobe), 0.72D);
-            double halfWidth = 0.030D + 0.93D * lobe;
+            // The reference is a broad pear/fan rather than a strict cone:
+            // narrow at the source, rapidly opening, fattest around 70% of
+            // the throw, then only gently rounding into the far cap.
+            double growth = smoothStep(0.0F, 0.24F, (float) t);
+            double lobe = Math.sin(Math.PI * 0.70D * t);
+            lobe = Math.pow(Math.max(0.0D, lobe), 0.56D);
+            double halfWidth = 0.025D + 1.52D * growth * lobe;
             Vec3 ringCenter = wallOrigin.add(tangent.scale(radius));
 
             for (int slice = 0; slice < ANGULAR_SAMPLES; slice++) {
@@ -436,7 +559,7 @@ public final class AlarmClient {
                         fanSide.scale(halfWidth * u));
                 Vec3 end = intendedSurface.add(inward.scale(RAY_OVERSHOOT));
                 samples[ring][slice] = cast(level, camera, pos,
-                        rayStart, end);
+                        ignoredBlastDoor, rayStart, end);
             }
         }
 
@@ -446,35 +569,55 @@ public final class AlarmClient {
     }
 
     private static ProjectedHit cast(ClientLevel level, Entity context,
-            BlockPos alarmPos, Vec3 start, Vec3 end) {
-        BlockHitResult hit = level.clip(new ClipContext(start, end,
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, context));
-        if (hit.getType() != HitResult.Type.BLOCK
-                || hit.getBlockPos().equals(alarmPos)) {
-            return null;
-        }
+            BlockPos alarmPos, BlockPos ignoredBlastDoor,
+            Vec3 start, Vec3 end) {
+        Vec3 ray = end.subtract(start);
+        if (ray.lengthSqr() < 1.0E-8D) return null;
+        Vec3 advance = ray.normalize().scale(0.012D);
+        Vec3 cursor = start;
 
-        Direction face = hit.getDirection();
-        Vec3 normal = direction(face);
-        Vec3 position = hit.getLocation().add(
-                normal.scale(SURFACE_EPSILON));
-        return new ProjectedHit(position, face);
+        for (int attempt = 0; attempt < 8; attempt++) {
+            BlockHitResult hit = level.clip(new ClipContext(cursor, end,
+                    ClipContext.Block.COLLIDER,
+                    ClipContext.Fluid.NONE, context));
+            if (hit.getType() != HitResult.Type.BLOCK) return null;
+
+            BlockPos hitPos = hit.getBlockPos();
+            if (hitPos.equals(alarmPos)
+                    || isIgnoredBlastDoorCell(
+                            level, hitPos, ignoredBlastDoor)) {
+                cursor = hit.getLocation().add(advance);
+                if (cursor.distanceToSqr(end) < 1.0E-6D) return null;
+                continue;
+            }
+
+            Direction face = hit.getDirection();
+            Vec3 normal = direction(face);
+            Vec3 position = hit.getLocation().add(
+                    normal.scale(SURFACE_EPSILON));
+            return new ProjectedHit(position, face);
+        }
+        return null;
     }
 
-    /**
-     * Draw one tiny radial light footprint directly on the face hit by that
-     * ray. Neighbouring footprints overlap additively. Unlike the old connected
-     * triangle sheet there is no topology to tear when one ray moves from a
-     * wall to a ceiling, so rotation cannot expose diagonal cuts or missing
-     * checkerboard cells at folds.
-     */
-    private static void projectionSplat(BufferBuilder builder,
-            Matrix4f matrix, BlockPos blockOrigin, ProjectedHit hit,
-            float u, float v) {
-        int centerAlpha = projectionAlpha(u, v);
-        if (centerAlpha <= 0) return;
+    private static boolean isIgnoredBlastDoorCell(ClientLevel level,
+            BlockPos pos, BlockPos controller) {
+        if (controller == null) return false;
+        BlockState state = level.getBlockState(pos);
+        if (BlastDoorModule.isController(state)) {
+            return pos.equals(controller);
+        }
+        return BlastDoorModule.isPart(state)
+                && BlastDoorStructure.isValidPart(level, pos, state)
+                && BlastDoorStructure.controllerPosition(pos, state)
+                        .equals(controller);
+    }
 
-        Vec3 normal = direction(hit.face);
+    private static void projectionSplat(VertexConsumer consumer,
+            PoseStack poseStack, BlockPos blockOrigin, ProjectedHit hit,
+            float u, float v, int alpha) {
+        if (alpha <= 0) return;
+
         Vec3 axisA;
         Vec3 axisB;
         if (hit.face.getAxis() == Direction.Axis.Y) {
@@ -488,54 +631,57 @@ public final class AlarmClient {
             axisB = new Vec3(0.0D, 1.0D, 0.0D);
         }
 
-        // Slightly larger farther from the beacon, matching the increasingly
-        // diffuse footprint visible in the reference while keeping every splat
-        // small enough to respect nearby architectural edges.
-        double radius = 0.145D + 0.075D * v;
+        double radius = 0.19D + 0.14D * v;
         Vec3 center = local(hit.position, blockOrigin);
+        Vec3 a = center.add(axisA.scale(-radius))
+                .add(axisB.scale(radius));
+        Vec3 b = center.add(axisA.scale(radius))
+                .add(axisB.scale(radius));
+        Vec3 cc = center.add(axisA.scale(radius))
+                .add(axisB.scale(-radius));
+        Vec3 d = center.add(axisA.scale(-radius))
+                .add(axisB.scale(-radius));
+        Vec3 normal = direction(hit.face);
 
-        for (int segment = 0; segment < 8; segment++) {
-            double angle0 = Math.PI * 2.0D * segment / 8.0D;
-            double angle1 = Math.PI * 2.0D * (segment + 1) / 8.0D;
-            Vec3 p0 = center.add(axisA.scale(Math.cos(angle0) * radius))
-                    .add(axisB.scale(Math.sin(angle0) * radius));
-            Vec3 p1 = center.add(axisA.scale(Math.cos(angle1) * radius))
-                    .add(axisB.scale(Math.sin(angle1) * radius));
+        splatVertex(consumer, poseStack, a, normal, 0.0F, 0.0F, alpha);
+        splatVertex(consumer, poseStack, b, normal, 1.0F, 0.0F, alpha);
+        splatVertex(consumer, poseStack, cc, normal, 1.0F, 1.0F, alpha);
+        splatVertex(consumer, poseStack, d, normal, 0.0F, 1.0F, alpha);
+    }
 
-            projectionColorVertex(builder, matrix, center, centerAlpha);
-            projectionColorVertex(builder, matrix, p0, 0);
-            projectionColorVertex(builder, matrix, p1, 0);
-        }
+    private static void splatVertex(VertexConsumer consumer,
+            PoseStack poseStack, Vec3 point, Vec3 normal,
+            float u, float v, int alpha) {
+        consumer.vertex(poseStack.last().pose(),
+                        (float) point.x, (float) point.y, (float) point.z)
+                .color(255, 198, 108, alpha)
+                .uv(u, v)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(FULL_BRIGHT)
+                .normal(poseStack.last().normal(),
+                        (float) normal.x, (float) normal.y,
+                        (float) normal.z)
+                .endVertex();
     }
 
     private static int projectionAlpha(float u, float v) {
         float lateral = Math.abs(u * 2.0F - 1.0F);
         float edgeFade = 1.0F - smoothStep(0.70F, 1.0F, lateral);
-        float endFade = 1.0F - smoothStep(0.74F, 1.0F, v);
+        float endFade = 1.0F - smoothStep(0.80F, 1.0F, v);
 
-        // Reference profile: a compact hot root, a deliberately weak middle,
-        // and brighter shoulders just inside the feathered boundary.
-        float nearHot = 0.070F * (float) Math.exp(-v / 0.105F);
-        float body = 0.012F + 0.008F * (1.0F - v);
-        float shoulder = 0.032F * (float) Math.exp(
-                -Math.pow((lateral - 0.66F) / 0.18F, 2.0D))
-                * (0.72F + 0.28F * (1.0F - v));
-        float middleDip = 1.0F - 0.44F
-                * (float) Math.exp(-Math.pow((v - 0.43F) / 0.24F, 2.0D))
-                * (float) Math.exp(-Math.pow(lateral / 0.47F, 2.0D));
+        float nearHot = 0.225F * (float) Math.exp(-v / 0.105F);
+        float body = 0.044F - 0.010F * v;
+        float shoulder = 0.092F * (float) Math.exp(
+                -Math.pow((lateral - 0.69F) / 0.19F, 2.0D))
+                * (0.92F - 0.22F * v);
+        float middleDip = 1.0F - 0.42F
+                * (float) Math.exp(-Math.pow((v - 0.46F) / 0.25F, 2.0D))
+                * (float) Math.exp(-Math.pow(lateral / 0.44F, 2.0D));
 
         float opacity = (nearHot + body + shoulder)
                 * edgeFade * endFade * middleDip;
-        return Math.max(0, Math.min(30,
+        return Math.max(0, Math.min(96,
                 Math.round(opacity * 255.0F)));
-    }
-
-    private static void projectionColorVertex(BufferBuilder builder,
-            Matrix4f matrix, Vec3 point, int alpha) {
-        builder.vertex(matrix, (float) point.x,
-                        (float) point.y, (float) point.z)
-                .color(255, 187, 92, alpha)
-                .endVertex();
     }
 
     private static float smoothStep(float edge0, float edge1, float value) {

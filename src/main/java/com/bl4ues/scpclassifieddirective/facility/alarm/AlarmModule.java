@@ -405,14 +405,24 @@ public final class AlarmModule {
 
     public static boolean isBlastDoorTopMounted(BlockGetter level,
             BlockPos pos, BlockState alarmState) {
+        return blastDoorTopMountController(level, pos, alarmState) != null;
+    }
+
+    @Nullable
+    public static BlockPos blastDoorTopMountController(BlockGetter level,
+            BlockPos pos, BlockState alarmState) {
         if (level == null || pos == null || alarmState == null
                 || !alarmState.hasProperty(FACING)) {
-            return false;
+            return null;
         }
         Direction facing = alarmState.getValue(FACING);
         BlockPos support = pos.relative(facing.getOpposite());
         BlockState supportState = level.getBlockState(support);
-        return isBlastDoorTopSupport(level, support, supportState);
+        if (!isBlastDoorTopSupport(level, support, supportState)) {
+            return null;
+        }
+        return BlastDoorStructure.controllerPosition(
+                support, supportState).immutable();
     }
 
     public static double visualYOffset(BlockGetter level, BlockPos pos,

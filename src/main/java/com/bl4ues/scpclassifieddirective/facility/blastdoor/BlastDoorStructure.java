@@ -657,11 +657,36 @@ public final class BlastDoorStructure {
             return null;
         }
 
-        VoxelShape mimic = mimicShapeAt(
-                level, controller, facing, side, height);
+        VoxelShape mimic = lowerMimicShape(level, pos, state);
         if (mimic.isEmpty()) return null;
 
-        return rotateFromNorth(mimic, facing).clip(start, end, pos);
+        return mimic.clip(start, end, pos);
+    }
+
+    /**
+     * Returns only the visible wall-copy quarter embedded in the lower outer
+     * Blast Door cells. Optical effects can use this as a real receiver without
+     * mistaking the rest of the multiblock collision envelope for visible wall.
+     */
+    public static VoxelShape lowerMimicShape(BlockGetter level,
+            BlockPos pos, BlockState state) {
+        if (!BlastDoorModule.isPart(state)) return Shapes.empty();
+
+        int side = decodeSide(state);
+        int height = state.getValue(BlastDoorModule.HEIGHT);
+        if (height != 2 || Math.abs(side) != 2) {
+            return Shapes.empty();
+        }
+
+        Direction facing = state.getValue(BlastDoorModule.FACING);
+        BlockPos controller = controllerPosition(pos, state);
+        if (!BlastDoorModule.isController(
+                level.getBlockState(controller))) {
+            return Shapes.empty();
+        }
+
+        return rotateFromNorth(mimicShapeAt(
+                level, controller, facing, side, height), facing);
     }
 
     private static VoxelShape mimicShapeAt(BlockGetter level,

@@ -1054,20 +1054,21 @@ public final class AlarmClient {
                                 ? COMPLEX_RECEIVER_SUBDIVISIONS
                                 : RECEIVER_SUBDIVISIONS;
 
-                        addReceiverFace(level, context, alarmPos, rayStart,
-                                wallFace, blastDoorController, box, wallFace,
+                        addReceiverFace(level, context, alarmPos,
+                                wallOrigin, rayStart, wallFace,
+                                blastDoorController, box, wallFace,
                                 divisions, blastDoor, seen, result);
 
                         if (rayStart.y < box.minY - 1.0E-5D) {
-                            addReceiverFace(level, context, alarmPos, rayStart,
-                                    wallFace, blastDoorController, box,
-                                    Direction.DOWN, divisions, blastDoor,
-                                    seen, result);
+                            addReceiverFace(level, context, alarmPos,
+                                    wallOrigin, rayStart, wallFace,
+                                    blastDoorController, box, Direction.DOWN,
+                                    divisions, blastDoor, seen, result);
                         } else if (rayStart.y > box.maxY + 1.0E-5D) {
-                            addReceiverFace(level, context, alarmPos, rayStart,
-                                    wallFace, blastDoorController, box,
-                                    Direction.UP, divisions, blastDoor,
-                                    seen, result);
+                            addReceiverFace(level, context, alarmPos,
+                                    wallOrigin, rayStart, wallFace,
+                                    blastDoorController, box, Direction.UP,
+                                    divisions, blastDoor, seen, result);
                         }
                     }
                 }

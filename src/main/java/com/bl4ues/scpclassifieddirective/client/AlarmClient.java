@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.client.render.AlarmProjectionRenderTypes;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmMountStructure;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
@@ -739,7 +740,7 @@ public final class AlarmClient {
                 rotorAngle, mountOffset, false);
         if (projected.triangles.isEmpty()) return;
 
-        RenderType washType = RenderType.entityTranslucent(SPLASH, true);
+        RenderType washType = AlarmProjectionRenderTypes.wash(SPLASH);
         VertexConsumer wash = buffers.getBuffer(washType);
         for (ProjectedTriangle triangle : projected.triangles) {
             emitProjectionTriangle(wash, poseStack, alarm.getBlockPos(),
@@ -765,7 +766,8 @@ public final class AlarmClient {
          */
         Direction bloomFace = alarm.getBlockState()
                 .getValue(AlarmModule.FACING);
-        RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
+        RenderType bloomType =
+                AlarmProjectionRenderTypes.bloom(SPLASH_EMISSIVE);
         VertexConsumer bloom = buffers.getBuffer(bloomType);
         boolean emittedBloom = false;
         for (ProjectedTriangle triangle : projected.triangles) {
@@ -1081,40 +1083,12 @@ public final class AlarmClient {
         private void addTriangle(List<ProjectedTriangle> result,
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
             if (!compatibleTriangle(a, b, c)) return;
-            if (!triangleInteriorMatchesReceiver(a, b, c)) return;
 
             float washScale = 1.0F;
             float bloomScale = 1.0F;
 
             result.add(new ProjectedTriangle(
                     a, b, c, washScale, bloomScale));
-        }
-
-        /**
-         * Plane equality alone is insufficient: two disconnected pieces of wall
-         * on opposite sides of an opening share the same face and coordinate.
-         * The old mesh could therefore bridge empty space with one triangle.
-         *
-         * Probe the three UV edge midpoints plus centroid and require every
-         * sample to hit the same physical receiver plane. These probes are
-         * cached, so neighbouring triangles share the work. This is a topology
-         * check, not a visual threshold.
-         */
-        private boolean triangleInteriorMatchesReceiver(
-                ProjectedSample a, ProjectedSample b, ProjectedSample c) {
-            float abU = (a.u + b.u) * 0.5F;
-            float abV = (a.v + b.v) * 0.5F;
-            float bcU = (b.u + c.u) * 0.5F;
-            float bcV = (b.v + c.v) * 0.5F;
-            float caU = (c.u + a.u) * 0.5F;
-            float caV = (c.v + a.v) * 0.5F;
-            float centerU = (a.u + b.u + c.u) / 3.0F;
-            float centerV = (a.v + b.v + c.v) / 3.0F;
-
-            return sameSurface(a, sampleAtCached(abU, abV))
-                    && sameSurface(a, sampleAtCached(bcU, bcV))
-                    && sameSurface(a, sampleAtCached(caU, caV))
-                    && sameSurface(a, sampleAtCached(centerU, centerV));
         }
 
         private ProjectedSample sample(int uIndex, int vIndex) {
@@ -1483,10 +1457,6 @@ public final class AlarmClient {
                 triangle.a, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,
                 triangle.b, bloomPass, energyScale);
-        projectionVertex(consumer, poseStack, blockOrigin,
-                triangle.c, bloomPass, energyScale);
-        // Both selected render types use QUADS. Repeating the final corner
-        // creates a degenerate quad with exactly the triangle's visible area.
         projectionVertex(consumer, poseStack, blockOrigin,
                 triangle.c, bloomPass, energyScale);
     }

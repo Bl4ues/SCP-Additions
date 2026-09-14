@@ -101,6 +101,13 @@ public final class AlarmClient {
     private static final int RECEIVER_SUBDIVISIONS = 2;
     private static final int COMPLEX_RECEIVER_SUBDIVISIONS = 4;
     private static final double RECEIVER_VISIBILITY_EPSILON_SQR = 0.0064D;
+    /*
+     * BSL treats RenderType.eyes as an HDR source. The emissive PNG is already
+     * subtle, but a full-strength vertex alpha still saturates a broad projected
+     * surface. Scale only the HDR copy; the visible wash/texture remains exactly
+     * as authored by the user.
+     */
+    private static final float PROJECTION_BLOOM_ALPHA = 0.16F;
     // Twenty deterministic rotor phases are cached. Receiver visibility is
     // rebuilt only when nearby block geometry changes; phase generation itself
     // performs no world raycasts.
@@ -1051,16 +1058,18 @@ public final class AlarmClient {
 
                         addReceiverFace(level, context, alarmPos, rayStart,
                                 wallFace, blastDoorController, box, wallFace,
-                                divisions, seen, result);
+                                divisions, blastDoor, seen, result);
 
                         if (rayStart.y < box.minY - 1.0E-5D) {
                             addReceiverFace(level, context, alarmPos, rayStart,
                                     wallFace, blastDoorController, box,
-                                    Direction.DOWN, divisions, seen, result);
+                                    Direction.DOWN, divisions, blastDoor,
+                                    seen, result);
                         } else if (rayStart.y > box.maxY + 1.0E-5D) {
                             addReceiverFace(level, context, alarmPos, rayStart,
                                     wallFace, blastDoorController, box,
-                                    Direction.UP, divisions, seen, result);
+                                    Direction.UP, divisions, blastDoor,
+                                    seen, result);
                         }
                     }
                 }
@@ -1084,7 +1093,8 @@ public final class AlarmClient {
     private static void addReceiverFace(ClientLevel level, Entity context,
             BlockPos alarmPos, Vec3 rayStart, Direction wallFace,
             BlockPos blastDoorController, AABB box, Direction face,
-            int divisions, Set<ReceiverPatchKey> seen,
+            int divisions, boolean blastDoorMimic,
+            Set<ReceiverPatchKey> seen,
             List<ReceiverPatch> result) {
         FaceRect rect = faceRect(box, face);
         if (direction(face).dot(rayStart.subtract(rect.center())) <= 1.0E-6D) {
@@ -1099,7 +1109,8 @@ public final class AlarmClient {
                 double u1 = (x + 1) / (double) divisions;
                 ReceiverPatch patch = new ReceiverPatch(
                         rect.point(u0, v0), rect.point(u1, v0),
-                        rect.point(u1, v1), rect.point(u0, v1), face);
+                        rect.point(u1, v1), rect.point(u0, v1), face,
+                        blastDoorMimic);
 
                 ReceiverPatchKey key = ReceiverPatchKey.of(patch);
                 if (!seen.add(key)) continue;
@@ -1116,7 +1127,8 @@ public final class AlarmClient {
             Direction wallFace, BlockPos blastDoorController,
             ReceiverPatch patch) {
         Vec3 target = patch.center();
-        if (blastDoorController != null && patch.face == wallFace) {
+        if (blastDoorController != null && patch.face == wallFace
+                && !patch.blastDoorMimic) {
             BlockState controllerState = level.getBlockState(blastDoorController);
             if (BlastDoorModule.isController(controllerState)
                     && BlastDoorStructure.visualOcclusionHit(
@@ -1142,7 +1154,8 @@ public final class AlarmClient {
                 visibilityRay.normalize().scale(RAY_OVERSHOOT));
 
         ProjectedHit hit = cast(level, context, alarmPos,
-                rayStart, visibilityEnd, target, patch.face);
+                rayStart, visibilityEnd, target, patch.face,
+                patch.blastDoorMimic);
         if (hit == null || hit.blastDoorOccluder || hit.face != patch.face) {
             return false;
         }
@@ -1203,7 +1216,8 @@ public final class AlarmClient {
     }
 
     private record ReceiverPatch(
-            Vec3 a, Vec3 b, Vec3 c, Vec3 d, Direction face) {
+            Vec3 a, Vec3 b, Vec3 c, Vec3 d, Direction face,
+            boolean blastDoorMimic) {
         private Vec3 center() {
             return new Vec3(
                     (a.x + b.x + c.x + d.x) * 0.25D,
@@ -1214,13 +1228,14 @@ public final class AlarmClient {
 
     private record ReceiverPatchKey(
             long ax, long ay, long az,
-            long cx, long cy, long cz, int face) {
+            long cx, long cy, long cz, int face,
+            boolean blastDoorMimic) {
         private static ReceiverPatchKey of(ReceiverPatch patch) {
             return new ReceiverPatchKey(
                     quantize(patch.a.x), quantize(patch.a.y),
                     quantize(patch.a.z), quantize(patch.c.x),
                     quantize(patch.c.y), quantize(patch.c.z),
-                    patch.face.ordinal());
+                    patch.face.ordinal(), patch.blastDoorMimic);
         }
         private static long quantize(double value) {
             return Math.round(value * 4096.0D);
@@ -1232,7 +1247,8 @@ public final class AlarmClient {
 
     private static ProjectedHit cast(ClientLevel level, Entity context,
             BlockPos alarmPos, Vec3 start, Vec3 end,
-            Vec3 wallSurface, Direction wallFace) {
+            Vec3 wallSurface, Direction wallFace,
+            boolean targetIsBlastDoorMimic) {
         Vec3 ray = end.subtract(start);
         if (ray.lengthSqr() < 1.0E-8D) return null;
         Vec3 rayDirection = ray.normalize();
@@ -1281,6 +1297,23 @@ public final class AlarmClient {
 
 
             if (BlastDoorModule.isStructureState(hitState)) {
+                if (targetIsBlastDoorMimic) {
+                    BlockHitResult directMimic =
+                            BlastDoorStructure.clipLowerMimic(
+                                    level, hitPos, hitState, cursor, end);
+                    if (directMimic != null
+                            && directMimic.getLocation()
+                                    .distanceToSqr(wallSurface)
+                                    <= RECEIVER_VISIBILITY_EPSILON_SQR) {
+                        Direction mimicFace = directMimic.getDirection();
+                        return new ProjectedHit(
+                                directMimic.getLocation().add(
+                                        direction(mimicFace)
+                                                .scale(SURFACE_EPSILON)),
+                                mimicFace, false, false);
+                    }
+                }
+
                 /*
                  * The gameplay collision envelope is intentionally conservative
                  * and includes reserved/mimic cells above the visible frame.
@@ -1381,14 +1414,16 @@ public final class AlarmClient {
     private static void emitProjectionQuad(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
             ProjectedQuad quad, boolean bloomPass) {
+        float energyScale = bloomPass
+                ? PROJECTION_BLOOM_ALPHA : 1.0F;
         projectionVertex(consumer, poseStack, blockOrigin,
-                quad.a, bloomPass, 1.0F);
+                quad.a, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,
-                quad.b, bloomPass, 1.0F);
+                quad.b, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,
-                quad.c, bloomPass, 1.0F);
+                quad.c, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,
-                quad.d, bloomPass, 1.0F);
+                quad.d, bloomPass, energyScale);
     }
 
     private static void projectionVertex(VertexConsumer consumer,

@@ -29,7 +29,14 @@ import java.util.Set;
 public final class BlastDoorStructure {
     public static final int MIN_SIDE = -2;
     public static final int MAX_SIDE = 2;
-    public static final int MAX_HEIGHT = 3;
+    /** Actual reserved multiblock cells stop below the copied-wall row. */
+    public static final int MAX_HEIGHT = 2;
+    /**
+     * The fourth visual row is ordinary facility wall again. It remains a
+     * conceptual Blast Door mounting strip for Alarm placement, but is no
+     * longer replaced by BlockEntity-rendered copycats.
+     */
+    public static final int TOP_MOUNT_HEIGHT = 3;
 
     private BlastDoorStructure() {
     }
@@ -168,9 +175,69 @@ public final class BlastDoorStructure {
 
     public static BlockPos topMimicSource(BlockPos controller,
             Direction facing, int side) {
-        // Every reserved block in the top row copies the wall block directly
-        // above it. This makes the copycat row continuous across the doorway.
-        return partPosition(controller, facing, side, 4);
+        // Kept only for migration of pre-change Y+3 copycat parts.
+        return partPosition(controller, facing, side, TOP_MOUNT_HEIGHT + 1);
+    }
+
+    /**
+     * Finds the Blast Door whose conceptual fourth-height wall strip contains
+     * {@code wallPos}. That strip intentionally consists of REAL wall blocks;
+     * the door no longer replaces them with renderer copycats.
+     */
+    @javax.annotation.Nullable
+    public static BlockPos topMountController(BlockGetter level,
+            BlockPos wallPos, Direction wallFace) {
+        if (level == null || wallPos == null || wallFace == null
+                || wallFace.getAxis().isVertical()) {
+            return null;
+        }
+
+        for (Direction doorFacing : Direction.Plane.HORIZONTAL) {
+            if (doorFacing.getAxis() != wallFace.getAxis()) continue;
+            Direction right = doorFacing.getClockWise();
+            for (int side = MIN_SIDE; side <= MAX_SIDE; side++) {
+                BlockPos candidate = wallPos.offset(
+                        -right.getStepX() * side,
+                        -TOP_MOUNT_HEIGHT,
+                        -right.getStepZ() * side);
+                BlockState state = level.getBlockState(candidate);
+                if (BlastDoorModule.isController(state)
+                        && state.getValue(BlastDoorModule.FACING)
+                                == doorFacing) {
+                    return candidate.immutable();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Development-world migration for the former full Y+3 copycat row.
+     * Restores the wall state that row used to copy, rather than leaving a hole
+     * when old helper parts discover that height 3 is no longer reserved.
+     */
+    public static void restoreLegacyTopPart(Level level, BlockPos partPos,
+            BlockState partState) {
+        if (!BlastDoorModule.isPart(partState)
+                || !partState.hasProperty(BlastDoorModule.HEIGHT)
+                || partState.getValue(BlastDoorModule.HEIGHT)
+                        != TOP_MOUNT_HEIGHT) {
+            clearBlock(level, partPos, partState);
+            return;
+        }
+
+        Direction facing = partState.getValue(BlastDoorModule.FACING);
+        int side = decodeSide(partState);
+        BlockPos controller = controllerPosition(partPos, partState);
+        BlockState source = level.getBlockState(
+                topMimicSource(controller, facing, side));
+        if (!source.isAir()
+                && source.getRenderShape() != RenderShape.INVISIBLE
+                && !BlastDoorModule.isStructureState(source)) {
+            level.setBlock(partPos, source, Block.UPDATE_ALL);
+        } else {
+            clearBlock(level, partPos, partState);
+        }
     }
 
     public static boolean hasNeighborSignal(Level level,
@@ -566,15 +633,12 @@ public final class BlastDoorStructure {
 
     private static VoxelShape mimicShapeAt(BlockGetter level,
             BlockPos controller, Direction facing, int side, int height) {
-        BlockPos sourcePos;
-        if (height == 3 && side >= MIN_SIDE && side <= MAX_SIDE) {
-            sourcePos = topMimicSource(controller, facing, side);
-        } else if (height == 2 && Math.abs(side) == 2) {
-            sourcePos = mimicSource(controller, facing, side > 0, false);
-        } else {
+        if (height != 2 || Math.abs(side) != 2) {
             return Shapes.empty();
         }
 
+        BlockPos sourcePos = mimicSource(
+                controller, facing, side > 0, false);
         BlockState source = level.getBlockState(sourcePos);
         if (source.isAir()
                 || source.getRenderShape() == RenderShape.INVISIBLE
@@ -582,14 +646,8 @@ public final class BlastDoorStructure {
             return Shapes.empty();
         }
 
-        if (height == 3) {
-            // All five top-row placeholders become full wall cells whenever a
-            // real wall block exists directly above them.
-            return Block.box(0.0D, 0.0D, 0.0D,
-                    16.0D, 16.0D, 16.0D);
-        }
-
-        // The original lower mimic is only the exposed outer/top quarter.
+        // Only the original lower exposed outer/top quarter remains a mimic.
+        // The former full Y+3 copycat row is now real facility wall.
         return side > 0
                 ? Block.box(8.0D, 8.0D, 0.0D, 16.0D, 16.0D, 16.0D)
                 : Block.box(0.0D, 8.0D, 0.0D, 8.0D, 16.0D, 16.0D);

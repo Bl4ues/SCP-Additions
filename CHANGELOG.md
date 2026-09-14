@@ -286,7 +286,7 @@
 ## Facility construction
 
 - Added a redstone-operated **Blast Door** for large secure facility entrances;
-- Added a functional animated **Alarm** that reacts to redstone or nearby open electric doors;
+- Added a functional animated **Alarm** that reacts to redstone or nearby open electric doors, projects a shader-compatible rotating wall light, and can be mounted at wall centers, shared edges, or shared corners;
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;

@@ -438,6 +438,27 @@ public final class AlarmModule {
                 BlockState state, AlarmBlockEntity alarm) {
             if (!(level instanceof ServerLevel server)) return;
 
+            /*
+             * Internal-development migration: Alarms placed on the old Blast
+             * Door copycat row had no mount properties and therefore deserialize
+             * at the center anchor. Center/lower anchors are now forbidden on
+             * that strip, so such a state is unambiguously legacy and can be
+             * promoted to the new top-center anchor without user intervention.
+             */
+            if (AlarmMountStructure.blastDoorController(
+                    server, pos, state) != null
+                    && AlarmMountStructure.decodeSlot(
+                            state.getValue(MOUNT_Y))
+                            != AlarmMountStructure.POSITIVE) {
+                BlockState migrated = state.setValue(MOUNT_Y,
+                        AlarmMountStructure.encodeSlot(
+                                AlarmMountStructure.POSITIVE));
+                if (AlarmMountStructure.canPlace(server, pos, migrated)) {
+                    server.setBlock(pos, migrated, Block.UPDATE_ALL);
+                    state = migrated;
+                }
+            }
+
             if (!AlarmMountStructure.canSurvive(server, pos, state)) {
                 server.destroyBlock(pos, true);
                 return;

@@ -98,6 +98,7 @@ public final class AlarmClient {
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
     private static final int BASE_MESH_CELLS = 5;
     private static final int MAX_BOUNDARY_SUBDIVISIONS = 3;
+    private static final int SURFACE_EDGE_BISECTIONS = 6;
     /*
      * Flat regions stay at 5x5 cells. Only cells whose nine probes disagree
      * recurse, up to an effective 40x40 boundary resolution. No synthetic
@@ -829,6 +830,7 @@ public final class AlarmClient {
         private final Direction wallFace;
         private final BlockPos blastDoorController;
         private final Map<Integer, ProjectedSample> samples = new HashMap<>();
+        private final Map<Long, ProjectedSample> edgeSamples = new HashMap<>();
 
         private ProjectionBuilder(ClientLevel level, Entity context,
                 BlockPos alarmPos, Vec3 rayStart, Vec3 wallOrigin,
@@ -897,20 +899,21 @@ public final class AlarmClient {
             }
 
             /*
-             * Finest boundary cell. Do not invent a transition point or stretch
-             * one receiver over another. Use only triangles whose three sampled
-             * vertices genuinely belong to the same physical plane. Eight
-             * center-fan triangles give half-cell edge precision at the final
-             * level without any overlap under blockers.
+             * Finest boundary cell. Clip each micro-triangle against the real
+             * receivers sampled by the world. A boundary vertex is always the
+             * last ACTUAL hit on that receiver, found by bisection along the UV
+             * edge. Nothing is projected onto an infinite plane, nothing is
+             * extended underneath an obstacle, and legitimate partial wedges
+             * are not deleted.
              */
-            addIfSameSurface(result, a, top, center);
-            addIfSameSurface(result, a, center, left);
-            addIfSameSurface(result, top, b, right);
-            addIfSameSurface(result, top, right, center);
-            addIfSameSurface(result, center, right, c);
-            addIfSameSurface(result, center, c, bottom);
-            addIfSameSurface(result, left, center, bottom);
-            addIfSameSurface(result, left, bottom, d);
+            clipLeafTriangle(result, a, top, center);
+            clipLeafTriangle(result, a, center, left);
+            clipLeafTriangle(result, top, b, right);
+            clipLeafTriangle(result, top, right, center);
+            clipLeafTriangle(result, center, right, c);
+            clipLeafTriangle(result, center, c, bottom);
+            clipLeafTriangle(result, left, center, bottom);
+            clipLeafTriangle(result, left, bottom, d);
         }
 
         private boolean sameReceiver(ProjectedSample... probes) {
@@ -933,15 +936,103 @@ public final class AlarmClient {
             return false;
         }
 
-        private void addIfSameSurface(List<ProjectedTriangle> result,
+        private void clipLeafTriangle(
+                List<ProjectedTriangle> result,
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
-            if (!isRenderable(a) || !isRenderable(b) || !isRenderable(c)) {
-                return;
+            ProjectedSample[] triangle = { a, b, c };
+
+            for (ProjectedSample target : triangle) {
+                if (!isRenderable(target)) continue;
+
+                boolean duplicate = false;
+                for (ProjectedSample previous : triangle) {
+                    if (previous == target) break;
+                    if (isRenderable(previous)
+                            && sameSurface(previous, target)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (duplicate) continue;
+
+                clipTriangleToReceiver(result, triangle, target);
             }
-            if (!sameSurface(a, b) || !sameSurface(a, c)) {
-                return;
+        }
+
+        private void clipTriangleToReceiver(
+                List<ProjectedTriangle> result,
+                ProjectedSample[] triangle, ProjectedSample target) {
+            List<ProjectedSample> polygon = new ArrayList<>(5);
+
+            for (int i = 0; i < 3; i++) {
+                ProjectedSample current = triangle[i];
+                ProjectedSample next = triangle[(i + 1) % 3];
+                boolean currentInside = isRenderable(current)
+                        && sameSurface(current, target);
+                boolean nextInside = isRenderable(next)
+                        && sameSurface(next, target);
+
+                if (currentInside && nextInside) {
+                    polygon.add(next);
+                } else if (currentInside) {
+                    ProjectedSample edge =
+                            receiverBoundary(current, next, target);
+                    if (edge != null) polygon.add(edge);
+                } else if (nextInside) {
+                    ProjectedSample edge =
+                            receiverBoundary(next, current, target);
+                    if (edge != null) polygon.add(edge);
+                    polygon.add(next);
+                }
             }
-            addTriangle(result, a, b, c);
+
+            if (polygon.size() < 3) return;
+            ProjectedSample first = polygon.get(0);
+            for (int i = 1; i + 1 < polygon.size(); i++) {
+                addTriangle(result, first,
+                        polygon.get(i), polygon.get(i + 1));
+            }
+        }
+
+        /**
+         * Returns the last verified sample that still belongs to {@code target}.
+         * This is a real world hit, never a point reconstructed on an infinite
+         * mathematical plane. The invariant matters more than another round of
+         * visual band-aids: every rendered vertex must correspond to geometry
+         * that the raycaster actually found.
+         */
+        private ProjectedSample receiverBoundary(
+                ProjectedSample inside, ProjectedSample outside,
+                ProjectedSample target) {
+            if (!isRenderable(inside)
+                    || !sameSurface(inside, target)
+                    || outside == null) {
+                return inside;
+            }
+
+            float inU = inside.u;
+            float inV = inside.v;
+            float outU = outside.u;
+            float outV = outside.v;
+            ProjectedSample lastValid = inside;
+
+            for (int i = 0; i < SURFACE_EDGE_BISECTIONS; i++) {
+                float midU = (inU + outU) * 0.5F;
+                float midV = (inV + outV) * 0.5F;
+                ProjectedSample probe = sampleAtCached(midU, midV);
+
+                if (isRenderable(probe)
+                        && sameSurface(probe, target)) {
+                    inU = midU;
+                    inV = midV;
+                    lastValid = probe;
+                } else {
+                    outU = midU;
+                    outV = midV;
+                }
+            }
+
+            return lastValid;
         }
 
         private static boolean isBlastDoorOccluder(ProjectedSample sample) {
@@ -969,9 +1060,48 @@ public final class AlarmClient {
 
         private void addTriangle(List<ProjectedTriangle> result,
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
-            if (compatibleTriangle(a, b, c)) {
-                result.add(new ProjectedTriangle(a, b, c));
+            if (!compatibleTriangle(a, b, c)) return;
+
+            double worldArea = triangleArea(
+                    a.position, b.position, c.position);
+            double idealArea = triangleArea(
+                    projectedWallPoint(a.u, a.v),
+                    projectedWallPoint(b.u, b.v),
+                    projectedWallPoint(c.u, c.v));
+
+            float washScale = 1.0F;
+            float bloomScale = 1.0F;
+            if (idealArea > 1.0E-8D) {
+                double ratio = Math.max(0.0D,
+                        Math.min(1.0D, worldArea / idealArea));
+
+                /*
+                 * A large region of projector UV compressed onto a tiny side
+                 * face is the exact signature of the orange/red "rods" in the
+                 * screenshots. Preserve the receiver, but normalize its energy
+                 * instead of letting RenderType.eyes amplify the compression.
+                 */
+                washScale = smoothStep(0.025F, 0.22F, (float) ratio);
+                bloomScale = smoothStep(0.12F, 0.55F, (float) ratio);
             }
+
+            result.add(new ProjectedTriangle(
+                    a, b, c, washScale, bloomScale));
+        }
+
+        private static double triangleArea(
+                Vec3 a, Vec3 b, Vec3 c) {
+            return b.subtract(a).cross(c.subtract(a)).length() * 0.5D;
+        }
+
+        private static float smoothStep(
+                float edge0, float edge1, float value) {
+            if (edge1 <= edge0) {
+                return value >= edge1 ? 1.0F : 0.0F;
+            }
+            float x = Math.max(0.0F, Math.min(1.0F,
+                    (value - edge0) / (edge1 - edge0)));
+            return x * x * (3.0F - 2.0F * x);
         }
 
         private ProjectedSample sample(int uIndex, int vIndex) {
@@ -980,8 +1110,20 @@ public final class AlarmClient {
 
             float u01 = uIndex / (float) MESH_RESOLUTION;
             float v01 = vIndex / (float) MESH_RESOLUTION;
-            ProjectedSample sample = sampleAt(u01, v01);
+            ProjectedSample sample = sampleAtCached(u01, v01);
             samples.put(key, sample);
+            return sample;
+        }
+
+        private ProjectedSample sampleAtCached(float u01, float v01) {
+            int qu = Math.round(u01 * 16384.0F);
+            int qv = Math.round(v01 * 16384.0F);
+            long key = ((long) qu << 32) | (qv & 0xffffffffL);
+            ProjectedSample cached = edgeSamples.get(key);
+            if (cached != null) return cached;
+
+            ProjectedSample sample = sampleAt(u01, v01);
+            edgeSamples.put(key, sample);
             return sample;
         }
 
@@ -1331,21 +1473,24 @@ public final class AlarmClient {
     private static void emitProjectionTriangle(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
             ProjectedTriangle triangle, boolean bloomPass) {
+        float energyScale = bloomPass
+                ? triangle.bloomScale : triangle.washScale;
         projectionVertex(consumer, poseStack, blockOrigin,
-                triangle.a, bloomPass);
+                triangle.a, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,
-                triangle.b, bloomPass);
+                triangle.b, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,
-                triangle.c, bloomPass);
+                triangle.c, bloomPass, energyScale);
         // Both selected render types use QUADS. Repeating the final corner
         // creates a degenerate quad with exactly the triangle's visible area.
         projectionVertex(consumer, poseStack, blockOrigin,
-                triangle.c, bloomPass);
+                triangle.c, bloomPass, energyScale);
     }
 
     private static void projectionVertex(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
-            ProjectedSample sample, boolean bloomPass) {
+            ProjectedSample sample, boolean bloomPass,
+            float energyScale) {
         Vec3 normal = direction(sample.face);
         Vec3 worldPoint = bloomPass
                 ? sample.position.add(normal.scale(BLOOM_SURFACE_EPSILON))
@@ -1356,7 +1501,8 @@ public final class AlarmClient {
                         (float) point.x, (float) point.y, (float) point.z)
                 .color(255, 255, 255,
                         Math.max(0, Math.min(255,
-                                Math.round(sample.opacity * 255.0F))))
+                                Math.round(sample.opacity
+                                        * energyScale * 255.0F))))
                 .uv(sample.u, sample.v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
@@ -1414,30 +1560,13 @@ public final class AlarmClient {
     }
 
     private record ProjectedTriangle(ProjectedSample a,
-            ProjectedSample b, ProjectedSample c) {
+            ProjectedSample b, ProjectedSample c,
+            float washScale, float bloomScale) {
         private boolean bloomAllowed() {
-            if (!(a.bloomAllowed && b.bloomAllowed && c.bloomAllowed)) {
-                return false;
-            }
-
-            Vec3 ab = b.position.subtract(a.position);
-            Vec3 ac = c.position.subtract(a.position);
-            double area2 = ab.cross(ac).length();
-            double longest = Math.max(
-                    a.position.distanceTo(b.position),
-                    Math.max(b.position.distanceTo(c.position),
-                            c.position.distanceTo(a.position)));
-            if (longest < 1.0E-6D) return false;
-
-            /*
-             * A tiny grazing receiver can legitimately exist, but feeding a
-             * needle-shaped triangle into RenderType.eyes turns it into the
-             * red/orange neon rods seen along ceiling and frame edges. Keep the
-             * normal translucent wash there; suppress only the HDR copy when
-             * the triangle's geometric altitude is sub-pixel thin.
-             */
-            double altitude = area2 / longest;
-            return altitude >= 0.028D;
+            return bloomScale > 0.01F
+                    && a.bloomAllowed
+                    && b.bloomAllowed
+                    && c.bloomAllowed;
         }
     }
 

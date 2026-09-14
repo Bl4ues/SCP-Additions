@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -629,6 +630,38 @@ public final class BlastDoorStructure {
         }
 
         return tMin;
+    }
+
+    /**
+     * Raycasts only the small lower wall-copy quarter of the Blast Door.
+     *
+     * <p>The Alarm projector must treat this piece as a real receiving surface,
+     * not as metal and not as empty multiblock space. The generic Blast Door
+     * collision also contains the frame/slab, so exposing the mimic-only clip
+     * keeps those concerns separate and prevents the light from vanishing when
+     * it reaches the copied 8x8 wall patch.</p>
+     */
+    @javax.annotation.Nullable
+    public static BlockHitResult clipLowerMimic(BlockGetter level,
+            BlockPos pos, BlockState state, Vec3 start, Vec3 end) {
+        if (!BlastDoorModule.isPart(state)) return null;
+
+        int side = decodeSide(state);
+        int height = state.getValue(BlastDoorModule.HEIGHT);
+        if (height != 2 || Math.abs(side) != 2) return null;
+
+        Direction facing = state.getValue(BlastDoorModule.FACING);
+        BlockPos controller = controllerPosition(pos, state);
+        if (!BlastDoorModule.isController(
+                level.getBlockState(controller))) {
+            return null;
+        }
+
+        VoxelShape mimic = mimicShapeAt(
+                level, controller, facing, side, height);
+        if (mimic.isEmpty()) return null;
+
+        return rotateFromNorth(mimic, facing).clip(start, end, pos);
     }
 
     private static VoxelShape mimicShapeAt(BlockGetter level,

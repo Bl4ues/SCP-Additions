@@ -94,7 +94,7 @@ public final class AlarmClient {
      * clipped analytically below instead of forcing the entire projector to a
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
-    private static final int BASE_MESH_CELLS = 6;
+    private static final int BASE_MESH_CELLS = 5;
     private static final int MAX_BOUNDARY_SUBDIVISIONS = 1;
     private static final int SURFACE_EDGE_BISECTIONS = 5;
     /*
@@ -743,12 +743,18 @@ public final class AlarmClient {
                 rotorAngle, mountOffset, false);
         if (projected.triangles.isEmpty()) return;
 
-        RenderType washType = RenderType.entityTranslucentCull(SPLASH);
+        RenderType washType = RenderType.entityTranslucent(SPLASH, true);
         VertexConsumer wash = buffers.getBuffer(washType);
         for (ProjectedTriangle triangle : projected.triangles) {
             emitProjectionTriangle(wash, poseStack, alarm.getBlockPos(),
                     triangle, false);
         }
+        /*
+         * The wash must be committed before the HDR eyes pass. Buffering both
+         * together lets shader packs reorder/combine the translucent receiver
+         * mesh and is what turned the cone into a solid emissive plate.
+         */
+        flush(buffers, washType);
         /*
          * HDR bloom is intentionally restricted to the Alarm's mounting-wall
          * receiver plane.
@@ -1113,7 +1119,14 @@ public final class AlarmClient {
                 }
             }
 
-            return lastValid;
+            /*
+             * Keep the boundary point on the verified receiver, but make it
+             * transparent. Interpolation from the interior sample to this
+             * zero-alpha vertex gives us a real geometric feather inside the
+             * valid surface. Nothing is pushed under the obstacle, so there is
+             * no overlap strip for BSL to turn into a bright blade.
+             */
+            return lastValid.withOpacity(0.0F);
         }
 
         private static boolean isBlastDoorOccluder(ProjectedSample sample) {
@@ -1142,16 +1155,6 @@ public final class AlarmClient {
         private void addTriangle(List<ProjectedTriangle> result,
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
             if (!compatibleTriangle(a, b, c)) return;
-
-            Vec3 geometricNormal = b.position.subtract(a.position)
-                    .cross(c.position.subtract(a.position));
-            Vec3 receiverNormal = direction(a.face);
-            if (geometricNormal.dot(receiverNormal) < 0.0D) {
-                ProjectedSample swap = b;
-                b = c;
-                c = swap;
-            }
-
             result.add(new ProjectedTriangle(
                     a, b, c, 1.0F, 1.0F));
         }

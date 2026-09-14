@@ -144,7 +144,6 @@ public final class BlastDoorClient {
                     packedLight, packedOverlay);
             renderLowerMimic(door, poseStack, bufferSource, false);
             renderLowerMimic(door, poseStack, bufferSource, true);
-            renderUpperWallMimics(door, poseStack, bufferSource);
         }
 
         @Override
@@ -221,62 +220,6 @@ public final class BlastDoorClient {
         renderInnerFace(consumer, pose, model, sourceState, level,
                 sourcePos, targetPos, facing, innerFace, innerX, y1, y2,
                 hAtBack, hAtFront, sourceV0, sourceV1, rightSide);
-    }
-
-    private static void renderUpperWallMimics(
-            BlastDoorModule.BlastDoorBlockEntity door,
-            PoseStack poseStack, MultiBufferSource buffers) {
-        Level level = door.getLevel();
-        if (level == null) return;
-        BlockState doorState = door.getBlockState();
-        if (!BlastDoorModule.isController(doorState)) return;
-
-        Direction facing = doorState.getValue(BlastDoorModule.FACING);
-        Minecraft minecraft = Minecraft.getInstance();
-
-        // The entire Y+3 row is reserved by the multiblock but visually belongs
-        // to the facility wall. Each cell copies the real block immediately
-        // above itself (Y+4), which closes the opening across the full five-block
-        // width instead of only patching the two outer corners.
-        for (int side = BlastDoorStructure.MIN_SIDE;
-                side <= BlastDoorStructure.MAX_SIDE; side++) {
-            BlockPos sourcePos = BlastDoorStructure.topMimicSource(
-                    door.getBlockPos(), facing, side);
-            BlockPos targetPos = BlastDoorStructure.partPosition(
-                    door.getBlockPos(), facing, side, 3);
-            if (!level.hasChunkAt(sourcePos)) continue;
-
-            BlockState sourceState = level.getBlockState(sourcePos);
-            if (sourceState.isAir()
-                    || sourceState.getRenderShape() == RenderShape.INVISIBLE
-                    || BlastDoorModule.isStructureState(sourceState)) {
-                continue;
-            }
-
-            BakedModel model = minecraft.getBlockRenderer()
-                    .getBlockModel(sourceState);
-            ModelData modelData = model.getModelData(level, sourcePos,
-                    sourceState, ModelData.EMPTY);
-            long seed = sourceState.getSeed(sourcePos);
-
-            poseStack.pushPose();
-            poseStack.translate(
-                    targetPos.getX() - door.getBlockPos().getX(),
-                    targetPos.getY() - door.getBlockPos().getY(),
-                    targetPos.getZ() - door.getBlockPos().getZ());
-
-            // Use the normal world block tessellator, not renderSingleBlock.
-            // That restores per-face/ambient-occlusion lighting and keeps Forge
-            // render layers/PBR hooks consistent with the surrounding wall.
-            for (RenderType renderType : model.getRenderTypes(sourceState,
-                    RandomSource.create(seed), modelData)) {
-                minecraft.getBlockRenderer().renderBatched(
-                        sourceState, targetPos, level, poseStack,
-                        buffers.getBuffer(renderType), false,
-                        RandomSource.create(seed));
-            }
-            poseStack.popPose();
-        }
     }
 
     private static void renderFrontBackFace(VertexConsumer consumer,

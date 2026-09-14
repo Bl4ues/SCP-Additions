@@ -1140,7 +1140,13 @@ public final class AlarmClient {
         }
 
         private boolean receiverVisible(Vec3 point, Direction face) {
-            if (blastDoorController != null) {
+            /*
+             * visualOcclusionHit is intentionally a WALL-SPACE silhouette test.
+             * Applying it to ceiling/side receivers turns their X/Y into fake
+             * door-metal hits and recreates holes around the Blast Door. Other
+             * faces use the real collision ray below.
+             */
+            if (face == wallFace && blastDoorController != null) {
                 BlockState controllerState =
                         level.getBlockState(blastDoorController);
                 if (BlastDoorModule.isController(controllerState)

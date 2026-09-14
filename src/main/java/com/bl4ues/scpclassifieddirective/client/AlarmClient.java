@@ -100,7 +100,15 @@ public final class AlarmClient {
      */
     private static final int RECEIVER_SUBDIVISIONS = 2;
     private static final int COMPLEX_RECEIVER_SUBDIVISIONS = 4;
+    private static final int RECEIVER_BOUNDARY_SUBDIVISIONS = 2;
     private static final double RECEIVER_VISIBILITY_EPSILON_SQR = 0.0064D;
+    /*
+     * The Alarm is a surface projector, not a volumetric spotlight. Once the
+     * mounting wall ends at a doorway/opening, the wash must not tunnel through
+     * that opening and land on geometry in the room behind it. A tiny tolerance
+     * keeps the actual mounting plane stable despite model/collision offsets.
+     */
+    private static final double BACKSIDE_RECEIVER_EPSILON = 0.035D;
     /*
      * The projected wash is intentionally much dimmer than the Alarm lamp.
      * Unlike RenderType.eyes, the translucent-emissive path preserves both the
@@ -861,7 +869,7 @@ public final class AlarmClient {
 
         if (cache.receivers == null) {
             cache.receivers = collectReceiverPatches(level, camera, pos,
-                    rayStart, facing, blastDoorController);
+                    wallOrigin, rayStart, facing, blastDoorController);
         }
 
         ProjectionBuilder builder = new ProjectionBuilder(
@@ -898,15 +906,6 @@ public final class AlarmClient {
         return hash;
     }
 
-    /**
-     * Adaptive surface tessellation for the alarm footprint.
-     *
-     * Flat surfaces stay at a coarse 5x5 topology. Only cells that contain a
-     * real receiver discontinuity subdivide. Boundary polygons are assembled
-     * from verified ray hits, and each emitted triangle rechecks its edge
-     * midpoints and centroid so disconnected coplanar surfaces cannot be
-     * bridged. The texture remains the sole owner of the beam's visual shape.
-     */
     /**
      * Surface-first projection. Receiver topology is collected once from real
      * VoxelShape faces. Rotor phases only remap those verified patches into
@@ -1016,7 +1015,7 @@ public final class AlarmClient {
 
     private static List<ReceiverPatch> collectReceiverPatches(
             ClientLevel level, Entity context, BlockPos alarmPos,
-            Vec3 rayStart, Direction wallFace,
+            Vec3 wallOrigin, Vec3 rayStart, Direction wallFace,
             BlockPos blastDoorController) {
         List<ReceiverPatch> result = new ArrayList<>();
         Set<ReceiverPatchKey> seen = new HashSet<>();
@@ -1090,10 +1089,10 @@ public final class AlarmClient {
     }
 
     private static void addReceiverFace(ClientLevel level, Entity context,
-            BlockPos alarmPos, Vec3 rayStart, Direction wallFace,
-            BlockPos blastDoorController, AABB box, Direction face,
-            int divisions, boolean blastDoorMimic,
-            Set<ReceiverPatchKey> seen,
+            BlockPos alarmPos, Vec3 wallOrigin, Vec3 rayStart,
+            Direction wallFace, BlockPos blastDoorController,
+            AABB box, Direction face, int divisions,
+            boolean blastDoorMimic, Set<ReceiverPatchKey> seen,
             List<ReceiverPatch> result) {
         FaceRect rect = faceRect(box, face);
         if (direction(face).dot(rayStart.subtract(rect.center())) <= 1.0E-6D) {
@@ -1111,21 +1110,84 @@ public final class AlarmClient {
                         rect.point(u1, v1), rect.point(u0, v1), face,
                         blastDoorMimic);
 
-                ReceiverPatchKey key = ReceiverPatchKey.of(patch);
-                if (!seen.add(key)) continue;
-                if (receiverPatchVisible(level, context, alarmPos, rayStart,
-                        wallFace, blastDoorController, patch)) {
-                    result.add(patch);
-                }
+                addReceiverPatch(level, context, alarmPos,
+                        wallOrigin, rayStart, wallFace,
+                        blastDoorController, patch, 0, seen, result);
             }
         }
     }
 
-    private static boolean receiverPatchVisible(ClientLevel level,
+    /**
+     * Refines only silhouette boundaries. A whole 1/2-block receiver patch used
+     * to disappear when its CENTER happened to fall behind the Blast Door top
+     * beam/shoulder, producing the remaining square bite. Five interior probes
+     * classify each patch; only mixed patches subdivide, so flat walls keep the
+     * cheap base topology and the extra work happens once when the receiver
+     * cache is built.
+     */
+    private static void addReceiverPatch(ClientLevel level, Entity context,
+            BlockPos alarmPos, Vec3 wallOrigin, Vec3 rayStart,
+            Direction wallFace, BlockPos blastDoorController,
+            ReceiverPatch patch, int depth, Set<ReceiverPatchKey> seen,
+            List<ReceiverPatch> result) {
+        Vec3 outward = direction(wallFace);
+        double wallDepth = patch.center().subtract(wallOrigin).dot(outward);
+        if (wallDepth < -BACKSIDE_RECEIVER_EPSILON) {
+            return;
+        }
+
+        boolean center = receiverPointVisible(level, context, alarmPos,
+                rayStart, wallFace, blastDoorController,
+                patch, patch.center());
+        boolean q00 = receiverPointVisible(level, context, alarmPos,
+                rayStart, wallFace, blastDoorController,
+                patch, patch.point(0.25D, 0.25D));
+        boolean q10 = receiverPointVisible(level, context, alarmPos,
+                rayStart, wallFace, blastDoorController,
+                patch, patch.point(0.75D, 0.25D));
+        boolean q11 = receiverPointVisible(level, context, alarmPos,
+                rayStart, wallFace, blastDoorController,
+                patch, patch.point(0.75D, 0.75D));
+        boolean q01 = receiverPointVisible(level, context, alarmPos,
+                rayStart, wallFace, blastDoorController,
+                patch, patch.point(0.25D, 0.75D));
+
+        int visibleCount = (center ? 1 : 0)
+                + (q00 ? 1 : 0) + (q10 ? 1 : 0)
+                + (q11 ? 1 : 0) + (q01 ? 1 : 0);
+
+        if (visibleCount == 0) return;
+        if (visibleCount == 5) {
+            ReceiverPatchKey key = ReceiverPatchKey.of(patch);
+            if (seen.add(key)) result.add(patch);
+            return;
+        }
+
+        if (depth >= RECEIVER_BOUNDARY_SUBDIVISIONS) {
+            if (center) {
+                ReceiverPatchKey key = ReceiverPatchKey.of(patch);
+                if (seen.add(key)) result.add(patch);
+            }
+            return;
+        }
+
+        for (int y = 0; y < 2; y++) {
+            for (int x = 0; x < 2; x++) {
+                ReceiverPatch child = patch.subPatch(
+                        x * 0.5D, y * 0.5D,
+                        (x + 1) * 0.5D, (y + 1) * 0.5D);
+                addReceiverPatch(level, context, alarmPos,
+                        wallOrigin, rayStart, wallFace,
+                        blastDoorController, child, depth + 1,
+                        seen, result);
+            }
+        }
+    }
+
+    private static boolean receiverPointVisible(ClientLevel level,
             Entity context, BlockPos alarmPos, Vec3 rayStart,
             Direction wallFace, BlockPos blastDoorController,
-            ReceiverPatch patch) {
-        Vec3 target = patch.center();
+            ReceiverPatch patch, Vec3 target) {
         if (blastDoorController != null && patch.face == wallFace
                 && !patch.blastDoorMimic) {
             BlockState controllerState = level.getBlockState(blastDoorController);
@@ -1218,10 +1280,19 @@ public final class AlarmClient {
             Vec3 a, Vec3 b, Vec3 c, Vec3 d, Direction face,
             boolean blastDoorMimic) {
         private Vec3 center() {
-            return new Vec3(
-                    (a.x + b.x + c.x + d.x) * 0.25D,
-                    (a.y + b.y + c.y + d.y) * 0.25D,
-                    (a.z + b.z + c.z + d.z) * 0.25D);
+            return point(0.5D, 0.5D);
+        }
+
+        private Vec3 point(double u, double v) {
+            return lerp(lerp(a, b, u), lerp(d, c, u), v);
+        }
+
+        private ReceiverPatch subPatch(double u0, double v0,
+                double u1, double v1) {
+            return new ReceiverPatch(
+                    point(u0, v0), point(u1, v0),
+                    point(u1, v1), point(u0, v1),
+                    face, blastDoorMimic);
         }
     }
 

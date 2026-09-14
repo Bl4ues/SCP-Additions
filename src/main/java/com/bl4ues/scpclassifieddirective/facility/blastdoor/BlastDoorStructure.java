@@ -432,12 +432,22 @@ public final class BlastDoorStructure {
                     ? 33.0D : 0.0D;
         }
 
-        boolean blocked =
-                // Moving door slab.
-                pointInModelRect(target,
+        /*
+         * When the door opens, the slab lifts behind the Y+3 copied-wall row.
+         * It is still physically present there, but it is NOT visible in front
+         * of that wall. Treating the hidden slab as an optical blocker is what
+         * kept carving the premature horizontal bite out of the Alarm wash.
+         *
+         * Below the copied-wall row (model Y < 48), the slab is exposed in the
+         * doorway and remains a valid blocker when closed/partially closed.
+         */
+        boolean exposedDoorSlab = target.y < 48.0D
+                && pointInModelRect(target,
                         -32.5D, 3.75D + lift,
                         32.5D, 47.5D + lift,
-                        0.0D, 0.0D, 0.0D)
+                        0.0D, 0.0D, 0.0D);
+
+        boolean blocked = exposedDoorSlab
                 // Left and right vertical posts.
                 || pointInModelRect(target,
                         -40.0D, 0.0D, -32.5D, 40.0D,

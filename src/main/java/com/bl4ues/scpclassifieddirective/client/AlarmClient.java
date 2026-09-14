@@ -96,18 +96,20 @@ public final class AlarmClient {
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
-    private static final int EDGE_BISECTIONS = 7;
-    private static final double EDGE_FEATHER_WIDTH = 0.035D;
     private static final int BASE_MESH_CELLS = 5;
+    private static final int MAX_BOUNDARY_SUBDIVISIONS = 3;
     /*
-     * A 2x sampling lattice gives every coarse cell an integer center sample,
-     * but the cells themselves are no longer recursively subdivided. Geometry
-     * boundaries are clipped analytically. This caps projection work at a small
-     * predictable number of samples instead of letting each Blast Door edge
-     * multiply the raycast count.
+     * Flat regions stay at 5x5 cells. Only cells whose nine probes disagree
+     * recurse, up to an effective 40x40 boundary resolution. No synthetic
+     * clipping vertices are ever fabricated: every rendered vertex is an
+     * actual sampled world hit. This is the important invariant that prevents
+     * floating shards, emissive rods and the saw-tooth holes caused by the old
+     * polygon clipper.
      */
-    private static final int MESH_RESOLUTION = BASE_MESH_CELLS * 2;
-    private static final int BASE_MESH_STEP = 2;
+    private static final int MESH_RESOLUTION =
+            BASE_MESH_CELLS << MAX_BOUNDARY_SUBDIVISIONS;
+    private static final int BASE_MESH_STEP =
+            1 << MAX_BOUNDARY_SUBDIVISIONS;
     // Projection geometry is rebuilt at Minecraft's 20 Hz world tick rate.
     // Recasting the complete surface mesh every render frame was the source of
     // the severe FPS regression, especially with shaders enabled.
@@ -809,12 +811,11 @@ public final class AlarmClient {
     /**
      * Adaptive surface tessellation for the alarm footprint.
      *
-     * Flat surfaces use a fixed coarse 5x5 topology on a half-cell sampling
-     * lattice. Geometry boundaries are clipped directly in UV space. Only a
-     * narrow fixed-width strip at a true terminal edge fades to zero alpha;
-     * the rest of the cell keeps the texture's original energy. No recursive
-     * tessellation is needed, which keeps multiple active Alarms predictable.
-     * The texture remains the owner of the beam's shape.
+     * Flat surfaces stay at a coarse 5x5 topology. Only cells that contain a
+     * real receiver discontinuity subdivide, and every final vertex comes from
+     * an actual world sample. There are no fabricated clip points, no geometry
+     * hidden under blockers and no cross-surface interpolation. The texture
+     * remains the sole owner of the beam's visual shape.
      */
     private static final class ProjectionBuilder {
         private final ClientLevel level;
@@ -828,7 +829,6 @@ public final class AlarmClient {
         private final Direction wallFace;
         private final BlockPos blastDoorController;
         private final Map<Integer, ProjectedSample> samples = new HashMap<>();
-        private final Map<Long, ProjectedSample> edgeSamples = new HashMap<>();
 
         private ProjectionBuilder(ClientLevel level, Entity context,
                 BlockPos alarmPos, Vec3 rayStart, Vec3 wallOrigin,
@@ -851,14 +851,14 @@ public final class AlarmClient {
             for (int v = 0; v < MESH_RESOLUTION; v += BASE_MESH_STEP) {
                 for (int u = 0; u < MESH_RESOLUTION;
                         u += BASE_MESH_STEP) {
-                    subdivide(u, v, u + BASE_MESH_STEP,
+                    tessellate(u, v, u + BASE_MESH_STEP,
                             v + BASE_MESH_STEP, 0, result);
                 }
             }
             return result;
         }
 
-        private void subdivide(int u0, int v0, int u1, int v1,
+        private void tessellate(int u0, int v0, int u1, int v1,
                 int depth, List<ProjectedTriangle> result) {
             ProjectedSample a = sample(u0, v0);
             ProjectedSample b = sample(u1, v0);
@@ -873,69 +873,75 @@ public final class AlarmClient {
             ProjectedSample left = sample(u0, vm);
             ProjectedSample center = sample(um, vm);
 
-            /*
-             * A coarse quad is legal only when ALL nine probes agree on one
-             * physical receiver. Checking just corners (or corners + center)
-             * allowed a triangle to bridge over a doorway/open edge while still
-             * having coplanar wall samples at its vertices. That is the root of
-             * the floating orange shards visible in ordinary doorways.
-             */
-            if (sameReceiver(a, b, c, d, top, right, bottom, left, center)) {
+            ProjectedSample[] probes = {
+                    a, b, c, d, top, right, bottom, left, center
+            };
+
+            if (sameReceiver(probes)) {
                 addTriangle(result, a, b, c);
                 addTriangle(result, a, c, d);
                 return;
             }
 
-            if (allBlocked(a, b, c, d, top, right,
-                    bottom, left, center)) {
+            if (!hasRenderable(probes)) {
+                return;
+            }
+
+            if (depth < MAX_BOUNDARY_SUBDIVISIONS
+                    && u1 - u0 >= 2 && v1 - v0 >= 2) {
+                tessellate(u0, v0, um, vm, depth + 1, result);
+                tessellate(um, v0, u1, vm, depth + 1, result);
+                tessellate(um, vm, u1, v1, depth + 1, result);
+                tessellate(u0, vm, um, v1, depth + 1, result);
                 return;
             }
 
             /*
-             * One deterministic local split, never recursive. The 3x3 probes
-             * are shared in the cache by neighbouring cells, so the complete
-             * projector has a hard upper bound of an 11x11 sample lattice.
-             * Each mini-quad is then clipped independently. This captures holes,
-             * corners and perpendicular faces without either bridging empty
-             * space or reviving the old raycast explosion.
+             * Finest boundary cell. Do not invent a transition point or stretch
+             * one receiver over another. Use only triangles whose three sampled
+             * vertices genuinely belong to the same physical plane. Eight
+             * center-fan triangles give half-cell edge precision at the final
+             * level without any overlap under blockers.
              */
-            processLeafQuad(a, top, center, left, result);
-            processLeafQuad(top, b, right, center, result);
-            processLeafQuad(center, right, c, bottom, result);
-            processLeafQuad(left, center, bottom, d, result);
+            addIfSameSurface(result, a, top, center);
+            addIfSameSurface(result, a, center, left);
+            addIfSameSurface(result, top, b, right);
+            addIfSameSurface(result, top, right, center);
+            addIfSameSurface(result, center, right, c);
+            addIfSameSurface(result, center, c, bottom);
+            addIfSameSurface(result, left, center, bottom);
+            addIfSameSurface(result, left, bottom, d);
         }
 
-        private boolean sameReceiver(ProjectedSample... samples) {
+        private boolean sameReceiver(ProjectedSample... probes) {
             ProjectedSample reference = null;
-            for (ProjectedSample sample : samples) {
-                if (!isRenderable(sample)) return false;
+            for (ProjectedSample probe : probes) {
+                if (!isRenderable(probe)) return false;
                 if (reference == null) {
-                    reference = sample;
-                } else if (!sameSurface(reference, sample)) {
+                    reference = probe;
+                } else if (!sameSurface(reference, probe)) {
                     return false;
                 }
             }
             return reference != null;
         }
 
-        private static boolean allBlocked(ProjectedSample... samples) {
-            for (ProjectedSample sample : samples) {
-                if (!isBlastDoorOccluder(sample)) return false;
+        private static boolean hasRenderable(ProjectedSample... probes) {
+            for (ProjectedSample probe : probes) {
+                if (isRenderable(probe)) return true;
             }
-            return true;
+            return false;
         }
 
-        private void processLeafQuad(ProjectedSample a,
-                ProjectedSample b, ProjectedSample c, ProjectedSample d,
-                List<ProjectedTriangle> result) {
-            if (sameReceiver(a, b, c, d)) {
-                addTriangle(result, a, b, c);
-                addTriangle(result, a, c, d);
+        private void addIfSameSurface(List<ProjectedTriangle> result,
+                ProjectedSample a, ProjectedSample b, ProjectedSample c) {
+            if (!isRenderable(a) || !isRenderable(b) || !isRenderable(c)) {
                 return;
             }
-
-            if (allBlocked(a, b, c, d)) return;
-            clipCellToSurfaces(a, b, c, d, result);
+            if (!sameSurface(a, b) || !sameSurface(a, c)) {
+                return;
+            }
+            addTriangle(result, a, b, c);
         }
 
         private static boolean isBlastDoorOccluder(ProjectedSample sample) {
@@ -948,216 +954,14 @@ public final class AlarmClient {
                     && !sample.blastDoorOccluder;
         }
 
-        private void clipCellToSurfaces(ProjectedSample a,
-                ProjectedSample b, ProjectedSample c, ProjectedSample d,
-                List<ProjectedTriangle> result) {
-            clipTriangleToSurfaces(a, b, c, result);
-            clipTriangleToSurfaces(a, c, d, result);
-        }
-
-        private void clipTriangleToSurfaces(ProjectedSample a,
-                ProjectedSample b, ProjectedSample c,
-                List<ProjectedTriangle> result) {
-            ProjectedSample[] triangle = { a, b, c };
-            for (ProjectedSample target : triangle) {
-                if (!isRenderable(target)) continue;
-
-                boolean duplicate = false;
-                for (ProjectedSample previous : triangle) {
-                    if (previous == target) break;
-                    if (isRenderable(previous)
-                            && sameSurface(target, previous)) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-                if (duplicate) continue;
-
-                clipTriangleToSurface(triangle, target, result);
-            }
-        }
-
-        private void clipTriangleToSurface(ProjectedSample[] triangle,
-                ProjectedSample target, List<ProjectedTriangle> result) {
-            List<ProjectedSample> polygon = new ArrayList<>(8);
-
-            for (int i = 0; i < triangle.length; i++) {
-                ProjectedSample current = triangle[i];
-                ProjectedSample next =
-                        triangle[(i + 1) % triangle.length];
-                boolean currentInside = isRenderable(current)
-                        && sameSurface(target, current);
-                boolean nextInside = isRenderable(next)
-                        && sameSurface(target, next);
-
-                if (currentInside && nextInside) {
-                    polygon.add(next);
-                    continue;
-                }
-
-                if (currentInside) {
-                    SurfaceBoundary edge =
-                            surfaceBoundary(current, next, target);
-                    if (edge != null) {
-                        if (edge.feather != null) {
-                            polygon.add(edge.feather);
-                        }
-                        polygon.add(edge.boundary);
-                    }
-                    continue;
-                }
-
-                if (nextInside) {
-                    SurfaceBoundary edge =
-                            surfaceBoundary(next, current, target);
-                    if (edge != null) {
-                        polygon.add(edge.boundary);
-                        if (edge.feather != null) {
-                            polygon.add(edge.feather);
-                        }
-                    }
-                    polygon.add(next);
-                }
-            }
-
-            if (polygon.size() < 3) return;
-            ProjectedSample first = polygon.get(0);
-            for (int i = 1; i + 1 < polygon.size(); i++) {
-                addTriangle(result, first,
-                        polygon.get(i), polygon.get(i + 1));
-            }
-        }
-
-        private record SurfaceBoundary(ProjectedSample boundary,
-                ProjectedSample feather) {
-        }
-
-        private SurfaceBoundary surfaceBoundary(
-                ProjectedSample clear, ProjectedSample other,
-                ProjectedSample target) {
-            if (!isRenderable(clear)
-                    || !sameSurface(clear, target)
-                    || other == null) {
-                return null;
-            }
-
-            float clearU = clear.u;
-            float clearV = clear.v;
-            float otherU = other.u;
-            float otherV = other.v;
-
-            /*
-             * Find the last UV sample that the WORLD still reports as the
-             * target receiver. We never project this UV onto an infinite plane
-             * afterwards. That old synthetic-plane step was the direct cause of
-             * light polygons floating beside door frames and through corners.
-             */
-            ProjectedSample lastValid = clear;
-            for (int i = 0; i < EDGE_BISECTIONS; i++) {
-                float midU = (clearU + otherU) * 0.5F;
-                float midV = (clearV + otherV) * 0.5F;
-                ProjectedSample probe = sampleAtCached(midU, midV);
-                if (isRenderable(probe)
-                        && sameSurface(target, probe)) {
-                    clearU = midU;
-                    clearV = midV;
-                    lastValid = probe;
-                } else {
-                    otherU = midU;
-                    otherV = midV;
-                }
-            }
-
-            ProjectedSample boundary = lastValid;
-            boolean terminal = !isRenderable(other)
-                    || other.blastDoorOccluder;
-
-            if (!terminal) {
-                /*
-                 * Receiver -> receiver (wall -> ceiling, one wall -> another):
-                 * keep the last VERIFIED point at full opacity. The other
-                 * surface builds its own polygon from its own verified samples.
-                 * A sub-millimetre ownership gap is preferable to fabricating a
-                 * triangle in mid-air.
-                 */
-                return new SurfaceBoundary(
-                        boundary.withOpacity(1.0F), null);
-            }
-
-            /*
-             * True end of the projected path. Boundary itself fades to zero,
-             * while one verified sample a fixed distance back toward the known
-             * interior stays at full wash. Both vertices are real raycast/fast
-             * path samples on the same receiver, so there is no overlap under an
-             * occluder and nothing for BSL to turn into a bright rod.
-             */
-            double distance = clear.position.distanceTo(boundary.position);
-            ProjectedSample feather = clear;
-            if (distance > EDGE_FEATHER_WIDTH + 1.0E-6D) {
-                double t = EDGE_FEATHER_WIDTH / distance;
-                float featherU = (float) (boundary.u
-                        + (clear.u - boundary.u) * t);
-                float featherV = (float) (boundary.v
-                        + (clear.v - boundary.v) * t);
-                ProjectedSample candidate =
-                        sampleAtCached(featherU, featherV);
-                if (isRenderable(candidate)
-                        && sameSurface(target, candidate)) {
-                    feather = candidate;
-                }
-            }
-
-            boundary = new ProjectedSample(
-                    boundary.position, boundary.face,
-                    boundary.u, boundary.v,
-                    false, false, true, 0.0F);
-            feather = new ProjectedSample(
-                    feather.position, feather.face,
-                    feather.u, feather.v,
-                    false, false, true, 1.0F);
-            return new SurfaceBoundary(boundary, feather);
-        }
-
-        private Vec3 projectedWallPoint(float u01, float v01) {
-            double lateral = -1.0D + 2.0D * u01;
-            double radius = MIN_SPLASH_RADIUS
-                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * v01;
-            double widthScale = 0.55D
-                    + 0.45D * Math.sqrt(Math.max(0.0D, v01));
-            return wallOrigin
-                    .add(tangent.scale(radius))
-                    .add(fanSide.scale(
-                            MAX_SPLASH_HALF_WIDTH
-                                    * widthScale * lateral));
-        }
-
-        private void addTriangle(List<ProjectedTriangle> result,
-                ProjectedSample a, ProjectedSample b, ProjectedSample c) {
-            if (compatibleTriangle(a, b, c)) {
-                result.add(new ProjectedTriangle(a, b, c));
-            }
-        }
-
         private ProjectedSample sample(int uIndex, int vIndex) {
             int key = (vIndex << 16) | uIndex;
             if (samples.containsKey(key)) return samples.get(key);
 
             float u01 = uIndex / (float) MESH_RESOLUTION;
             float v01 = vIndex / (float) MESH_RESOLUTION;
-            ProjectedSample sample = sampleAtCached(u01, v01);
-            samples.put(key, sample);
-            return sample;
-        }
-
-        private ProjectedSample sampleAtCached(float u01, float v01) {
-            int qu = Math.round(u01 * 4096.0F);
-            int qv = Math.round(v01 * 4096.0F);
-            long key = ((long) qu << 32) | (qv & 0xffffffffL);
-            ProjectedSample cached = edgeSamples.get(key);
-            if (cached != null) return cached;
-
             ProjectedSample sample = sampleAt(u01, v01);
-            edgeSamples.put(key, sample);
+            samples.put(key, sample);
             return sample;
         }
 
@@ -1207,25 +1011,6 @@ public final class AlarmClient {
             return new ProjectedSample(hit.position, hit.face,
                     u01, v01, hit.bloomAllowed,
                     hit.blastDoorOccluder, true, 1.0F);
-        }
-
-        /**
-         * Corners are insufficient around thin collision geometry. Probe the
-         * center and four edge midpoints before allowing a coarse cell to span
-         * one surface. All probes are cached on the same integer lattice, so the
-         * cost is shared by neighbouring cells.
-         */
-        private boolean cellBelongsToOneSurface(int u0, int v0,
-                int u1, int v1, ProjectedSample reference) {
-            int spanU = u1 - u0;
-            int spanV = v1 - v0;
-            if (spanU < 2 || spanV < 2) {
-                return true;
-            }
-
-            int um = (u0 + u1) >>> 1;
-            int vm = (v0 + v1) >>> 1;
-            return sameSurface(reference, sample(um, vm));
         }
 
         /**
@@ -1561,13 +1346,6 @@ public final class AlarmClient {
                 .endVertex();
     }
 
-    private static float smoothStep(float edge0, float edge1, float value) {
-        if (edge1 <= edge0) return value >= edge1 ? 1.0F : 0.0F;
-        float x = Math.max(0.0F, Math.min(1.0F,
-                (value - edge0) / (edge1 - edge0)));
-        return x * x * (3.0F - 2.0F * x);
-    }
-
     private static void flush(MultiBufferSource buffers, RenderType type) {
         if (buffers instanceof MultiBufferSource.BufferSource source) {
             source.endBatch(type);
@@ -1618,7 +1396,28 @@ public final class AlarmClient {
     private record ProjectedTriangle(ProjectedSample a,
             ProjectedSample b, ProjectedSample c) {
         private boolean bloomAllowed() {
-            return a.bloomAllowed && b.bloomAllowed && c.bloomAllowed;
+            if (!(a.bloomAllowed && b.bloomAllowed && c.bloomAllowed)) {
+                return false;
+            }
+
+            Vec3 ab = b.position.subtract(a.position);
+            Vec3 ac = c.position.subtract(a.position);
+            double area2 = ab.cross(ac).length();
+            double longest = Math.max(
+                    a.position.distanceTo(b.position),
+                    Math.max(b.position.distanceTo(c.position),
+                            c.position.distanceTo(a.position)));
+            if (longest < 1.0E-6D) return false;
+
+            /*
+             * A tiny grazing receiver can legitimately exist, but feeding a
+             * needle-shaped triangle into RenderType.eyes turns it into the
+             * red/orange neon rods seen along ceiling and frame edges. Keep the
+             * normal translucent wash there; suppress only the HDR copy when
+             * the triangle's geometric altitude is sub-pixel thin.
+             */
+            double altitude = area2 / longest;
+            return altitude >= 0.028D;
         }
     }
 

@@ -45,6 +45,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -308,8 +309,9 @@ public final class AlarmModule {
                     controller.getX() - partPos.getX(),
                     controller.getY() - partPos.getY(),
                     controller.getZ() - partPos.getZ());
-            return Shapes.and(inPart, Block.box(
-                    0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D));
+            return Shapes.join(inPart, Block.box(
+                    0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D),
+                    BooleanOp.AND);
         }
 
         @Override

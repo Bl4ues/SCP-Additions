@@ -96,20 +96,17 @@ public final class AlarmClient {
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
-    private static final int EDGE_BISECTIONS = 7;
+    private static final int EDGE_BISECTIONS = 4;
     private static final int BASE_MESH_CELLS = 5;
-    private static final int ADAPTIVE_SUBDIVISIONS = 1;
     /*
-     * Only cells that actually straddle Blast Door geometry may refine this
-     * deeply. Using this resolution globally was the cause of the old FPS
-     * collapse; keeping the extra samples on the occluder silhouette gives us
-     * model-faithful clipping without turning every Alarm into a raycast farm.
+     * A 2x sampling lattice gives every coarse cell an integer center sample,
+     * but the cells themselves are no longer recursively subdivided. Geometry
+     * boundaries are clipped analytically. This caps projection work at a small
+     * predictable number of samples instead of letting each Blast Door edge
+     * multiply the raycast count.
      */
-    private static final int BLAST_DOOR_SUBDIVISIONS = 1;
-    private static final int MESH_RESOLUTION =
-            BASE_MESH_CELLS << BLAST_DOOR_SUBDIVISIONS;
-    private static final int BASE_MESH_STEP =
-            MESH_RESOLUTION / BASE_MESH_CELLS;
+    private static final int MESH_RESOLUTION = BASE_MESH_CELLS * 2;
+    private static final int BASE_MESH_STEP = 2;
     // Projection geometry is rebuilt at Minecraft's 20 Hz world tick rate.
     // Recasting the complete surface mesh every render frame was the source of
     // the severe FPS regression, especially with shaders enabled.
@@ -811,13 +808,11 @@ public final class AlarmClient {
     /**
      * Adaptive surface tessellation for the alarm footprint.
      *
-     * Flat surfaces use a coarse 5x5 topology. Only cells that cross a
-     * collision-depth or face discontinuity subdivide once. The final boundary
-     * is then clipped and padded analytically, so smooth obstacle edges do not
-     * require a dense projector-wide raycast grid. Combined with 20 Hz
-     * projection caching this keeps multiple active Alarms practical with
-     * shaders enabled. The alpha texture, not tessellation density, carries the
-     * soft visual edge.
+     * Flat surfaces use a fixed coarse 5x5 topology on a half-cell sampling
+     * lattice. Geometry boundaries are clipped directly in UV space and their
+     * final vertices fade to zero alpha. No recursive tessellation is needed,
+     * which keeps two active Alarms around a Blast Door from multiplying
+     * collision work. The texture remains the owner of the beam's shape.
      */
     private static final class ProjectionBuilder {
         private final ClientLevel level;
@@ -881,17 +876,6 @@ public final class AlarmClient {
                 return;
             }
             if (blastDoor == BlastDoorCoverage.MIXED) {
-                if (depth < BLAST_DOOR_SUBDIVISIONS) {
-                    subdivideChildren(u0, v0, u1, v1, depth, result);
-                    return;
-                }
-
-                /*
-                 * At the final local cell, clip against every real receiving
-                 * surface. The edge search stays on the receiving side, so the
-                 * projection reaches the silhouette without overlapping the
-                 * emissive texture into the occluder.
-                 */
                 clipCellToSurfaces(a, b, c, d, result);
                 return;
             }
@@ -903,28 +887,13 @@ public final class AlarmClient {
                 return;
             }
 
-            if (depth < ADAPTIVE_SUBDIVISIONS) {
-                subdivideChildren(u0, v0, u1, v1, depth, result);
-                return;
-            }
-
             /*
-             * A plain "keep/discard triangle" decision is what produced the
-             * square staircase at block boundaries and the little missing wedges
-             * near the Alarm origin. Clip the two cell triangles to each
-             * receiving surface instead.
+             * Boundaries are clipped in UV space instead of recursively
+             * generating smaller mesh cells. This both removes the moving
+             * staircase and avoids the raycast explosion that occurred with
+             * two Alarms around the Blast Door.
              */
             clipCellToSurfaces(a, b, c, d, result);
-        }
-
-        private void subdivideChildren(int u0, int v0, int u1, int v1,
-                int depth, List<ProjectedTriangle> result) {
-            int um = (u0 + u1) >>> 1;
-            int vm = (v0 + v1) >>> 1;
-            subdivide(u0, v0, um, vm, depth + 1, result);
-            subdivide(um, v0, u1, vm, depth + 1, result);
-            subdivide(um, vm, u1, v1, depth + 1, result);
-            subdivide(u0, vm, um, v1, depth + 1, result);
         }
 
         private BlastDoorCoverage blastDoorCoverage(
@@ -978,6 +947,17 @@ public final class AlarmClient {
             ProjectedSample[] triangle = { a, b, c };
             for (ProjectedSample target : triangle) {
                 if (!isRenderable(target)) continue;
+
+                int targetVertices = 0;
+                for (ProjectedSample vertex : triangle) {
+                    if (isRenderable(vertex)
+                            && sameSurface(target, vertex)) {
+                        targetVertices++;
+                    }
+                }
+                if (targetVertices < 2) {
+                    continue;
+                }
 
                 boolean duplicate = false;
                 for (ProjectedSample previous : triangle) {
@@ -1074,7 +1054,7 @@ public final class AlarmClient {
              */
             ProjectedSample boundary =
                     sampleOnExistingSurface(clearU, clearV, target);
-            return boundary != null ? boundary : clear;
+            return boundary != null ? boundary.withOpacity(0.0F) : clear;
         }
 
         /**
@@ -1099,7 +1079,7 @@ public final class AlarmClient {
 
             Vec3 position = rayStart.add(ray.scale(t));
             return new ProjectedSample(position, target.face,
-                    u01, v01, target.bloomAllowed, false, true);
+                    u01, v01, false, false, true, 1.0F);
         }
 
         private Vec3 projectedWallPoint(float u01, float v01) {
@@ -1167,7 +1147,7 @@ public final class AlarmClient {
                     if (visualHit != null) {
                         return new ProjectedSample(
                                 visualHit, wallFace, u01, v01,
-                                false, true, false);
+                                false, true, false, 1.0F);
                     }
                 }
             }
@@ -1182,11 +1162,11 @@ public final class AlarmClient {
             if (hit == null) {
                 return new ProjectedSample(
                         wallSurface, wallFace, u01, v01,
-                        false, false, false);
+                        false, false, false, 1.0F);
             }
             return new ProjectedSample(hit.position, hit.face,
                     u01, v01, hit.bloomAllowed,
-                    hit.blastDoorOccluder, true);
+                    hit.blastDoorOccluder, true, 1.0F);
         }
 
         /**
@@ -1523,7 +1503,9 @@ public final class AlarmClient {
 
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 255, 255, 255)
+                .color(255, 255, 255,
+                        Math.max(0, Math.min(255,
+                                Math.round(sample.opacity * 255.0F))))
                 .uv(sample.u, sample.v)
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(FULL_BRIGHT)
@@ -1580,7 +1562,11 @@ public final class AlarmClient {
 
     private record ProjectedSample(Vec3 position, Direction face,
             float u, float v, boolean bloomAllowed,
-            boolean blastDoorOccluder, boolean receiver) {
+            boolean blastDoorOccluder, boolean receiver, float opacity) {
+        private ProjectedSample withOpacity(float opacity) {
+            return new ProjectedSample(position, face, u, v,
+                    bloomAllowed, blastDoorOccluder, receiver, opacity);
+        }
     }
 
     private record ProjectedTriangle(ProjectedSample a,

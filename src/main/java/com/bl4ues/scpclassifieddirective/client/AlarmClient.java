@@ -888,9 +888,9 @@ public final class AlarmClient {
 
                 /*
                  * At the final local cell, clip against every real receiving
-                 * surface and push the cut a few centimetres underneath the
-                 * occluder. Depth hides that tiny overlap, while the light no
-                 * longer stops one texel/cell early at block and frame edges.
+                 * surface. The edge search stays on the receiving side, so the
+                 * projection reaches the silhouette without overlapping the
+                 * emissive texture into the occluder.
                  */
                 clipCellToSurfaces(a, b, c, d, result);
                 return;
@@ -912,8 +912,7 @@ public final class AlarmClient {
              * A plain "keep/discard triangle" decision is what produced the
              * square staircase at block boundaries and the little missing wedges
              * near the Alarm origin. Clip the two cell triangles to each
-             * receiving surface instead, with a tiny hidden overlap under the
-             * blocking surface.
+             * receiving surface instead.
              */
             clipCellToSurfaces(a, b, c, d, result);
         }
@@ -1080,9 +1079,9 @@ public final class AlarmClient {
 
         /**
          * Reconstructs a UV point on an already-known receiving plane instead
-         * of asking the world collision system again. This makes the padding
-         * cheap and, more importantly, keeps it on the wall/ceiling/obstacle
-         * surface that is supposed to receive the light.
+         * of asking the world collision system again. This keeps the exact
+         * boundary on the wall/ceiling/obstacle surface that is supposed to
+         * receive the light.
          */
         private ProjectedSample sampleOnExistingSurface(float u01, float v01,
                 ProjectedSample target) {
@@ -1173,9 +1172,10 @@ public final class AlarmClient {
                 }
             }
 
-            ProjectedHit hit = fastWallPlaneHit(
+            FastWallResult fast = fastWallPlaneHit(
                     wallSurface, intended);
-            if (hit == null) {
+            ProjectedHit hit = fast.hit;
+            if (!fast.handled) {
                 hit = cast(level, context, alarmPos,
                         rayStart, intended, wallSurface, wallFace);
             }
@@ -1220,7 +1220,8 @@ public final class AlarmClient {
          * flat-wall case. Partial shapes, glass and real obstacles still fall
          * back to the full cast, so the surface-aware behaviour is preserved.</p>
          */
-        private ProjectedHit fastWallPlaneHit(Vec3 wallSurface, Vec3 intended) {
+        private FastWallResult fastWallPlaneHit(
+                Vec3 wallSurface, Vec3 intended) {
             Vec3 outward = direction(wallFace);
             BlockPos frontPos = BlockPos.containing(
                     wallSurface.add(outward.scale(0.01D)));
@@ -1241,7 +1242,7 @@ public final class AlarmClient {
                     && !letsProjectedLightPass(frontState)
                     && !frontState.getCollisionShape(level, frontPos)
                             .isEmpty()) {
-                return null;
+                return FastWallResult.NEEDS_CAST;
             }
 
             BlockPos supportPos = BlockPos.containing(
@@ -1251,29 +1252,48 @@ public final class AlarmClient {
             if (BlastDoorModule.isStructureState(supportState)) {
                 BlockHitResult mimicHit = BlastDoorStructure.clipLowerMimic(
                         level, supportPos, supportState, rayStart, intended);
-                if (mimicHit == null) return null;
+                if (mimicHit == null) {
+                    return FastWallResult.NEEDS_CAST;
+                }
                 Direction face = mimicHit.getDirection();
                 Vec3 normal = direction(face);
-                return new ProjectedHit(
+                return FastWallResult.hit(new ProjectedHit(
                         mimicHit.getLocation().add(
                                 normal.scale(SURFACE_EPSILON)),
-                        face, false, false);
+                        face, false, false));
             }
 
+            /*
+             * The requested projection plane ends here. Air or a translucent
+             * support cell is therefore a definitive miss; there is no reason
+             * to ask Level.clip and then rediscover the same fact. This matters
+             * especially during the seven cheap UV bisections at an open edge.
+             */
             if (supportState.isAir()
                     || letsProjectedLightPass(supportState)) {
-                return null;
+                return FastWallResult.MISS;
             }
 
             if (!supportState.isFaceSturdy(
                     level, supportPos, wallFace)) {
-                return null;
+                return FastWallResult.NEEDS_CAST;
             }
 
             Vec3 position = wallSurface.add(
                     outward.scale(SURFACE_EPSILON));
-            return new ProjectedHit(
-                    position, wallFace, true, false);
+            return FastWallResult.hit(new ProjectedHit(
+                    position, wallFace, true, false));
+        }
+
+        private record FastWallResult(ProjectedHit hit, boolean handled) {
+            private static final FastWallResult NEEDS_CAST =
+                    new FastWallResult(null, false);
+            private static final FastWallResult MISS =
+                    new FastWallResult(null, true);
+
+            private static FastWallResult hit(ProjectedHit hit) {
+                return new FastWallResult(hit, true);
+            }
         }
     }
 

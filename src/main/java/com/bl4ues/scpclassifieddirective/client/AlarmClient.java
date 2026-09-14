@@ -22,11 +22,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -91,18 +89,26 @@ public final class AlarmClient {
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0030D;
     private static final double PLANE_EPSILON = 0.018D;
-    private static final double BLOOM_SURFACE_EPSILON = 0.0016D;
     /*
-     * Receiver-first projection. World faces are exact, then only shadow/beam
-     * boundaries on those faces subdivide. This avoids the fundamental failure
-     * mode of the old UV-first mesh: triangles can no longer bridge unrelated
-     * surfaces or collapse a large UV region onto a tiny perpendicular face.
+     * Flat-wall cells are allowed to stay coarse; geometry discontinuities are
+     * clipped analytically below instead of forcing the entire projector to a
+     * dense mesh. This is the main CPU win for multiple active Alarms.
      */
-    private static final int SURFACE_PATCH_SUBDIVISIONS = 3;
+    private static final int BASE_MESH_CELLS = 5;
+    private static final int MAX_BOUNDARY_SUBDIVISIONS = 3;
     private static final int SURFACE_EDGE_BISECTIONS = 6;
-    private static final double PROJECTION_BOUNDS_PADDING = 0.12D;
-    private static final double RECEIVER_HIT_EPSILON_SQR = 0.0016D;
-    private static final float UV_EPSILON = 0.0010F;
+    /*
+     * Flat regions stay at 5x5 cells. Only cells whose nine probes disagree
+     * recurse, up to an effective 40x40 boundary resolution. No synthetic
+     * clipping vertices are ever fabricated: every rendered vertex is an
+     * actual sampled world hit. This is the important invariant that prevents
+     * floating shards, emissive rods and the saw-tooth holes caused by the old
+     * polygon clipper.
+     */
+    private static final int MESH_RESOLUTION =
+            BASE_MESH_CELLS << MAX_BOUNDARY_SUBDIVISIONS;
+    private static final int BASE_MESH_STEP =
+            1 << MAX_BOUNDARY_SUBDIVISIONS;
     // Projection geometry is rebuilt at Minecraft's 20 Hz world tick rate.
     // Recasting the complete surface mesh every render frame was the source of
     // the severe FPS regression, especially with shaders enabled.
@@ -802,20 +808,13 @@ public final class AlarmClient {
     }
 
     /**
-     * Receiver-first projected light.
+     * Adaptive surface tessellation for the alarm footprint.
      *
-     * <p>The old renderer started with a UV grid and tried to infer world
-     * surfaces from ray samples. That is mathematically unstable exactly where
-     * this effect matters most: corners, door openings, thin frames and
-     * wall-to-ceiling transitions. One UV triangle could straddle two unrelated
-     * planes, so every attempted "fix" merely chose between holes, neon slivers
-     * or geometry floating in empty space.</p>
-     *
-     * <p>This builder inverts the problem. It enumerates the ACTUAL collision
-     * faces that can receive light, maps each face point back into projector UV,
-     * and ray-tests visibility on that same face. Geometry boundaries therefore
-     * come from world geometry itself; adaptive subdivision is used only for the
-     * 2-D visibility boundary inside one already-known receiver plane.</p>
+     * Flat surfaces stay at a coarse 5x5 topology. Only cells that contain a
+     * real receiver discontinuity subdivide. Boundary polygons are assembled
+     * from verified ray hits, and each emitted triangle rechecks its edge
+     * midpoints and centroid so disconnected coplanar surfaces cannot be
+     * bridged. The texture remains the sole owner of the beam's visual shape.
      */
     private static final class ProjectionBuilder {
         private final ClientLevel level;
@@ -827,9 +826,9 @@ public final class AlarmClient {
         private final Vec3 fanSide;
         private final Vec3 inward;
         private final Direction wallFace;
-        private final Vec3 outward;
         private final BlockPos blastDoorController;
-        private final Map<SurfaceKey, FaceProbe> probes = new HashMap<>();
+        private final Map<Integer, ProjectedSample> samples = new HashMap<>();
+        private final Map<Long, ProjectedSample> edgeSamples = new HashMap<>();
 
         private ProjectionBuilder(ClientLevel level, Entity context,
                 BlockPos alarmPos, Vec3 rayStart, Vec3 wallOrigin,
@@ -844,359 +843,204 @@ public final class AlarmClient {
             this.fanSide = fanSide;
             this.inward = inward;
             this.wallFace = wallFace;
-            this.outward = direction(wallFace);
             this.blastDoorController = blastDoorController;
         }
 
         private List<ProjectedTriangle> build() {
             List<ProjectedTriangle> result = new ArrayList<>();
-            AABB bounds = projectionBounds();
-
-            int minX = (int) Math.floor(bounds.minX);
-            int minY = (int) Math.floor(bounds.minY);
-            int minZ = (int) Math.floor(bounds.minZ);
-            int maxX = (int) Math.floor(bounds.maxX);
-            int maxY = (int) Math.floor(bounds.maxY);
-            int maxZ = (int) Math.floor(bounds.maxZ);
-
-            for (int x = minX; x <= maxX; x++) {
-                for (int y = minY; y <= maxY; y++) {
-                    for (int z = minZ; z <= maxZ; z++) {
-                        BlockPos pos = new BlockPos(x, y, z);
-                        BlockState state = level.getBlockState(pos);
-                        if (state.isAir() || isOwnAlarmCell(pos, state)) {
-                            continue;
-                        }
-
-                        VoxelShape shape;
-                        boolean bloomAllowed = true;
-
-                        if (BlastDoorModule.isStructureState(state)) {
-                            /*
-                             * Blast Door metal is an occluder-only GeckoLib
-                             * surface. Rendering the emissive decal on its coarse
-                             * collision envelope is what used to make it appear
-                             * transparent. Only the authored lower wall-mimic is
-                             * a legitimate receiver here.
-                             */
-                            shape = BlastDoorStructure.lowerMimicShape(
-                                    level, pos, state);
-                            if (shape.isEmpty()) continue;
-                        } else {
-                            if (letsProjectedLightPass(state)) continue;
-                            shape = state.getCollisionShape(level, pos);
-                            if (shape.isEmpty()) continue;
-                        }
-
-                        for (AABB localBox : shape.toAabbs()) {
-                            AABB box = localBox.move(
-                                    pos.getX(), pos.getY(), pos.getZ());
-                            emitBox(box, bloomAllowed, result);
-                        }
-                    }
+            for (int v = 0; v < MESH_RESOLUTION; v += BASE_MESH_STEP) {
+                for (int u = 0; u < MESH_RESOLUTION;
+                        u += BASE_MESH_STEP) {
+                    tessellate(u, v, u + BASE_MESH_STEP,
+                            v + BASE_MESH_STEP, 0, result);
                 }
             }
-
             return result;
         }
 
-        private AABB projectionBounds() {
-            Vec3 p00 = projectedWallPoint(0.0F, 0.0F);
-            Vec3 p10 = projectedWallPoint(1.0F, 0.0F);
-            Vec3 p01 = projectedWallPoint(0.0F, 1.0F);
-            Vec3 p11 = projectedWallPoint(1.0F, 1.0F);
+        private void tessellate(int u0, int v0, int u1, int v1,
+                int depth, List<ProjectedTriangle> result) {
+            ProjectedSample a = sample(u0, v0);
+            ProjectedSample b = sample(u1, v0);
+            ProjectedSample c = sample(u1, v1);
+            ProjectedSample d = sample(u0, v1);
 
-            double minX = Math.min(rayStart.x,
-                    Math.min(Math.min(p00.x, p10.x),
-                            Math.min(p01.x, p11.x)));
-            double minY = Math.min(rayStart.y,
-                    Math.min(Math.min(p00.y, p10.y),
-                            Math.min(p01.y, p11.y)));
-            double minZ = Math.min(rayStart.z,
-                    Math.min(Math.min(p00.z, p10.z),
-                            Math.min(p01.z, p11.z)));
-            double maxX = Math.max(rayStart.x,
-                    Math.max(Math.max(p00.x, p10.x),
-                            Math.max(p01.x, p11.x)));
-            double maxY = Math.max(rayStart.y,
-                    Math.max(Math.max(p00.y, p10.y),
-                            Math.max(p01.y, p11.y)));
-            double maxZ = Math.max(rayStart.z,
-                    Math.max(Math.max(p00.z, p10.z),
-                            Math.max(p01.z, p11.z)));
+            int um = (u0 + u1) >>> 1;
+            int vm = (v0 + v1) >>> 1;
+            ProjectedSample top = sample(um, v0);
+            ProjectedSample right = sample(u1, vm);
+            ProjectedSample bottom = sample(um, v1);
+            ProjectedSample left = sample(u0, vm);
+            ProjectedSample center = sample(um, vm);
 
-            return new AABB(minX, minY, minZ,
-                    maxX, maxY, maxZ).inflate(PROJECTION_BOUNDS_PADDING);
-        }
+            ProjectedSample[] probes = {
+                    a, b, c, d, top, right, bottom, left, center
+            };
 
-        private boolean isOwnAlarmCell(BlockPos pos, BlockState state) {
-            if (pos.equals(alarmPos)) return true;
-            if (!AlarmModule.isPart(state)) return false;
-            try {
-                return AlarmMountStructure.controllerPosition(
-                        pos, state).equals(alarmPos);
-            } catch (RuntimeException ignored) {
-                return false;
+            if (sameReceiver(probes)) {
+                addTriangle(result, a, b, c);
+                addTriangle(result, a, c, d);
+                return;
             }
+
+            if (!hasRenderable(probes)) {
+                return;
+            }
+
+            if (depth < MAX_BOUNDARY_SUBDIVISIONS
+                    && u1 - u0 >= 2 && v1 - v0 >= 2) {
+                tessellate(u0, v0, um, vm, depth + 1, result);
+                tessellate(um, v0, u1, vm, depth + 1, result);
+                tessellate(um, vm, u1, v1, depth + 1, result);
+                tessellate(u0, vm, um, v1, depth + 1, result);
+                return;
+            }
+
+            /*
+             * Finest boundary cell. Clip each micro-triangle against the real
+             * receivers sampled by the world. A boundary vertex is always the
+             * last ACTUAL hit on that receiver, found by bisection along the UV
+             * edge. Nothing is projected onto an infinite plane, nothing is
+             * extended underneath an obstacle, and legitimate partial wedges
+             * are not deleted.
+             */
+            clipLeafTriangle(result, a, top, center);
+            clipLeafTriangle(result, a, center, left);
+            clipLeafTriangle(result, top, b, right);
+            clipLeafTriangle(result, top, right, center);
+            clipLeafTriangle(result, center, right, c);
+            clipLeafTriangle(result, center, c, bottom);
+            clipLeafTriangle(result, left, center, bottom);
+            clipLeafTriangle(result, left, bottom, d);
         }
 
-        private void emitBox(AABB box, boolean bloomAllowed,
-                List<ProjectedTriangle> result) {
-            for (Direction face : Direction.values()) {
-                FaceRect rect = faceRect(box, face);
-                Vec3 center = rect.center();
-                if (direction(face).dot(
-                        rayStart.subtract(center)) <= 1.0E-6D) {
-                    continue;
+        private boolean sameReceiver(ProjectedSample... probes) {
+            ProjectedSample reference = null;
+            for (ProjectedSample probe : probes) {
+                if (!isRenderable(probe)) return false;
+                if (reference == null) {
+                    reference = probe;
+                } else if (!sameSurface(reference, probe)) {
+                    return false;
                 }
-                if (!mayIntersectProjector(rect)) continue;
-
-                tessellateFace(rect, face, bloomAllowed,
-                        0, result);
             }
+            return reference != null;
         }
 
-        private boolean mayIntersectProjector(FaceRect rect) {
-            Vec3[] points = {
-                    rect.p00, rect.p10, rect.p11, rect.p01, rect.center()
-            };
-            boolean mapped = false;
-            float minU = Float.POSITIVE_INFINITY;
-            float maxU = Float.NEGATIVE_INFINITY;
-            float minV = Float.POSITIVE_INFINITY;
-            float maxV = Float.NEGATIVE_INFINITY;
-
-            for (Vec3 point : points) {
-                ProjectorUv uv = projectorUv(point);
-                if (uv == null) continue;
-                mapped = true;
-                minU = Math.min(minU, uv.u);
-                maxU = Math.max(maxU, uv.u);
-                minV = Math.min(minV, uv.v);
-                maxV = Math.max(maxV, uv.v);
-            }
-
-            return mapped
-                    && maxU >= -UV_EPSILON
-                    && minU <= 1.0F + UV_EPSILON
-                    && maxV >= -UV_EPSILON
-                    && minV <= 1.0F + UV_EPSILON;
-        }
-
-        private void tessellateFace(FaceRect rect, Direction face,
-                boolean bloomAllowed, int depth,
-                List<ProjectedTriangle> result) {
-            Vec3 topMid = midpoint(rect.p00, rect.p10);
-            Vec3 rightMid = midpoint(rect.p10, rect.p11);
-            Vec3 bottomMid = midpoint(rect.p01, rect.p11);
-            Vec3 leftMid = midpoint(rect.p00, rect.p01);
-            Vec3 center = rect.center();
-
-            FaceProbe a = probe(rect.p00, face, bloomAllowed);
-            FaceProbe b = probe(rect.p10, face, bloomAllowed);
-            FaceProbe c = probe(rect.p11, face, bloomAllowed);
-            FaceProbe d = probe(rect.p01, face, bloomAllowed);
-            FaceProbe top = probe(topMid, face, bloomAllowed);
-            FaceProbe right = probe(rightMid, face, bloomAllowed);
-            FaceProbe bottom = probe(bottomMid, face, bloomAllowed);
-            FaceProbe left = probe(leftMid, face, bloomAllowed);
-            FaceProbe mid = probe(center, face, bloomAllowed);
-
-            FaceProbe[] nine = {
-                    a, b, c, d, top, right, bottom, left, mid
-            };
-
-            if (allActive(nine)) {
-                addSurfaceTriangle(result, a.sample, b.sample, c.sample);
-                addSurfaceTriangle(result, a.sample, c.sample, d.sample);
-                return;
-            }
-
-            if (!anyActive(nine)) {
-                return;
-            }
-
-            if (depth < SURFACE_PATCH_SUBDIVISIONS) {
-                tessellateFace(new FaceRect(
-                                rect.p00, topMid, center, leftMid),
-                        face, bloomAllowed, depth + 1, result);
-                tessellateFace(new FaceRect(
-                                topMid, rect.p10, rightMid, center),
-                        face, bloomAllowed, depth + 1, result);
-                tessellateFace(new FaceRect(
-                                center, rightMid, rect.p11, bottomMid),
-                        face, bloomAllowed, depth + 1, result);
-                tessellateFace(new FaceRect(
-                                leftMid, center, bottomMid, rect.p01),
-                        face, bloomAllowed, depth + 1, result);
-                return;
-            }
-
-            clipFaceTriangle(result, a, b, c, face, bloomAllowed);
-            clipFaceTriangle(result, a, c, d, face, bloomAllowed);
-        }
-
-        private static boolean allActive(FaceProbe[] probes) {
-            for (FaceProbe probe : probes) {
-                if (!probe.active) return false;
-            }
-            return true;
-        }
-
-        private static boolean anyActive(FaceProbe[] probes) {
-            for (FaceProbe probe : probes) {
-                if (probe.active) return true;
+        private static boolean hasRenderable(ProjectedSample... probes) {
+            for (ProjectedSample probe : probes) {
+                if (isRenderable(probe)) return true;
             }
             return false;
         }
 
-        private void clipFaceTriangle(List<ProjectedTriangle> result,
-                FaceProbe a, FaceProbe b, FaceProbe c,
-                Direction face, boolean bloomAllowed) {
-            FaceProbe[] triangle = { a, b, c };
-            List<FaceProbe> polygon = new ArrayList<>(5);
+        private void clipLeafTriangle(
+                List<ProjectedTriangle> result,
+                ProjectedSample a, ProjectedSample b, ProjectedSample c) {
+            ProjectedSample[] triangle = { a, b, c };
+
+            for (ProjectedSample target : triangle) {
+                if (!isRenderable(target)) continue;
+
+                boolean duplicate = false;
+                for (ProjectedSample previous : triangle) {
+                    if (previous == target) break;
+                    if (isRenderable(previous)
+                            && sameSurface(previous, target)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (duplicate) continue;
+
+                clipTriangleToReceiver(result, triangle, target);
+            }
+        }
+
+        private void clipTriangleToReceiver(
+                List<ProjectedTriangle> result,
+                ProjectedSample[] triangle, ProjectedSample target) {
+            List<ProjectedSample> polygon = new ArrayList<>(5);
 
             for (int i = 0; i < 3; i++) {
-                FaceProbe current = triangle[i];
-                FaceProbe next = triangle[(i + 1) % 3];
+                ProjectedSample current = triangle[i];
+                ProjectedSample next = triangle[(i + 1) % 3];
+                boolean currentInside = isRenderable(current)
+                        && sameSurface(current, target);
+                boolean nextInside = isRenderable(next)
+                        && sameSurface(next, target);
 
-                if (current.active && next.active) {
+                if (currentInside && nextInside) {
                     polygon.add(next);
-                } else if (current.active) {
-                    FaceProbe edge = faceBoundary(
-                            current, next, face, bloomAllowed);
+                } else if (currentInside) {
+                    ProjectedSample edge =
+                            receiverBoundary(current, next, target);
                     if (edge != null) polygon.add(edge);
-                } else if (next.active) {
-                    FaceProbe edge = faceBoundary(
-                            next, current, face, bloomAllowed);
+                } else if (nextInside) {
+                    ProjectedSample edge =
+                            receiverBoundary(next, current, target);
                     if (edge != null) polygon.add(edge);
                     polygon.add(next);
                 }
             }
 
             if (polygon.size() < 3) return;
-            ProjectedSample first = polygon.get(0).sample;
+            ProjectedSample first = polygon.get(0);
             for (int i = 1; i + 1 < polygon.size(); i++) {
-                addSurfaceTriangle(result, first,
-                        polygon.get(i).sample,
-                        polygon.get(i + 1).sample);
+                addTriangle(result, first,
+                        polygon.get(i), polygon.get(i + 1));
             }
         }
 
-        private FaceProbe faceBoundary(FaceProbe inside, FaceProbe outside,
-                Direction face, boolean bloomAllowed) {
-            if (!inside.active) return null;
+        /**
+         * Returns the last verified sample that still belongs to {@code target}.
+         * This is a real world hit, never a point reconstructed on an infinite
+         * mathematical plane. The invariant matters more than another round of
+         * visual band-aids: every rendered vertex must correspond to geometry
+         * that the raycaster actually found.
+         */
+        private ProjectedSample receiverBoundary(
+                ProjectedSample inside, ProjectedSample outside,
+                ProjectedSample target) {
+            if (!isRenderable(inside)
+                    || !sameSurface(inside, target)
+                    || outside == null) {
+                return inside;
+            }
 
-            Vec3 in = inside.position;
-            Vec3 out = outside.position;
-            FaceProbe lastValid = inside;
+            float inU = inside.u;
+            float inV = inside.v;
+            float outU = outside.u;
+            float outV = outside.v;
+            ProjectedSample lastValid = inside;
 
             for (int i = 0; i < SURFACE_EDGE_BISECTIONS; i++) {
-                Vec3 mid = midpoint(in, out);
-                FaceProbe probe = probe(mid, face, bloomAllowed);
-                if (probe.active) {
-                    in = mid;
+                float midU = (inU + outU) * 0.5F;
+                float midV = (inV + outV) * 0.5F;
+                ProjectedSample probe = sampleAtCached(midU, midV);
+
+                if (isRenderable(probe)
+                        && sameSurface(probe, target)) {
+                    inU = midU;
+                    inV = midV;
                     lastValid = probe;
                 } else {
-                    out = mid;
+                    outU = midU;
+                    outV = midV;
                 }
             }
 
             return lastValid;
         }
 
-        private FaceProbe probe(Vec3 point, Direction face,
-                boolean bloomAllowed) {
-            SurfaceKey key = SurfaceKey.of(point, face, bloomAllowed);
-            FaceProbe cached = probes.get(key);
-            if (cached != null) return cached;
-
-            ProjectorUv uv = projectorUv(point);
-            if (uv == null
-                    || uv.u < -UV_EPSILON
-                    || uv.u > 1.0F + UV_EPSILON
-                    || uv.v < -UV_EPSILON
-                    || uv.v > 1.0F + UV_EPSILON) {
-                FaceProbe miss = new FaceProbe(
-                        point, uv, false, null);
-                probes.put(key, miss);
-                return miss;
-            }
-
-            float u = Math.max(0.0F, Math.min(1.0F, uv.u));
-            float v = Math.max(0.0F, Math.min(1.0F, uv.v));
-            boolean visible = receiverVisible(point, face);
-            ProjectedSample sample = visible
-                    ? new ProjectedSample(
-                            point.add(direction(face)
-                                    .scale(SURFACE_EPSILON)),
-                            face, u, v, bloomAllowed,
-                            false, true, 1.0F)
-                    : null;
-            FaceProbe result = new FaceProbe(
-                    point, new ProjectorUv(u, v), visible, sample);
-            probes.put(key, result);
-            return result;
+        private static boolean isBlastDoorOccluder(ProjectedSample sample) {
+            return sample != null && sample.blastDoorOccluder;
         }
 
-        private boolean receiverVisible(Vec3 point, Direction face) {
-            /*
-             * visualOcclusionHit is intentionally a WALL-SPACE silhouette test.
-             * Applying it to ceiling/side receivers turns their X/Y into fake
-             * door-metal hits and recreates holes around the Blast Door. Other
-             * faces use the real collision ray below.
-             */
-            if (face == wallFace && blastDoorController != null) {
-                BlockState controllerState =
-                        level.getBlockState(blastDoorController);
-                if (BlastDoorModule.isController(controllerState)
-                        && BlastDoorStructure.visualOcclusionHit(
-                                level, blastDoorController, controllerState,
-                                rayStart, point) != null) {
-                    return false;
-                }
-            }
-
-            Vec3 ray = point.subtract(rayStart);
-            double length = ray.length();
-            if (length < 1.0E-6D) return false;
-            Vec3 end = point.add(ray.scale(0.025D / length));
-
-            ProjectedHit hit = cast(level, context, alarmPos,
-                    rayStart, end, point, wallFace);
-            if (hit == null || hit.blastDoorOccluder) return false;
-
-            Vec3 expected = point.add(
-                    direction(face).scale(SURFACE_EPSILON));
-            return hit.position.distanceToSqr(expected)
-                    <= RECEIVER_HIT_EPSILON_SQR;
-        }
-
-        private ProjectorUv projectorUv(Vec3 point) {
-            Vec3 ray = point.subtract(rayStart);
-            double denominator = ray.dot(outward);
-            if (Math.abs(denominator) < 1.0E-6D) return null;
-
-            double numerator = wallOrigin.subtract(rayStart).dot(outward);
-            double t = numerator / denominator;
-            if (!Double.isFinite(t) || t <= 0.0D) return null;
-
-            Vec3 projected = rayStart.add(ray.scale(t));
-            Vec3 rel = projected.subtract(wallOrigin);
-            double radius = rel.dot(tangent);
-            float v = (float) ((radius - MIN_SPLASH_RADIUS)
-                    / (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS));
-            if (!Float.isFinite(v)) return null;
-
-            double widthScale = 0.55D
-                    + 0.45D * Math.sqrt(Math.max(0.0D,
-                            Math.min(1.0D, v)));
-            double halfWidth = MAX_SPLASH_HALF_WIDTH * widthScale;
-            if (halfWidth < 1.0E-6D) return null;
-
-            double lateral = rel.dot(fanSide) / halfWidth;
-            float u = (float) ((lateral + 1.0D) * 0.5D);
-            return Float.isFinite(u) ? new ProjectorUv(u, v) : null;
+        private static boolean isRenderable(ProjectedSample sample) {
+            return sample != null
+                    && sample.receiver
+                    && !sample.blastDoorOccluder;
         }
 
         private Vec3 projectedWallPoint(float u01, float v01) {
@@ -1212,48 +1056,63 @@ public final class AlarmClient {
                                     * widthScale * lateral));
         }
 
-        private void addSurfaceTriangle(List<ProjectedTriangle> result,
+        private void addTriangle(List<ProjectedTriangle> result,
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
-            if (a == null || b == null || c == null) return;
+            if (!compatibleTriangle(a, b, c)) return;
+            if (!triangleInteriorMatchesReceiver(a, b, c)) return;
 
-            Vec3 ab = b.position.subtract(a.position);
-            Vec3 ac = c.position.subtract(a.position);
-            double worldArea = ab.cross(ac).length() * 0.5D;
-            if (worldArea <= 1.0E-10D) return;
-
-            Vec3 center = a.position.add(b.position).add(c.position)
-                    .scale(1.0D / 3.0D);
-            Direction face = a.face;
-            double incidence = Math.max(0.0D,
-                    direction(face).dot(
-                            rayStart.subtract(center).normalize()));
-
-            float washScale = 1.0F;
-            float bloomScale = 1.0F;
-
-            if (face != wallFace) {
-                washScale *= smoothStep(0.035F, 0.34F,
-                        (float) incidence);
-                bloomScale *= smoothStep(0.14F, 0.52F,
-                        (float) incidence);
-            }
-
+            double worldArea = triangleArea(
+                    a.position, b.position, c.position);
             double idealArea = triangleArea(
                     projectedWallPoint(a.u, a.v),
                     projectedWallPoint(b.u, b.v),
                     projectedWallPoint(c.u, c.v));
-            if (idealArea > 1.0E-9D) {
-                float compression = (float) Math.max(0.0D,
+
+            float washScale = 1.0F;
+            float bloomScale = 1.0F;
+            if (idealArea > 1.0E-8D) {
+                double ratio = Math.max(0.0D,
                         Math.min(1.0D, worldArea / idealArea));
-                if (face != wallFace) {
-                    washScale *= smoothStep(0.025F, 0.24F, compression);
-                    bloomScale *= smoothStep(0.12F, 0.50F, compression);
-                }
+
+                /*
+                 * A large region of projector UV compressed onto a tiny side
+                 * face is the exact signature of the orange/red "rods" in the
+                 * screenshots. Preserve the receiver, but normalize its energy
+                 * instead of letting RenderType.eyes amplify the compression.
+                 */
+                washScale = smoothStep(0.025F, 0.22F, (float) ratio);
+                bloomScale = smoothStep(0.12F, 0.55F, (float) ratio);
             }
 
-            if (washScale <= 0.002F) return;
             result.add(new ProjectedTriangle(
                     a, b, c, washScale, bloomScale));
+        }
+
+        /**
+         * Plane equality alone is insufficient: two disconnected pieces of wall
+         * on opposite sides of an opening share the same face and coordinate.
+         * The old mesh could therefore bridge empty space with one triangle.
+         *
+         * Probe the three UV edge midpoints plus centroid and require every
+         * sample to hit the same physical receiver plane. These probes are
+         * cached, so neighbouring triangles share the work. This is a topology
+         * check, not a visual threshold.
+         */
+        private boolean triangleInteriorMatchesReceiver(
+                ProjectedSample a, ProjectedSample b, ProjectedSample c) {
+            float abU = (a.u + b.u) * 0.5F;
+            float abV = (a.v + b.v) * 0.5F;
+            float bcU = (b.u + c.u) * 0.5F;
+            float bcV = (b.v + c.v) * 0.5F;
+            float caU = (c.u + a.u) * 0.5F;
+            float caV = (c.v + a.v) * 0.5F;
+            float centerU = (a.u + b.u + c.u) / 3.0F;
+            float centerV = (a.v + b.v + c.v) / 3.0F;
+
+            return sameSurface(a, sampleAtCached(abU, abV))
+                    && sameSurface(a, sampleAtCached(bcU, bcV))
+                    && sameSurface(a, sampleAtCached(caU, caV))
+                    && sameSurface(a, sampleAtCached(centerU, centerV));
         }
 
         private static double triangleArea(
@@ -1271,74 +1130,162 @@ public final class AlarmClient {
             return x * x * (3.0F - 2.0F * x);
         }
 
-        private static FaceRect faceRect(AABB box, Direction face) {
-            return switch (face) {
-                case NORTH -> new FaceRect(
-                        new Vec3(box.maxX, box.minY, box.minZ),
-                        new Vec3(box.minX, box.minY, box.minZ),
-                        new Vec3(box.minX, box.maxY, box.minZ),
-                        new Vec3(box.maxX, box.maxY, box.minZ));
-                case SOUTH -> new FaceRect(
-                        new Vec3(box.minX, box.minY, box.maxZ),
-                        new Vec3(box.maxX, box.minY, box.maxZ),
-                        new Vec3(box.maxX, box.maxY, box.maxZ),
-                        new Vec3(box.minX, box.maxY, box.maxZ));
-                case WEST -> new FaceRect(
-                        new Vec3(box.minX, box.minY, box.minZ),
-                        new Vec3(box.minX, box.minY, box.maxZ),
-                        new Vec3(box.minX, box.maxY, box.maxZ),
-                        new Vec3(box.minX, box.maxY, box.minZ));
-                case EAST -> new FaceRect(
-                        new Vec3(box.maxX, box.minY, box.maxZ),
-                        new Vec3(box.maxX, box.minY, box.minZ),
-                        new Vec3(box.maxX, box.maxY, box.minZ),
-                        new Vec3(box.maxX, box.maxY, box.maxZ));
-                case DOWN -> new FaceRect(
-                        new Vec3(box.minX, box.minY, box.minZ),
-                        new Vec3(box.maxX, box.minY, box.minZ),
-                        new Vec3(box.maxX, box.minY, box.maxZ),
-                        new Vec3(box.minX, box.minY, box.maxZ));
-                case UP -> new FaceRect(
-                        new Vec3(box.minX, box.maxY, box.minZ),
-                        new Vec3(box.minX, box.maxY, box.maxZ),
-                        new Vec3(box.maxX, box.maxY, box.maxZ),
-                        new Vec3(box.maxX, box.maxY, box.minZ));
-            };
+        private ProjectedSample sample(int uIndex, int vIndex) {
+            int key = (vIndex << 16) | uIndex;
+            if (samples.containsKey(key)) return samples.get(key);
+
+            float u01 = uIndex / (float) MESH_RESOLUTION;
+            float v01 = vIndex / (float) MESH_RESOLUTION;
+            ProjectedSample sample = sampleAtCached(u01, v01);
+            samples.put(key, sample);
+            return sample;
         }
 
-        private static Vec3 midpoint(Vec3 a, Vec3 b) {
-            return new Vec3(
-                    (a.x + b.x) * 0.5D,
-                    (a.y + b.y) * 0.5D,
-                    (a.z + b.z) * 0.5D);
+        private ProjectedSample sampleAtCached(float u01, float v01) {
+            int qu = Math.round(u01 * 16384.0F);
+            int qv = Math.round(v01 * 16384.0F);
+            long key = ((long) qu << 32) | (qv & 0xffffffffL);
+            ProjectedSample cached = edgeSamples.get(key);
+            if (cached != null) return cached;
+
+            ProjectedSample sample = sampleAt(u01, v01);
+            edgeSamples.put(key, sample);
+            return sample;
         }
 
-        private record FaceRect(
-                Vec3 p00, Vec3 p10, Vec3 p11, Vec3 p01) {
-            private Vec3 center() {
-                return new Vec3(
-                        (p00.x + p10.x + p11.x + p01.x) * 0.25D,
-                        (p00.y + p10.y + p11.y + p01.y) * 0.25D,
-                        (p00.z + p10.z + p11.z + p01.z) * 0.25D);
+        private ProjectedSample sampleAt(float u01, float v01) {
+            /*
+             * Geometry is deliberately boring: a broad projector strip. The
+             * final shape and feathering remain entirely texture-driven.
+             */
+            Vec3 wallSurface = projectedWallPoint(u01, v01);
+            Vec3 intended = wallSurface.add(
+                    inward.scale(RAY_OVERSHOOT));
+
+            /*
+             * Top-mounted Alarms now sit on real wall blocks, not Blast Door
+             * copycats. Test the authored frame silhouette explicitly before
+             * the normal world raycast so the metal can still clip the wash
+             * without forcing the wall itself through a BlockEntity renderer.
+             */
+            if (blastDoorController != null) {
+                BlockState doorState =
+                        level.getBlockState(blastDoorController);
+                if (BlastDoorModule.isController(doorState)) {
+                    Vec3 visualHit =
+                            BlastDoorStructure.visualOcclusionHit(
+                                    level, blastDoorController, doorState,
+                                    rayStart, wallSurface);
+                    if (visualHit != null) {
+                        return new ProjectedSample(
+                                visualHit, wallFace, u01, v01,
+                                false, true, false, 1.0F);
+                    }
+                }
             }
+
+            FastWallResult fast = fastWallPlaneHit(
+                    wallSurface, intended);
+            ProjectedHit hit = fast.hit;
+            if (!fast.handled) {
+                hit = cast(level, context, alarmPos,
+                        rayStart, intended, wallSurface, wallFace);
+            }
+            if (hit == null) {
+                return new ProjectedSample(
+                        wallSurface, wallFace, u01, v01,
+                        false, false, false, 1.0F);
+            }
+            return new ProjectedSample(hit.position, hit.face,
+                    u01, v01, hit.bloomAllowed,
+                    hit.blastDoorOccluder, true, 1.0F);
         }
 
-        private record ProjectorUv(float u, float v) {
+        /**
+         * Most samples are much simpler than a Minecraft raycast makes them
+         * look. The projector starts in the Alarm's wall cell and ends on the
+         * mounting plane only ~0.4 blocks away. If that front cell is empty (or
+         * is one of this Alarm's invisible reservation helpers) and the block
+         * immediately behind the plane exposes a sturdy opaque face, the hit is
+         * mathematically known: it is the mounting plane itself.
+         *
+         * <p>This removes the expensive collision traversal from the common
+         * flat-wall case. Partial shapes, glass and real obstacles still fall
+         * back to the full cast, so the surface-aware behaviour is preserved.</p>
+         */
+        private FastWallResult fastWallPlaneHit(
+                Vec3 wallSurface, Vec3 intended) {
+            Vec3 outward = direction(wallFace);
+            BlockPos frontPos = BlockPos.containing(
+                    wallSurface.add(outward.scale(0.01D)));
+            BlockState frontState = level.getBlockState(frontPos);
+
+            boolean ownAlarmCell = frontPos.equals(alarmPos);
+            if (!ownAlarmCell && AlarmModule.isPart(frontState)) {
+                try {
+                    ownAlarmCell = AlarmMountStructure.controllerPosition(
+                            frontPos, frontState).equals(alarmPos);
+                } catch (RuntimeException ignored) {
+                    ownAlarmCell = false;
+                }
+            }
+
+            if (!ownAlarmCell
+                    && !frontState.isAir()
+                    && !letsProjectedLightPass(frontState)
+                    && !frontState.getCollisionShape(level, frontPos)
+                            .isEmpty()) {
+                return FastWallResult.NEEDS_CAST;
+            }
+
+            BlockPos supportPos = BlockPos.containing(
+                    wallSurface.add(inward.scale(0.01D)));
+            BlockState supportState = level.getBlockState(supportPos);
+
+            if (BlastDoorModule.isStructureState(supportState)) {
+                BlockHitResult mimicHit = BlastDoorStructure.clipLowerMimic(
+                        level, supportPos, supportState, rayStart, intended);
+                if (mimicHit == null) {
+                    return FastWallResult.NEEDS_CAST;
+                }
+                Direction face = mimicHit.getDirection();
+                Vec3 normal = direction(face);
+                return FastWallResult.hit(new ProjectedHit(
+                        mimicHit.getLocation().add(
+                                normal.scale(SURFACE_EPSILON)),
+                        face, false, false));
+            }
+
+            /*
+             * The requested projection plane ends here. Air or a translucent
+             * support cell is therefore a definitive miss; there is no reason
+             * to ask Level.clip and then rediscover the same fact. This matters
+             * especially during the seven cheap UV bisections at an open edge.
+             */
+            if (supportState.isAir()
+                    || letsProjectedLightPass(supportState)) {
+                return FastWallResult.MISS;
+            }
+
+            if (!supportState.isFaceSturdy(
+                    level, supportPos, wallFace)) {
+                return FastWallResult.NEEDS_CAST;
+            }
+
+            Vec3 position = wallSurface.add(
+                    outward.scale(SURFACE_EPSILON));
+            return FastWallResult.hit(new ProjectedHit(
+                    position, wallFace, true, false));
         }
 
-        private record FaceProbe(Vec3 position, ProjectorUv uv,
-                boolean active, ProjectedSample sample) {
-        }
+        private record FastWallResult(ProjectedHit hit, boolean handled) {
+            private static final FastWallResult NEEDS_CAST =
+                    new FastWallResult(null, false);
+            private static final FastWallResult MISS =
+                    new FastWallResult(null, true);
 
-        private record SurfaceKey(long x, long y, long z,
-                int face, boolean bloomAllowed) {
-            private static SurfaceKey of(Vec3 point, Direction face,
-                    boolean bloomAllowed) {
-                return new SurfaceKey(
-                        Math.round(point.x * 16384.0D),
-                        Math.round(point.y * 16384.0D),
-                        Math.round(point.z * 16384.0D),
-                        face.ordinal(), bloomAllowed);
+            private static FastWallResult hit(ProjectedHit hit) {
+                return new FastWallResult(hit, true);
             }
         }
     }
@@ -1491,6 +1438,55 @@ public final class AlarmClient {
                 ? distance : Double.POSITIVE_INFINITY;
     }
 
+    private static boolean compatibleQuad(ProjectedSample a,
+            ProjectedSample b, ProjectedSample c, ProjectedSample d) {
+        return compatibleTriangle(a, b, c)
+                && compatibleTriangle(a, c, d);
+    }
+
+    private static boolean sameSurface(ProjectedSample a,
+            ProjectedSample b) {
+        if (!isRenderableSample(a) || !isRenderableSample(b)
+                || a.blastDoorOccluder != b.blastDoorOccluder
+                || a.face != b.face) return false;
+        return Math.abs(planeCoordinate(a.position, a.face)
+                - planeCoordinate(b.position, b.face)) <= PLANE_EPSILON;
+    }
+
+    private static boolean compatibleTriangle(ProjectedSample a,
+            ProjectedSample b, ProjectedSample c) {
+        if (!isRenderableSample(a)
+                || !isRenderableSample(b)
+                || !isRenderableSample(c)) return false;
+        if (a.blastDoorOccluder || b.blastDoorOccluder
+                || c.blastDoorOccluder) return false;
+        if (a.face != b.face || a.face != c.face) return false;
+
+        double planeA = planeCoordinate(a.position, a.face);
+        if (Math.abs(planeA - planeCoordinate(b.position, b.face))
+                        > PLANE_EPSILON
+                || Math.abs(planeA - planeCoordinate(c.position, c.face))
+                        > PLANE_EPSILON) {
+            return false;
+        }
+
+        Vec3 ab = b.position.subtract(a.position);
+        Vec3 ac = c.position.subtract(a.position);
+        return ab.cross(ac).lengthSqr() > 1.0E-12D;
+    }
+
+    private static boolean isRenderableSample(ProjectedSample sample) {
+        return sample != null && sample.receiver;
+    }
+
+    private static double planeCoordinate(Vec3 point, Direction face) {
+        return switch (face.getAxis()) {
+            case X -> point.x;
+            case Y -> point.y;
+            case Z -> point.z;
+        };
+    }
+
     private static void emitProjectionTriangle(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
             ProjectedTriangle triangle, boolean bloomPass) {
@@ -1513,10 +1509,14 @@ public final class AlarmClient {
             ProjectedSample sample, boolean bloomPass,
             float energyScale) {
         Vec3 normal = direction(sample.face);
-        Vec3 worldPoint = bloomPass
-                ? sample.position.add(normal.scale(BLOOM_SURFACE_EPSILON))
-                : sample.position;
-        Vec3 point = local(worldPoint, blockOrigin);
+        /*
+         * Wash and HDR bloom MUST be depth-identical. A second shell offset
+         * away from the receiver protrudes past wall/ceiling/door silhouettes
+         * and is exactly what produced the bright rods at projection ends.
+         * BSL still sees a separate emissive texture pass; it simply occupies
+         * the same physical decal surface.
+         */
+        Vec3 point = local(sample.position, blockOrigin);
 
         consumer.vertex(poseStack.last().pose(),
                         (float) point.x, (float) point.y, (float) point.z)

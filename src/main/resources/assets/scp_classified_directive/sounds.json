@@ -1783,7 +1783,7 @@
       {
         "name": "scp_classified_directive:ceiling_ventilation",
         "stream": false,
-        "volume": 2
+        "volume": 3
       }
     ]
   },

@@ -782,7 +782,6 @@ public final class AlarmClient {
             }
             emitProjectionTriangle(bloom, poseStack, alarm.getBlockPos(),
                     triangle, true);
-            emittedBloom = true;
         }
         // Do not endBatch here. Let the shared BufferSource batch every Alarm
         // projection in the frame; forcing two flushes per Alarm was a major

@@ -1091,10 +1091,25 @@ public final class AlarmClient {
                         && hitState.hasProperty(BlastDoorModule.HEIGHT)
                         && hitState.getValue(BlastDoorModule.HEIGHT)
                                 == BlastDoorStructure.MAX_HEIGHT) {
+                    /*
+                     * The upper wall mimic is rendered as a normal baked block
+                     * inside this reserved Blast Door cell. wallSurface, however,
+                     * is the projector's overshoot target and intentionally sits
+                     * slightly INSIDE the wall. Reusing it as a vertex position
+                     * made the wash/bloom intersect the mimic depth buffer under
+                     * BSL, producing the moving purple slivers seen in-game.
+                     *
+                     * Snap the synthetic receiver to the actual outward face of
+                     * the reserved cell, exactly where renderBatched() draws the
+                     * copied wall, then offset the light a few millimetres toward
+                     * the room just like a normal raycast hit.
+                     */
                     Vec3 normal = direction(wallFace);
+                    Vec3 receiver = snapToBlockFace(
+                            wallSurface, hitPos, wallFace)
+                            .add(normal.scale(SURFACE_EPSILON));
                     return new ProjectedHit(
-                            wallSurface.add(normal.scale(SURFACE_EPSILON)),
-                            wallFace, true, false);
+                            receiver, wallFace, true, false);
                 }
 
                 cursor = skipPastBlockCell(hit.getLocation(),
@@ -1131,6 +1146,18 @@ public final class AlarmClient {
         // opaque material and must cast a real shadow.
         return ItemBlockRenderTypes.getChunkRenderType(state)
                 == RenderType.translucent();
+    }
+
+    private static Vec3 snapToBlockFace(Vec3 point,
+            BlockPos blockPos, Direction face) {
+        return switch (face) {
+            case NORTH -> new Vec3(point.x, point.y, blockPos.getZ());
+            case SOUTH -> new Vec3(point.x, point.y, blockPos.getZ() + 1.0D);
+            case WEST -> new Vec3(blockPos.getX(), point.y, point.z);
+            case EAST -> new Vec3(blockPos.getX() + 1.0D, point.y, point.z);
+            case DOWN -> new Vec3(point.x, blockPos.getY(), point.z);
+            case UP -> new Vec3(point.x, blockPos.getY() + 1.0D, point.z);
+        };
     }
 
     private static boolean rayCursorStillValid(Vec3 cursor, Vec3 start,

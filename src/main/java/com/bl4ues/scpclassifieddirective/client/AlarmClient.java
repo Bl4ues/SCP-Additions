@@ -96,13 +96,6 @@ public final class AlarmClient {
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
-    /*
-     * Clipped polygons can collapse into long, sub-pixel needles as a surface
-     * first enters/leaves the projector. Those are the detached orange
-     * "sparks" visible in the latest video. Reject only extremely skinny
-     * triangles by geometric altitude; ordinary small triangles remain valid.
-     */
-    private static final double MIN_TRIANGLE_ALTITUDE = 0.018D;
     private static final int EDGE_BISECTIONS = 4;
     private static final int BASE_MESH_CELLS = 5;
     /*
@@ -833,6 +826,7 @@ public final class AlarmClient {
         private final Direction wallFace;
         private final BlockPos blastDoorController;
         private final Map<Integer, ProjectedSample> samples = new HashMap<>();
+        private final Map<Long, ProjectedSample> edgeSamples = new HashMap<>();
 
         private ProjectionBuilder(ClientLevel level, Entity context,
                 BlockPos alarmPos, Vec3 rayStart, Vec3 wallOrigin,
@@ -955,17 +949,6 @@ public final class AlarmClient {
             for (ProjectedSample target : triangle) {
                 if (!isRenderable(target)) continue;
 
-                int targetVertices = 0;
-                for (ProjectedSample vertex : triangle) {
-                    if (isRenderable(vertex)
-                            && sameSurface(target, vertex)) {
-                        targetVertices++;
-                    }
-                }
-                if (targetVertices < 2) {
-                    continue;
-                }
-
                 boolean duplicate = false;
                 for (ProjectedSample previous : triangle) {
                     if (previous == target) break;
@@ -984,6 +967,14 @@ public final class AlarmClient {
         private void clipTriangleToSurface(ProjectedSample[] triangle,
                 ProjectedSample target, List<ProjectedTriangle> result) {
             List<ProjectedSample> polygon = new ArrayList<>(6);
+            int insideVertices = 0;
+
+            for (ProjectedSample vertex : triangle) {
+                if (isRenderable(vertex)
+                        && sameSurface(target, vertex)) {
+                    insideVertices++;
+                }
+            }
 
             for (int i = 0; i < triangle.length; i++) {
                 ProjectedSample current = triangle[i];
@@ -1009,11 +1000,62 @@ public final class AlarmClient {
             }
 
             if (polygon.size() < 3) return;
-            ProjectedSample first = polygon.get(0);
+
+            /*
+             * When a new surface first enters the beam, only one original
+             * triangle corner may belong to it. That is valid geometry, not an
+             * artifact. Deleting it created the massive saw-tooth holes.
+             *
+             * At the same time, drawing a microscopic one-corner wedge at full
+             * alpha is what used to look like a bright needle. Fade only that
+             * transitional case by the polygon's real covered area. The wedge
+             * exists continuously from the first contact, but its energy grows
+             * continuously instead of popping or disappearing.
+             */
+            float coverageFade = 1.0F;
+            if (insideVertices == 1) {
+                double originalArea = triangleArea(
+                        triangle[0], triangle[1], triangle[2]);
+                double clippedArea = polygonArea(polygon);
+                if (originalArea > 1.0E-9D) {
+                    float coverage = (float) Math.max(0.0D,
+                            Math.min(1.0D, clippedArea / originalArea));
+                    coverageFade = smoothStep(0.0F, 0.14F, coverage);
+                }
+            }
+
+            ProjectedSample first = withOpacityScale(
+                    polygon.get(0), coverageFade);
             for (int i = 1; i + 1 < polygon.size(); i++) {
                 addTriangle(result, first,
-                        polygon.get(i), polygon.get(i + 1));
+                        withOpacityScale(polygon.get(i), coverageFade),
+                        withOpacityScale(polygon.get(i + 1), coverageFade));
             }
+        }
+
+        private static ProjectedSample withOpacityScale(
+                ProjectedSample sample, float scale) {
+            if (scale >= 0.999F) return sample;
+            return sample.withOpacity(sample.opacity * scale);
+        }
+
+        private static double polygonArea(List<ProjectedSample> polygon) {
+            if (polygon.size() < 3) return 0.0D;
+            Vec3 origin = polygon.get(0).position;
+            double area = 0.0D;
+            for (int i = 1; i + 1 < polygon.size(); i++) {
+                Vec3 a = polygon.get(i).position.subtract(origin);
+                Vec3 b = polygon.get(i + 1).position.subtract(origin);
+                area += a.cross(b).length() * 0.5D;
+            }
+            return area;
+        }
+
+        private static double triangleArea(ProjectedSample a,
+                ProjectedSample b, ProjectedSample c) {
+            Vec3 ab = b.position.subtract(a.position);
+            Vec3 ac = c.position.subtract(a.position);
+            return ab.cross(ac).length() * 0.5D;
         }
 
         /**
@@ -1042,7 +1084,7 @@ public final class AlarmClient {
             for (int i = 0; i < EDGE_BISECTIONS; i++) {
                 float midU = (clearU + otherU) * 0.5F;
                 float midV = (clearV + otherV) * 0.5F;
-                ProjectedSample probe = sampleAt(midU, midV);
+                ProjectedSample probe = sampleAtCached(midU, midV);
                 if (isRenderable(probe)
                         && sameSurface(target, probe)) {
                     clearU = midU;
@@ -1123,8 +1165,20 @@ public final class AlarmClient {
 
             float u01 = uIndex / (float) MESH_RESOLUTION;
             float v01 = vIndex / (float) MESH_RESOLUTION;
-            ProjectedSample sample = sampleAt(u01, v01);
+            ProjectedSample sample = sampleAtCached(u01, v01);
             samples.put(key, sample);
+            return sample;
+        }
+
+        private ProjectedSample sampleAtCached(float u01, float v01) {
+            int qu = Math.round(u01 * 4096.0F);
+            int qv = Math.round(v01 * 4096.0F);
+            long key = ((long) qu << 32) | (qv & 0xffffffffL);
+            ProjectedSample cached = edgeSamples.get(key);
+            if (cached != null) return cached;
+
+            ProjectedSample sample = sampleAt(u01, v01);
+            edgeSamples.put(key, sample);
             return sample;
         }
 
@@ -1473,14 +1527,9 @@ public final class AlarmClient {
             return false;
         }
 
-        double longest = Math.sqrt(Math.max(abSqr,
-                Math.max(bcSqr, caSqr)));
-        if (longest < 1.0E-6D) return false;
-
         Vec3 ab = b.position.subtract(a.position);
         Vec3 ac = c.position.subtract(a.position);
-        double altitude = ab.cross(ac).length() / longest;
-        return altitude >= MIN_TRIANGLE_ALTITUDE;
+        return ab.cross(ac).lengthSqr() > 1.0E-12D;
     }
 
     private static boolean isRenderableSample(ProjectedSample sample) {

@@ -102,12 +102,12 @@ public final class AlarmClient {
     private static final int COMPLEX_RECEIVER_SUBDIVISIONS = 4;
     private static final double RECEIVER_VISIBILITY_EPSILON_SQR = 0.0064D;
     /*
-     * BSL treats RenderType.eyes as an HDR source. The emissive PNG is already
-     * subtle, but a full-strength vertex alpha still saturates a broad projected
-     * surface. Scale only the HDR copy; the visible wash/texture remains exactly
-     * as authored by the user.
+     * The projected wash is intentionally much dimmer than the Alarm lamp.
+     * Unlike RenderType.eyes, the translucent-emissive path preserves both the
+     * texture alpha and this vertex alpha under shader packs, so the cone reads
+     * as soft projected light instead of an HDR-white surface.
      */
-    private static final float PROJECTION_BLOOM_ALPHA = 0.16F;
+    private static final float PROJECTION_EMISSIVE_ALPHA = 0.34F;
     // Twenty deterministic rotor phases are cached. Receiver visibility is
     // rebuilt only when nearby block geometry changes; phase generation itself
     // performs no world raycasts.
@@ -755,25 +755,23 @@ public final class AlarmClient {
          */
         flush(buffers, washType);
         /*
-         * HDR bloom is intentionally restricted to the Alarm's mounting-wall
-         * receiver plane.
+         * The lamp itself still uses RenderType.eyes because it should be a
+         * compact HDR source. The projected cone should not. Shader packs treat
+         * eyes/spidereyes as a special additive/HDR program and can effectively
+         * ignore the low vertex alpha on a broad decal, which is why the cone
+         * became an opaque orange plate even at 16% alpha.
          *
-         * RenderType.eyes is excellent for closed emissive meshes such as the
-         * lamp itself, but shader packs do not treat it like an ordinary
-         * depth-behaved translucent decal. When the same eyes pass is wrapped
-         * onto ceiling, side-wall, floor or frame faces, those grazing triangles
-         * are composited as bright HDR blades at the physical boundary. This is
-         * exactly the artifact visible in the screenshots; changing UV density
-         * or clipping thresholds cannot fix a render-pass semantic mismatch.
-         *
-         * Secondary receiver faces still render in the FULL_BRIGHT wash above,
-         * so the beam continues naturally around geometry. Only the HDR copy is
-         * limited to the coplanar authored surface where it is depth-stable.
+         * entityTranslucentEmissive keeps the projection full-bright while
+         * preserving ordinary translucent blending, texture alpha and depth.
+         * Restrict this weak emissive copy to the mounting-wall receiver as
+         * before; secondary faces keep only the normal full-bright wash.
          */
         Direction bloomFace = alarm.getBlockState()
                 .getValue(AlarmModule.FACING);
-        RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
+        RenderType bloomType =
+                RenderType.entityTranslucentEmissive(SPLASH_EMISSIVE);
         VertexConsumer bloom = buffers.getBuffer(bloomType);
+        boolean emittedBloom = false;
         for (ProjectedQuad quad : projected.quads) {
             if (!quad.bloomAllowed()
                     || !quad.isOnFace(bloomFace)) {
@@ -781,10 +779,11 @@ public final class AlarmClient {
             }
             emitProjectionQuad(bloom, poseStack, alarm.getBlockPos(),
                     quad, true);
+            emittedBloom = true;
         }
-        // Do not endBatch here. Let the shared BufferSource batch every Alarm
-        // projection in the frame; forcing two flushes per Alarm was a major
-        // shader-side performance penalty.
+        if (emittedBloom) {
+            flush(buffers, bloomType);
+        }
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -1415,7 +1414,7 @@ public final class AlarmClient {
             PoseStack poseStack, BlockPos blockOrigin,
             ProjectedQuad quad, boolean bloomPass) {
         float energyScale = bloomPass
-                ? PROJECTION_BLOOM_ALPHA : 1.0F;
+                ? PROJECTION_EMISSIVE_ALPHA : 1.0F;
         projectionVertex(consumer, poseStack, blockOrigin,
                 quad.a, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,

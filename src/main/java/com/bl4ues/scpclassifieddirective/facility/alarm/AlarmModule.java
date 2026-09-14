@@ -19,6 +19,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -39,7 +41,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -73,14 +78,17 @@ public final class AlarmModule {
             HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty ACTIVE =
             BooleanProperty.create("active");
+    /** 0/1/2 encode left-center-right and bottom-center-top. */
+    public static final IntegerProperty MOUNT_X =
+            IntegerProperty.create("mount_x", 0, 2);
+    public static final IntegerProperty MOUNT_Y =
+            IntegerProperty.create("mount_y", 0, 2);
+    /** Relative helper-cell offsets use the same -1/0/+1 encoding. */
+    public static final IntegerProperty PART_X =
+            IntegerProperty.create("part_x", 0, 2);
+    public static final IntegerProperty PART_Y =
+            IntegerProperty.create("part_y", 0, 2);
     public static final int ACTIVE_LIGHT_LEVEL = 7;
-    /**
-     * The Alarm model spans Y 6.25..9.75 in its block. When attached to the
-     * top row of a Blast Door, raise it just enough for the model top to meet
-     * the top edge of its placement block instead of intersecting the frame.
-     */
-    public static final double BLAST_DOOR_TOP_MOUNT_Y_OFFSET =
-            6.25D / 16.0D;
 
     public static final DeferredRegister<Block> BLOCKS =
             DeferredRegister.create(ForgeRegistries.BLOCKS,
@@ -97,6 +105,8 @@ public final class AlarmModule {
 
     public static final RegistryObject<AlarmBlock> BLOCK =
             BLOCKS.register(PATH, AlarmBlock::new);
+    public static final RegistryObject<AlarmPartBlock> PART =
+            BLOCKS.register(PATH + "_part", AlarmPartBlock::new);
     public static final RegistryObject<Item> ITEM =
             ITEMS.register(PATH, () -> new AlarmItem(BLOCK.get()));
     public static final RegistryObject<BlockEntityType<AlarmBlockEntity>>
@@ -118,6 +128,14 @@ public final class AlarmModule {
         SOUNDS.register(bus);
     }
 
+    public static boolean isController(BlockState state) {
+        return state != null && state.is(BLOCK.get());
+    }
+
+    public static boolean isPart(BlockState state) {
+        return state != null && state.is(PART.get());
+    }
+
     public static final class AlarmBlock extends BaseEntityBlock {
         // Authored NORTH model: X -1.75..1.75, Y 6.25..9.75 and
         // Z 4.75..8.0. Convert the compact body to a simple one-piece shape.
@@ -135,7 +153,13 @@ public final class AlarmModule {
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any()
                     .setValue(FACING, Direction.NORTH)
-                    .setValue(ACTIVE, false));
+                    .setValue(ACTIVE, false)
+                    .setValue(MOUNT_X,
+                            AlarmMountStructure.encodeSlot(
+                                    AlarmMountStructure.CENTER))
+                    .setValue(MOUNT_Y,
+                            AlarmMountStructure.encodeSlot(
+                                    AlarmMountStructure.CENTER)));
         }
 
         @Nullable
@@ -167,7 +191,7 @@ public final class AlarmModule {
         @Override
         protected void createBlockStateDefinition(
                 StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(FACING, ACTIVE);
+            builder.add(FACING, ACTIVE, MOUNT_X, MOUNT_Y);
         }
 
         @Nullable
@@ -175,21 +199,32 @@ public final class AlarmModule {
         public BlockState getStateForPlacement(BlockPlaceContext context) {
             Direction clicked = context.getClickedFace();
             if (clicked.getAxis() == Direction.Axis.Y) return null;
+
+            int horizontal = AlarmMountStructure.quantize(
+                    AlarmMountStructure.horizontalClick(context, clicked));
+            int vertical = AlarmMountStructure.quantize(
+                    AlarmMountStructure.verticalClick(context, clicked));
             BlockState state = defaultBlockState()
                     .setValue(FACING, clicked)
-                    .setValue(ACTIVE, false);
-            return state.canSurvive(context.getLevel(),
-                    context.getClickedPos()) ? state : null;
+                    .setValue(ACTIVE, false)
+                    .setValue(MOUNT_X,
+                            AlarmMountStructure.encodeSlot(horizontal))
+                    .setValue(MOUNT_Y,
+                            AlarmMountStructure.encodeSlot(vertical));
+
+            BlockPos pos = context.getClickedPos();
+            if (!AlarmMountStructure.blastDoorPlacementAllowed(
+                    context.getLevel(), pos, state)) {
+                return null;
+            }
+            return AlarmMountStructure.canPlace(
+                    context.getLevel(), pos, state) ? state : null;
         }
 
         @Override
         public boolean canSurvive(BlockState state, LevelReader level,
                 BlockPos pos) {
-            Direction facing = state.getValue(FACING);
-            BlockPos support = pos.relative(facing.getOpposite());
-            BlockState supportState = level.getBlockState(support);
-            return supportState.isFaceSturdy(level, support, facing)
-                    || isBlastDoorTopSupport(level, support, supportState);
+            return AlarmMountStructure.canSurvive(level, pos, state);
         }
 
         @Override
@@ -207,11 +242,29 @@ public final class AlarmModule {
         public void onPlace(BlockState state, Level level, BlockPos pos,
                 BlockState oldState, boolean moving) {
             super.onPlace(state, level, pos, oldState, moving);
-            if (!level.isClientSide && level instanceof ServerLevel server
-                    && level.getBlockEntity(pos)
+            if (level.isClientSide || !(level instanceof ServerLevel server)) {
+                return;
+            }
+
+            if (!oldState.is(this)
+                    && !AlarmMountStructure.placeParts(level, pos, state)) {
+                level.destroyBlock(pos, true);
+                return;
+            }
+
+            if (level.getBlockEntity(pos)
                     instanceof AlarmBlockEntity alarm) {
                 alarm.refresh(server, true);
             }
+        }
+
+        @Override
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState newState, boolean moving) {
+            if (!level.isClientSide && !newState.is(this)) {
+                AlarmMountStructure.removeParts(level, pos, state);
+            }
+            super.onRemove(state, level, pos, newState, moving);
         }
 
         @Override
@@ -231,10 +284,32 @@ public final class AlarmModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
+            return mountedShape(state);
+        }
+
+        private static VoxelShape mountedShape(BlockState state) {
             VoxelShape shape = rotateNorthShape(
                     NORTH_SHAPE, state.getValue(FACING));
-            double offset = visualYOffset(level, pos, state);
-            return offset == 0.0D ? shape : shape.move(0.0D, offset, 0.0D);
+            Vec3 offset = AlarmMountStructure.visualOffset(state);
+            return shape.move(offset.x, offset.y, offset.z);
+        }
+
+        private static VoxelShape shapeForPart(BlockGetter level,
+                BlockPos partPos, BlockState partState) {
+            if (!AlarmMountStructure.isValidPart(
+                    level, partPos, partState)) {
+                return Shapes.empty();
+            }
+            BlockPos controller = AlarmMountStructure.controllerPosition(
+                    partPos, partState);
+            BlockState controllerState = level.getBlockState(controller);
+            VoxelShape inController = mountedShape(controllerState);
+            VoxelShape inPart = inController.move(
+                    controller.getX() - partPos.getX(),
+                    controller.getY() - partPos.getY(),
+                    controller.getZ() - partPos.getZ());
+            return Shapes.and(inPart, Block.box(
+                    0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D));
         }
 
         @Override
@@ -258,6 +333,83 @@ public final class AlarmModule {
         @Override
         public BlockState mirror(BlockState state, Mirror mirror) {
             return state.rotate(mirror.getRotation(state.getValue(FACING)));
+        }
+    }
+
+    public static final class AlarmPartBlock extends Block {
+        private AlarmPartBlock() {
+            super(BlockBehaviour.Properties.of()
+                    .strength(2.0F, 8.0F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .noLootTable()
+                    .isRedstoneConductor((state, level, pos) -> false));
+            registerDefaultState(stateDefinition.any()
+                    .setValue(FACING, Direction.NORTH)
+                    .setValue(PART_X,
+                            AlarmMountStructure.encodeSlot(
+                                    AlarmMountStructure.CENTER))
+                    .setValue(PART_Y,
+                            AlarmMountStructure.encodeSlot(
+                                    AlarmMountStructure.POSITIVE)));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING, PART_X, PART_Y);
+        }
+
+        @Override
+        public RenderShape getRenderShape(BlockState state) {
+            return RenderShape.INVISIBLE;
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return AlarmBlock.shapeForPart(level, pos, state);
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state,
+                BlockGetter level, BlockPos pos, CollisionContext context) {
+            return getShape(state, level, pos, context);
+        }
+
+        @Override
+        public VoxelShape getVisualShape(BlockState state,
+                BlockGetter level, BlockPos pos, CollisionContext context) {
+            return Shapes.empty();
+        }
+
+        @Override
+        public BlockState updateShape(BlockState state, Direction direction,
+                BlockState neighborState, LevelAccessor level, BlockPos pos,
+                BlockPos neighborPos) {
+            if (!AlarmMountStructure.isValidPart(level, pos, state)) {
+                return Blocks.AIR.defaultBlockState();
+            }
+            return super.updateShape(state, direction, neighborState,
+                    level, pos, neighborPos);
+        }
+
+        @Override
+        public void playerWillDestroy(Level level, BlockPos pos,
+                BlockState state, Player player) {
+            if (!level.isClientSide
+                    && AlarmMountStructure.isValidPart(level, pos, state)) {
+                BlockPos controller =
+                        AlarmMountStructure.controllerPosition(pos, state);
+                level.destroyBlock(controller, !player.isCreative());
+            }
+            super.playerWillDestroy(level, pos, state, player);
+        }
+
+        @Override
+        public ItemStack getCloneItemStack(BlockState state, HitResult target,
+                BlockGetter level, BlockPos pos, Player player) {
+            return new ItemStack(ITEM.get());
         }
     }
 
@@ -286,7 +438,9 @@ public final class AlarmModule {
             // Six adjacent block checks are cheap enough to do every tick and
             // give the Alarm exact, immediate door behaviour without a broad
             // room-radius scan.
-            alarm.applyActive(server, server.hasNeighborSignal(pos)
+            AlarmMountStructure.ensureParts(server, pos, state);
+            alarm.applyActive(server,
+                    AlarmMountStructure.hasNeighborSignal(server, pos, state)
                     || alarm.hasAdjacentOpenElectricDoor(server));
         }
 
@@ -299,7 +453,10 @@ public final class AlarmModule {
 
         private void refresh(ServerLevel server,
                 boolean ignoredRefreshDoors) {
-            applyActive(server, server.hasNeighborSignal(worldPosition)
+            BlockState state = getBlockState();
+            applyActive(server,
+                    AlarmMountStructure.hasNeighborSignal(
+                            server, worldPosition, state)
                     || hasAdjacentOpenElectricDoor(server));
         }
 
@@ -309,33 +466,38 @@ public final class AlarmModule {
          * room-wide or several-block-away activation is accepted.
          */
         private boolean hasAdjacentOpenElectricDoor(ServerLevel server) {
-            for (Direction direction : Direction.values()) {
-                BlockPos doorPos = worldPosition.relative(direction);
-                BlockState doorState = server.getBlockState(doorPos);
+            java.util.HashSet<BlockPos> checked = new java.util.HashSet<>();
+            for (BlockPos occupied : AlarmMountStructure.occupiedPositions(
+                    worldPosition, getBlockState())) {
+                for (Direction direction : Direction.values()) {
+                    BlockPos doorPos = occupied.relative(direction);
+                    if (!checked.add(doorPos)) continue;
+                    BlockState doorState = server.getBlockState(doorPos);
 
-                if (DecontaminationStructure.isOwnedDoor(
-                        server, doorPos, doorState)) {
-                    continue;
-                }
+                    if (DecontaminationStructure.isOwnedDoor(
+                            server, doorPos, doorState)) {
+                        continue;
+                    }
 
-                if (FacilityModule.isElectricDoorOpenOrOpening(doorState)) {
-                    return true;
-                }
+                    if (FacilityModule.isElectricDoorOpenOrOpening(doorState)) {
+                        return true;
+                    }
 
-                BlockPos controller = null;
-                if (BlastDoorModule.isController(doorState)) {
-                    controller = doorPos;
-                } else if (BlastDoorModule.isPart(doorState)
-                        && BlastDoorStructure.isValidPart(
-                                server, doorPos, doorState)) {
-                    controller = BlastDoorStructure.controllerPosition(
-                            doorPos, doorState);
-                }
+                    BlockPos controller = null;
+                    if (BlastDoorModule.isController(doorState)) {
+                        controller = doorPos;
+                    } else if (BlastDoorModule.isPart(doorState)
+                            && BlastDoorStructure.isValidPart(
+                                    server, doorPos, doorState)) {
+                        controller = BlastDoorStructure.controllerPosition(
+                                doorPos, doorState);
+                    }
 
-                if (controller != null
-                        && BlastDoorModule.isOpenOrOpening(
-                                server, controller)) {
-                    return true;
+                    if (controller != null
+                            && BlastDoorModule.isOpenOrOpening(
+                                    server, controller)) {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -411,34 +573,19 @@ public final class AlarmModule {
     @Nullable
     public static BlockPos blastDoorTopMountController(BlockGetter level,
             BlockPos pos, BlockState alarmState) {
-        if (level == null || pos == null || alarmState == null
-                || !alarmState.hasProperty(FACING)) {
-            return null;
-        }
-        Direction facing = alarmState.getValue(FACING);
-        BlockPos support = pos.relative(facing.getOpposite());
-        BlockState supportState = level.getBlockState(support);
-        if (!isBlastDoorTopSupport(level, support, supportState)) {
-            return null;
-        }
-        return BlastDoorStructure.controllerPosition(
-                support, supportState).immutable();
+        return AlarmMountStructure.blastDoorController(
+                level, pos, alarmState);
     }
 
+    public static Vec3 visualOffset(BlockGetter level, BlockPos pos,
+            BlockState alarmState) {
+        return AlarmMountStructure.visualOffset(alarmState);
+    }
+
+    /** Compatibility shim while render code migrates to the full 3-D offset. */
     public static double visualYOffset(BlockGetter level, BlockPos pos,
             BlockState alarmState) {
-        return isBlastDoorTopMounted(level, pos, alarmState)
-                ? BLAST_DOOR_TOP_MOUNT_Y_OFFSET : 0.0D;
-    }
-
-    private static boolean isBlastDoorTopSupport(BlockGetter level,
-            BlockPos support, BlockState supportState) {
-        return BlastDoorModule.isPart(supportState)
-                && supportState.hasProperty(BlastDoorModule.HEIGHT)
-                && supportState.getValue(BlastDoorModule.HEIGHT)
-                        == BlastDoorStructure.MAX_HEIGHT
-                && BlastDoorStructure.isValidPart(
-                        level, support, supportState);
+        return visualOffset(level, pos, alarmState).y;
     }
 
     public static final class AlarmItem extends BlockItem implements GeoItem {
@@ -448,6 +595,16 @@ public final class AlarmModule {
         private AlarmItem(Block block) {
             super(block, new Item.Properties());
             SingletonGeoAnimatable.registerSyncedAnimatable(this);
+        }
+
+        @Override
+        public InteractionResult place(BlockPlaceContext context) {
+            BlockState state = BLOCK.get().getStateForPlacement(context);
+            if (state == null || !AlarmMountStructure.canPlace(
+                    context.getLevel(), context.getClickedPos(), state)) {
+                return InteractionResult.FAIL;
+            }
+            return super.place(context);
         }
 
         @Override

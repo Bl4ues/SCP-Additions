@@ -88,18 +88,18 @@ public final class AlarmClient {
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.00020D;
-    private static final double PLANE_EPSILON = 0.018D;
+    private static final double PLANE_EPSILON = 0.0020D;
     /*
      * Flat-wall cells are allowed to stay coarse; geometry discontinuities are
      * clipped analytically below instead of forcing the entire projector to a
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
-    private static final int BASE_MESH_CELLS = 5;
-    private static final int MAX_BOUNDARY_SUBDIVISIONS = 2;
+    private static final int BASE_MESH_CELLS = 6;
+    private static final int MAX_BOUNDARY_SUBDIVISIONS = 1;
     private static final int SURFACE_EDGE_BISECTIONS = 5;
     /*
      * Flat regions stay at 5x5 cells. Only cells whose nine probes disagree
-     * recurse, up to an effective 40x40 boundary resolution. No synthetic
+     * recurse once around a discontinuity. No synthetic
      * clipping vertices are ever fabricated: every rendered vertex is an
      * actual sampled world hit. This is the important invariant that prevents
      * floating shards, emissive rods and the saw-tooth holes caused by the old
@@ -114,8 +114,8 @@ public final class AlarmClient {
     // the severe FPS regression, especially with shaders enabled.
 
     private static final int PROJECTION_PHASES = 20;
-    private static final int GEOMETRY_SIGNATURE_INTERVAL = 10;
-    private static final int GEOMETRY_SIGNATURE_RADIUS = 5;
+    private static final int GEOMETRY_SIGNATURE_INTERVAL = 40;
+    private static final int GEOMETRY_SIGNATURE_RADIUS = 4;
 
     private static final Map<ClientLevel, Map<BlockPos, ProjectionPhaseCache>>
             PROJECTIONS = new WeakHashMap<>();
@@ -743,14 +743,12 @@ public final class AlarmClient {
                 rotorAngle, mountOffset, false);
         if (projected.triangles.isEmpty()) return;
 
-        RenderType washType = RenderType.entityTranslucent(SPLASH, true);
+        RenderType washType = RenderType.entityTranslucentCull(SPLASH);
         VertexConsumer wash = buffers.getBuffer(washType);
         for (ProjectedTriangle triangle : projected.triangles) {
             emitProjectionTriangle(wash, poseStack, alarm.getBlockPos(),
                     triangle, false);
         }
-        flush(buffers, washType);
-
         /*
          * HDR bloom is intentionally restricted to the Alarm's mounting-wall
          * receiver plane.
@@ -781,9 +779,9 @@ public final class AlarmClient {
                     triangle, true);
             emittedBloom = true;
         }
-        if (emittedBloom) {
-            flush(buffers, bloomType);
-        }
+        // Do not endBatch here. Let the shared BufferSource batch every Alarm
+        // projection in the frame; forcing two flushes per Alarm was a major
+        // shader-side performance penalty.
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -1145,11 +1143,17 @@ public final class AlarmClient {
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
             if (!compatibleTriangle(a, b, c)) return;
 
-            float washScale = 1.0F;
-            float bloomScale = 1.0F;
+            Vec3 geometricNormal = b.position.subtract(a.position)
+                    .cross(c.position.subtract(a.position));
+            Vec3 receiverNormal = direction(a.face);
+            if (geometricNormal.dot(receiverNormal) < 0.0D) {
+                ProjectedSample swap = b;
+                b = c;
+                c = swap;
+            }
 
             result.add(new ProjectedTriangle(
-                    a, b, c, washScale, bloomScale));
+                    a, b, c, 1.0F, 1.0F));
         }
 
         private ProjectedSample sample(int uIndex, int vIndex) {
@@ -1218,9 +1222,42 @@ public final class AlarmClient {
                         wallSurface, wallFace, u01, v01,
                         false, false, false, 1.0F);
             }
+
+            /*
+             * The authored beam lives on the mounting wall and may fold onto a
+             * ceiling/floor when the wall ends. A vertical face perpendicular
+             * to the mounting wall is instead an obstacle silhouette (door
+             * return, column side, adjacent room wall). Treating that grazing
+             * face as a texture receiver is what creates the huge orange
+             * "blades": a tiny UV interval gets stretched over the side face.
+             *
+             * It still blocks the ray; it simply does not receive a decal.
+             */
+            if (!isStableReceiverFace(hit.face, wallFace, rayStart,
+                    hit.position)) {
+                return new ProjectedSample(hit.position, hit.face,
+                        u01, v01, false,
+                        hit.blastDoorOccluder, false, 1.0F);
+            }
+
             return new ProjectedSample(hit.position, hit.face,
                     u01, v01, hit.bloomAllowed,
                     hit.blastDoorOccluder, true, 1.0F);
+        }
+
+        private static boolean isStableReceiverFace(
+                Direction face, Direction wallFace,
+                Vec3 rayStart, Vec3 hitPosition) {
+            if (face == wallFace) return true;
+            if (face.getAxis() != Direction.Axis.Y) return false;
+
+            Vec3 toSource = rayStart.subtract(hitPosition);
+            double lengthSqr = toSource.lengthSqr();
+            if (lengthSqr < 1.0E-10D) return false;
+
+            double incidence = Math.abs(direction(face).dot(
+                    toSource.scale(1.0D / Math.sqrt(lengthSqr))));
+            return incidence >= 0.12D;
         }
 
         /**
@@ -1471,8 +1508,22 @@ public final class AlarmClient {
         if (!isRenderableSample(a) || !isRenderableSample(b)
                 || a.blastDoorOccluder != b.blastDoorOccluder
                 || a.face != b.face) return false;
-        return Math.abs(planeCoordinate(a.position, a.face)
-                - planeCoordinate(b.position, b.face)) <= PLANE_EPSILON;
+        if (Math.abs(planeCoordinate(a.position, a.face)
+                - planeCoordinate(b.position, b.face)) > PLANE_EPSILON) {
+            return false;
+        }
+
+        BlockPos cellA = receiverCell(a);
+        BlockPos cellB = receiverCell(b);
+        return Math.abs(cellA.getX() - cellB.getX()) <= 1
+                && Math.abs(cellA.getY() - cellB.getY()) <= 1
+                && Math.abs(cellA.getZ() - cellB.getZ()) <= 1;
+    }
+
+    private static BlockPos receiverCell(ProjectedSample sample) {
+        Vec3 intoReceiver = sample.position.subtract(
+                direction(sample.face).scale(0.01D));
+        return BlockPos.containing(intoReceiver);
     }
 
     private static boolean compatibleTriangle(ProjectedSample a,

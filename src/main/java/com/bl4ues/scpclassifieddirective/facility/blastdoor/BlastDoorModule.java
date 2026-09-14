@@ -479,7 +479,14 @@ public final class BlastDoorModule {
         public void tick(BlockState state, ServerLevel level, BlockPos pos,
                 net.minecraft.util.RandomSource random) {
             if (!BlastDoorStructure.isValidPart(level, pos, state)) {
-                BlastDoorStructure.clearBlock(level, pos, state);
+                if (state.hasProperty(HEIGHT)
+                        && state.getValue(HEIGHT)
+                                == BlastDoorStructure.TOP_MOUNT_HEIGHT) {
+                    BlastDoorStructure.restoreLegacyTopPart(
+                            level, pos, state);
+                } else {
+                    BlastDoorStructure.clearBlock(level, pos, state);
+                }
                 return;
             }
             BlockPos controller = BlastDoorStructure.controllerPosition(pos,

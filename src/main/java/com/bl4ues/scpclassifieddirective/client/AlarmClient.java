@@ -1126,8 +1126,23 @@ public final class AlarmClient {
             }
         }
 
+        /*
+         * ClipContext does not reliably report a collision when the ray ends
+         * exactly on the receiver plane. This was filtering every wall patch
+         * out of the new surface-first cache, which is why the cones vanished
+         * entirely. Cast a little past the target so the receiver lies strictly
+         * inside the segment, while keeping the authored target separate for
+         * Blast Door silhouette tests and hit validation.
+         */
+        Vec3 visibilityRay = target.subtract(rayStart);
+        if (visibilityRay.lengthSqr() < 1.0E-8D) {
+            return false;
+        }
+        Vec3 visibilityEnd = target.add(
+                visibilityRay.normalize().scale(RAY_OVERSHOOT));
+
         ProjectedHit hit = cast(level, context, alarmPos,
-                rayStart, target, target, patch.face);
+                rayStart, visibilityEnd, target, patch.face);
         if (hit == null || hit.blastDoorOccluder || hit.face != patch.face) {
             return false;
         }
@@ -1277,7 +1292,7 @@ public final class AlarmClient {
                  * the lamp were still in its old, lower position.
                  */
                 Vec3 visualHit = BlastDoorStructure.visualOcclusionHit(
-                        level, hitPos, hitState, cursor, end);
+                        level, hitPos, hitState, cursor, wallSurface);
                 if (visualHit != null) {
                     return new ProjectedHit(visualHit,
                             hit.getDirection(), false, true);

@@ -97,8 +97,6 @@ public final class AlarmClient {
     private static final int BASE_MESH_CELLS = 5;
     private static final int MAX_BOUNDARY_SUBDIVISIONS = 3;
     private static final int SURFACE_EDGE_BISECTIONS = 6;
-    private static final double PROJECTIVE_MIDPOINT_ERROR_SQR = 0.000625D;
-    private static final double PROJECTIVE_MAX_EDGE_SQR = 0.3025D;
     /*
      * Flat regions stay at 5x5 cells. Only cells whose nine probes disagree
      * recurse, up to an effective 40x40 boundary resolution. No synthetic
@@ -749,17 +747,39 @@ public final class AlarmClient {
         }
         flush(buffers, washType);
 
-        // Separate, deliberately weak shader-emissive copy. The texture itself
-        // carries a much lower alpha than the visible wash, so BSL receives a
-        // soft bloom signal instead of another opaque cone.
+        /*
+         * HDR bloom is intentionally restricted to the Alarm's mounting-wall
+         * receiver plane.
+         *
+         * RenderType.eyes is excellent for closed emissive meshes such as the
+         * lamp itself, but shader packs do not treat it like an ordinary
+         * depth-behaved translucent decal. When the same eyes pass is wrapped
+         * onto ceiling, side-wall, floor or frame faces, those grazing triangles
+         * are composited as bright HDR blades at the physical boundary. This is
+         * exactly the artifact visible in the screenshots; changing UV density
+         * or clipping thresholds cannot fix a render-pass semantic mismatch.
+         *
+         * Secondary receiver faces still render in the FULL_BRIGHT wash above,
+         * so the beam continues naturally around geometry. Only the HDR copy is
+         * limited to the coplanar authored surface where it is depth-stable.
+         */
+        Direction bloomFace = alarm.getBlockState()
+                .getValue(AlarmModule.FACING);
         RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
         VertexConsumer bloom = buffers.getBuffer(bloomType);
+        boolean emittedBloom = false;
         for (ProjectedTriangle triangle : projected.triangles) {
-            if (!triangle.bloomAllowed()) continue;
+            if (!triangle.bloomAllowed()
+                    || !triangle.isOnFace(bloomFace)) {
+                continue;
+            }
             emitProjectionTriangle(bloom, poseStack, alarm.getBlockPos(),
                     triangle, true);
+            emittedBloom = true;
         }
-        flush(buffers, bloomType);
+        if (emittedBloom) {
+            flush(buffers, bloomType);
+        }
     }
 
     private static ProjectionCache projection(ClientLevel level,
@@ -880,17 +900,6 @@ public final class AlarmClient {
             };
 
             if (sameReceiver(probes)) {
-                if (depth < MAX_BOUNDARY_SUBDIVISIONS
-                        && needsProjectiveRefinement(
-                                a, b, c, d,
-                                top, right, bottom, left, center)) {
-                    tessellate(u0, v0, um, vm, depth + 1, result);
-                    tessellate(um, v0, u1, vm, depth + 1, result);
-                    tessellate(um, vm, u1, v1, depth + 1, result);
-                    tessellate(u0, vm, um, v1, depth + 1, result);
-                    return;
-                }
-
                 addTriangle(result, a, b, c);
                 addTriangle(result, a, c, d);
                 return;
@@ -938,75 +947,6 @@ public final class AlarmClient {
                 }
             }
             return reference != null;
-        }
-
-        /**
-         * The texture was authored on the Alarm's mounting wall. On that plane
-         * projector UV -> world position is affine, so a coarse triangle is
-         * exact. Once a ray lands on a perpendicular/oblique receiver (ceiling,
-         * side wall, door return, frame edge), that mapping becomes projective.
-         *
-         * Minecraft interpolates ordinary UV attributes affinely across the
-         * triangle. A large coarse triangle on such a receiver therefore pulls
-         * the texture into the characteristic bright wedges/rods seen at room
-         * edges. This was the missing piece: the geometry was valid, but its UV
-         * interpolation was not.
-         *
-         * Measure the non-linearity using samples we already have. If the real
-         * midpoint/center differs from the affine prediction, or the world-space
-         * triangle becomes too large, refine only that receiver patch. Main-wall
-         * cells stay coarse and cheap.
-         */
-        private boolean needsProjectiveRefinement(
-                ProjectedSample a, ProjectedSample b,
-                ProjectedSample c, ProjectedSample d,
-                ProjectedSample top, ProjectedSample right,
-                ProjectedSample bottom, ProjectedSample left,
-                ProjectedSample center) {
-            if (!isRenderable(a) || a.face == wallFace) {
-                return false;
-            }
-
-            if (midpointErrorSqr(a.position, b.position, top.position)
-                            > PROJECTIVE_MIDPOINT_ERROR_SQR
-                    || midpointErrorSqr(b.position, c.position, right.position)
-                            > PROJECTIVE_MIDPOINT_ERROR_SQR
-                    || midpointErrorSqr(d.position, c.position, bottom.position)
-                            > PROJECTIVE_MIDPOINT_ERROR_SQR
-                    || midpointErrorSqr(a.position, d.position, left.position)
-                            > PROJECTIVE_MIDPOINT_ERROR_SQR
-                    || centerErrorSqr(a.position, b.position,
-                            c.position, d.position, center.position)
-                            > PROJECTIVE_MIDPOINT_ERROR_SQR) {
-                return true;
-            }
-
-            return a.position.distanceToSqr(b.position)
-                            > PROJECTIVE_MAX_EDGE_SQR
-                    || b.position.distanceToSqr(c.position)
-                            > PROJECTIVE_MAX_EDGE_SQR
-                    || c.position.distanceToSqr(d.position)
-                            > PROJECTIVE_MAX_EDGE_SQR
-                    || d.position.distanceToSqr(a.position)
-                            > PROJECTIVE_MAX_EDGE_SQR;
-        }
-
-        private static double midpointErrorSqr(
-                Vec3 a, Vec3 b, Vec3 actualMidpoint) {
-            Vec3 predicted = new Vec3(
-                    (a.x + b.x) * 0.5D,
-                    (a.y + b.y) * 0.5D,
-                    (a.z + b.z) * 0.5D);
-            return predicted.distanceToSqr(actualMidpoint);
-        }
-
-        private static double centerErrorSqr(
-                Vec3 a, Vec3 b, Vec3 c, Vec3 d, Vec3 actualCenter) {
-            Vec3 predicted = new Vec3(
-                    (a.x + b.x + c.x + d.x) * 0.25D,
-                    (a.y + b.y + c.y + d.y) * 0.25D,
-                    (a.z + b.z + c.z + d.z) * 0.25D);
-            return predicted.distanceToSqr(actualCenter);
         }
 
         private static boolean hasRenderable(ProjectedSample... probes) {
@@ -1143,35 +1083,8 @@ public final class AlarmClient {
             if (!compatibleTriangle(a, b, c)) return;
             if (!triangleInteriorMatchesReceiver(a, b, c)) return;
 
-            double worldArea = triangleArea(
-                    a.position, b.position, c.position);
-            double idealArea = triangleArea(
-                    projectedWallPoint(a.u, a.v),
-                    projectedWallPoint(b.u, b.v),
-                    projectedWallPoint(c.u, c.v));
-
             float washScale = 1.0F;
             float bloomScale = 1.0F;
-            if (idealArea > 1.0E-8D && worldArea > 1.0E-10D) {
-                /*
-                 * alarm_light_splash.png is calibrated for the mounting-wall
-                 * plane. When the same UV patch lands on a grazing side/ceiling
-                 * face, a tiny projector region can expand over a much larger
-                 * physical area. Keeping alpha unchanged makes that stretched
-                 * patch read as a solid orange blade.
-                 *
-                 * Conserve energy relative to the authored plane: expansion
-                 * lowers irradiance; compression never boosts it above 1.
-                 */
-                float irradiance = (float) Math.max(0.0D,
-                        Math.min(1.0D, idealArea / worldArea));
-                washScale = smoothStep(0.02F, 0.90F, irradiance);
-                bloomScale = smoothStep(0.08F, 0.95F, irradiance);
-
-                if (washScale <= 0.003F) {
-                    return;
-                }
-            }
 
             result.add(new ProjectedTriangle(
                     a, b, c, washScale, bloomScale));
@@ -1202,21 +1115,6 @@ public final class AlarmClient {
                     && sameSurface(a, sampleAtCached(bcU, bcV))
                     && sameSurface(a, sampleAtCached(caU, caV))
                     && sameSurface(a, sampleAtCached(centerU, centerV));
-        }
-
-        private static double triangleArea(
-                Vec3 a, Vec3 b, Vec3 c) {
-            return b.subtract(a).cross(c.subtract(a)).length() * 0.5D;
-        }
-
-        private static float smoothStep(
-                float edge0, float edge1, float value) {
-            if (edge1 <= edge0) {
-                return value >= edge1 ? 1.0F : 0.0F;
-            }
-            float x = Math.max(0.0F, Math.min(1.0F,
-                    (value - edge0) / (edge1 - edge0)));
-            return x * x * (3.0F - 2.0F * x);
         }
 
         private ProjectedSample sample(int uIndex, int vIndex) {
@@ -1682,6 +1580,10 @@ public final class AlarmClient {
                     && a.bloomAllowed
                     && b.bloomAllowed
                     && c.bloomAllowed;
+        }
+
+        private boolean isOnFace(Direction face) {
+            return a.face == face && b.face == face && c.face == face;
         }
     }
 

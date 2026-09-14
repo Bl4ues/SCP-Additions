@@ -866,9 +866,22 @@ public final class AlarmClient {
             if (blastDoor == BlastDoorCoverage.FULL) {
                 return;
             }
-            if (blastDoor == BlastDoorCoverage.MIXED
-                    && depth < BLAST_DOOR_SUBDIVISIONS) {
-                subdivideChildren(u0, v0, u1, v1, depth, result);
+            if (blastDoor == BlastDoorCoverage.MIXED) {
+                if (depth < BLAST_DOOR_SUBDIVISIONS) {
+                    subdivideChildren(u0, v0, u1, v1, depth, result);
+                    return;
+                }
+
+                /*
+                 * Do not quantize the final Blast Door silhouette to the last
+                 * mesh cell. That produced the staircase edge visible while the
+                 * rotor moved. At the finest local cell, clip the quad itself
+                 * against the blocker and binary-search each crossing edge in
+                 * UV space. The blocker therefore stays crisp and continuous
+                 * while the projector rotates, without increasing the whole
+                 * projection mesh or reviving the old FPS problem.
+                 */
+                clipBlastDoorCell(a, b, c, d, result);
                 return;
             }
 
@@ -945,6 +958,83 @@ public final class AlarmClient {
             return sample != null && sample.blastDoorOccluder;
         }
 
+        private static boolean isRenderable(ProjectedSample sample) {
+            return sample != null && !sample.blastDoorOccluder;
+        }
+
+        private void clipBlastDoorCell(ProjectedSample a,
+                ProjectedSample b, ProjectedSample c, ProjectedSample d,
+                List<ProjectedTriangle> result) {
+            ProjectedSample[] corners = { a, b, c, d };
+            List<ProjectedSample> polygon = new ArrayList<>(8);
+
+            for (int i = 0; i < corners.length; i++) {
+                ProjectedSample current = corners[i];
+                ProjectedSample next = corners[(i + 1) % corners.length];
+                boolean currentClear = isRenderable(current);
+                boolean nextClear = isRenderable(next);
+
+                if (currentClear && nextClear) {
+                    polygon.add(next);
+                    continue;
+                }
+
+                if (currentClear && isBlastDoorOccluder(next)) {
+                    ProjectedSample edge = blastDoorBoundary(current, next);
+                    if (edge != null) polygon.add(edge);
+                    continue;
+                }
+
+                if (isBlastDoorOccluder(current) && nextClear) {
+                    ProjectedSample edge = blastDoorBoundary(next, current);
+                    if (edge != null) polygon.add(edge);
+                    polygon.add(next);
+                }
+            }
+
+            if (polygon.size() < 3) return;
+            ProjectedSample first = polygon.get(0);
+            for (int i = 1; i + 1 < polygon.size(); i++) {
+                addTriangle(result, first,
+                        polygon.get(i), polygon.get(i + 1));
+            }
+        }
+
+        /**
+         * Finds the last renderable point immediately before a Blast Door
+         * occluder along one mesh edge. Seven bisections place the edge far
+         * below a visible pixel at normal viewing distances while costing only
+         * a handful of extra casts on cells that already touch the frame.
+         */
+        private ProjectedSample blastDoorBoundary(ProjectedSample clear,
+                ProjectedSample blocked) {
+            if (!isRenderable(clear) || !isBlastDoorOccluder(blocked)) {
+                return null;
+            }
+
+            float clearU = clear.u;
+            float clearV = clear.v;
+            float blockedU = blocked.u;
+            float blockedV = blocked.v;
+            ProjectedSample best = clear;
+
+            for (int i = 0; i < 7; i++) {
+                float midU = (clearU + blockedU) * 0.5F;
+                float midV = (clearV + blockedV) * 0.5F;
+                ProjectedSample probe = sampleAt(midU, midV);
+
+                if (isRenderable(probe)) {
+                    best = probe;
+                    clearU = midU;
+                    clearV = midV;
+                } else {
+                    blockedU = midU;
+                    blockedV = midV;
+                }
+            }
+            return best;
+        }
+
         private void addTriangle(List<ProjectedTriangle> result,
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
             if (compatibleTriangle(a, b, c)) {
@@ -958,6 +1048,12 @@ public final class AlarmClient {
 
             float u01 = uIndex / (float) MESH_RESOLUTION;
             float v01 = vIndex / (float) MESH_RESOLUTION;
+            ProjectedSample sample = sampleAt(u01, v01);
+            samples.put(key, sample);
+            return sample;
+        }
+
+        private ProjectedSample sampleAt(float u01, float v01) {
             double lateral = -1.0D + 2.0D * u01;
 
             /*
@@ -988,12 +1084,10 @@ public final class AlarmClient {
 
             ProjectedHit hit = cast(level, context, alarmPos,
                     rayStart, intended, wallSurface, wallFace);
-            ProjectedSample sample = hit == null ? null
+            return hit == null ? null
                     : new ProjectedSample(hit.position, hit.face,
                             u01, v01, hit.bloomAllowed,
                             hit.blastDoorOccluder);
-            samples.put(key, sample);
-            return sample;
         }
 
         /**

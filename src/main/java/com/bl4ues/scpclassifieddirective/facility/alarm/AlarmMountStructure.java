@@ -133,10 +133,6 @@ public final class AlarmMountStructure {
         Direction facing = state.getValue(AlarmModule.FACING);
         for (BlockPos cell : occupiedPositions(controller, state)) {
             if (!hasSupport(level, cell, facing)) return false;
-            if (cell.equals(controller)) continue;
-
-            BlockState part = level.getBlockState(cell);
-            if (!isValidPart(level, cell, part)) return false;
         }
         return true;
     }

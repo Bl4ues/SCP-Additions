@@ -1,7 +1,6 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
-import com.bl4ues.scpclassifieddirective.client.render.AlarmProjectionRenderTypes;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmMountStructure;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
@@ -88,7 +87,7 @@ public final class AlarmClient {
     private static final double PROJECTOR_OUTSET = 0.34D;
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
-    private static final double SURFACE_EPSILON = 0.0030D;
+    private static final double SURFACE_EPSILON = 0.00020D;
     private static final double PLANE_EPSILON = 0.018D;
     /*
      * Flat-wall cells are allowed to stay coarse; geometry discontinuities are
@@ -96,8 +95,8 @@ public final class AlarmClient {
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
     private static final int BASE_MESH_CELLS = 5;
-    private static final int MAX_BOUNDARY_SUBDIVISIONS = 3;
-    private static final int SURFACE_EDGE_BISECTIONS = 6;
+    private static final int MAX_BOUNDARY_SUBDIVISIONS = 2;
+    private static final int SURFACE_EDGE_BISECTIONS = 5;
     /*
      * Flat regions stay at 5x5 cells. Only cells whose nine probes disagree
      * recurse, up to an effective 40x40 boundary resolution. No synthetic
@@ -114,7 +113,11 @@ public final class AlarmClient {
     // Recasting the complete surface mesh every render frame was the source of
     // the severe FPS regression, especially with shaders enabled.
 
-    private static final Map<ClientLevel, Map<BlockPos, ProjectionCache>>
+    private static final int PROJECTION_PHASES = 20;
+    private static final int GEOMETRY_SIGNATURE_INTERVAL = 10;
+    private static final int GEOMETRY_SIGNATURE_RADIUS = 5;
+
+    private static final Map<ClientLevel, Map<BlockPos, ProjectionPhaseCache>>
             PROJECTIONS = new WeakHashMap<>();
 
     private AlarmClient() {
@@ -740,7 +743,7 @@ public final class AlarmClient {
                 rotorAngle, mountOffset, false);
         if (projected.triangles.isEmpty()) return;
 
-        RenderType washType = AlarmProjectionRenderTypes.wash(SPLASH);
+        RenderType washType = RenderType.entityTranslucent(SPLASH, true);
         VertexConsumer wash = buffers.getBuffer(washType);
         for (ProjectedTriangle triangle : projected.triangles) {
             emitProjectionTriangle(wash, poseStack, alarm.getBlockPos(),
@@ -766,8 +769,7 @@ public final class AlarmClient {
          */
         Direction bloomFace = alarm.getBlockState()
                 .getValue(AlarmModule.FACING);
-        RenderType bloomType =
-                AlarmProjectionRenderTypes.bloom(SPLASH_EMISSIVE);
+        RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
         VertexConsumer bloom = buffers.getBuffer(bloomType);
         boolean emittedBloom = false;
         for (ProjectedTriangle triangle : projected.triangles) {
@@ -787,13 +789,41 @@ public final class AlarmClient {
     private static ProjectionCache projection(ClientLevel level,
             AlarmModule.AlarmBlockEntity alarm, Entity camera,
             float rotorAngle, Vec3 mountOffset, boolean perFrame) {
-        Map<BlockPos, ProjectionCache> byPos = PROJECTIONS.computeIfAbsent(
-                level, ignored -> new HashMap<>());
+        Map<BlockPos, ProjectionPhaseCache> byPos =
+                PROJECTIONS.computeIfAbsent(level,
+                        ignored -> new HashMap<>());
         BlockPos pos = alarm.getBlockPos();
         long tick = level.getGameTime();
-        ProjectionCache cached = byPos.get(pos);
-        if (!perFrame && cached != null && cached.tick == tick) {
-            return cached;
+
+        ProjectionPhaseCache cache = byPos.computeIfAbsent(
+                pos.immutable(), ignored -> new ProjectionPhaseCache());
+        cache.lastTouchedTick = tick;
+
+        if (cache.signatureTick == Long.MIN_VALUE
+                || tick - cache.signatureTick
+                        >= GEOMETRY_SIGNATURE_INTERVAL) {
+            long signature = projectionGeometrySignature(level, pos);
+            if (cache.signatureTick != Long.MIN_VALUE
+                    && cache.signature != signature) {
+                cache.phases.clear();
+            }
+            cache.signature = signature;
+            cache.signatureTick = tick;
+
+            if ((tick & 127L) == 0L && byPos.size() > 16) {
+                byPos.entrySet().removeIf(entry ->
+                        tick - entry.getValue().lastTouchedTick > 200L);
+            }
+        }
+
+        int phase = Math.floorMod((int) Math.floor(
+                alarm.projectionPhase(0.0F)
+                        * PROJECTION_PHASES + 1.0E-4F),
+                PROJECTION_PHASES);
+
+        List<ProjectedTriangle> cached = cache.phases.get(phase);
+        if (!perFrame && cached != null) {
+            return new ProjectionCache(tick, cached);
         }
 
         BlockState state = alarm.getBlockState();
@@ -803,7 +833,14 @@ public final class AlarmClient {
         Vec3 right = direction(facing.getClockWise());
         Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
 
-        double rotorRadians = rotorAngle;
+        /*
+         * Geometry is intentionally quantized to the same 20 samples per
+         * second that the previous cache already exposed visually. The model
+         * itself remains smoothly animated; only the projected collision mesh
+         * reuses one of the 20 deterministic revolution phases.
+         */
+        double rotorRadians = -phase
+                * (Math.PI * 2.0D / PROJECTION_PHASES);
         Vec3 tangent = right.scale(Math.sin(rotorRadians))
                 .add(up.scale(-Math.cos(rotorRadians))).normalize();
         Vec3 fanSide = outward.cross(tangent);
@@ -823,12 +860,36 @@ public final class AlarmClient {
         ProjectionBuilder builder = new ProjectionBuilder(level, camera, pos,
                 rayStart, wallOrigin, tangent, fanSide, inward, facing,
                 blastDoorController);
-        List<ProjectedTriangle> triangles = builder.build();
+        List<ProjectedTriangle> triangles =
+                List.copyOf(builder.build());
 
-        ProjectionCache fresh = new ProjectionCache(tick,
-                List.copyOf(triangles));
-        byPos.put(pos.immutable(), fresh);
-        return fresh;
+        if (!perFrame) {
+            cache.phases.put(phase, triangles);
+        }
+        return new ProjectionCache(tick, triangles);
+    }
+
+    private static long projectionGeometrySignature(
+            ClientLevel level, BlockPos origin) {
+        long hash = 0xcbf29ce484222325L;
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+
+        for (int x = -GEOMETRY_SIGNATURE_RADIUS;
+                x <= GEOMETRY_SIGNATURE_RADIUS; x++) {
+            for (int y = -GEOMETRY_SIGNATURE_RADIUS;
+                    y <= GEOMETRY_SIGNATURE_RADIUS; y++) {
+                for (int z = -GEOMETRY_SIGNATURE_RADIUS;
+                        z <= GEOMETRY_SIGNATURE_RADIUS; z++) {
+                    cursor.set(origin.getX() + x,
+                            origin.getY() + y,
+                            origin.getZ() + z);
+                    BlockState state = level.getBlockState(cursor);
+                    hash ^= state.hashCode();
+                    hash *= 0x100000001b3L;
+                }
+            }
+        }
+        return hash;
     }
 
     /**
@@ -1459,6 +1520,8 @@ public final class AlarmClient {
                 triangle.b, bloomPass, energyScale);
         projectionVertex(consumer, poseStack, blockOrigin,
                 triangle.c, bloomPass, energyScale);
+        projectionVertex(consumer, poseStack, blockOrigin,
+                triangle.c, bloomPass, energyScale);
     }
 
     private static void projectionVertex(VertexConsumer consumer,
@@ -1559,6 +1622,14 @@ public final class AlarmClient {
 
     private record ProjectionCache(long tick,
             List<ProjectedTriangle> triangles) {
+    }
+
+    private static final class ProjectionPhaseCache {
+        private long signature;
+        private long signatureTick = Long.MIN_VALUE;
+        private long lastTouchedTick;
+        private final Map<Integer, List<ProjectedTriangle>> phases =
+                new HashMap<>();
     }
 
     private static final class ItemModel

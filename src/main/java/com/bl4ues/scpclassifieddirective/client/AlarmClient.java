@@ -90,8 +90,15 @@ public final class AlarmClient {
     private static final double SURFACE_EPSILON = 0.0030D;
     private static final double PLANE_EPSILON = 0.018D;
     private static final double BLOOM_SURFACE_EPSILON = 0.0016D;
-    private static final double MAX_TRIANGLE_EDGE_SQR = 0.24D;
-    private static final int BASE_MESH_CELLS = 6;
+    /*
+     * Flat-wall cells are allowed to stay coarse; geometry discontinuities are
+     * clipped analytically below instead of forcing the entire projector to a
+     * dense mesh. This is the main CPU win for multiple active Alarms.
+     */
+    private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
+    private static final double EDGE_PADDING = 0.032D;
+    private static final int EDGE_BISECTIONS = 4;
+    private static final int BASE_MESH_CELLS = 5;
     private static final int ADAPTIVE_SUBDIVISIONS = 1;
     /*
      * Only cells that actually straddle Blast Door geometry may refine this
@@ -99,7 +106,7 @@ public final class AlarmClient {
      * collapse; keeping the extra samples on the occluder silhouette gives us
      * model-faithful clipping without turning every Alarm into a raycast farm.
      */
-    private static final int BLAST_DOOR_SUBDIVISIONS = 3;
+    private static final int BLAST_DOOR_SUBDIVISIONS = 1;
     private static final int MESH_RESOLUTION =
             BASE_MESH_CELLS << BLAST_DOOR_SUBDIVISIONS;
     private static final int BASE_MESH_STEP =
@@ -805,11 +812,12 @@ public final class AlarmClient {
     /**
      * Adaptive surface tessellation for the alarm footprint.
      *
-     * Flat surfaces use a coarse 6x6 topology. Only cells that cross a
-     * collision-depth or face discontinuity subdivide once, for an effective
-     * 12x12 local boundary. Combined with 20 Hz projection caching this keeps
-     * the rotating splash cheap enough for shader use while retaining obstacle
-     * silhouettes. The alpha texture, not tessellation density, carries the
+     * Flat surfaces use a coarse 5x5 topology. Only cells that cross a
+     * collision-depth or face discontinuity subdivide once. The final boundary
+     * is then clipped and padded analytically, so smooth obstacle edges do not
+     * require a dense projector-wide raycast grid. Combined with 20 Hz
+     * projection caching this keeps multiple active Alarms practical with
+     * shaders enabled. The alpha texture, not tessellation density, carries the
      * soft visual edge.
      */
     private static final class ProjectionBuilder {
@@ -880,15 +888,12 @@ public final class AlarmClient {
                 }
 
                 /*
-                 * Do not quantize the final Blast Door silhouette to the last
-                 * mesh cell. That produced the staircase edge visible while the
-                 * rotor moved. At the finest local cell, clip the quad itself
-                 * against the blocker and binary-search each crossing edge in
-                 * UV space. The blocker therefore stays crisp and continuous
-                 * while the projector rotates, without increasing the whole
-                 * projection mesh or reviving the old FPS problem.
+                 * At the final local cell, clip against every real receiving
+                 * surface and push the cut a few centimetres underneath the
+                 * occluder. Depth hides that tiny overlap, while the light no
+                 * longer stops one texel/cell early at block and frame edges.
                  */
-                clipBlastDoorCell(a, b, c, d, result);
+                clipCellToSurfaces(a, b, c, d, result);
                 return;
             }
 
@@ -904,11 +909,14 @@ public final class AlarmClient {
                 return;
             }
 
-            // At the finest local resolution retain whichever triangle really
-            // belongs to a single physical surface. Blast Door samples are
-            // never renderable, so the visible light stops at its silhouette.
-            addTriangle(result, a, b, c);
-            addTriangle(result, a, c, d);
+            /*
+             * A plain "keep/discard triangle" decision is what produced the
+             * square staircase at block boundaries and the little missing wedges
+             * near the Alarm origin. Clip the two cell triangles to each
+             * receiving surface instead, with a tiny hidden overlap under the
+             * blocking surface.
+             */
+            clipCellToSurfaces(a, b, c, d, result);
         }
 
         private void subdivideChildren(int u0, int v0, int u1, int v1,
@@ -940,20 +948,8 @@ public final class AlarmClient {
                 int um = (u0 + u1) >>> 1;
                 int vm = (v0 + v1) >>> 1;
                 ProjectedSample center = sample(um, vm);
-                ProjectedSample top = sample(um, v0);
-                ProjectedSample right = sample(u1, vm);
-                ProjectedSample bottom = sample(um, v1);
-                ProjectedSample left = sample(u0, vm);
-                blocked |= isBlastDoorOccluder(center)
-                        || isBlastDoorOccluder(top)
-                        || isBlastDoorOccluder(right)
-                        || isBlastDoorOccluder(bottom)
-                        || isBlastDoorOccluder(left);
-                clear |= !isBlastDoorOccluder(center)
-                        || !isBlastDoorOccluder(top)
-                        || !isBlastDoorOccluder(right)
-                        || !isBlastDoorOccluder(bottom)
-                        || !isBlastDoorOccluder(left);
+                blocked |= isBlastDoorOccluder(center);
+                clear |= !isBlastDoorOccluder(center);
             }
 
             if (!blocked) return BlastDoorCoverage.NONE;
@@ -969,31 +965,57 @@ public final class AlarmClient {
             return sample != null && !sample.blastDoorOccluder;
         }
 
-        private void clipBlastDoorCell(ProjectedSample a,
+        private void clipCellToSurfaces(ProjectedSample a,
                 ProjectedSample b, ProjectedSample c, ProjectedSample d,
                 List<ProjectedTriangle> result) {
-            ProjectedSample[] corners = { a, b, c, d };
-            List<ProjectedSample> polygon = new ArrayList<>(8);
+            clipTriangleToSurfaces(a, b, c, result);
+            clipTriangleToSurfaces(a, c, d, result);
+        }
 
-            for (int i = 0; i < corners.length; i++) {
-                ProjectedSample current = corners[i];
-                ProjectedSample next = corners[(i + 1) % corners.length];
-                boolean currentClear = isRenderable(current);
-                boolean nextClear = isRenderable(next);
+        private void clipTriangleToSurfaces(ProjectedSample a,
+                ProjectedSample b, ProjectedSample c,
+                List<ProjectedTriangle> result) {
+            ProjectedSample[] triangle = { a, b, c };
+            for (ProjectedSample target : triangle) {
+                if (!isRenderable(target)) continue;
 
-                if (currentClear && nextClear) {
+                boolean duplicate = false;
+                for (ProjectedSample previous : triangle) {
+                    if (previous == target) break;
+                    if (isRenderable(previous)
+                            && sameSurface(target, previous)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (duplicate) continue;
+
+                clipTriangleToSurface(triangle, target, result);
+            }
+        }
+
+        private void clipTriangleToSurface(ProjectedSample[] triangle,
+                ProjectedSample target, List<ProjectedTriangle> result) {
+            List<ProjectedSample> polygon = new ArrayList<>(6);
+
+            for (int i = 0; i < triangle.length; i++) {
+                ProjectedSample current = triangle[i];
+                ProjectedSample next =
+                        triangle[(i + 1) % triangle.length];
+                boolean currentInside = isRenderable(current)
+                        && sameSurface(target, current);
+                boolean nextInside = isRenderable(next)
+                        && sameSurface(target, next);
+
+                if (currentInside && nextInside) {
                     polygon.add(next);
-                    continue;
-                }
-
-                if (currentClear && isBlastDoorOccluder(next)) {
-                    ProjectedSample edge = blastDoorBoundary(current, next);
+                } else if (currentInside) {
+                    ProjectedSample edge =
+                            paddedSurfaceBoundary(current, next, target);
                     if (edge != null) polygon.add(edge);
-                    continue;
-                }
-
-                if (isBlastDoorOccluder(current) && nextClear) {
-                    ProjectedSample edge = blastDoorBoundary(next, current);
+                } else if (nextInside) {
+                    ProjectedSample edge =
+                            paddedSurfaceBoundary(next, current, target);
                     if (edge != null) polygon.add(edge);
                     polygon.add(next);
                 }
@@ -1008,38 +1030,104 @@ public final class AlarmClient {
         }
 
         /**
-         * Finds the last renderable point immediately before a Blast Door
-         * occluder along one mesh edge. Seven bisections place the edge far
-         * below a visible pixel at normal viewing distances while costing only
-         * a handful of extra casts on cells that already touch the frame.
+         * Finds a surface transition along one UV edge, then intentionally
+         * moves the receiving polygon a tiny amount INTO the blocked side.
+         * The blocker depth-buffer hides that overlap. Visually this behaves
+         * like an internal padding and prevents the obvious square gap that
+         * appears when a projection terminates exactly on a block boundary.
          */
-        private ProjectedSample blastDoorBoundary(ProjectedSample clear,
-                ProjectedSample blocked) {
-            if (!isRenderable(clear) || !isBlastDoorOccluder(blocked)) {
-                return null;
+        private ProjectedSample paddedSurfaceBoundary(
+                ProjectedSample clear, ProjectedSample other,
+                ProjectedSample target) {
+            if (!isRenderable(clear)
+                    || !sameSurface(clear, target)
+                    || other == null) {
+                return clear;
             }
 
             float clearU = clear.u;
             float clearV = clear.v;
-            float blockedU = blocked.u;
-            float blockedV = blocked.v;
-            ProjectedSample best = clear;
+            float otherU = other.u;
+            float otherV = other.v;
 
-            for (int i = 0; i < 7; i++) {
-                float midU = (clearU + blockedU) * 0.5F;
-                float midV = (clearV + blockedV) * 0.5F;
+            for (int i = 0; i < EDGE_BISECTIONS; i++) {
+                float midU = (clearU + otherU) * 0.5F;
+                float midV = (clearV + otherV) * 0.5F;
                 ProjectedSample probe = sampleAt(midU, midV);
-
-                if (isRenderable(probe)) {
-                    best = probe;
+                if (isRenderable(probe)
+                        && sameSurface(target, probe)) {
                     clearU = midU;
                     clearV = midV;
                 } else {
-                    blockedU = midU;
-                    blockedV = midV;
+                    otherU = midU;
+                    otherV = midV;
                 }
             }
-            return best;
+
+            float du = other.u - clear.u;
+            float dv = other.v - clear.v;
+            double uvLength = Math.sqrt(du * du + dv * dv);
+            if (uvLength < 1.0E-6D) return clear;
+
+            // Convert the requested world-space overlap to UV using the longer
+            // projector axis as a conservative scale.
+            double uvPadding = EDGE_PADDING / MAX_SPLASH_RADIUS;
+            float padU = (float) (otherU
+                    + du / uvLength * uvPadding);
+            float padV = (float) (otherV
+                    + dv / uvLength * uvPadding);
+            padU = Math.max(0.0F, Math.min(1.0F, padU));
+            padV = Math.max(0.0F, Math.min(1.0F, padV));
+
+            ProjectedSample padded =
+                    sampleOnExistingSurface(padU, padV, target);
+            return padded != null ? padded : clear;
+        }
+
+        /**
+         * Reconstructs a UV point on an already-known receiving plane instead
+         * of asking the world collision system again. This makes the padding
+         * cheap and, more importantly, keeps it on the wall/ceiling/obstacle
+         * surface that is supposed to receive the light.
+         */
+        private ProjectedSample sampleOnExistingSurface(float u01, float v01,
+                ProjectedSample target) {
+            Vec3 wallPoint = projectedWallPoint(u01, v01);
+            Vec3 rayEnd = wallPoint.add(inward.scale(RAY_OVERSHOOT));
+            Vec3 ray = rayEnd.subtract(rayStart);
+
+            double denominator = axisCoordinate(ray, target.face);
+            if (Math.abs(denominator) < 1.0E-8D) return null;
+
+            double plane = planeCoordinate(target.position, target.face);
+            double startAxis = axisCoordinate(rayStart, target.face);
+            double t = (plane - startAxis) / denominator;
+            if (t < -0.05D || t > 1.05D) return null;
+
+            Vec3 position = rayStart.add(ray.scale(t));
+            return new ProjectedSample(position, target.face,
+                    u01, v01, target.bloomAllowed, false);
+        }
+
+        private Vec3 projectedWallPoint(float u01, float v01) {
+            double lateral = -1.0D + 2.0D * u01;
+            double radius = MIN_SPLASH_RADIUS
+                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * v01;
+            double widthScale = 0.55D
+                    + 0.45D * Math.sqrt(Math.max(0.0D, v01));
+            return wallOrigin
+                    .add(tangent.scale(radius))
+                    .add(fanSide.scale(
+                            MAX_SPLASH_HALF_WIDTH
+                                    * widthScale * lateral));
+        }
+
+        private static double axisCoordinate(Vec3 vector, Direction face) {
+            return switch (face.getAxis()) {
+                case X -> vector.x;
+                case Y -> vector.y;
+                case Z -> vector.z;
+            };
         }
 
         private void addTriangle(List<ProjectedTriangle> result,
@@ -1061,31 +1149,11 @@ public final class AlarmClient {
         }
 
         private ProjectedSample sampleAt(float u01, float v01) {
-            double lateral = -1.0D + 2.0D * u01;
-
             /*
-             * Geometry is deliberately boring: a broad rectangular projector
-             * strip. The pear-shaped footprint, wide root, rounded far end,
-             * source hotspot, weak middle and brighter soft rim all live in
-             * alarm_light_splash.png. Keeping shape in alpha rather than in the
-             * mesh is what removes the straight polygon boundary from the cone.
+             * Geometry is deliberately boring: a broad projector strip. The
+             * final shape and feathering remain entirely texture-driven.
              */
-            double radius = MIN_SPLASH_RADIUS
-                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * v01;
-
-            /*
-             * The reference beam is not a dome. It leaves the beacon relatively
-             * narrow, opens quickly, then keeps travelling before the distant
-             * feather disappears. The alpha texture still owns the soft edge,
-             * but a mild geometric fan prevents the same mask from reading as a
-             * round blob once stretched over a wall.
-             */
-            double widthScale = 0.55D
-                    + 0.45D * Math.sqrt(Math.max(0.0D, v01));
-            Vec3 wallSurface = wallOrigin
-                    .add(tangent.scale(radius))
-                    .add(fanSide.scale(
-                            MAX_SPLASH_HALF_WIDTH * widthScale * lateral));
+            Vec3 wallSurface = projectedWallPoint(u01, v01);
             Vec3 intended = wallSurface.add(
                     inward.scale(RAY_OVERSHOOT));
 
@@ -1135,11 +1203,7 @@ public final class AlarmClient {
 
             int um = (u0 + u1) >>> 1;
             int vm = (v0 + v1) >>> 1;
-            return sameSurface(reference, sample(um, vm))
-                    && sameSurface(reference, sample(um, v0))
-                    && sameSurface(reference, sample(u1, vm))
-                    && sameSurface(reference, sample(um, v1))
-                    && sameSurface(reference, sample(u0, vm));
+            return sameSurface(reference, sample(um, vm));
         }
     }
 
@@ -1199,6 +1263,17 @@ public final class AlarmClient {
                 if (visualHit != null) {
                     return new ProjectedHit(visualHit,
                             hit.getDirection(), false, true);
+                }
+
+                BlockHitResult mimicHit = BlastDoorStructure.clipLowerMimic(
+                        level, hitPos, hitState, cursor, end);
+                if (mimicHit != null) {
+                    Direction mimicFace = mimicHit.getDirection();
+                    Vec3 mimicNormal = direction(mimicFace);
+                    return new ProjectedHit(
+                            mimicHit.getLocation().add(
+                                    mimicNormal.scale(SURFACE_EPSILON)),
+                            mimicFace, false, false);
                 }
 
                 cursor = skipPastBlockCell(hit.getLocation(),

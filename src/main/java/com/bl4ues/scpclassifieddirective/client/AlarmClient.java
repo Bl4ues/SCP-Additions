@@ -96,6 +96,13 @@ public final class AlarmClient {
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
+    /*
+     * Clipped polygons can collapse into long, sub-pixel needles as a surface
+     * first enters/leaves the projector. Those are the detached orange
+     * "sparks" visible in the latest video. Reject only extremely skinny
+     * triangles by geometric altitude; ordinary small triangles remain valid.
+     */
+    private static final double MIN_TRIANGLE_ALTITUDE = 0.018D;
     private static final int EDGE_BISECTIONS = 4;
     private static final int BASE_MESH_CELLS = 5;
     /*
@@ -1457,12 +1464,23 @@ public final class AlarmClient {
             return false;
         }
 
-        return a.position.distanceToSqr(b.position)
-                        <= MAX_TRIANGLE_EDGE_SQR
-                && b.position.distanceToSqr(c.position)
-                        <= MAX_TRIANGLE_EDGE_SQR
-                && c.position.distanceToSqr(a.position)
-                        <= MAX_TRIANGLE_EDGE_SQR;
+        double abSqr = a.position.distanceToSqr(b.position);
+        double bcSqr = b.position.distanceToSqr(c.position);
+        double caSqr = c.position.distanceToSqr(a.position);
+        if (abSqr > MAX_TRIANGLE_EDGE_SQR
+                || bcSqr > MAX_TRIANGLE_EDGE_SQR
+                || caSqr > MAX_TRIANGLE_EDGE_SQR) {
+            return false;
+        }
+
+        double longest = Math.sqrt(Math.max(abSqr,
+                Math.max(bcSqr, caSqr)));
+        if (longest < 1.0E-6D) return false;
+
+        Vec3 ab = b.position.subtract(a.position);
+        Vec3 ac = c.position.subtract(a.position);
+        double altitude = ab.cross(ac).length() / longest;
+        return altitude >= MIN_TRIANGLE_ALTITUDE;
     }
 
     private static boolean isRenderableSample(ProjectedSample sample) {

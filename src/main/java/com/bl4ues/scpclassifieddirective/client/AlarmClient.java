@@ -96,7 +96,8 @@ public final class AlarmClient {
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
-    private static final int EDGE_BISECTIONS = 4;
+    private static final int EDGE_BISECTIONS = 7;
+    private static final double EDGE_FEATHER_WIDTH = 0.035D;
     private static final int BASE_MESH_CELLS = 5;
     /*
      * A 2x sampling lattice gives every coarse cell an integer center sample,
@@ -809,10 +810,11 @@ public final class AlarmClient {
      * Adaptive surface tessellation for the alarm footprint.
      *
      * Flat surfaces use a fixed coarse 5x5 topology on a half-cell sampling
-     * lattice. Geometry boundaries are clipped directly in UV space and their
-     * final vertices fade to zero alpha. No recursive tessellation is needed,
-     * which keeps two active Alarms around a Blast Door from multiplying
-     * collision work. The texture remains the owner of the beam's shape.
+     * lattice. Geometry boundaries are clipped directly in UV space. Only a
+     * narrow fixed-width strip at a true terminal edge fades to zero alpha;
+     * the rest of the cell keeps the texture's original energy. No recursive
+     * tessellation is needed, which keeps multiple active Alarms predictable.
+     * The texture remains the owner of the beam's shape.
      */
     private static final class ProjectionBuilder {
         private final ClientLevel level;
@@ -966,15 +968,7 @@ public final class AlarmClient {
 
         private void clipTriangleToSurface(ProjectedSample[] triangle,
                 ProjectedSample target, List<ProjectedTriangle> result) {
-            List<ProjectedSample> polygon = new ArrayList<>(6);
-            int insideVertices = 0;
-
-            for (ProjectedSample vertex : triangle) {
-                if (isRenderable(vertex)
-                        && sameSurface(target, vertex)) {
-                    insideVertices++;
-                }
-            }
+            List<ProjectedSample> polygon = new ArrayList<>(8);
 
             for (int i = 0; i < triangle.length; i++) {
                 ProjectedSample current = triangle[i];
@@ -987,75 +981,44 @@ public final class AlarmClient {
 
                 if (currentInside && nextInside) {
                     polygon.add(next);
-                } else if (currentInside) {
-                    ProjectedSample edge =
-                            paddedSurfaceBoundary(current, next, target);
-                    if (edge != null) polygon.add(edge);
-                } else if (nextInside) {
-                    ProjectedSample edge =
-                            paddedSurfaceBoundary(next, current, target);
-                    if (edge != null) polygon.add(edge);
+                    continue;
+                }
+
+                if (currentInside) {
+                    SurfaceBoundary edge =
+                            surfaceBoundary(current, next, target);
+                    if (edge != null) {
+                        if (edge.feather != null) {
+                            polygon.add(edge.feather);
+                        }
+                        polygon.add(edge.boundary);
+                    }
+                    continue;
+                }
+
+                if (nextInside) {
+                    SurfaceBoundary edge =
+                            surfaceBoundary(next, current, target);
+                    if (edge != null) {
+                        polygon.add(edge.boundary);
+                        if (edge.feather != null) {
+                            polygon.add(edge.feather);
+                        }
+                    }
                     polygon.add(next);
                 }
             }
 
             if (polygon.size() < 3) return;
-
-            /*
-             * When a new surface first enters the beam, only one original
-             * triangle corner may belong to it. That is valid geometry, not an
-             * artifact. Deleting it created the massive saw-tooth holes.
-             *
-             * At the same time, drawing a microscopic one-corner wedge at full
-             * alpha is what used to look like a bright needle. Fade only that
-             * transitional case by the polygon's real covered area. The wedge
-             * exists continuously from the first contact, but its energy grows
-             * continuously instead of popping or disappearing.
-             */
-            float coverageFade = 1.0F;
-            if (insideVertices == 1) {
-                double originalArea = triangleArea(
-                        triangle[0], triangle[1], triangle[2]);
-                double clippedArea = polygonArea(polygon);
-                if (originalArea > 1.0E-9D) {
-                    float coverage = (float) Math.max(0.0D,
-                            Math.min(1.0D, clippedArea / originalArea));
-                    coverageFade = smoothStep(0.0F, 0.14F, coverage);
-                }
-            }
-
-            ProjectedSample first = withOpacityScale(
-                    polygon.get(0), coverageFade);
+            ProjectedSample first = polygon.get(0);
             for (int i = 1; i + 1 < polygon.size(); i++) {
                 addTriangle(result, first,
-                        withOpacityScale(polygon.get(i), coverageFade),
-                        withOpacityScale(polygon.get(i + 1), coverageFade));
+                        polygon.get(i), polygon.get(i + 1));
             }
         }
 
-        private static ProjectedSample withOpacityScale(
-                ProjectedSample sample, float scale) {
-            if (scale >= 0.999F) return sample;
-            return sample.withOpacity(sample.opacity * scale);
-        }
-
-        private static double polygonArea(List<ProjectedSample> polygon) {
-            if (polygon.size() < 3) return 0.0D;
-            Vec3 origin = polygon.get(0).position;
-            double area = 0.0D;
-            for (int i = 1; i + 1 < polygon.size(); i++) {
-                Vec3 a = polygon.get(i).position.subtract(origin);
-                Vec3 b = polygon.get(i + 1).position.subtract(origin);
-                area += a.cross(b).length() * 0.5D;
-            }
-            return area;
-        }
-
-        private static double triangleArea(ProjectedSample a,
-                ProjectedSample b, ProjectedSample c) {
-            Vec3 ab = b.position.subtract(a.position);
-            Vec3 ac = c.position.subtract(a.position);
-            return ab.cross(ac).length() * 0.5D;
+        private record SurfaceBoundary(ProjectedSample boundary,
+                ProjectedSample feather) {
         }
 
         /**
@@ -1067,13 +1030,30 @@ public final class AlarmClient {
          * slivers visible around the Blast Door. Exact clipping gives the same
          * visual continuity without overlapping geometry.
          */
-        private ProjectedSample paddedSurfaceBoundary(
+        /**
+         * Resolves one UV edge transition once, then represents it in one of two
+         * ways:
+         *
+         * 1) receiver -> another receiver: both surfaces meet at the same UV
+         *    boundary with full wash. No artificial dark seam is introduced.
+         *
+         * 2) receiver -> air/opaque occluder: the boundary vertex is alpha 0,
+         *    but a second full-alpha vertex is inserted only EDGE_FEATHER_WIDTH
+         *    inside the valid surface. This gives a small real feather strip
+         *    instead of fading the entire coarse cell or drawing beyond the
+         *    obstacle.
+         *
+         * The old implementations alternated between overlap (bright needles)
+         * and deleting/fading whole wedges (large serrated holes). This keeps
+         * the geometry complete and confines the fade to the actual termination.
+         */
+        private SurfaceBoundary surfaceBoundary(
                 ProjectedSample clear, ProjectedSample other,
                 ProjectedSample target) {
             if (!isRenderable(clear)
                     || !sameSurface(clear, target)
                     || other == null) {
-                return clear;
+                return null;
             }
 
             float clearU = clear.u;
@@ -1096,14 +1076,59 @@ public final class AlarmClient {
             }
 
             /*
-             * Stay on the proven receiving side. Seven bisections put this
-             * within a few thousandths of a block of the true edge at the
-             * current mesh scale, close enough to remove the old staircase but
-             * never far enough to create an emissive overlap sliver.
+             * Use the midpoint of the final ownership interval as the shared UV
+             * transition. Adjacent triangles hit the same cached samples and
+             * therefore converge to the same boundary instead of leaving tiny
+             * cracks or double-covered slivers.
              */
+            float boundaryU = (clearU + otherU) * 0.5F;
+            float boundaryV = (clearV + otherV) * 0.5F;
             ProjectedSample boundary =
-                    sampleOnExistingSurface(clearU, clearV, target);
-            return boundary != null ? boundary.withOpacity(0.0F) : clear;
+                    sampleOnExistingSurface(boundaryU, boundaryV, target);
+            if (boundary == null) {
+                boundary = sampleOnExistingSurface(clearU, clearV, target);
+            }
+            if (boundary == null) return null;
+
+            boolean terminal = !isRenderable(other)
+                    || other.blastDoorOccluder;
+            if (!terminal) {
+                return new SurfaceBoundary(
+                        boundary.withOpacity(1.0F), null);
+            }
+
+            double distance = clear.position.distanceTo(boundary.position);
+            if (distance <= 1.0E-6D) {
+                return new SurfaceBoundary(
+                        boundary.withOpacity(0.0F), clear);
+            }
+
+            double featherT = Math.min(1.0D,
+                    EDGE_FEATHER_WIDTH / distance);
+            float featherU = (float) (boundaryU
+                    + (clear.u - boundaryU) * featherT);
+            float featherV = (float) (boundaryV
+                    + (clear.v - boundaryV) * featherT);
+
+            ProjectedSample feather = sampleOnExistingSurface(
+                    featherU, featherV, target);
+            if (feather == null) feather = clear;
+
+            /*
+             * Boundary is wash-only and transparent. The inner feather point is
+             * full wash. Because both points remain on the receiving plane,
+             * there is no geometry hidden under the obstacle and therefore no
+             * emissive "spark" for BSL to amplify.
+             */
+            boundary = new ProjectedSample(
+                    boundary.position, boundary.face,
+                    boundary.u, boundary.v,
+                    false, false, true, 0.0F);
+            feather = new ProjectedSample(
+                    feather.position, feather.face,
+                    feather.u, feather.v,
+                    false, false, true, 1.0F);
+            return new SurfaceBoundary(boundary, feather);
         }
 
         /**

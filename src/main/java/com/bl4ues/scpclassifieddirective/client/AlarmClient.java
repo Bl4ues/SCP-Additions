@@ -937,10 +937,10 @@ public final class AlarmClient {
                     || isBlastDoorOccluder(b)
                     || isBlastDoorOccluder(c)
                     || isBlastDoorOccluder(d);
-            boolean clear = !isBlastDoorOccluder(a)
-                    || !isBlastDoorOccluder(b)
-                    || !isBlastDoorOccluder(c)
-                    || !isBlastDoorOccluder(d);
+            boolean clear = isRenderable(a)
+                    || isRenderable(b)
+                    || isRenderable(c)
+                    || isRenderable(d);
 
             int spanU = u1 - u0;
             int spanV = v1 - v0;
@@ -949,7 +949,7 @@ public final class AlarmClient {
                 int vm = (v0 + v1) >>> 1;
                 ProjectedSample center = sample(um, vm);
                 blocked |= isBlastDoorOccluder(center);
-                clear |= !isBlastDoorOccluder(center);
+                clear |= isRenderable(center);
             }
 
             if (!blocked) return BlastDoorCoverage.NONE;
@@ -962,7 +962,9 @@ public final class AlarmClient {
         }
 
         private static boolean isRenderable(ProjectedSample sample) {
-            return sample != null && !sample.blastDoorOccluder;
+            return sample != null
+                    && sample.receiver
+                    && !sample.blastDoorOccluder;
         }
 
         private void clipCellToSurfaces(ProjectedSample a,
@@ -1069,9 +1071,10 @@ public final class AlarmClient {
             double uvLength = Math.sqrt(du * du + dv * dv);
             if (uvLength < 1.0E-6D) return clear;
 
-            // Convert the requested world-space overlap to UV using the longer
-            // projector axis as a conservative scale.
-            double uvPadding = EDGE_PADDING / MAX_SPLASH_RADIUS;
+            boolean hasBlockingSurface = other.receiver
+                    || other.blastDoorOccluder;
+            double uvPadding = hasBlockingSurface
+                    ? EDGE_PADDING / MAX_SPLASH_RADIUS : 0.0D;
             float padU = (float) (otherU
                     + du / uvLength * uvPadding);
             float padV = (float) (otherV
@@ -1106,7 +1109,7 @@ public final class AlarmClient {
 
             Vec3 position = rayStart.add(ray.scale(t));
             return new ProjectedSample(position, target.face,
-                    u01, v01, target.bloomAllowed, false);
+                    u01, v01, target.bloomAllowed, false, true);
         }
 
         private Vec3 projectedWallPoint(float u01, float v01) {
@@ -1174,17 +1177,21 @@ public final class AlarmClient {
                     if (visualHit != null) {
                         return new ProjectedSample(
                                 visualHit, wallFace, u01, v01,
-                                false, true);
+                                false, true, false);
                     }
                 }
             }
 
             ProjectedHit hit = cast(level, context, alarmPos,
                     rayStart, intended, wallSurface, wallFace);
-            return hit == null ? null
-                    : new ProjectedSample(hit.position, hit.face,
-                            u01, v01, hit.bloomAllowed,
-                            hit.blastDoorOccluder);
+            if (hit == null) {
+                return new ProjectedSample(
+                        wallSurface, wallFace, u01, v01,
+                        false, false, false);
+            }
+            return new ProjectedSample(hit.position, hit.face,
+                    u01, v01, hit.bloomAllowed,
+                    hit.blastDoorOccluder, true);
         }
 
         /**
@@ -1353,7 +1360,7 @@ public final class AlarmClient {
 
     private static boolean sameSurface(ProjectedSample a,
             ProjectedSample b) {
-        if (a == null || b == null
+        if (!isRenderableSample(a) || !isRenderableSample(b)
                 || a.blastDoorOccluder != b.blastDoorOccluder
                 || a.face != b.face) return false;
         return Math.abs(planeCoordinate(a.position, a.face)
@@ -1362,7 +1369,9 @@ public final class AlarmClient {
 
     private static boolean compatibleTriangle(ProjectedSample a,
             ProjectedSample b, ProjectedSample c) {
-        if (a == null || b == null || c == null) return false;
+        if (!isRenderableSample(a)
+                || !isRenderableSample(b)
+                || !isRenderableSample(c)) return false;
         if (a.blastDoorOccluder || b.blastDoorOccluder
                 || c.blastDoorOccluder) return false;
         if (a.face != b.face || a.face != c.face) return false;
@@ -1381,6 +1390,10 @@ public final class AlarmClient {
                         <= MAX_TRIANGLE_EDGE_SQR
                 && c.position.distanceToSqr(a.position)
                         <= MAX_TRIANGLE_EDGE_SQR;
+    }
+
+    private static boolean isRenderableSample(ProjectedSample sample) {
+        return sample != null && sample.receiver;
     }
 
     private static double planeCoordinate(Vec3 point, Direction face) {
@@ -1474,7 +1487,7 @@ public final class AlarmClient {
 
     private record ProjectedSample(Vec3 position, Direction face,
             float u, float v, boolean bloomAllowed,
-            boolean blastDoorOccluder) {
+            boolean blastDoorOccluder, boolean receiver) {
     }
 
     private record ProjectedTriangle(ProjectedSample a,

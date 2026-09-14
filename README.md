@@ -21,7 +21,7 @@ SCP: Classified Directive (formerly SCP Additions) is an SCP survival-horror and
 
 ## Main features
 
-- Functional SCPs including SCP-012, SCP-079, SCP-106, SCP-131, SCP-173, SCP-294, SCP-714, SCP-914, SCP-939, SCP-1576, and more.
+- Functional SCPs including SCP-079, SCP-106, SCP-173, SCP-294, SCP-914, SCP-939, and more.
 - SCP Unity-inspired inventory, Status, Crafting, Codex, health, stamina, movement, blink, and interaction systems.
 - Animated facility doors, keycard readers, Tesla Gates, decontamination machinery, terminals, lights, props, and modular building blocks.
 - Server-authoritative configuration center for modules, inventory rules, Codex documents, contextual interactions, SCP-294 drinks, and SCP-914 recipes.

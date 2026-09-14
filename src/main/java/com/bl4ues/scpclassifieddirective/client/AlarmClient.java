@@ -1485,64 +1485,6 @@ public final class AlarmClient {
                 ? distance : Double.POSITIVE_INFINITY;
     }
 
-    private static boolean compatibleQuad(ProjectedSample a,
-            ProjectedSample b, ProjectedSample c, ProjectedSample d) {
-        return compatibleTriangle(a, b, c)
-                && compatibleTriangle(a, c, d);
-    }
-
-    private static boolean sameSurface(ProjectedSample a,
-            ProjectedSample b) {
-        if (!isRenderableSample(a) || !isRenderableSample(b)
-                || a.blastDoorOccluder != b.blastDoorOccluder
-                || a.face != b.face) return false;
-        return Math.abs(planeCoordinate(a.position, a.face)
-                - planeCoordinate(b.position, b.face)) <= PLANE_EPSILON;
-    }
-
-    private static boolean compatibleTriangle(ProjectedSample a,
-            ProjectedSample b, ProjectedSample c) {
-        if (!isRenderableSample(a)
-                || !isRenderableSample(b)
-                || !isRenderableSample(c)) return false;
-        if (a.blastDoorOccluder || b.blastDoorOccluder
-                || c.blastDoorOccluder) return false;
-        if (a.face != b.face || a.face != c.face) return false;
-
-        double planeA = planeCoordinate(a.position, a.face);
-        if (Math.abs(planeA - planeCoordinate(b.position, b.face))
-                        > PLANE_EPSILON
-                || Math.abs(planeA - planeCoordinate(c.position, c.face))
-                        > PLANE_EPSILON) {
-            return false;
-        }
-
-        double abSqr = a.position.distanceToSqr(b.position);
-        double bcSqr = b.position.distanceToSqr(c.position);
-        double caSqr = c.position.distanceToSqr(a.position);
-        if (abSqr > MAX_TRIANGLE_EDGE_SQR
-                || bcSqr > MAX_TRIANGLE_EDGE_SQR
-                || caSqr > MAX_TRIANGLE_EDGE_SQR) {
-            return false;
-        }
-
-        Vec3 ab = b.position.subtract(a.position);
-        Vec3 ac = c.position.subtract(a.position);
-        return ab.cross(ac).lengthSqr() > 1.0E-12D;
-    }
-
-    private static boolean isRenderableSample(ProjectedSample sample) {
-        return sample != null && sample.receiver;
-    }
-
-    private static double planeCoordinate(Vec3 point, Direction face) {
-        return switch (face.getAxis()) {
-            case X -> point.x;
-            case Y -> point.y;
-            case Z -> point.z;
-        };
-    }
-
     private static void emitProjectionTriangle(VertexConsumer consumer,
             PoseStack poseStack, BlockPos blockOrigin,
             ProjectedTriangle triangle, boolean bloomPass) {

@@ -775,7 +775,6 @@ public final class AlarmClient {
                 .getValue(AlarmModule.FACING);
         RenderType bloomType = RenderType.eyes(SPLASH_EMISSIVE);
         VertexConsumer bloom = buffers.getBuffer(bloomType);
-        boolean emittedBloom = false;
         for (ProjectedTriangle triangle : projected.triangles) {
             if (!triangle.bloomAllowed()
                     || !triangle.isOnFace(bloomFace)) {

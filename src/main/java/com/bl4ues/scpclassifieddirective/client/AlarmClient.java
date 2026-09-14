@@ -865,66 +865,77 @@ public final class AlarmClient {
             ProjectedSample c = sample(u1, v1);
             ProjectedSample d = sample(u0, v1);
 
-            /*
-             * A Blast Door is rendered through a translucent GeckoLib entity
-             * pass even though its metal is opaque. Never paint the Alarm wash
-             * onto that surface: BSL can then composite the glow through the
-             * door. Instead use the exact collision hit only as an occlusion
-             * boundary. Fully-covered cells disappear immediately; only cells
-             * that CROSS the real door/frame silhouette refine further.
-             */
-            BlastDoorCoverage blastDoor = blastDoorCoverage(
-                    u0, v0, u1, v1, a, b, c, d);
-            if (blastDoor == BlastDoorCoverage.FULL) {
-                return;
-            }
-            if (blastDoor == BlastDoorCoverage.MIXED) {
-                clipCellToSurfaces(a, b, c, d, result);
-                return;
-            }
+            int um = (u0 + u1) >>> 1;
+            int vm = (v0 + v1) >>> 1;
+            ProjectedSample top = sample(um, v0);
+            ProjectedSample right = sample(u1, vm);
+            ProjectedSample bottom = sample(um, v1);
+            ProjectedSample left = sample(u0, vm);
+            ProjectedSample center = sample(um, vm);
 
-            if (compatibleQuad(a, b, c, d)
-                    && cellBelongsToOneSurface(u0, v0, u1, v1, a)) {
+            /*
+             * A coarse quad is legal only when ALL nine probes agree on one
+             * physical receiver. Checking just corners (or corners + center)
+             * allowed a triangle to bridge over a doorway/open edge while still
+             * having coplanar wall samples at its vertices. That is the root of
+             * the floating orange shards visible in ordinary doorways.
+             */
+            if (sameReceiver(a, b, c, d, top, right, bottom, left, center)) {
                 addTriangle(result, a, b, c);
                 addTriangle(result, a, c, d);
                 return;
             }
 
-            /*
-             * Boundaries are clipped in UV space instead of recursively
-             * generating smaller mesh cells. This both removes the moving
-             * staircase and avoids the raycast explosion that occurred with
-             * two Alarms around the Blast Door.
-             */
-            clipCellToSurfaces(a, b, c, d, result);
-        }
-
-        private BlastDoorCoverage blastDoorCoverage(
-                int u0, int v0, int u1, int v1,
-                ProjectedSample a, ProjectedSample b,
-                ProjectedSample c, ProjectedSample d) {
-            boolean blocked = isBlastDoorOccluder(a)
-                    || isBlastDoorOccluder(b)
-                    || isBlastDoorOccluder(c)
-                    || isBlastDoorOccluder(d);
-            boolean clear = isRenderable(a)
-                    || isRenderable(b)
-                    || isRenderable(c)
-                    || isRenderable(d);
-
-            int spanU = u1 - u0;
-            int spanV = v1 - v0;
-            if (spanU >= 2 && spanV >= 2) {
-                int um = (u0 + u1) >>> 1;
-                int vm = (v0 + v1) >>> 1;
-                ProjectedSample center = sample(um, vm);
-                blocked |= isBlastDoorOccluder(center);
-                clear |= isRenderable(center);
+            if (allBlocked(a, b, c, d, top, right,
+                    bottom, left, center)) {
+                return;
             }
 
-            if (!blocked) return BlastDoorCoverage.NONE;
-            return clear ? BlastDoorCoverage.MIXED
-                    : BlastDoorCoverage.FULL;
+            /*
+             * One deterministic local split, never recursive. The 3x3 probes
+             * are shared in the cache by neighbouring cells, so the complete
+             * projector has a hard upper bound of an 11x11 sample lattice.
+             * Each mini-quad is then clipped independently. This captures holes,
+             * corners and perpendicular faces without either bridging empty
+             * space or reviving the old raycast explosion.
+             */
+            processLeafQuad(a, top, center, left, result);
+            processLeafQuad(top, b, right, center, result);
+            processLeafQuad(center, right, c, bottom, result);
+            processLeafQuad(left, center, bottom, d, result);
+        }
+
+        private boolean sameReceiver(ProjectedSample... samples) {
+            ProjectedSample reference = null;
+            for (ProjectedSample sample : samples) {
+                if (!isRenderable(sample)) return false;
+                if (reference == null) {
+                    reference = sample;
+                } else if (!sameSurface(reference, sample)) {
+                    return false;
+                }
+            }
+            return reference != null;
+        }
+
+        private static boolean allBlocked(ProjectedSample... samples) {
+            for (ProjectedSample sample : samples) {
+                if (!isBlastDoorOccluder(sample)) return false;
+            }
+            return true;
+        }
+
+        private void processLeafQuad(ProjectedSample a,
+                ProjectedSample b, ProjectedSample c, ProjectedSample d,
+                List<ProjectedTriangle> result) {
+            if (sameReceiver(a, b, c, d)) {
+                addTriangle(result, a, b, c);
+                addTriangle(result, a, c, d);
+                return;
+            }
+
+            if (allBlocked(a, b, c, d)) return;
+            clipCellToSurfaces(a, b, c, d, result);
         }
 
         private static boolean isBlastDoorOccluder(ProjectedSample sample) {
@@ -1021,32 +1032,6 @@ public final class AlarmClient {
                 ProjectedSample feather) {
         }
 
-        /**
-         * Finds a surface transition along one UV edge, then intentionally
-         * converges on the last point that still belongs to the receiving
-         * surface. The previous implementation deliberately crossed into the
-         * blocked side as "padding"; that worked with opaque cubes but leaked
-         * through translucent GeckoLib depth and produced the bright spark-like
-         * slivers visible around the Blast Door. Exact clipping gives the same
-         * visual continuity without overlapping geometry.
-         */
-        /**
-         * Resolves one UV edge transition once, then represents it in one of two
-         * ways:
-         *
-         * 1) receiver -> another receiver: both surfaces meet at the same UV
-         *    boundary with full wash. No artificial dark seam is introduced.
-         *
-         * 2) receiver -> air/opaque occluder: the boundary vertex is alpha 0,
-         *    but a second full-alpha vertex is inserted only EDGE_FEATHER_WIDTH
-         *    inside the valid surface. This gives a small real feather strip
-         *    instead of fading the entire coarse cell or drawing beyond the
-         *    obstacle.
-         *
-         * The old implementations alternated between overlap (bright needles)
-         * and deleting/fading whole wedges (large serrated holes). This keeps
-         * the geometry complete and confines the fade to the actual termination.
-         */
         private SurfaceBoundary surfaceBoundary(
                 ProjectedSample clear, ProjectedSample other,
                 ProjectedSample target) {
@@ -1061,6 +1046,13 @@ public final class AlarmClient {
             float otherU = other.u;
             float otherV = other.v;
 
+            /*
+             * Find the last UV sample that the WORLD still reports as the
+             * target receiver. We never project this UV onto an infinite plane
+             * afterwards. That old synthetic-plane step was the direct cause of
+             * light polygons floating beside door frames and through corners.
+             */
+            ProjectedSample lastValid = clear;
             for (int i = 0; i < EDGE_BISECTIONS; i++) {
                 float midU = (clearU + otherU) * 0.5F;
                 float midV = (clearV + otherV) * 0.5F;
@@ -1069,57 +1061,52 @@ public final class AlarmClient {
                         && sameSurface(target, probe)) {
                     clearU = midU;
                     clearV = midV;
+                    lastValid = probe;
                 } else {
                     otherU = midU;
                     otherV = midV;
                 }
             }
 
-            /*
-             * Use the midpoint of the final ownership interval as the shared UV
-             * transition. Adjacent triangles hit the same cached samples and
-             * therefore converge to the same boundary instead of leaving tiny
-             * cracks or double-covered slivers.
-             */
-            float boundaryU = (clearU + otherU) * 0.5F;
-            float boundaryV = (clearV + otherV) * 0.5F;
-            ProjectedSample boundary =
-                    sampleOnExistingSurface(boundaryU, boundaryV, target);
-            if (boundary == null) {
-                boundary = sampleOnExistingSurface(clearU, clearV, target);
-            }
-            if (boundary == null) return null;
-
+            ProjectedSample boundary = lastValid;
             boolean terminal = !isRenderable(other)
                     || other.blastDoorOccluder;
+
             if (!terminal) {
+                /*
+                 * Receiver -> receiver (wall -> ceiling, one wall -> another):
+                 * keep the last VERIFIED point at full opacity. The other
+                 * surface builds its own polygon from its own verified samples.
+                 * A sub-millimetre ownership gap is preferable to fabricating a
+                 * triangle in mid-air.
+                 */
                 return new SurfaceBoundary(
                         boundary.withOpacity(1.0F), null);
             }
 
+            /*
+             * True end of the projected path. Boundary itself fades to zero,
+             * while one verified sample a fixed distance back toward the known
+             * interior stays at full wash. Both vertices are real raycast/fast
+             * path samples on the same receiver, so there is no overlap under an
+             * occluder and nothing for BSL to turn into a bright rod.
+             */
             double distance = clear.position.distanceTo(boundary.position);
-            if (distance <= 1.0E-6D) {
-                return new SurfaceBoundary(
-                        boundary.withOpacity(0.0F), clear);
+            ProjectedSample feather = clear;
+            if (distance > EDGE_FEATHER_WIDTH + 1.0E-6D) {
+                double t = EDGE_FEATHER_WIDTH / distance;
+                float featherU = (float) (boundary.u
+                        + (clear.u - boundary.u) * t);
+                float featherV = (float) (boundary.v
+                        + (clear.v - boundary.v) * t);
+                ProjectedSample candidate =
+                        sampleAtCached(featherU, featherV);
+                if (isRenderable(candidate)
+                        && sameSurface(target, candidate)) {
+                    feather = candidate;
+                }
             }
 
-            double featherT = Math.min(1.0D,
-                    EDGE_FEATHER_WIDTH / distance);
-            float featherU = (float) (boundaryU
-                    + (clear.u - boundaryU) * featherT);
-            float featherV = (float) (boundaryV
-                    + (clear.v - boundaryV) * featherT);
-
-            ProjectedSample feather = sampleOnExistingSurface(
-                    featherU, featherV, target);
-            if (feather == null) feather = clear;
-
-            /*
-             * Boundary is wash-only and transparent. The inner feather point is
-             * full wash. Because both points remain on the receiving plane,
-             * there is no geometry hidden under the obstacle and therefore no
-             * emissive "spark" for BSL to amplify.
-             */
             boundary = new ProjectedSample(
                     boundary.position, boundary.face,
                     boundary.u, boundary.v,
@@ -1129,31 +1116,6 @@ public final class AlarmClient {
                     feather.u, feather.v,
                     false, false, true, 1.0F);
             return new SurfaceBoundary(boundary, feather);
-        }
-
-        /**
-         * Reconstructs a UV point on an already-known receiving plane instead
-         * of asking the world collision system again. This keeps the exact
-         * boundary on the wall/ceiling/obstacle surface that is supposed to
-         * receive the light.
-         */
-        private ProjectedSample sampleOnExistingSurface(float u01, float v01,
-                ProjectedSample target) {
-            Vec3 wallPoint = projectedWallPoint(u01, v01);
-            Vec3 rayEnd = wallPoint.add(inward.scale(RAY_OVERSHOOT));
-            Vec3 ray = rayEnd.subtract(rayStart);
-
-            double denominator = axisCoordinate(ray, target.face);
-            if (Math.abs(denominator) < 1.0E-8D) return null;
-
-            double plane = planeCoordinate(target.position, target.face);
-            double startAxis = axisCoordinate(rayStart, target.face);
-            double t = (plane - startAxis) / denominator;
-            if (t < -0.05D || t > 1.05D) return null;
-
-            Vec3 position = rayStart.add(ray.scale(t));
-            return new ProjectedSample(position, target.face,
-                    u01, v01, false, false, true, 1.0F);
         }
 
         private Vec3 projectedWallPoint(float u01, float v01) {
@@ -1167,14 +1129,6 @@ public final class AlarmClient {
                     .add(fanSide.scale(
                             MAX_SPLASH_HALF_WIDTH
                                     * widthScale * lateral));
-        }
-
-        private static double axisCoordinate(Vec3 vector, Direction face) {
-            return switch (face.getAxis()) {
-                case X -> vector.x;
-                case Y -> vector.y;
-                case Z -> vector.z;
-            };
         }
 
         private void addTriangle(List<ProjectedTriangle> result,

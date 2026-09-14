@@ -954,6 +954,26 @@ public final class AlarmClient {
                     && !sample.blastDoorOccluder;
         }
 
+        private Vec3 projectedWallPoint(float u01, float v01) {
+            double lateral = -1.0D + 2.0D * u01;
+            double radius = MIN_SPLASH_RADIUS
+                    + (MAX_SPLASH_RADIUS - MIN_SPLASH_RADIUS) * v01;
+            double widthScale = 0.55D
+                    + 0.45D * Math.sqrt(Math.max(0.0D, v01));
+            return wallOrigin
+                    .add(tangent.scale(radius))
+                    .add(fanSide.scale(
+                            MAX_SPLASH_HALF_WIDTH
+                                    * widthScale * lateral));
+        }
+
+        private void addTriangle(List<ProjectedTriangle> result,
+                ProjectedSample a, ProjectedSample b, ProjectedSample c) {
+            if (compatibleTriangle(a, b, c)) {
+                result.add(new ProjectedTriangle(a, b, c));
+            }
+        }
+
         private ProjectedSample sample(int uIndex, int vIndex) {
             int key = (vIndex << 16) | uIndex;
             if (samples.containsKey(key)) return samples.get(key);

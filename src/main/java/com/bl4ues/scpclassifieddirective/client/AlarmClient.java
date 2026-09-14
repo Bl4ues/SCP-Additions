@@ -87,7 +87,6 @@ public final class AlarmClient {
     private static final double WALL_PLANE_INSET = 0.0625D;
     private static final double RAY_OVERSHOOT = 0.06D;
     private static final double SURFACE_EPSILON = 0.0030D;
-    private static final double MIMIC_SURFACE_EPSILON = 0.0120D;
     private static final double PLANE_EPSILON = 0.018D;
     private static final double BLOOM_SURFACE_EPSILON = 0.0016D;
     private static final double MAX_TRIANGLE_EDGE_SQR = 0.24D;
@@ -873,23 +872,6 @@ public final class AlarmClient {
                 return;
             }
 
-            /*
-             * A copied-wall mimic is rendered by the Blast Door block entity,
-             * not by the ordinary wall chunk. Never let one projection triangle
-             * bridge from a real wall sample into a synthetic mimic sample:
-             * BSL interprets those twisted cross-surface quads badly and the
-             * result is the bright magenta shards seen in the video.
-             *
-             * Refine only the seam, then keep each final triangle entirely on
-             * one receiver type. This is localized to the mimic boundary, so it
-             * does not bring back the old projector-wide raycast cost.
-             */
-            if (mixedSyntheticReceiver(u0, v0, u1, v1, a, b, c, d)
-                    && depth < BLAST_DOOR_SUBDIVISIONS) {
-                subdivideChildren(u0, v0, u1, v1, depth, result);
-                return;
-            }
-
             if (compatibleQuad(a, b, c, d)
                     && cellBelongsToOneSurface(u0, v0, u1, v1, a)) {
                 addTriangle(result, a, b, c);
@@ -963,55 +945,6 @@ public final class AlarmClient {
             return sample != null && sample.blastDoorOccluder;
         }
 
-        private boolean mixedSyntheticReceiver(
-                int u0, int v0, int u1, int v1,
-                ProjectedSample a, ProjectedSample b,
-                ProjectedSample c, ProjectedSample d) {
-            boolean synthetic = isSyntheticReceiver(a)
-                    || isSyntheticReceiver(b)
-                    || isSyntheticReceiver(c)
-                    || isSyntheticReceiver(d);
-            boolean ordinary = isOrdinaryReceiver(a)
-                    || isOrdinaryReceiver(b)
-                    || isOrdinaryReceiver(c)
-                    || isOrdinaryReceiver(d);
-
-            int spanU = u1 - u0;
-            int spanV = v1 - v0;
-            if (spanU >= 2 && spanV >= 2) {
-                int um = (u0 + u1) >>> 1;
-                int vm = (v0 + v1) >>> 1;
-                ProjectedSample center = sample(um, vm);
-                ProjectedSample top = sample(um, v0);
-                ProjectedSample right = sample(u1, vm);
-                ProjectedSample bottom = sample(um, v1);
-                ProjectedSample left = sample(u0, vm);
-
-                synthetic |= isSyntheticReceiver(center)
-                        || isSyntheticReceiver(top)
-                        || isSyntheticReceiver(right)
-                        || isSyntheticReceiver(bottom)
-                        || isSyntheticReceiver(left);
-                ordinary |= isOrdinaryReceiver(center)
-                        || isOrdinaryReceiver(top)
-                        || isOrdinaryReceiver(right)
-                        || isOrdinaryReceiver(bottom)
-                        || isOrdinaryReceiver(left);
-            }
-
-            return synthetic && ordinary;
-        }
-
-        private static boolean isSyntheticReceiver(ProjectedSample sample) {
-            return sample != null && sample.syntheticReceiver;
-        }
-
-        private static boolean isOrdinaryReceiver(ProjectedSample sample) {
-            return sample != null
-                    && !sample.syntheticReceiver
-                    && !sample.blastDoorOccluder;
-        }
-
         private void addTriangle(List<ProjectedTriangle> result,
                 ProjectedSample a, ProjectedSample b, ProjectedSample c) {
             if (compatibleTriangle(a, b, c)) {
@@ -1058,8 +991,7 @@ public final class AlarmClient {
             ProjectedSample sample = hit == null ? null
                     : new ProjectedSample(hit.position, hit.face,
                             u01, v01, hit.bloomAllowed,
-                            hit.blastDoorOccluder,
-                            hit.syntheticReceiver);
+                            hit.blastDoorOccluder);
             samples.put(key, sample);
             return sample;
         }
@@ -1143,7 +1075,7 @@ public final class AlarmClient {
                         level, hitPos, hitState, cursor, end);
                 if (visualHit != null) {
                     return new ProjectedHit(visualHit,
-                            hit.getDirection(), false, true, false);
+                            hit.getDirection(), false, true);
                 }
 
                 /*
@@ -1175,16 +1107,19 @@ public final class AlarmClient {
                     Vec3 normal = direction(wallFace);
                     Vec3 receiver = snapToBlockFace(
                             wallSurface, hitPos, wallFace)
-                            .add(normal.scale(MIMIC_SURFACE_EPSILON));
+                            .add(normal.scale(SURFACE_EPSILON));
                     /*
-                     * Keep the visible wash on the copied wall, but do not run
-                     * the RenderType.eyes HDR copy on this BlockEntity-rendered
-                     * baked model. The surrounding wall still contributes the
-                     * soft bloom, while avoiding BSL's magenta material/debug
-                     * artifacts on the synthetic receiver.
+                     * Treat the copied Y+3 wall as the SAME optical plane as the
+                     * real wall around it. Splitting the mesh at this artificial
+                     * BlockEntity/chunk boundary created the staircase-shaped
+                     * cutoff visible above the Blast Door. The wash may bridge
+                     * the boundary continuously; only the HDR eyes pass stays
+                     * disabled on triangles touching the mimic, which avoids
+                     * BSL's magenta material artifacts without changing the
+                     * actual footprint.
                      */
                     return new ProjectedHit(
-                            receiver, wallFace, false, false, true);
+                            receiver, wallFace, false, false);
                 }
 
                 cursor = skipPastBlockCell(hit.getLocation(),
@@ -1208,7 +1143,7 @@ public final class AlarmClient {
             Vec3 normal = direction(face);
             Vec3 position = hit.getLocation().add(
                     normal.scale(SURFACE_EPSILON));
-            return new ProjectedHit(position, face, true, false, false);
+            return new ProjectedHit(position, face, true, false);
         }
         return null;
     }
@@ -1278,7 +1213,6 @@ public final class AlarmClient {
             ProjectedSample b) {
         if (a == null || b == null
                 || a.blastDoorOccluder != b.blastDoorOccluder
-                || a.syntheticReceiver != b.syntheticReceiver
                 || a.face != b.face) return false;
         return Math.abs(planeCoordinate(a.position, a.face)
                 - planeCoordinate(b.position, b.face)) <= PLANE_EPSILON;
@@ -1289,8 +1223,6 @@ public final class AlarmClient {
         if (a == null || b == null || c == null) return false;
         if (a.blastDoorOccluder || b.blastDoorOccluder
                 || c.blastDoorOccluder) return false;
-        if (a.syntheticReceiver != b.syntheticReceiver
-                || a.syntheticReceiver != c.syntheticReceiver) return false;
         if (a.face != b.face || a.face != c.face) return false;
 
         double planeA = planeCoordinate(a.position, a.face);
@@ -1396,13 +1328,12 @@ public final class AlarmClient {
     }
 
     private record ProjectedHit(Vec3 position, Direction face,
-            boolean bloomAllowed, boolean blastDoorOccluder,
-            boolean syntheticReceiver) {
+            boolean bloomAllowed, boolean blastDoorOccluder) {
     }
 
     private record ProjectedSample(Vec3 position, Direction face,
             float u, float v, boolean bloomAllowed,
-            boolean blastDoorOccluder, boolean syntheticReceiver) {
+            boolean blastDoorOccluder) {
     }
 
     private record ProjectedTriangle(ProjectedSample a,

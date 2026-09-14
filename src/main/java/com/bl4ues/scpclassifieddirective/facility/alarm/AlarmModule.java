@@ -437,9 +437,14 @@ public final class AlarmModule {
         private static void serverTick(Level level, BlockPos pos,
                 BlockState state, AlarmBlockEntity alarm) {
             if (!(level instanceof ServerLevel server)) return;
-            // Six adjacent block checks are cheap enough to do every tick and
-            // give the Alarm exact, immediate door behaviour without a broad
-            // room-radius scan.
+
+            if (!AlarmMountStructure.canSurvive(server, pos, state)) {
+                server.destroyBlock(pos, true);
+                return;
+            }
+
+            // At most three helper cells are repaired. Door/redstone checks
+            // then use the complete physical footprint of the mounted Alarm.
             AlarmMountStructure.ensureParts(server, pos, state);
             alarm.applyActive(server,
                     AlarmMountStructure.hasNeighborSignal(server, pos, state)

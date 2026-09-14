@@ -96,8 +96,7 @@ public final class AlarmClient {
      * dense mesh. This is the main CPU win for multiple active Alarms.
      */
     private static final double MAX_TRIANGLE_EDGE_SQR = 1.10D;
-    private static final double EDGE_PADDING = 0.032D;
-    private static final int EDGE_BISECTIONS = 4;
+    private static final int EDGE_BISECTIONS = 7;
     private static final int BASE_MESH_CELLS = 5;
     private static final int ADAPTIVE_SUBDIVISIONS = 1;
     /*
@@ -1033,10 +1032,12 @@ public final class AlarmClient {
 
         /**
          * Finds a surface transition along one UV edge, then intentionally
-         * moves the receiving polygon a tiny amount INTO the blocked side.
-         * The blocker depth-buffer hides that overlap. Visually this behaves
-         * like an internal padding and prevents the obvious square gap that
-         * appears when a projection terminates exactly on a block boundary.
+         * converges on the last point that still belongs to the receiving
+         * surface. The previous implementation deliberately crossed into the
+         * blocked side as "padding"; that worked with opaque cubes but leaked
+         * through translucent GeckoLib depth and produced the bright spark-like
+         * slivers visible around the Blast Door. Exact clipping gives the same
+         * visual continuity without overlapping geometry.
          */
         private ProjectedSample paddedSurfaceBoundary(
                 ProjectedSample clear, ProjectedSample other,
@@ -1066,25 +1067,15 @@ public final class AlarmClient {
                 }
             }
 
-            float du = other.u - clear.u;
-            float dv = other.v - clear.v;
-            double uvLength = Math.sqrt(du * du + dv * dv);
-            if (uvLength < 1.0E-6D) return clear;
-
-            boolean hasBlockingSurface = other.receiver
-                    || other.blastDoorOccluder;
-            double uvPadding = hasBlockingSurface
-                    ? EDGE_PADDING / MAX_SPLASH_RADIUS : 0.0D;
-            float padU = (float) (otherU
-                    + du / uvLength * uvPadding);
-            float padV = (float) (otherV
-                    + dv / uvLength * uvPadding);
-            padU = Math.max(0.0F, Math.min(1.0F, padU));
-            padV = Math.max(0.0F, Math.min(1.0F, padV));
-
-            ProjectedSample padded =
-                    sampleOnExistingSurface(padU, padV, target);
-            return padded != null ? padded : clear;
+            /*
+             * Stay on the proven receiving side. Seven bisections put this
+             * within a few thousandths of a block of the true edge at the
+             * current mesh scale, close enough to remove the old staircase but
+             * never far enough to create an emissive overlap sliver.
+             */
+            ProjectedSample boundary =
+                    sampleOnExistingSurface(clearU, clearV, target);
+            return boundary != null ? boundary : clear;
         }
 
         /**
@@ -1182,8 +1173,12 @@ public final class AlarmClient {
                 }
             }
 
-            ProjectedHit hit = cast(level, context, alarmPos,
-                    rayStart, intended, wallSurface, wallFace);
+            ProjectedHit hit = fastWallPlaneHit(
+                    wallSurface, intended);
+            if (hit == null) {
+                hit = cast(level, context, alarmPos,
+                        rayStart, intended, wallSurface, wallFace);
+            }
             if (hit == null) {
                 return new ProjectedSample(
                         wallSurface, wallFace, u01, v01,
@@ -1211,6 +1206,74 @@ public final class AlarmClient {
             int um = (u0 + u1) >>> 1;
             int vm = (v0 + v1) >>> 1;
             return sameSurface(reference, sample(um, vm));
+        }
+
+        /**
+         * Most samples are much simpler than a Minecraft raycast makes them
+         * look. The projector starts in the Alarm's wall cell and ends on the
+         * mounting plane only ~0.4 blocks away. If that front cell is empty (or
+         * is one of this Alarm's invisible reservation helpers) and the block
+         * immediately behind the plane exposes a sturdy opaque face, the hit is
+         * mathematically known: it is the mounting plane itself.
+         *
+         * <p>This removes the expensive collision traversal from the common
+         * flat-wall case. Partial shapes, glass and real obstacles still fall
+         * back to the full cast, so the surface-aware behaviour is preserved.</p>
+         */
+        private ProjectedHit fastWallPlaneHit(Vec3 wallSurface, Vec3 intended) {
+            Vec3 outward = direction(wallFace);
+            BlockPos frontPos = BlockPos.containing(
+                    wallSurface.add(outward.scale(0.01D)));
+            BlockState frontState = level.getBlockState(frontPos);
+
+            boolean ownAlarmCell = frontPos.equals(alarmPos);
+            if (!ownAlarmCell && AlarmModule.isPart(frontState)) {
+                try {
+                    ownAlarmCell = AlarmMountStructure.controllerPosition(
+                            frontPos, frontState).equals(alarmPos);
+                } catch (RuntimeException ignored) {
+                    ownAlarmCell = false;
+                }
+            }
+
+            if (!ownAlarmCell
+                    && !frontState.isAir()
+                    && !letsProjectedLightPass(frontState)
+                    && !frontState.getCollisionShape(level, frontPos)
+                            .isEmpty()) {
+                return null;
+            }
+
+            BlockPos supportPos = BlockPos.containing(
+                    wallSurface.add(inward.scale(0.01D)));
+            BlockState supportState = level.getBlockState(supportPos);
+
+            if (BlastDoorModule.isStructureState(supportState)) {
+                BlockHitResult mimicHit = BlastDoorStructure.clipLowerMimic(
+                        level, supportPos, supportState, rayStart, intended);
+                if (mimicHit == null) return null;
+                Direction face = mimicHit.getDirection();
+                Vec3 normal = direction(face);
+                return new ProjectedHit(
+                        mimicHit.getLocation().add(
+                                normal.scale(SURFACE_EPSILON)),
+                        face, false, false);
+            }
+
+            if (supportState.isAir()
+                    || letsProjectedLightPass(supportState)) {
+                return null;
+            }
+
+            if (!supportState.isFaceSturdy(
+                    level, supportPos, wallFace)) {
+                return null;
+            }
+
+            Vec3 position = wallSurface.add(
+                    outward.scale(SURFACE_EPSILON));
+            return new ProjectedHit(
+                    position, wallFace, true, false);
         }
     }
 
@@ -1244,7 +1307,17 @@ public final class AlarmClient {
             if (hit.getType() != HitResult.Type.BLOCK) return null;
 
             BlockPos hitPos = hit.getBlockPos();
-            if (hitPos.equals(alarmPos)) {
+            BlockState hitState = level.getBlockState(hitPos);
+            boolean ownAlarmCell = hitPos.equals(alarmPos);
+            if (!ownAlarmCell && AlarmModule.isPart(hitState)) {
+                try {
+                    ownAlarmCell = AlarmMountStructure.controllerPosition(
+                            hitPos, hitState).equals(alarmPos);
+                } catch (RuntimeException ignored) {
+                    ownAlarmCell = false;
+                }
+            }
+            if (ownAlarmCell) {
                 cursor = skipPastBlockCell(hit.getLocation(),
                         rayDirection, hitPos);
                 if (!rayCursorStillValid(cursor, start, end, ray)) {
@@ -1253,7 +1326,7 @@ public final class AlarmClient {
                 continue;
             }
 
-            BlockState hitState = level.getBlockState(hitPos);
+
             if (BlastDoorModule.isStructureState(hitState)) {
                 /*
                  * The gameplay collision envelope is intentionally conservative

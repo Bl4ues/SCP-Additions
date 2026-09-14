@@ -1,12 +1,12 @@
 {
-  "variants": {
-    "active=false,facing=north": {"model": "scp_classified_directive:block/alarm_empty"},
-    "active=false,facing=east": {"model": "scp_classified_directive:block/alarm_empty", "y": 90},
-    "active=false,facing=south": {"model": "scp_classified_directive:block/alarm_empty", "y": 180},
-    "active=false,facing=west": {"model": "scp_classified_directive:block/alarm_empty", "y": 270},
-    "active=true,facing=north": {"model": "scp_classified_directive:block/alarm_shader_proxy"},
-    "active=true,facing=east": {"model": "scp_classified_directive:block/alarm_shader_proxy", "y": 90},
-    "active=true,facing=south": {"model": "scp_classified_directive:block/alarm_shader_proxy", "y": 180},
-    "active=true,facing=west": {"model": "scp_classified_directive:block/alarm_shader_proxy", "y": 270}
-  }
+  "multipart": [
+    {"when":{"active":"false","facing":"north"},"apply":{"model":"scp_classified_directive:block/alarm_empty"}},
+    {"when":{"active":"false","facing":"east"},"apply":{"model":"scp_classified_directive:block/alarm_empty","y":90}},
+    {"when":{"active":"false","facing":"south"},"apply":{"model":"scp_classified_directive:block/alarm_empty","y":180}},
+    {"when":{"active":"false","facing":"west"},"apply":{"model":"scp_classified_directive:block/alarm_empty","y":270}},
+    {"when":{"active":"true","facing":"north"},"apply":{"model":"scp_classified_directive:block/alarm_shader_proxy"}},
+    {"when":{"active":"true","facing":"east"},"apply":{"model":"scp_classified_directive:block/alarm_shader_proxy","y":90}},
+    {"when":{"active":"true","facing":"south"},"apply":{"model":"scp_classified_directive:block/alarm_shader_proxy","y":180}},
+    {"when":{"active":"true","facing":"west"},"apply":{"model":"scp_classified_directive:block/alarm_shader_proxy","y":270}}
+  ]
 }

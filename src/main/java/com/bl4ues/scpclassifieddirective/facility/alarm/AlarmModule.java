@@ -45,7 +45,6 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -305,13 +304,17 @@ public final class AlarmModule {
                     partPos, partState);
             BlockState controllerState = level.getBlockState(controller);
             VoxelShape inController = mountedShape(controllerState);
-            VoxelShape inPart = inController.move(
+            /*
+             * Do not clip the helper's shape to its own 1x1x1 cell. Edge and
+             * corner mounts deliberately span two/four cells, and every one of
+             * those cells must select the SAME physical Alarm. Translating the
+             * controller shape into helper-local coordinates makes all cells
+             * resolve to one identical world-space outline/collision volume.
+             */
+            return inController.move(
                     controller.getX() - partPos.getX(),
                     controller.getY() - partPos.getY(),
                     controller.getZ() - partPos.getZ());
-            return Shapes.join(inPart, Block.box(
-                    0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D),
-                    BooleanOp.AND);
         }
 
         @Override
@@ -494,9 +497,29 @@ public final class AlarmModule {
          * room-wide or several-block-away activation is accepted.
          */
         private boolean hasAdjacentOpenElectricDoor(ServerLevel server) {
+            BlockState alarmState = getBlockState();
+
+            /*
+             * The Blast Door's fourth-height mounting strip is intentionally
+             * real wall now, so the door controller is no longer one of the six
+             * literal neighbour blocks. The mount system already knows exactly
+             * which Blast Door owns that strip; use that relationship directly.
+             * This keeps ordinary doors on the strict one-block adjacency rule
+             * while restoring the intended "Alarm above this Blast Door"
+             * behaviour without bringing back fake copycat geometry.
+             */
+            BlockPos mountedBlastDoor =
+                    AlarmMountStructure.blastDoorController(
+                            server, worldPosition, alarmState);
+            if (mountedBlastDoor != null
+                    && BlastDoorModule.isOpenOrOpening(
+                            server, mountedBlastDoor)) {
+                return true;
+            }
+
             java.util.HashSet<BlockPos> checked = new java.util.HashSet<>();
             for (BlockPos occupied : AlarmMountStructure.occupiedPositions(
-                    worldPosition, getBlockState())) {
+                    worldPosition, alarmState)) {
                 for (Direction direction : Direction.values()) {
                     BlockPos doorPos = occupied.relative(direction);
                     if (!checked.add(doorPos)) continue;

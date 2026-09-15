@@ -45,9 +45,13 @@ public abstract class Scp079FacilityMapTravelPromptMixin {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
         Screen screen = (Screen) (Object) this;
-        FacilityRoomSnapshot current = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(),
-                BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        FacilityRoomSnapshot current =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (current == null) {
+            current = FacilityMappingClientState.roomAt(
+                    Scp079PlayableClient.hostDimension(),
+                    BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        }
         double cost = Scp079CameraTravelRules.displayedCost(
                 minecraft.level.getDifficulty(), current, target);
 

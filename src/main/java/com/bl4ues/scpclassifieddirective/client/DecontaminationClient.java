@@ -69,10 +69,11 @@ public final class DecontaminationClient {
         private Renderer() {
             super(new Model());
 
-            // Keep the base geometry on the same two-sided translucent path
-            // that correctly renders the authored zero-thickness window and
-            // thin painted details. Only the authored mask is re-rendered as
-            // emissive; do not change the base pass to fix shader artifacts.
+            // The translucent base is required for the authored window and
+            // zero-thickness details. Keep that pass intact, then submit the
+            // lamp mask twice through the additive full-bright eyes pipeline.
+            // The second submission raises HDR energy for shader bloom without
+            // making the whole decontamination model emissive.
             addRenderLayer(new GeoRenderLayer<>(this) {
                 @Override
                 public void render(PoseStack poseStack,
@@ -81,9 +82,14 @@ public final class DecontaminationClient {
                         MultiBufferSource bufferSource, VertexConsumer buffer,
                         float partialTick, int packedLight, int packedOverlay) {
                     RenderType emissive = RenderType.eyes(GLOWMASK);
+                    VertexConsumer emissiveBuffer =
+                            bufferSource.getBuffer(emissive);
                     getRenderer().reRender(bakedModel, poseStack, bufferSource,
-                            animatable, emissive,
-                            bufferSource.getBuffer(emissive), partialTick,
+                            animatable, emissive, emissiveBuffer, partialTick,
+                            FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                            1.0F, 1.0F, 1.0F, 1.0F);
+                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                            animatable, emissive, emissiveBuffer, partialTick,
                             FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
                             1.0F, 1.0F, 1.0F, 1.0F);
                 }

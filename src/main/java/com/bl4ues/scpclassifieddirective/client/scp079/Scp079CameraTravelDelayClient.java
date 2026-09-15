@@ -53,10 +53,18 @@ public final class Scp079CameraTravelDelayClient {
             return false;
         }
 
-        FacilityRoomSnapshot from = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(), BlockPos.containing(current));
-        FacilityRoomSnapshot to = FacilityMappingClientState.roomAt(
-                state.dimension(), BlockPos.containing(target));
+        FacilityRoomSnapshot from = Scp079CameraNetworkClientState.activeRoom();
+        if (from == null) {
+            from = FacilityMappingClientState.roomAt(
+                    Scp079PlayableClient.hostDimension(),
+                    BlockPos.containing(current));
+        }
+        FacilityRoomSnapshot to =
+                Scp079CameraNetworkClientState.roomForCamera(state.cameraId());
+        if (to == null) {
+            to = FacilityMappingClientState.roomAt(
+                    state.dimension(), BlockPos.containing(target));
+        }
         int tier = Scp079CameraTravelRules.multiplier(from, to);
 
         // Same-floor movement has no authored wait. Begin the interference now,

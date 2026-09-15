@@ -167,26 +167,80 @@ public final class Scp079FacilityMapScreen extends Screen {
         MapTransform transform = transformFor(floor, mapZoom, panX, panY);
         if (transform == null) return;
 
-        hoveredRoom = null;
-        FacilityRoomSnapshot currentRoom = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(),
-                net.minecraft.core.BlockPos.containing(
-                        Scp079PlayableClient.viewPosition()));
-
+        // Cache each geometric union once for this frame. Overlapping rooms are
+        // intentionally allowed: Y decides normal draw order, not X/Z ownership.
+        Map<FacilityRoomSnapshot, Set<Long>> cellsByRoom =
+                new LinkedHashMap<>();
         for (FacilityRoomSnapshot room : floor.rooms) {
-            Set<Long> cells = roomCells(room);
-            boolean hovered = !leaveConfirmation && !floorMenuOpen
-                    && roomContainsScreen(cells, mouseX, mouseY, transform);
-            if (hovered) hoveredRoom = room;
+            cellsByRoom.put(room, roomCells(room));
+        }
+
+        FacilityRoomSnapshot previousHover = hoveredRoom;
+        hoveredRoom = resolveHoveredRoom(floor, cellsByRoom, previousHover,
+                mouseX, mouseY, transform);
+
+        FacilityRoomSnapshot currentRoom =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (currentRoom == null) {
+            currentRoom = FacilityMappingClientState.roomAt(
+                    Scp079PlayableClient.hostDimension(),
+                    net.minecraft.core.BlockPos.containing(
+                            Scp079PlayableClient.viewPosition()));
+        }
+
+        List<FacilityRoomSnapshot> drawOrder =
+                new ArrayList<>(floor.rooms);
+        drawOrder.sort(Comparator
+                .comparingInt(Scp079FacilityMapScreen::roomElevation)
+                .thenComparing(room -> room.id().toString()));
+        if (hoveredRoom != null) {
+            FacilityRoomSnapshot hover = hoveredRoom;
+            drawOrder.removeIf(room -> room.id().equals(hover.id()));
+            drawOrder.add(hover);
+        }
+
+        int minY = floor.rooms.stream()
+                .mapToInt(Scp079FacilityMapScreen::roomElevation)
+                .min().orElse(floor.y);
+        int maxY = floor.rooms.stream()
+                .mapToInt(Scp079FacilityMapScreen::roomElevation)
+                .max().orElse(floor.y);
+
+        for (FacilityRoomSnapshot room : drawOrder) {
+            Set<Long> cells = cellsByRoom.get(room);
+            boolean hovered = hoveredRoom != null
+                    && hoveredRoom.id().equals(room.id());
             boolean current = currentRoom != null
                     && currentRoom.id().equals(room.id());
-            int fill = current ? 0xC628A77B
-                    : hovered ? 0xC65AA7C8 : 0xA63C6E87;
-            int line = current ? 0xFF89FFD0
-                    : hovered ? 0xFFE7FAFF : 0xFF73A5BC;
+            boolean hasCamera =
+                    Scp079CameraNetworkClientState.hasCamera(room.id());
 
-            // Fill the room's geometric union cell by cell. A HashSet guarantees
-            // that authored patches which overlap contribute colour exactly once.
+            int fill;
+            int line;
+            if (current) {
+                fill = 0xC628A77B;
+                line = 0xFF89FFD0;
+            } else if (hovered && hasCamera) {
+                fill = 0xD05AA7C8;
+                line = 0xFFE7FAFF;
+            } else if (hovered) {
+                fill = 0xCE355766;
+                line = 0xFF91B8C5;
+            } else if (hasCamera) {
+                fill = 0xA63C6E87;
+                line = 0xFF73A5BC;
+            } else {
+                // Offline rooms remain much darker than a merely lower room.
+                fill = 0xA61C3541;
+                line = 0xFF425F6C;
+            }
+
+            if (!hovered && !current) {
+                double tone = elevationTone(roomElevation(room), minY, maxY);
+                fill = shade(fill, tone);
+                line = shade(line, tone);
+            }
+
             for (long packed : cells) {
                 int cellX = unpackX(packed);
                 int cellZ = unpackZ(packed);
@@ -207,14 +261,73 @@ public final class Scp079FacilityMapScreen extends Screen {
                             * transform.scale;
                     if (Scp079UiTheme.scaledWidth(font, name, 1.02F)
                             < roomWidth + 28) {
+                        int textColor = hasCamera || current
+                                ? Scp079UiTheme.TEXT : 0xFF66818D;
                         Scp079UiTheme.drawCentered(graphics, font, name,
-                                centerX, centerY - 5, 1.02F,
-                                Scp079UiTheme.TEXT);
+                                centerX, centerY - 5, 1.02F, textColor);
                     }
                 }
             }
         }
         renderTrackers(graphics, floor, transform);
+    }
+
+    private FacilityRoomSnapshot resolveHoveredRoom(FloorGroup floor,
+            Map<FacilityRoomSnapshot, Set<Long>> cellsByRoom,
+            FacilityRoomSnapshot previous, int mouseX, int mouseY,
+            MapTransform transform) {
+        if (leaveConfirmation || floorMenuOpen) return null;
+        List<FacilityRoomSnapshot> candidates = new ArrayList<>();
+        for (FacilityRoomSnapshot room : floor.rooms) {
+            if (roomContainsScreen(cellsByRoom.get(room),
+                    mouseX, mouseY, transform)) {
+                candidates.add(room);
+            }
+        }
+        if (candidates.isEmpty()) return null;
+
+        // Once the cursor enters a lower room through an exposed section, keep
+        // that layer selected while it moves through an overlap. This makes a
+        // partly covered room actually inspectable instead of instantly handing
+        // hover back to the top layer.
+        if (previous != null) {
+            for (FacilityRoomSnapshot candidate : candidates) {
+                if (candidate.id().equals(previous.id())) return candidate;
+            }
+        }
+
+        // Without an established hover, the physically highest room is what the
+        // operator sees first, matching the normal render stack.
+        return candidates.stream()
+                .max(Comparator
+                        .comparingInt(Scp079FacilityMapScreen::roomElevation)
+                        .thenComparing(room -> room.id().toString()))
+                .orElse(null);
+    }
+
+    private static int roomElevation(FacilityRoomSnapshot room) {
+        return room.patches().stream().mapToInt(FacilityFloorPatch::y)
+                .min().orElse(0);
+    }
+
+    private static double elevationTone(int y, int minY, int maxY) {
+        if (maxY <= minY) return 0.0D;
+        double t = Mth.clamp((y - minY) / (double) (maxY - minY),
+                0.0D, 1.0D);
+        // Subtle enough to read as depth, not as another connectivity state.
+        return -0.14D + t * 0.22D;
+    }
+
+    private static int shade(int color, double amount) {
+        int alpha = color >>> 24 & 0xFF;
+        double factor = Math.max(0.0D, 1.0D + amount);
+        int red = Mth.clamp((int) Math.round(
+                (color >>> 16 & 0xFF) * factor), 0, 255);
+        int green = Mth.clamp((int) Math.round(
+                (color >>> 8 & 0xFF) * factor), 0, 255);
+        int blue = Mth.clamp((int) Math.round(
+                (color & 0xFF) * factor), 0, 255);
+        return alpha << 24 | red << 16 | green << 8 | blue;
     }
 
     private void renderRoomOutline(GuiGraphics graphics, Set<Long> cells,
@@ -546,9 +659,13 @@ public final class Scp079FacilityMapScreen extends Screen {
     private int initialFloor(List<FloorGroup> options) {
         if (options.isEmpty()) return 0;
         Vec3 view = Scp079PlayableClient.viewPosition();
-        FacilityRoomSnapshot current = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(),
-                net.minecraft.core.BlockPos.containing(view));
+        FacilityRoomSnapshot current =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (current == null) {
+            current = FacilityMappingClientState.roomAt(
+                    Scp079PlayableClient.hostDimension(),
+                    net.minecraft.core.BlockPos.containing(view));
+        }
         if (current != null) {
             for (int i = 0; i < options.size(); i++) {
                 if (options.get(i).rooms.stream().anyMatch(room ->

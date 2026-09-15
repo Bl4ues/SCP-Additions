@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079BlackoutAvailabilityClient;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient;
+import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNetworkClientState;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient.Move;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079CameraNavigationClient.NavigationTarget;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079FacilityMapScreen;
@@ -128,9 +129,13 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
                 minecraft.options.keyRight, right, y);
         y += 7;
 
-        FacilityRoomSnapshot activeRoom = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(),
-                BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        FacilityRoomSnapshot activeRoom =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (activeRoom == null) {
+            activeRoom = FacilityMappingClientState.roomAt(
+                    Scp079PlayableClient.hostDimension(),
+                    BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        }
         if (Scp079BlackoutAvailabilityClient.supported()) {
             double blackoutCost = adjustedCost(minecraft,
                     Scp079RoomAbilityManager.blackoutBaseCost(activeRoom));

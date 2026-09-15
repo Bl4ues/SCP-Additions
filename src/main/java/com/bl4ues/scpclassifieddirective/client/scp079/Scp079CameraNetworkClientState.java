@@ -3,6 +3,8 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.network.Scp079CameraNavigationNetwork;
 import com.bl4ues.scpclassifieddirective.network.Scp079CameraNavigationNetwork.CameraNode;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -44,6 +46,16 @@ public final class Scp079CameraNetworkClientState {
             if (cameraId.equals(node.cameraId())) return node;
         }
         return null;
+    }
+
+    public static FacilityRoomSnapshot activeRoom() {
+        return roomForCamera(Scp079PlayableClient.cameraId());
+    }
+
+    public static FacilityRoomSnapshot roomForCamera(UUID cameraId) {
+        CameraNode node = camera(cameraId);
+        return node == null ? null : FacilityMappingClientState.roomById(
+                Scp079PlayableClient.hostDimension(), node.roomId());
     }
 
     public static Set<UUID> cameraRoomIds() {

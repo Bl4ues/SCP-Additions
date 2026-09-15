@@ -230,6 +230,9 @@ public final class ScpClassifiedDirectiveModulesConfig {
 
 		@SerializedName("main_menu_music_enabled")
 		public boolean mainMenuMusicEnabled = true;
+
+		@SerializedName("facility_ambience_enabled")
+		public boolean facilityAmbienceEnabled = true;
 	}
 
 	public static final class Accessibility {

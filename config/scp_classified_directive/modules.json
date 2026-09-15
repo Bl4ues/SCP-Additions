@@ -2,10 +2,10 @@
   "crosshair": {
     "enabled": true,
     "in_game_enabled": true,
-    "red": 1.0,
-    "green": 1.0,
-    "blue": 1.0,
-    "alpha": 1.0
+    "red": 1,
+    "green": 1,
+    "blue": 1,
+    "alpha": 1
   },
   "inventory": {
     "enabled": true,
@@ -49,18 +49,18 @@
         "omniscient": true,
         "blind": false,
         "night_vision": false,
-        "visibility_multiplier": 1.0,
-        "range_multiplier": 1.0,
-        "acquire_delay_multiplier": 1.0
+        "visibility_multiplier": 1,
+        "range_multiplier": 1,
+        "acquire_delay_multiplier": 1
       },
       {
         "entity": "scp_classified_directive:scp_939",
         "omniscient": false,
         "blind": true,
         "night_vision": false,
-        "visibility_multiplier": 1.0,
-        "range_multiplier": 1.0,
-        "acquire_delay_multiplier": 1.0
+        "visibility_multiplier": 1,
+        "range_multiplier": 1,
+        "acquire_delay_multiplier": 1
       },
       {
         "entity": "scp_classified_directive:scp_173",
@@ -68,7 +68,7 @@
         "blind": false,
         "night_vision": false,
         "visibility_multiplier": 1.35,
-        "range_multiplier": 1.0,
+        "range_multiplier": 1,
         "acquire_delay_multiplier": 0.55
       },
       {
@@ -76,18 +76,18 @@
         "omniscient": false,
         "blind": false,
         "night_vision": true,
-        "visibility_multiplier": 1.0,
-        "range_multiplier": 1.0,
-        "acquire_delay_multiplier": 1.0
+        "visibility_multiplier": 1,
+        "range_multiplier": 1,
+        "acquire_delay_multiplier": 1
       },
       {
         "entity": "minecraft:cave_spider",
         "omniscient": false,
         "blind": false,
         "night_vision": true,
-        "visibility_multiplier": 1.0,
-        "range_multiplier": 1.0,
-        "acquire_delay_multiplier": 1.0
+        "visibility_multiplier": 1,
+        "range_multiplier": 1,
+        "acquire_delay_multiplier": 1
       }
     ]
   },
@@ -107,6 +107,7 @@
     "disable_vanilla_music": true,
     "main_menu_music_enabled": true,
     "save_game_sound_enabled": true,
-    "custom_item_interaction_sounds": true
+    "custom_item_interaction_sounds": true,
+    "facility_ambience_enabled": true
   }
 }

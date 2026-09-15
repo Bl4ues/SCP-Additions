@@ -1796,5 +1796,221 @@
         "volume": 1
       }
     ]
+  },
+  "facility_noise_1": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_1",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_2": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_2",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_3": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_3",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_4": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_4",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_5": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_5",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_6": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_6",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_7": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_7",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_8": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_8",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_9": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_9",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_10": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_10",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_11": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_11",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_12": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_12",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_13": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_13",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_14": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_14",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "facility_noise_15": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:facility_noise_15",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_1": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_1",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_2": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_2",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_3": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_3",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_4": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_4",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_5": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_5",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_6": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_6",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_7": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_7",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_8": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_8",
+        "stream": false,
+        "volume": 1
+      }
+    ]
+  },
+  "core_noises_9": {
+    "sounds": [
+      {
+        "name": "scp_classified_directive:core_noises_9",
+        "stream": false,
+        "volume": 1
+      }
+    ]
   }
 }

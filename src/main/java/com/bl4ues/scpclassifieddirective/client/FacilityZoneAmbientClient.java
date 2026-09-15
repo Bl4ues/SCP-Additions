@@ -48,6 +48,10 @@ public final class FacilityZoneAmbientClient {
             stopImmediately(minecraft);
             return;
         }
+        if (!ClientModulePreferences.facilityAmbienceEnabled()) {
+            stopImmediately(minecraft);
+            return;
+        }
 
         Selection desired = select(minecraft);
         if (desired.area() != activeArea) {

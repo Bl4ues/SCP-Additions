@@ -42,7 +42,7 @@ public final class ClientPreferencesMenu {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            migrateMainMenuMusicDefault();
+            migrateAudioDefaults();
             MinecraftForge.registerConfigScreen(ClientPreferencesMenu::open);
         });
     }
@@ -91,8 +91,8 @@ public final class ClientPreferencesMenu {
         field.set(null, value);
     }
 
-    /** Give existing preference files the advertised default for this new key. */
-    private static void migrateMainMenuMusicDefault() {
+    /** Give existing preference files the advertised defaults for new audio keys. */
+    private static void migrateAudioDefaults() {
         try {
             if (!Files.exists(PREFERENCES)) {
                 ClientModulePreferences.load();
@@ -115,15 +115,23 @@ public final class ClientPreferencesMenu {
                 root.add("audio", audio);
             }
 
+            boolean changed = false;
             if (!audio.has("mainMenuMusicEnabled")) {
                 audio.addProperty("mainMenuMusicEnabled", true);
+                changed = true;
+            }
+            if (!audio.has("facilityAmbienceEnabled")) {
+                audio.addProperty("facilityAmbienceEnabled", true);
+                changed = true;
+            }
+            if (changed) {
                 ConfigFilePersistence.writeWithBackup(PREFERENCES,
                         root.toString() + System.lineSeparator());
             }
             ClientModulePreferences.load();
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.error(
-                    "Could not migrate client menu-music preferences",
+                    "Could not migrate client audio preferences",
                     exception);
             ClientModulePreferences.load();
         }

@@ -96,6 +96,8 @@ public final class Scp079ModulesScreenExtension {
                     "Uses SCP Inventory pickup, consumption, and equipment feedback sounds while the custom inventory is active.", true),
             new Row("audio", "disable_vanilla_music", "Disable Vanilla Music",
                     "Stops Minecraft's ambient soundtrack while preserving SCP: Classified Directive music.", true),
+            new Row("audio", "facility_ambience_enabled", "Facility Ambience",
+                    "Plays mapped floor ambience and synchronized distant facility noises inside mapped rooms.", true),
             new Row("audio", "main_menu_music_enabled", "Main Menu Music",
                     "Loops main_menu.ogg throughout Minecraft's menus.", true),
             new Row("audio", "replace_player_hurt_sounds",

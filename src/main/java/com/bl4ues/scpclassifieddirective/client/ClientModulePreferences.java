@@ -46,7 +46,7 @@ public final class ClientModulePreferences {
             "audio.custom_item_interaction_sounds",
             "audio.replace_player_hurt_sounds", "audio.use_voice_profile_b",
             "audio.mute_non_player_hit_sounds", "audio.disable_vanilla_music",
-            "audio.main_menu_music_enabled",
+            "audio.main_menu_music_enabled", "audio.facility_ambience_enabled",
             "accessibility.reduce_scp_012_visual_effects",
             "accessibility.reduce_restore_motion"
     );
@@ -130,6 +130,7 @@ public final class ClientModulePreferences {
         next.audio.muteNonPlayerHitSounds = bool(audio, "mute_non_player_hit_sounds", next.audio.muteNonPlayerHitSounds);
         next.audio.disableVanillaMusic = bool(audio, "disable_vanilla_music", next.audio.disableVanillaMusic);
         next.audio.mainMenuMusicEnabled = bool(audio, "main_menu_music_enabled", next.audio.mainMenuMusicEnabled);
+        next.audio.facilityAmbienceEnabled = bool(audio, "facility_ambience_enabled", next.audio.facilityAmbienceEnabled);
 
         JsonObject accessibility = object(modules, "accessibility");
         next.accessibility.reduceScp012VisualEffects = bool(accessibility,
@@ -194,6 +195,7 @@ public final class ClientModulePreferences {
         audio.addProperty("mute_non_player_hit_sounds", value.audio.muteNonPlayerHitSounds);
         audio.addProperty("disable_vanilla_music", value.audio.disableVanillaMusic);
         audio.addProperty("main_menu_music_enabled", value.audio.mainMenuMusicEnabled);
+        audio.addProperty("facility_ambience_enabled", value.audio.facilityAmbienceEnabled);
 
         JsonObject accessibility = object(modules, "accessibility");
         accessibility.addProperty("reduce_scp_012_visual_effects", value.accessibility.reduceScp012VisualEffects);
@@ -233,6 +235,7 @@ public final class ClientModulePreferences {
     }
 
     public static boolean mainMenuMusicEnabled() { return current.audio.mainMenuMusicEnabled; }
+    public static boolean facilityAmbienceEnabled() { return current.audio.facilityAmbienceEnabled; }
     public static boolean customMainMenuEnabled() { return current.ui.customMainMenu; }
     public static boolean customPauseMenuEnabled() { return current.ui.customPauseMenu; }
     public static boolean customLoadingScreenEnabled() { return current.ui.customLoadingScreen; }
@@ -360,6 +363,7 @@ public final class ClientModulePreferences {
         private boolean muteNonPlayerHitSounds;
         private boolean disableVanillaMusic = true;
         private boolean mainMenuMusicEnabled = true;
+        private boolean facilityAmbienceEnabled = true;
     }
 
     private static final class Accessibility {

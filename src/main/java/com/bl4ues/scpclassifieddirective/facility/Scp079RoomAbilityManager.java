@@ -66,7 +66,8 @@ public final class Scp079RoomAbilityManager {
             return false;
         }
         ServerLevel level = player.serverLevel();
-        FacilityRoomSnapshot room = currentRoom(level, player.blockPosition());
+        FacilityRoomSnapshot room =
+                Scp079PlayableManager.currentCameraRoom(player);
         if (room == null) return false;
         return useMapped(level, room, ability, true);
     }

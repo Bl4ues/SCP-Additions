@@ -54,42 +54,50 @@ public final class Scp079CameraNetworkClientState {
     }
 
     public static FacilityRoomSnapshot roomForCamera(UUID cameraId) {
-        CameraNode node = camera(cameraId);
-        if (node != null) {
-            return FacilityMappingClientState.roomById(
-                    Scp079PlayableClient.hostDimension(), node.roomId());
-        }
         FacilityCameraMappingSnapshot mapping =
                 FacilityMappingClientState.cameraById(
                         Scp079PlayableClient.hostDimension(), cameraId);
-        return mapping == null || !mapping.associated() ? null
-                : FacilityMappingClientState.roomById(
-                        Scp079PlayableClient.hostDimension(),
-                        mapping.roomId());
+        if (mapping != null) {
+            return !mapping.associated() ? null
+                    : FacilityMappingClientState.roomById(
+                            Scp079PlayableClient.hostDimension(),
+                            mapping.roomId());
+        }
+        CameraNode node = camera(cameraId);
+        return node == null ? null : FacilityMappingClientState.roomById(
+                Scp079PlayableClient.hostDimension(), node.roomId());
     }
 
     public static Set<UUID> cameraRoomIds() {
         Set<UUID> result = new LinkedHashSet<>();
-        for (CameraNode node : nodes) result.add(node.roomId());
-        for (FacilityCameraMappingSnapshot mapping
-                : FacilityMappingClientState.cameras(
-                Scp079PlayableClient.hostDimension())) {
-            if (mapping.associated()) result.add(mapping.roomId());
+        List<FacilityCameraMappingSnapshot> mappings =
+                FacilityMappingClientState.cameras(
+                        Scp079PlayableClient.hostDimension());
+        if (!mappings.isEmpty()) {
+            for (FacilityCameraMappingSnapshot mapping : mappings) {
+                if (mapping.associated()) result.add(mapping.roomId());
+            }
+            return Set.copyOf(result);
         }
+        for (CameraNode node : nodes) result.add(node.roomId());
         return Set.copyOf(result);
     }
 
     public static boolean hasCamera(UUID roomId) {
         if (roomId == null) return false;
+        List<FacilityCameraMappingSnapshot> mappings =
+                FacilityMappingClientState.cameras(
+                        Scp079PlayableClient.hostDimension());
+        if (!mappings.isEmpty()) {
+            for (FacilityCameraMappingSnapshot mapping : mappings) {
+                if (mapping.associated() && roomId.equals(mapping.roomId())) {
+                    return true;
+                }
+            }
+            return false;
+        }
         for (CameraNode node : nodes) {
             if (roomId.equals(node.roomId())) return true;
-        }
-        for (FacilityCameraMappingSnapshot mapping
-                : FacilityMappingClientState.cameras(
-                Scp079PlayableClient.hostDimension())) {
-            if (mapping.associated() && roomId.equals(mapping.roomId())) {
-                return true;
-            }
         }
         return false;
     }

@@ -32,12 +32,14 @@ public final class FacilityZoneAmbientClient {
     private static final float LCZ_INSIDE_VOLUME = 1.35F;
     private static final float CORE_INSIDE_VOLUME = 1.70F;
     private static final double SPILL_RADIUS = 12.0D;
-    private static final int RETRY_DELAY_TICKS = 100;
+    private static final int RETRY_DELAY_TICKS = 20;
+    private static final int INACTIVE_GRACE_TICKS = 20;
 
     private static FacilityZoneAmbientSound active;
     private static FacilityZoneAmbientSound fading;
     private static Area activeArea = Area.NONE;
     private static int retryTicks;
+    private static int inactiveTicks;
 
     private FacilityZoneAmbientClient() {
     }
@@ -64,10 +66,20 @@ public final class FacilityZoneAmbientClient {
         }
 
         if (retryTicks > 0) retryTicks--;
-        if (active != null
-                && !minecraft.getSoundManager().isActive(active)) {
-            active = null;
-            if (activeArea.hasAudio()) retryTicks = RETRY_DELAY_TICKS;
+        if (active != null) {
+            if (minecraft.getSoundManager().isActive(active)) {
+                inactiveTicks = 0;
+            } else if (++inactiveTicks > INACTIVE_GRACE_TICKS) {
+                // Streaming sources can report inactive briefly while their
+                // asynchronous channel is being created or cycled. Recreate the
+                // loop only after a sustained loss instead of killing it on the
+                // very tick it was started.
+                active = null;
+                inactiveTicks = 0;
+                if (activeArea.hasAudio()) retryTicks = RETRY_DELAY_TICKS;
+            }
+        } else {
+            inactiveTicks = 0;
         }
         if (fading != null
                 && !minecraft.getSoundManager().isActive(fading)) {
@@ -212,6 +224,7 @@ public final class FacilityZoneAmbientClient {
         }
         activeArea = desired.area();
         retryTicks = 0;
+        inactiveTicks = 0;
         if (activeArea.hasAudio()) {
             start(minecraft, activeArea, desired.volume());
         }
@@ -221,6 +234,7 @@ public final class FacilityZoneAmbientClient {
         SoundEvent event = soundFor(area);
         if (event == null) return;
         active = new FacilityZoneAmbientSound(event, volume);
+        inactiveTicks = 0;
         minecraft.getSoundManager().play(active);
     }
 
@@ -241,6 +255,7 @@ public final class FacilityZoneAmbientClient {
         fading = null;
         activeArea = Area.NONE;
         retryTicks = 0;
+        inactiveTicks = 0;
     }
 
     private enum Area {

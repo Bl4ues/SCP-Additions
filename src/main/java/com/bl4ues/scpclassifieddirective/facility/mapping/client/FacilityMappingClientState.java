@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.mapping.client;
 
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityCameraMappingSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.core.BlockPos;
@@ -14,7 +15,10 @@ import java.util.Map;
 public final class FacilityMappingClientState {
     private static final Map<ResourceLocation, List<FacilityRoomSnapshot>> ROOMS =
             new HashMap<>();
+    private static final Map<ResourceLocation, List<FacilityCameraMappingSnapshot>>
+            CAMERAS = new HashMap<>();
     private static BlockPos selectionStart;
+    private static java.util.UUID cameraLinkSelection;
 
     private FacilityMappingClientState() {
     }
@@ -25,6 +29,14 @@ public final class FacilityMappingClientState {
 
     public static BlockPos selectionStart() {
         return selectionStart;
+    }
+
+    public static void setCameraLinkSelection(java.util.UUID cameraId) {
+        cameraLinkSelection = cameraId;
+    }
+
+    public static java.util.UUID cameraLinkSelection() {
+        return cameraLinkSelection;
     }
 
     public static void sync(ResourceLocation dimension,
@@ -38,12 +50,89 @@ public final class FacilityMappingClientState {
                 : ROOMS.getOrDefault(dimension, List.of());
     }
 
-    public static FacilityRoomSnapshot roomAt(ResourceLocation dimension,
-            BlockPos pos) {
-        for (FacilityRoomSnapshot room : rooms(dimension)) {
-            if (room.containsColumn(pos) || withinBorder(room, pos, 1)) return room;
+    public static void syncCameras(ResourceLocation dimension,
+            List<FacilityCameraMappingSnapshot> cameras) {
+        if (dimension == null) return;
+        CAMERAS.put(dimension,
+                cameras == null ? List.of() : List.copyOf(cameras));
+    }
+
+    public static List<FacilityCameraMappingSnapshot> cameras(
+            ResourceLocation dimension) {
+        return dimension == null ? List.of()
+                : CAMERAS.getOrDefault(dimension, List.of());
+    }
+
+    public static FacilityCameraMappingSnapshot cameraAt(
+            ResourceLocation dimension, BlockPos pos) {
+        if (pos == null) return null;
+        for (FacilityCameraMappingSnapshot camera : cameras(dimension)) {
+            if (camera.anchorPos().equals(pos)) return camera;
         }
         return null;
+    }
+
+    public static FacilityRoomSnapshot roomById(ResourceLocation dimension,
+            java.util.UUID roomId) {
+        if (roomId == null) return null;
+        for (FacilityRoomSnapshot room : rooms(dimension)) {
+            if (roomId.equals(room.id())) return room;
+        }
+        return null;
+    }
+
+    public static FacilityRoomSnapshot roomAt(ResourceLocation dimension,
+            BlockPos pos) {
+        if (pos == null) return null;
+        FacilityRoomSnapshot best = null;
+        int bestVertical = Integer.MAX_VALUE;
+        long bestArea = Long.MAX_VALUE;
+        for (FacilityRoomSnapshot room : rooms(dimension)) {
+            if (!room.containsColumn(pos)) continue;
+            int vertical = verticalDistance(room, pos);
+            long area = authoredArea(room);
+            if (vertical < bestVertical
+                    || vertical == bestVertical && area < bestArea) {
+                best = room;
+                bestVertical = vertical;
+                bestArea = area;
+            }
+        }
+        if (best != null) return best;
+        for (FacilityRoomSnapshot room : rooms(dimension)) {
+            if (!withinBorder(room, pos, 1)) continue;
+            int vertical = verticalDistance(room, pos);
+            long area = authoredArea(room);
+            if (vertical < bestVertical
+                    || vertical == bestVertical && area < bestArea) {
+                best = room;
+                bestVertical = vertical;
+                bestArea = area;
+            }
+        }
+        return best;
+    }
+
+    private static int verticalDistance(FacilityRoomSnapshot room,
+            BlockPos pos) {
+        int best = Integer.MAX_VALUE;
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (pos.getX() >= patch.minX() && pos.getX() <= patch.maxX()
+                    && pos.getZ() >= patch.minZ() && pos.getZ() <= patch.maxZ()) {
+                best = Math.min(best, Math.abs(pos.getY() - patch.y()));
+            }
+        }
+        if (best != Integer.MAX_VALUE) return best;
+        for (FacilityFloorPatch patch : room.patches()) {
+            best = Math.min(best, Math.abs(pos.getY() - patch.y()));
+        }
+        return best;
+    }
+
+    private static long authoredArea(FacilityRoomSnapshot room) {
+        long area = 0L;
+        for (FacilityFloorPatch patch : room.patches()) area += patch.area();
+        return area;
     }
 
     private static boolean withinBorder(FacilityRoomSnapshot room,
@@ -64,6 +153,8 @@ public final class FacilityMappingClientState {
 
     public static void clear() {
         selectionStart = null;
+        cameraLinkSelection = null;
         ROOMS.clear();
+        CAMERAS.clear();
     }
 }

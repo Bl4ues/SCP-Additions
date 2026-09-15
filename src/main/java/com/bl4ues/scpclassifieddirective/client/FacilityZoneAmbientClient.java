@@ -30,7 +30,7 @@ public final class FacilityZoneAmbientClient {
     // The source files are intentionally quiet environmental beds. These gains
     // keep them clearly audible without competing with encounter music.
     private static final float LCZ_INSIDE_VOLUME = 1.08F;
-    private static final float CORE_INSIDE_VOLUME = 2.975F;
+    private static final float CORE_INSIDE_VOLUME = 2.70F;
     private static final double SPILL_RADIUS = 12.0D;
     private static final int CORE_ROOM_BORDER = 1;
     private static final int RETRY_DELAY_TICKS = 20;
@@ -38,8 +38,10 @@ public final class FacilityZoneAmbientClient {
 
     private static FacilityZoneAmbientSound active;
     private static FacilityZoneAmbientSound activeBoost;
+    private static FacilityZoneAmbientSound activeBoost2;
     private static FacilityZoneAmbientSound fading;
     private static FacilityZoneAmbientSound fadingBoost;
+    private static FacilityZoneAmbientSound fadingBoost2;
     private static Area activeArea = Area.NONE;
     private static int retryTicks;
     private static int inactiveTicks;
@@ -91,6 +93,10 @@ public final class FacilityZoneAmbientClient {
         if (fadingBoost != null
                 && !minecraft.getSoundManager().isActive(fadingBoost)) {
             fadingBoost = null;
+        }
+        if (fadingBoost2 != null
+                && !minecraft.getSoundManager().isActive(fadingBoost2)) {
+            fadingBoost2 = null;
         }
         if (active == null && activeArea.hasAudio()
                 && retryTicks <= 0) {
@@ -251,10 +257,13 @@ public final class FacilityZoneAmbientClient {
     }
 
     private static void transitionTo(Minecraft minecraft, Selection desired) {
-        if (active != null || activeBoost != null) {
+        if (active != null || activeBoost != null || activeBoost2 != null) {
             if (fading != null) minecraft.getSoundManager().stop(fading);
             if (fadingBoost != null) {
                 minecraft.getSoundManager().stop(fadingBoost);
+            }
+            if (fadingBoost2 != null) {
+                minecraft.getSoundManager().stop(fadingBoost2);
             }
             if (active != null) {
                 active.beginFadeOut();
@@ -264,8 +273,13 @@ public final class FacilityZoneAmbientClient {
                 activeBoost.beginFadeOut();
                 fadingBoost = activeBoost;
             }
+            if (activeBoost2 != null) {
+                activeBoost2.beginFadeOut();
+                fadingBoost2 = activeBoost2;
+            }
             active = null;
             activeBoost = null;
+            activeBoost2 = null;
         }
         activeArea = desired.area();
         retryTicks = 0;
@@ -282,16 +296,25 @@ public final class FacilityZoneAmbientClient {
             minecraft.getSoundManager().stop(activeBoost);
             activeBoost = null;
         }
+        if (activeBoost2 != null) {
+            minecraft.getSoundManager().stop(activeBoost2);
+            activeBoost2 = null;
+        }
 
         float primaryVolume = Math.min(1.0F,
                 Math.max(FacilityZoneAmbientSound.MIN_VOLUME, volume));
-        float boostVolume = Math.max(0.0F, volume - 1.0F);
+        float boostVolume = Math.min(1.0F, Math.max(0.0F, volume - 1.0F));
+        float boost2Volume = Math.max(0.0F, volume - 2.0F);
         active = new FacilityZoneAmbientSound(event, primaryVolume);
         inactiveTicks = 0;
         minecraft.getSoundManager().play(active);
         if (boostVolume > FacilityZoneAmbientSound.MIN_VOLUME) {
             activeBoost = new FacilityZoneAmbientSound(event, boostVolume);
             minecraft.getSoundManager().play(activeBoost);
+        }
+        if (boost2Volume > FacilityZoneAmbientSound.MIN_VOLUME) {
+            activeBoost2 = new FacilityZoneAmbientSound(event, boost2Volume);
+            minecraft.getSoundManager().play(activeBoost2);
         }
     }
 
@@ -301,8 +324,12 @@ public final class FacilityZoneAmbientClient {
                     Math.max(FacilityZoneAmbientSound.MIN_VOLUME, volume)));
         }
         if (activeBoost != null) {
-            activeBoost.setTargetVolume(Math.max(
-                    FacilityZoneAmbientSound.MIN_VOLUME, volume - 1.0F));
+            activeBoost.setTargetVolume(Math.min(1.0F, Math.max(
+                    FacilityZoneAmbientSound.MIN_VOLUME, volume - 1.0F)));
+        }
+        if (activeBoost2 != null) {
+            activeBoost2.setTargetVolume(Math.max(
+                    FacilityZoneAmbientSound.MIN_VOLUME, volume - 2.0F));
         }
     }
 
@@ -319,12 +346,16 @@ public final class FacilityZoneAmbientClient {
     private static void stopImmediately(Minecraft minecraft) {
         if (active != null) minecraft.getSoundManager().stop(active);
         if (activeBoost != null) minecraft.getSoundManager().stop(activeBoost);
+        if (activeBoost2 != null) minecraft.getSoundManager().stop(activeBoost2);
         if (fading != null) minecraft.getSoundManager().stop(fading);
         if (fadingBoost != null) minecraft.getSoundManager().stop(fadingBoost);
+        if (fadingBoost2 != null) minecraft.getSoundManager().stop(fadingBoost2);
         active = null;
         activeBoost = null;
+        activeBoost2 = null;
         fading = null;
         fadingBoost = null;
+        fadingBoost2 = null;
         activeArea = Area.NONE;
         retryTicks = 0;
         inactiveTicks = 0;

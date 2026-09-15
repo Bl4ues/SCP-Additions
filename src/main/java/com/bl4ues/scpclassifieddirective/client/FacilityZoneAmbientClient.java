@@ -27,7 +27,7 @@ import java.util.Locale;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityZoneAmbientClient {
-    private static final float INSIDE_VOLUME = 0.55F;
+    private static final float INSIDE_VOLUME = 0.85F;
     private static final double SPILL_RADIUS = 12.0D;
     private static final int RETRY_DELAY_TICKS = 100;
 
@@ -128,8 +128,11 @@ public final class FacilityZoneAmbientClient {
 
     private static Area areaFor(FacilityRoomSnapshot room) {
         if (room == null) return Area.NONE;
-        BlockPos station = room.floorStation();
-        if (station != null && room.containsColumn(station)) {
+        // A room is a Core Room because Facility Mapping explicitly associates
+        // it with a configured Elevator Floor Station. The station block itself
+        // may sit in the wall/perimeter rather than over one of the room's floor
+        // columns, so containment is the wrong test here.
+        if (room.floorStation() != null) {
             return Area.CORE_ROOM;
         }
 

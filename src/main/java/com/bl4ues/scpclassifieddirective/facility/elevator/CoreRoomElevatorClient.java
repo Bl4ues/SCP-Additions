@@ -122,10 +122,10 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorModule.StationBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            // The station body is opaque/cutout. Keeping it off the translucent
-            // pipeline prevents shader compositing from dimming the emissive
-            // panel that is rendered immediately afterwards.
-            return RenderType.entityCutoutNoCull(texture);
+            // Preserve the authored translucent windows/glass. The emissive
+            // panel is isolated in the dedicated eyes pass above, so the body
+            // does not need to sacrifice its alpha channel to protect bloom.
+            return RenderType.entityTranslucent(texture, true);
         }
     }
 
@@ -238,10 +238,12 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorCarriageEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            // The authored cage relies on cutout holes, not semitransparent
-            // glass. Using the translucent pipeline made the lamp panel and
-            // nearby cage faces feed one another into shader bloom.
-            return RenderType.entityCutoutNoCull(texture);
+            // The carriage contains authored translucent windows and glass in
+            // addition to the perforated cage. Keep the original translucent
+            // material path; the lamp artifact is prevented by the explicit
+            // glowmask pass and by excluding this large entity from automatic
+            // LabPBR glowmask merging.
+            return RenderType.entityTranslucent(texture, true);
         }
 
         @Override

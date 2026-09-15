@@ -245,7 +245,7 @@ public final class BlastDoorClient {
                     point(back, x2, y2, MIMIC_SURFACE),
                     point(back, x1, y2, MIMIC_SURFACE),
                     front, a, b, cc, d,
-                    faceLight(level, targetPos, front),
+                    faceLight(level, sourcePos, front),
                     faceColor(level, sourceState, sourcePos, frontUv, front));
         }
         if (backUv != null) {
@@ -259,7 +259,7 @@ public final class BlastDoorClient {
                     point(back, x1, y2, -MIMIC_SURFACE),
                     point(back, x2, y2, -MIMIC_SURFACE),
                     back, a, b, cc, d,
-                    faceLight(level, targetPos, back),
+                    faceLight(level, sourcePos, back),
                     faceColor(level, sourceState, sourcePos, backUv, back));
         }
     }
@@ -286,7 +286,7 @@ public final class BlastDoorClient {
                     uv.sample(hAtFront, v0),
                     uv.sample(hAtFront, v1),
                     uv.sample(hAtBack, v1),
-                    faceLight(level, targetPos, innerFace),
+                    faceLight(level, sourcePos, innerFace),
                     faceColor(level, sourceState, sourcePos, uv, innerFace));
         } else {
             emitFace(consumer, pose,
@@ -299,18 +299,21 @@ public final class BlastDoorClient {
                     uv.sample(hAtBack, v0),
                     uv.sample(hAtBack, v1),
                     uv.sample(hAtFront, v1),
-                    faceLight(level, targetPos, innerFace),
+                    faceLight(level, sourcePos, innerFace),
                     faceColor(level, sourceState, sourcePos, uv, innerFace));
         }
     }
 
-    private static int faceLight(Level level, BlockPos targetPos,
+    private static int faceLight(Level level, BlockPos sourcePos,
             Direction face) {
-        // Match vanilla block-face lighting: a visible face samples the light
-        // in the neighbouring cell on that side, not the invisible placeholder
-        // cell occupied by the multiblock itself.
+        /*
+         * Sample the same neighbouring wall face that provides this mimic's
+         * texture. The 8x8 quarter occupies a reserved Blast Door multiblock
+         * cell, whose local light sample can be shadowed by the frame and make
+         * only this small mimic visibly darker than the full wall mimics.
+         */
         return net.minecraft.client.renderer.LevelRenderer.getLightColor(
-                level, targetPos.relative(face));
+                level, sourcePos.relative(face));
     }
 
     private static int faceColor(Level level, BlockState state,

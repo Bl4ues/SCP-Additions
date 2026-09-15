@@ -51,7 +51,9 @@ public final class Scp079AdjacentCameraSwitchNetwork {
         FacilityCameraDefinition currentCamera = nearestActiveCamera(server,
                 level, player.position().x, player.position().y,
                 player.position().z);
-        FacilityRoomSnapshot currentRoom = roomForCamera(rooms, currentCamera);
+        FacilityRoomSnapshot currentRoom =
+                FacilityMappingManager.roomSnapshotForCamera(level,
+                        currentCamera);
         FacilityRoomSnapshot targetRoom = roomById(rooms, roomId);
         if (currentRoom == null || targetRoom == null
                 || currentRoom.id().equals(targetRoom.id())
@@ -86,20 +88,6 @@ public final class Scp079AdjacentCameraSwitchNetwork {
             }
         }
         return best;
-    }
-
-    private static FacilityRoomSnapshot roomForCamera(
-            List<FacilityRoomSnapshot> rooms, FacilityCameraDefinition camera) {
-        if (camera == null) return null;
-        BlockPos eye = BlockPos.containing(camera.eyePosition());
-        for (FacilityRoomSnapshot room : rooms) {
-            if (room.containsColumn(eye)) return room;
-        }
-        for (FacilityRoomSnapshot room : rooms) {
-            if (Scp079RoomInteractionPolicy.withinExpandedFloor(room,
-                    camera.anchorPos(), 1)) return room;
-        }
-        return null;
     }
 
     private static FacilityRoomSnapshot roomById(

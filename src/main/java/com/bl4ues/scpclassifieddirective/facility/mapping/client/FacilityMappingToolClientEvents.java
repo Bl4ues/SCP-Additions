@@ -22,8 +22,16 @@ public final class FacilityMappingToolClientEvents {
         if (event.getHand() != InteractionHand.MAIN_HAND
                 || !event.getItemStack().is(FacilityMappingItems.getTool())
                 || !event.getEntity().isCreative()) return;
-        FacilityMappingClientState.setSelectionStart(event.getPos());
-        FacilityMappingNetwork.requestSelectionStart(event.getPos());
+        var dimension = event.getLevel().dimension().location();
+        if (FacilityMappingClientState.cameraLinkSelection() != null) {
+            FacilityMappingNetwork.requestCameraLinkAssign(event.getPos());
+        } else if (FacilityMappingClientState.cameraAt(
+                dimension, event.getPos()) != null) {
+            FacilityMappingNetwork.requestCameraLinkStart(event.getPos());
+        } else {
+            FacilityMappingClientState.setSelectionStart(event.getPos());
+            FacilityMappingNetwork.requestSelectionStart(event.getPos());
+        }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
     }

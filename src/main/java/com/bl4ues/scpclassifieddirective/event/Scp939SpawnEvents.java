@@ -20,8 +20,10 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerManager;
+import com.bl4ues.scpclassifieddirective.roamer.RoamerMappedSpawnPreference;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerResult;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerType;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 
 /** Natural SCP-939 encounter scheduler and hidden placement. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
@@ -162,6 +164,27 @@ public final class Scp939SpawnEvents {
     private static Scp939Entity trySpawnNearPlayer(ServerPlayer player,
             RandomSource random) {
         ServerLevel level = player.serverLevel();
+
+        RoamerMappedSpawnPreference.Search mapped =
+                RoamerMappedSpawnPreference.search(player, random,
+                        MIN_DISTANCE, MAX_DISTANCE,
+                        LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN, SPAWN_ATTEMPTS);
+        if (mapped.preferred()) {
+            for (BlockPos pos : mapped.candidates()) {
+                if (!isValidPosition(level, pos)) continue;
+                Vec3 spawnPos = Vec3.atBottomCenterOf(pos);
+                if (isDirectlyVisible(player, spawnPos)) continue;
+                Scp939Entity spawned = spawn(level, spawnPos, player);
+                if (spawned != null) return spawned;
+            }
+            /*
+             * Nearby mapped cells remain authoritative even when every sampled
+             * point is blocked, visible, or protected by a Safe Zone. Only a
+             * player without nearby mapping uses the legacy random fallback.
+             */
+            return null;
+        }
+
         Vec3 look = horizontal(player.getLookAngle());
         if (look.lengthSqr() < 0.0001D) look = new Vec3(0, 0, 1);
         Vec3 behind = look.scale(-1.0D);
@@ -231,6 +254,11 @@ public final class Scp939SpawnEvents {
         AABB box = new AABB(x - ENTITY_HALF_WIDTH, y,
                 z - ENTITY_HALF_WIDTH, x + ENTITY_HALF_WIDTH,
                 y + ENTITY_HEIGHT, z + ENTITY_HALF_WIDTH);
+        if (SafeZoneManager.contains(level, pos.below())
+                || SafeZoneManager.contains(level, pos)
+                || SafeZoneManager.intersects(level, box)) {
+            return false;
+        }
         return level.noCollision(box);
     }
 

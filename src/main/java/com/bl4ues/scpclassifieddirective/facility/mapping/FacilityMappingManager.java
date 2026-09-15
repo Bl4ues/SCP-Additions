@@ -464,6 +464,10 @@ public final class FacilityMappingManager {
                 best = Math.min(best, Math.abs(pos.getY() - patch.y()));
             }
         }
+        if (best != Integer.MAX_VALUE) return best;
+        for (FacilityFloorPatch patch : room.patches()) {
+            best = Math.min(best, Math.abs(pos.getY() - patch.y()));
+        }
         return best;
     }
 

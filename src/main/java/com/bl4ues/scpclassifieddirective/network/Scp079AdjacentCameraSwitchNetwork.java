@@ -48,9 +48,8 @@ public final class Scp079AdjacentCameraSwitchNetwork {
         ServerLevel level = player.serverLevel();
         List<FacilityRoomSnapshot> rooms = FacilityMappingManager.roomSnapshots(level);
 
-        FacilityCameraDefinition currentCamera = nearestActiveCamera(server,
-                level, player.position().x, player.position().y,
-                player.position().z);
+        FacilityCameraDefinition currentCamera =
+                Scp079PlayableManager.currentCamera(player);
         FacilityRoomSnapshot currentRoom =
                 FacilityMappingManager.roomSnapshotForCamera(level,
                         currentCamera);
@@ -65,29 +64,6 @@ public final class Scp079AdjacentCameraSwitchNetwork {
                 .nextForRoom(level, targetRoom.id(), null);
         return target != null
                 && Scp079PlayableManager.switchToCamera(player, target.id());
-    }
-
-    private static FacilityCameraDefinition nearestActiveCamera(
-            MinecraftServer server, ServerLevel level,
-            double x, double y, double z) {
-        FacilityCameraDefinition best = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (FacilityCameraDefinition raw : FacilitySurveillanceSavedData
-                .get(server).all()) {
-            if (!raw.dimension().equals(level.dimension().location())) continue;
-            FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
-                    level, raw.id());
-            if (camera == null) continue;
-            double dx = camera.eyePosition().x - x;
-            double dy = camera.eyePosition().y - y;
-            double dz = camera.eyePosition().z - z;
-            double distance = dx * dx + dy * dy + dz * dz;
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                best = camera;
-            }
-        }
-        return best;
     }
 
     private static FacilityRoomSnapshot roomById(

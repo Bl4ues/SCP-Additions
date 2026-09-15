@@ -71,6 +71,11 @@ public final class Scp079CameraNetworkClientState {
     public static Set<UUID> cameraRoomIds() {
         Set<UUID> result = new LinkedHashSet<>();
         for (CameraNode node : nodes) result.add(node.roomId());
+        for (FacilityCameraMappingSnapshot mapping
+                : FacilityMappingClientState.cameras(
+                Scp079PlayableClient.hostDimension())) {
+            if (mapping.associated()) result.add(mapping.roomId());
+        }
         return Set.copyOf(result);
     }
 
@@ -78,6 +83,13 @@ public final class Scp079CameraNetworkClientState {
         if (roomId == null) return false;
         for (CameraNode node : nodes) {
             if (roomId.equals(node.roomId())) return true;
+        }
+        for (FacilityCameraMappingSnapshot mapping
+                : FacilityMappingClientState.cameras(
+                Scp079PlayableClient.hostDimension())) {
+            if (mapping.associated() && roomId.equals(mapping.roomId())) {
+                return true;
+            }
         }
         return false;
     }

@@ -68,6 +68,7 @@ public final class AreaUnderConstructionSignModule {
         BLOCK_ENTITIES.register(bus);
         HazardSignModule.register(bus);
         ObjectContainmentUnitModule.register(bus);
+        Scp714ContainmentStandModule.register(bus);
         SurveillanceCameraPlaceholderModule.register(bus);
         CeilingCameraModule.register(bus);
         SpeakerModule.register(bus);
@@ -79,6 +80,7 @@ public final class AreaUnderConstructionSignModule {
             BuildCreativeModeTabContentsEvent event) {
         if (event.getTab() == FacilityModule.SCP_FACILITY_BLOCKS.get()) {
             event.accept(ObjectContainmentUnitModule.ITEM.get());
+            event.accept(Scp714ContainmentStandModule.ITEM.get());
             event.accept(SurveillanceCameraPlaceholderModule.ITEM.get());
             event.accept(CeilingCameraModule.ITEM.get());
             event.accept(SpeakerModule.ITEM.get());
@@ -106,6 +108,8 @@ public final class AreaUnderConstructionSignModule {
                 if (stack.is(UnifiedReaderItems.KEYCARD_READER.get())) {
                     addUnique(items,
                             new ItemStack(ObjectContainmentUnitModule.ITEM.get()));
+                    addUnique(items,
+                            new ItemStack(Scp714ContainmentStandModule.ITEM.get()));
                 }
             }
             if (section.sprite().getPath().endsWith("/functionaltab.png")) {

@@ -43,20 +43,9 @@ public final class Scp079FacilityMapNetworkOverlay {
                 screenHeight, mapZoom, panX, panY);
         if (transform == null) return;
 
-        for (FacilityRoomSnapshot room : floor.rooms()) {
-            if (Scp079CameraNetworkClientState.hasCamera(room.id())) continue;
-
-            // Authored floor patches may overlap. Darkening each patch directly
-            // stacks translucent fills and makes no-camera rooms look striped or
-            // blotchy, so render the geometric union exactly once per cell.
-            for (long packed : roomCells(room)) {
-                int x = unpackX(packed);
-                int z = unpackZ(packed);
-                graphics.fill(transform.sx(x), transform.sy(z),
-                        transform.sx(x + 1), transform.sy(z + 1),
-                        0xB806121A);
-            }
-        }
+        // Room coverage/dimming is rendered by the base map now so vertical
+        // room stacking and hover promotion share one deterministic draw order.
+        // This overlay is intentionally limited to transient network markers.
 
         renderActivityPings(graphics, floor, transform);
         renderHostMarker(graphics, floor, transform, minecraft);

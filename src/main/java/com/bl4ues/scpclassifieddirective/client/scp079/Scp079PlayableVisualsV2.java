@@ -222,7 +222,12 @@ public final class Scp079PlayableVisualsV2 {
         int width = minecraft.getWindow().getGuiScaledWidth();
         int height = minecraft.getWindow().getGuiScaledHeight();
         Scp079UiTheme.renderFrame(graphics, width, height);
-        FacilityRoomSnapshot room = roomAt(BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        FacilityRoomSnapshot room =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (room == null) {
+            room = roomAt(BlockPos.containing(
+                    Scp079PlayableClient.viewPosition()));
+        }
         int x = 24;
         int y = 23;
         if (room != null) {

@@ -1,6 +1,8 @@
 package com.bl4ues.scpclassifieddirective.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import com.bl4ues.scpclassifieddirective.sound.FacilityAmbientSounds;
@@ -14,6 +16,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -38,6 +41,7 @@ public final class FacilityDistantNoiseClient {
     private static final double MIN_DISTANCE = 6.5D;
     private static final double DISTANCE_RANGE = 4.5D;
     private static final double MAX_VERTICAL_OFFSET = 1.75D;
+    private static final int CORE_ROOM_BORDER = 1;
     private static final float PLAYBACK_VOLUME = 3.00F;
     private static final float BOOST_VOLUME = 1.50F;
 
@@ -118,9 +122,23 @@ public final class FacilityDistantNoiseClient {
     }
 
     private static boolean isCoreRoom(FacilityRoomSnapshot room) {
-        // Facility Mapping's explicit station association defines the Core Room.
-        // The physical station can be mounted on the room perimeter.
-        return room.floorStation() != null;
+        if (room == null || room.floorStation() == null) return false;
+        BlockPos station = room.floorStation();
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (station.getX() < patch.minX() - CORE_ROOM_BORDER
+                    || station.getX() > patch.maxX() + CORE_ROOM_BORDER
+                    || station.getZ() < patch.minZ() - CORE_ROOM_BORDER
+                    || station.getZ() > patch.maxZ() + CORE_ROOM_BORDER) {
+                continue;
+            }
+            if (station.getY() >= patch.y() - 1
+                    && station.getY() <= patch.y()
+                    + FacilityRoom.CAMERA_COLUMN_HEIGHT) {
+                return true;
+            }
+        }
+        return room.name() != null
+                && room.name().toLowerCase(Locale.ROOT).contains("core room");
     }
 
     private static void trackRoom(ResourceLocation dimension, UUID roomId) {

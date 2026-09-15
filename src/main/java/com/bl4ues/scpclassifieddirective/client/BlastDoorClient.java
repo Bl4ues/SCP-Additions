@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.Sheets;
@@ -307,13 +308,19 @@ public final class BlastDoorClient {
     private static int faceLight(Level level, BlockPos sourcePos,
             Direction face) {
         /*
-         * Sample the same neighbouring wall face that provides this mimic's
-         * texture. The 8x8 quarter occupies a reserved Blast Door multiblock
-         * cell, whose local light sample can be shadowed by the frame and make
-         * only this small mimic visibly darker than the full wall mimics.
+         * The quarter mimic is rendered from the controller rather than as the
+         * source wall block itself. Sample both the copied wall and its exposed
+         * face, then keep the brighter sky/block components. This prevents the
+         * Blast Door frame or placeholder cell from darkening only this 8x8
+         * patch while still respecting the room's actual world lighting.
          */
-        return net.minecraft.client.renderer.LevelRenderer.getLightColor(
+        int source = net.minecraft.client.renderer.LevelRenderer.getLightColor(
+                level, sourcePos);
+        int exposed = net.minecraft.client.renderer.LevelRenderer.getLightColor(
                 level, sourcePos.relative(face));
+        return LightTexture.pack(
+                Math.max(LightTexture.block(source), LightTexture.block(exposed)),
+                Math.max(LightTexture.sky(source), LightTexture.sky(exposed)));
     }
 
     private static int faceColor(Level level, BlockState state,
@@ -323,11 +330,10 @@ public final class BlastDoorClient {
             tint = Minecraft.getInstance().getBlockColors().getColor(
                     state, level, sourcePos, uv.tintIndex());
         }
-        float shade = uv.shade() ? level.getShade(face, true) : 1.0F;
-        int red = Math.round(((tint >> 16) & 0xFF) * shade);
-        int green = Math.round(((tint >> 8) & 0xFF) * shade);
-        int blue = Math.round((tint & 0xFF) * shade);
-        return (red << 16) | (green << 8) | blue;
+        // Sheets.cutoutBlockSheet already carries the face normal through the
+        // block-atlas render path. Applying vanilla directional shade here made
+        // this custom quarter visibly darker than the copied wall under shaders.
+        return tint & 0xFFFFFF;
     }
 
     private static FaceUv faceUv(BakedModel model, BlockState state,

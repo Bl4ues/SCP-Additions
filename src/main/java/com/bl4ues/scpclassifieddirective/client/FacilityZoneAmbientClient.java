@@ -32,6 +32,7 @@ public final class FacilityZoneAmbientClient {
     private static final float LCZ_INSIDE_VOLUME = 1.35F;
     private static final float CORE_INSIDE_VOLUME = 1.70F;
     private static final double SPILL_RADIUS = 12.0D;
+    private static final int CORE_ROOM_BORDER = 1;
     private static final int RETRY_DELAY_TICKS = 20;
     private static final int INACTIVE_GRACE_TICKS = 20;
 
@@ -155,11 +156,11 @@ public final class FacilityZoneAmbientClient {
 
     private static Area areaFor(FacilityRoomSnapshot room) {
         if (room == null) return Area.NONE;
-        // A room is a Core Room because Facility Mapping explicitly associates
-        // it with a configured Elevator Floor Station. The station block itself
-        // may sit in the wall/perimeter rather than over one of the room's floor
-        // columns, so containment is the wrong test here.
-        if (room.floorStation() != null) {
+        // Every mapped room can be assigned to a Core Room Floor Station so it
+        // inherits that floor's labels. That association does NOT make every
+        // room a Core Room. Only the room that physically contains/touches its
+        // assigned station gets the Core Room bed.
+        if (isCoreRoom(room)) {
             return Area.CORE_ROOM;
         }
 
@@ -182,6 +183,26 @@ public final class FacilityZoneAmbientClient {
             if (matchesSublevel(labels, 3)) return Area.LCZ_SL3;
         }
         return Area.NONE;
+    }
+
+    private static boolean isCoreRoom(FacilityRoomSnapshot room) {
+        if (room == null || room.floorStation() == null) return false;
+        BlockPos station = room.floorStation();
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (station.getX() < patch.minX() - CORE_ROOM_BORDER
+                    || station.getX() > patch.maxX() + CORE_ROOM_BORDER
+                    || station.getZ() < patch.minZ() - CORE_ROOM_BORDER
+                    || station.getZ() > patch.maxZ() + CORE_ROOM_BORDER) {
+                continue;
+            }
+            if (station.getY() >= patch.y() - 1
+                    && station.getY() <= patch.y()
+                    + FacilityRoom.CAMERA_COLUMN_HEIGHT) {
+                return true;
+            }
+        }
+        return room.name() != null
+                && room.name().toLowerCase(Locale.ROOT).contains("core room");
     }
 
     private static double distanceToRoom(Vec3 position,

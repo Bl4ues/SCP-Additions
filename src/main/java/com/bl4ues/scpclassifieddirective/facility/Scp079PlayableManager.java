@@ -93,6 +93,19 @@ public final class Scp079PlayableManager {
         return session != null && session.cameraId != null;
     }
 
+    public static FacilityCameraDefinition currentCamera(ServerPlayer player) {
+        Session session = session(player);
+        return session == null ? null : currentCamera(player, session);
+    }
+
+    public static FacilityRoomSnapshot currentCameraRoom(ServerPlayer player) {
+        if (player == null) return null;
+        FacilityCameraDefinition camera = currentCamera(player);
+        return camera == null ? null
+                : FacilityMappingManager.roomSnapshotForCamera(
+                        player.serverLevel(), camera);
+    }
+
     public static boolean assume(ServerPlayer player, BlockPos hostPos) {
         if (player == null || hostPos == null || player.getServer() == null) {
             return false;

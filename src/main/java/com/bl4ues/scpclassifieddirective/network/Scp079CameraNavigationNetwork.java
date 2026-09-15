@@ -69,7 +69,8 @@ public final class Scp079CameraNavigationNetwork {
             FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
                     level, raw.id());
             if (camera == null) continue;
-            FacilityRoomSnapshot room = roomForCamera(rooms, camera);
+            FacilityRoomSnapshot room =
+                    FacilityMappingManager.roomSnapshotForCamera(level, camera);
             if (room == null) continue;
             nodes.add(new CameraNode(camera.id(), room.id(), room.name(),
                     camera.anchorPos(), camera.eyePosition().x,
@@ -82,19 +83,6 @@ public final class Scp079CameraNavigationNetwork {
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new TopologyState(List.copyOf(nodes)));
-    }
-
-    private static FacilityRoomSnapshot roomForCamera(
-            List<FacilityRoomSnapshot> rooms, FacilityCameraDefinition camera) {
-        BlockPos eye = BlockPos.containing(camera.eyePosition());
-        for (FacilityRoomSnapshot room : rooms) {
-            if (room.containsColumn(eye)) return room;
-        }
-        for (FacilityRoomSnapshot room : rooms) {
-            if (Scp079RoomInteractionPolicy.withinExpandedFloor(room,
-                    camera.anchorPos(), 1)) return room;
-        }
-        return null;
     }
 
     public record CameraNode(UUID cameraId, UUID roomId, String roomName,

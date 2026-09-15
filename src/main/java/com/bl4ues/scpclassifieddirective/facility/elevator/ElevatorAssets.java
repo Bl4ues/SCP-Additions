@@ -12,6 +12,8 @@ public final class ElevatorAssets {
             "geo/entity/core_room_elevator_carriage.geo.json");
     public static final ResourceLocation CARRIAGE_TEXTURE = resource(
             "textures/entities/core_room_elevator_carriage.png");
+    public static final ResourceLocation CARRIAGE_GLOWMASK = resource(
+            "textures/entities/core_room_elevator_carriage_glowmask.png");
     public static final ResourceLocation CARRIAGE_ANIMATION = resource(
             "animations/entity/core_room_elevator_carriage.animation.json");
 

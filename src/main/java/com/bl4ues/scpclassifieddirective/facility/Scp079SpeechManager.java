@@ -224,21 +224,11 @@ public final class Scp079SpeechManager {
             currentCameraSpeakers(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel level)
                 || player.getServer() == null) return List.of();
-        Vec3 anchor = player.position();
-        FacilityCameraDefinition closest = null;
-        double best = 1.0D;
-        for (FacilityCameraDefinition camera : FacilitySurveillanceSavedData
-                .get(player.getServer()).all()) {
-            if (!camera.dimension().equals(level.dimension().location())) continue;
-            double distance = camera.eyePosition().distanceToSqr(anchor);
-            if (distance < best) {
-                best = distance;
-                closest = camera;
-            }
-        }
-        return closest == null ? List.of()
+        FacilityCameraDefinition camera =
+                Scp079PlayableManager.currentCamera(player);
+        return camera == null ? List.of()
                 : FacilitySpeakerRegistry.speakersForCamera(level,
-                        closest.anchorPos());
+                        camera.anchorPos());
     }
 
     private static Output hostOutput(ServerPlayer player) {

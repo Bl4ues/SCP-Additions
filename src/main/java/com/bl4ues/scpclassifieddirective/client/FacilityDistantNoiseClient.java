@@ -24,17 +24,22 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityDistantNoiseClient {
-    private static final long WINDOW_TICKS = 400L;
+    /*
+     * Every mapped room receives one deterministic cue per window. Randomizing
+     * the target tick inside the window keeps the cadence organic while avoiding
+     * long silent streaks caused by repeatedly failing a second probability roll.
+     * Neighboring clients resolve the same window, sound and direction.
+     */
+    private static final long WINDOW_TICKS = 520L;
     private static final long MIN_OFFSET_TICKS = 80L;
-    private static final long OFFSET_RANGE_TICKS = 241L;
-    private static final double PLAY_CHANCE = 0.78D;
+    private static final long OFFSET_RANGE_TICKS = 361L;
     private static final long LATE_GRACE_TICKS = 3L;
 
     private static final double MIN_DISTANCE = 6.5D;
     private static final double DISTANCE_RANGE = 4.5D;
     private static final double MAX_VERTICAL_OFFSET = 1.75D;
+    private static final float PLAYBACK_VOLUME = 1.55F;
 
-    private static final long CHANCE_SALT = 0x4E554C4C5F414D42L;
     private static final long OFFSET_SALT = 0x5343484544554C45L;
     private static final long SOUND_SALT = 0x534F554E445F4944L;
     private static final long ANGLE_SALT = 0x414E474C455F3031L;
@@ -75,11 +80,6 @@ public final class FacilityDistantNoiseClient {
         if (consumedWindow == window) return;
 
         long seed = seed(room.id(), window);
-        if (unit(mix64(seed ^ CHANCE_SALT)) >= PLAY_CHANCE) {
-            consumedWindow = window;
-            return;
-        }
-
         long offset = MIN_OFFSET_TICKS
                 + (long) Math.floor(unit(mix64(seed ^ OFFSET_SALT))
                 * OFFSET_RANGE_TICKS);
@@ -111,7 +111,7 @@ public final class FacilityDistantNoiseClient {
                 Math.sin(angle) * radius);
 
         minecraft.level.playLocalSound(source.x, source.y, source.z, sound,
-                SoundSource.AMBIENT, 1.0F, 1.0F, false);
+                SoundSource.AMBIENT, PLAYBACK_VOLUME, 1.0F, false);
     }
 
     private static boolean isCoreRoom(FacilityRoomSnapshot room) {

@@ -23,6 +23,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -34,9 +35,11 @@ import java.util.UUID;
 /**
  * Sparse SCP: Unity-inspired Roomba encounters driven by Facility Mapping.
  *
- * <p>Unnamed mapped rooms are eligible by default, while rooms explicitly named
- * as corridors or hallways remain eligible and receive a small selection bias.
- * Safe Zones, Sublevel 3, Heavy Containment and Super Heavy Containment are
+ * <p>Unnamed mapped rooms are eligible by default, while Unity-style transit
+ * rooms (corridors, hallways, corners and threeways) remain eligible and receive
+ * a small selection bias. Rooms occupied by players and directly adjacent rooms
+ * are excluded. Safe Zones, Sublevel 3, Heavy Containment and Super Heavy
+ * Containment are
  * always excluded. Standard LCZ labels keep the Unity-style SL1/SL2 split,
  * Entrance Zone uses the same frequency tier as SL1, and other layouts fall
  * back to a height-based preference for upper mapped floors.</p>
@@ -44,26 +47,29 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class RoombaSpawnEvents {
-    private static final int CHECK_INTERVAL_TICKS = 1_800;
+    private static final int CHECK_INTERVAL_TICKS = 1_200;
     private static final int CHECK_JITTER_TICKS = 600;
 
     /*
-     * The highest-frequency tier keeps the old 1/80 check rate. Lower tiers
-     * become progressively rarer instead of making SL1 four times more common
-     * than it was before Facility Mapping became the source of truth.
+     * Unity lets Roombas appear in several SL1 hallway/corner/three-way rooms,
+     * while SL2 has only the fan hallway. Preserve that strong SL1 bias without
+     * making a single Roomba a multi-hour event: the highest tier is 1/16 per
+     * 60-90 second check (~20 minutes for one eligible player), while the
+     * regional cap and room-distance rules keep them sparse.
      */
-    private static final int PRIMARY_CHANCE_SCALE = 320;
+    private static final int PRIMARY_CHANCE_SCALE = 64;
     private static final int MAX_FREQUENCY_WEIGHT = 4;
     private static final int CORRIDOR_SELECTION_MULTIPLIER = 2;
     private static final int PAIR_CHANCE_BOUND = 64;
     private static final int SEARCH_ATTEMPTS = 48;
     private static final int PAIR_SEARCH_ATTEMPTS = 28;
     private static final int MIN_SEARCH_RADIUS = 8;
-    private static final int MAX_SEARCH_RADIUS = 22;
+    private static final int MAX_SEARCH_RADIUS = 64;
     private static final double LOCAL_EXCLUSION_RADIUS = 18.0D;
-    private static final double REGIONAL_RADIUS = 72.0D;
+    private static final double REGIONAL_RADIUS = 80.0D;
     private static final int REGIONAL_CAP = 2;
     private static final double SAFE_ROOM_HEIGHT = 3.0D;
+    private static final int ADJACENT_ROOM_GAP = 2;
 
     private static final Map<UUID, Long> NEXT_CHECK = new HashMap<>();
 
@@ -75,7 +81,7 @@ public final class RoombaSpawnEvents {
         if (event.phase != TickEvent.Phase.END
                 || event.player.level().isClientSide
                 || !(event.player instanceof ServerPlayer player)
-                || player.isCreative() || player.isSpectator()
+                || player.isSpectator()
                 || !(player.level() instanceof ServerLevel level)
                 || !level.getGameRules().getBoolean(
                 ScpClassifiedDirectiveModGameRules.ROOMBA_SPAWN)) {
@@ -151,9 +157,25 @@ public final class RoombaSpawnEvents {
 
     private static List<WeightedPatch> nearbyMappedPatches(ServerLevel level,
             ServerPlayer player) {
+        List<FacilityRoomSnapshot> rooms =
+                FacilityMappingManager.roomSnapshots(level);
+        if (rooms.isEmpty()) return List.of();
+
+        /*
+         * Roombas are ambient facility life, not jumpscare spawns. Never create
+         * one in a room currently occupied by any non-spectating player or in a
+         * room directly adjacent to one. This applies equally to Survival and
+         * Creative players, so builders/testers do not watch a cleaner pop into
+         * existence in the room beside them.
+         */
+        Set<UUID> excludedRooms = occupiedAndAdjacentRooms(level, rooms);
+
         List<FacilityRoomSnapshot> eligibleRooms = new ArrayList<>();
-        for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
-            if (isEligibleRoom(level, room)) eligibleRooms.add(room);
+        for (FacilityRoomSnapshot room : rooms) {
+            if (!excludedRooms.contains(room.id())
+                    && isEligibleRoom(level, room)) {
+                eligibleRooms.add(room);
+            }
         }
         if (eligibleRooms.isEmpty()) return List.of();
 
@@ -161,7 +183,7 @@ public final class RoombaSpawnEvents {
                 customElevationWeights(eligibleRooms);
         List<WeightedPatch> result = new ArrayList<>();
         for (FacilityRoomSnapshot room : eligibleRooms) {
-            int roomMultiplier = isCorridorOrHallway(room.name())
+            int roomMultiplier = isUnityTransitRoom(room.name())
                     ? CORRIDOR_SELECTION_MULTIPLIER : 1;
             for (FacilityFloorPatch patch : room.patches()) {
                 int frequencyWeight = frequencyWeight(room, patch,
@@ -180,6 +202,58 @@ public final class RoombaSpawnEvents {
         return result;
     }
 
+    private static Set<UUID> occupiedAndAdjacentRooms(ServerLevel level,
+            List<FacilityRoomSnapshot> rooms) {
+        Set<UUID> occupied = new HashSet<>();
+        for (ServerPlayer other : level.players()) {
+            if (other.isSpectator()) continue;
+            BlockPos pos = other.blockPosition();
+            for (FacilityRoomSnapshot room : rooms) {
+                if (room.containsColumn(pos)) occupied.add(room.id());
+            }
+        }
+        if (occupied.isEmpty()) return Set.of();
+
+        Set<UUID> excluded = new HashSet<>(occupied);
+        for (FacilityRoomSnapshot room : rooms) {
+            if (excluded.contains(room.id())) continue;
+            for (FacilityRoomSnapshot occupiedRoom : rooms) {
+                if (!occupied.contains(occupiedRoom.id())) continue;
+                if (adjacent(room, occupiedRoom)) {
+                    excluded.add(room.id());
+                    break;
+                }
+            }
+        }
+        return Set.copyOf(excluded);
+    }
+
+    private static boolean adjacent(FacilityRoomSnapshot a,
+            FacilityRoomSnapshot b) {
+        if (a == null || b == null || a.id().equals(b.id())) return false;
+        if (!a.floorLongLabel().equalsIgnoreCase(b.floorLongLabel())) {
+            return false;
+        }
+        for (FacilityFloorPatch pa : a.patches()) {
+            for (FacilityFloorPatch pb : b.patches()) {
+                if (Math.abs(pa.y() - pb.y()) > 3) continue;
+                int gapX = intervalGap(pa.minX(), pa.maxX(),
+                        pb.minX(), pb.maxX());
+                int gapZ = intervalGap(pa.minZ(), pa.maxZ(),
+                        pb.minZ(), pb.maxZ());
+                if (Math.max(gapX, gapZ) <= ADJACENT_ROOM_GAP) return true;
+            }
+        }
+        return false;
+    }
+
+    private static int intervalGap(int aMin, int aMax,
+            int bMin, int bMax) {
+        if (aMax < bMin) return bMin - aMax - 1;
+        if (bMax < aMin) return aMin - bMax - 1;
+        return 0;
+    }
+
     private static boolean isEligibleRoom(ServerLevel level,
             FacilityRoomSnapshot room) {
         if (room == null || room.patches().isEmpty()
@@ -191,7 +265,7 @@ public final class RoombaSpawnEvents {
         if (isExcludedLocation(labels)) return false;
 
         String name = room.name() == null ? "" : room.name().strip();
-        return name.isBlank() || isCorridorOrHallway(name);
+        return name.isBlank() || isUnityTransitRoom(name);
     }
 
     /**
@@ -346,10 +420,15 @@ public final class RoombaSpawnEvents {
                 || token(labels, "shcz");
     }
 
-    private static boolean isCorridorOrHallway(String roomName) {
+    private static boolean isUnityTransitRoom(String roomName) {
         if (roomName == null || roomName.isBlank()) return false;
         String name = roomName.toLowerCase(Locale.ROOT);
-        return name.contains("corridor") || name.contains("hallway");
+        return name.contains("corridor")
+                || name.contains("hallway")
+                || name.contains("corner")
+                || name.contains("threeway")
+                || name.contains("three-way")
+                || name.contains("three way");
     }
 
     private static String floorLabels(FacilityRoomSnapshot room) {

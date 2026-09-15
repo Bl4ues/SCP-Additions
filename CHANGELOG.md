@@ -110,7 +110,8 @@
 ## SCP-714
 
 - Reworked SCP-714's stamina drawback so the ring no longer immediately empties or disables stamina; sprinting begins at normal stamina cost and progressively becomes more exhausting with exposure, reaching **2.5×** stamina drain at the most advanced pre-coma stage;
-- Now sneaking and using SCP-714 on a supported surface places the object on the ground.
+- Now sneaking and using SCP-714 on a supported surface places the object on the ground;
+- Added the **SCP-714 Containment Stand**, a dedicated physical display pedestal that stores one SCP-714 and exposes contextual **Place**/**Take** interactions on the ring mount.
 
 ## SCP-173
 

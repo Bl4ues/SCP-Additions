@@ -26,6 +26,7 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityLargePropStructure;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityPropPartBlock;
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
+import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorGeometry;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
@@ -191,6 +192,8 @@ public final class ContextInteractionRegistry {
         integratedCount += registerElevatorRules(configuredIdentities);
         integratedCount += registerObjectContainmentUnitRules(
                 configuredIdentities);
+        integratedCount += registerScp714ContainmentStandRules(
+                configuredIdentities);
         integratedCount += registerNativeScrewdriverRules(configuredIdentities);
         loaded = true;
         ScpClassifiedDirectiveMod.LOGGER.info(
@@ -338,6 +341,52 @@ public final class ContextInteractionRegistry {
         } catch (Exception exception) {
             ScpClassifiedDirectiveMod.LOGGER.error(
                     "Failed to register Core Room elevator interactions",
+                    exception);
+        }
+        return registered;
+    }
+
+    private static int registerScp714ContainmentStandRules(
+            Set<InteractionIdentity> configuredIdentities) {
+        int registered = 0;
+        try {
+            ResourceLocation standId = new ResourceLocation(
+                    ScpClassifiedDirectiveMod.MODID,
+                    Scp714ContainmentStandModule.PATH);
+            Block stand = Scp714ContainmentStandModule.BLOCK.get();
+            ResourceLocation scp714 = new ResourceLocation(
+                    ScpClassifiedDirectiveMod.MODID, "scp_714");
+
+            // These anchors are the actual Gecko-space centers of ring_box and
+            // 714 after the authored parent bone's 12.5-degree tilt. Keeping the
+            // model transform here makes the prompt follow the physical prop
+            // instead of approximating the top of the block.
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", standId.toString(),
+                            Scp714ContainmentStandModule.PLACE_INTERACTION),
+                    new Rule(Kind.BLOCK, standId, stand, null,
+                            Scp714ContainmentStandModule.PLACE_INTERACTION,
+                            2.25D, 100, "Place", "SCP-714",
+                            true, true, false,
+                            0.5D, 1.0268055013D, 0.4594175724D,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "front", "hand", "hand", scp714, 0.82D, false));
+
+            registered += addIntegratedRule(configuredIdentities,
+                    new InteractionIdentity("block", standId.toString(),
+                            Scp714ContainmentStandModule.TAKE_INTERACTION),
+                    new Rule(Kind.BLOCK, standId, stand, null,
+                            Scp714ContainmentStandModule.TAKE_INTERACTION,
+                            2.25D, 101, "Take", "SCP-714",
+                            true, true, false,
+                            0.5D, 1.0263147682D, 0.4579259286D,
+                            0.0D, 0.0D, 0.0D,
+                            RotationMode.HORIZONTAL_FACING, true, true,
+                            "front", "hand", "hand", null, 0.82D, false));
+        } catch (Exception exception) {
+            ScpClassifiedDirectiveMod.LOGGER.error(
+                    "Failed to register SCP-714 Containment Stand interactions",
                     exception);
         }
         return registered;
@@ -827,6 +876,10 @@ public final class ContextInteractionRegistry {
         public boolean allowOffscreen() { return allowOffscreen; }
         public boolean requiresPreciseAim() {
             return "close_object_containment_unit".equals(interactionKey)
+                    || Scp714ContainmentStandModule.PLACE_INTERACTION.equals(
+                            interactionKey)
+                    || Scp714ContainmentStandModule.TAKE_INTERACTION.equals(
+                            interactionKey)
                     || interactionKey.startsWith("elevator_station_")
                     || interactionKey.startsWith("elevator_carriage_")
                     || interactionKey.startsWith("scp_914_");
@@ -863,6 +916,19 @@ public final class ContextInteractionRegistry {
                 BlockState state) {
             if (ObjectContainmentUnitModule.isProtectedContent(level, pos)) {
                 return false;
+            }
+            if (block == Scp714ContainmentStandModule.BLOCK.get()) {
+                if (!(level.getBlockEntity(pos) instanceof
+                        Scp714ContainmentStandModule.StandBlockEntity stand)) {
+                    return false;
+                }
+                return switch (interactionKey) {
+                    case Scp714ContainmentStandModule.PLACE_INTERACTION ->
+                            !stand.hasRing();
+                    case Scp714ContainmentStandModule.TAKE_INTERACTION ->
+                            stand.hasRing();
+                    default -> true;
+                };
             }
             if (block == ObjectContainmentUnitModule.UNIT.get()) {
                 if (!(level.getBlockEntity(pos)

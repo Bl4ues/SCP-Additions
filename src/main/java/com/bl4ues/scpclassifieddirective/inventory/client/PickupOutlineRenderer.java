@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.client.Scp294PhysicalClient;
 import com.bl4ues.scpclassifieddirective.client.Scp914InteractionClient;
+import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.mixin.client.LevelRendererEntityTargetAccessor;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -114,6 +115,11 @@ public final class PickupOutlineRenderer {
                         minecraft.level.getBlockState(context.blockPos()),
                         context.interactionKey(), poseStack, camera,
                         OUTLINE_BUFFER);
+            } else if (context != null && context.isBlock()
+                    && isScp714ContainmentStandControl(
+                    context.interactionKey())) {
+                renderScp714ContainmentStandMask(minecraft, context,
+                        poseStack, camera);
             } else if (context != null && context.isScp914Control()) {
                 renderScp914ControlMask(minecraft, context, poseStack, camera);
             } else if (context != null && context.isElevatorButton()) {
@@ -203,6 +209,117 @@ public final class PickupOutlineRenderer {
             if (blockEntity != null) {
                 minecraft.getBlockEntityRenderDispatcher().render(
                         blockEntity, partialTick, poseStack, OUTLINE_BUFFER);
+            }
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    private static boolean isScp714ContainmentStandControl(
+            String interactionKey) {
+        return Scp714ContainmentStandModule.PLACE_INTERACTION.equals(
+                interactionKey)
+                || Scp714ContainmentStandModule.TAKE_INTERACTION.equals(
+                interactionKey);
+    }
+
+    /**
+     * Replays only the authored interaction bone selected by the stand state.
+     * ring_box deliberately excludes its lid child; Take likewise replays only
+     * the 714 bone. This keeps the thin outline on the physical target rather
+     * than flashing the entire GeckoLib stand.
+     */
+    private static void renderScp714ContainmentStandMask(
+            Minecraft minecraft, ContextPromptOutlineTarget.Target context,
+            PoseStack poseStack, Camera camera) {
+        if (minecraft.level == null || context.blockPos() == null) return;
+        BlockPos pos = context.blockPos();
+        BlockState state = minecraft.level.getBlockState(pos);
+        if (!state.is(Scp714ContainmentStandModule.BLOCK.get())) return;
+
+        Direction facing = state.hasProperty(
+                Scp714ContainmentStandModule.FACING)
+                ? state.getValue(Scp714ContainmentStandModule.FACING)
+                : Direction.NORTH;
+        Vec3 cameraPosition = camera.getPosition();
+
+        poseStack.pushPose();
+        try {
+            poseStack.translate(pos.getX() - cameraPosition.x,
+                    pos.getY() - cameraPosition.y,
+                    pos.getZ() - cameraPosition.z);
+            poseStack.translate(0.5D, 0.0D, 0.5D);
+            rotateForFacing(poseStack, facing);
+
+            // Parent "bone": pivot [0, 13.5, 0], rotation [12.5, 0, 0].
+            applyAuthoredBoneTransform(poseStack,
+                    0.0D, 13.5D, 0.0D,
+                    12.5D, 0.0D, 0.0D);
+
+            VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
+                    RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
+
+            if (Scp714ContainmentStandModule.PLACE_INTERACTION.equals(
+                    context.interactionKey())) {
+                // ring_box only. Its "lid" child must not be outlined.
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -1.0D, 15.5D, -1.0D,
+                        2.0D, 1.0D, 2.0D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.95D, 15.55D, -0.95D,
+                        1.9D, 0.95D, 1.9D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.25D, 16.4D, 0.9D,
+                        0.5D, 0.2D, 0.2D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.35D, 15.5D, -1.0D,
+                        0.7D, 1.0D, 2.0D);
+                return;
+            }
+
+            if (!Scp714ContainmentStandModule.TAKE_INTERACTION.equals(
+                    context.interactionKey())) {
+                return;
+            }
+
+            poseStack.pushPose();
+            try {
+                // 714 bone: pivot [0, 16.4975, -0.025], rotation [0, 90, 90].
+                applyAuthoredBoneTransform(poseStack,
+                        0.0D, 16.4975D, -0.025D,
+                        0.0D, 90.0D, 90.0D);
+
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.7D, 16.25D, -0.35D,
+                        0.2D, 0.5D, 1.0D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        0.5D, 16.25D, -0.35D,
+                        0.2D, 0.5D, 1.0D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.7D, 16.25D, 0.65D,
+                        1.4D, 0.5D, 0.2D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.7D, 16.25D, -0.55D,
+                        1.4D, 0.5D, 0.2D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.7D, 16.8D, -1.35D,
+                        1.4D, 0.0D, 1.0D);
+                emitAuthoredCube(consumer, poseStack.last(),
+                        -0.7D, 16.195D, -1.35D,
+                        1.4D, 0.0D, 1.0D);
+
+                emitTransformedAuthoredCube(consumer, poseStack,
+                        -0.90555D, 16.2D, -0.9205D,
+                        1.1D, 0.6D, 0.4D,
+                        0.0D, 16.4975D, -0.025D,
+                        0.0D, -45.0D, 0.0D);
+                emitTransformedAuthoredCube(consumer, poseStack,
+                        -0.19445D, 16.2D, -0.9205D,
+                        1.1D, 0.6D, 0.4D,
+                        0.0D, 16.4975D, -0.025D,
+                        0.0D, 45.0D, 0.0D);
+            } finally {
+                poseStack.popPose();
             }
         } finally {
             poseStack.popPose();

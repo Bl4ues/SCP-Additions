@@ -106,6 +106,14 @@ public final class Scp714ContainmentStandModule {
                 box(5.0D, 12.0D, 4.0D, 11.0D, 15.0D, 12.0D),
                 box(1.0D, 15.0D, 1.0D, 15.0D, 16.0D, 15.0D))
                 .optimize();
+        // Shape queries are hot during placement/collision checks. Precompute
+        // every facing once instead of rebuilding unions on each query.
+        private static final VoxelShape BODY_EAST =
+                rotateNorthShape(BODY_NORTH, Direction.EAST);
+        private static final VoxelShape BODY_SOUTH =
+                rotateNorthShape(BODY_NORTH, Direction.SOUTH);
+        private static final VoxelShape BODY_WEST =
+                rotateNorthShape(BODY_NORTH, Direction.WEST);
 
         private StandBlock() {
             super(BlockBehaviour.Properties.of()
@@ -193,7 +201,12 @@ public final class Scp714ContainmentStandModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return rotateNorthShape(BODY_NORTH, state.getValue(FACING));
+            return switch (state.getValue(FACING)) {
+                case EAST -> BODY_EAST;
+                case SOUTH -> BODY_SOUTH;
+                case WEST -> BODY_WEST;
+                default -> BODY_NORTH;
+            };
         }
 
         @Override

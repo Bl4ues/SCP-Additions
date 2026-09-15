@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.client.Scp294PhysicalClient;
 import com.bl4ues.scpclassifieddirective.client.Scp914InteractionClient;
 import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
+import com.bl4ues.scpclassifieddirective.init.Scp714Items;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.mixin.client.LevelRendererEntityTargetAccessor;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -27,6 +28,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -224,10 +227,10 @@ public final class PickupOutlineRenderer {
     }
 
     /**
-     * Replays only the authored interaction bone selected by the stand state.
-     * ring_box deliberately excludes its lid child; Take likewise replays only
-     * the 714 bone. This keeps the thin outline on the physical target rather
-     * than flashing the entire GeckoLib stand.
+     * Replays only the physical part selected by the stand interaction.
+     * Place outlines the complete ring case, including its hinged lid. Take
+     * reuses SCP-714's real baked item model so alpha cutouts and the item's
+     * authored silhouette match the ordinary world pickup exactly.
      */
     private static void renderScp714ContainmentStandMask(
             Minecraft minecraft, ContextPromptOutlineTarget.Target context,
@@ -261,7 +264,7 @@ public final class PickupOutlineRenderer {
 
             if (Scp714ContainmentStandModule.PLACE_INTERACTION.equals(
                     context.interactionKey())) {
-                // ring_box only. Its "lid" child must not be outlined.
+                // ring_box itself.
                 emitAuthoredCube(consumer, poseStack.last(),
                         -1.0D, 15.5D, -1.0D,
                         2.0D, 1.0D, 2.0D);
@@ -274,6 +277,33 @@ public final class PickupOutlineRenderer {
                 emitAuthoredCube(consumer, poseStack.last(),
                         -0.35D, 15.5D, -1.0D,
                         0.7D, 1.0D, 2.0D);
+
+                // lid is a child of ring_box. The bone contributes -5 degrees
+                // and each of its authored cubes contributes another -112.5
+                // degrees around the same hinge pivot.
+                poseStack.pushPose();
+                try {
+                    applyAuthoredBoneTransform(poseStack,
+                            0.0D, 16.5D, 1.0D,
+                            -5.0D, 0.0D, 0.0D);
+                    emitTransformedAuthoredCube(consumer, poseStack,
+                            -0.95D, 16.5D, -0.95D,
+                            1.9D, 1.35D, 1.9D,
+                            0.0D, 16.5D, 1.0D,
+                            -112.5D, 0.0D, 0.0D);
+                    emitTransformedAuthoredCube(consumer, poseStack,
+                            -1.0D, 16.5D, -1.0D,
+                            2.0D, 1.4D, 2.0D,
+                            0.0D, 16.5D, 1.0D,
+                            -112.5D, 0.0D, 0.0D);
+                    emitTransformedAuthoredCube(consumer, poseStack,
+                            -0.25D, 16.25D, -1.05D,
+                            0.5D, 0.5D, 0.15D,
+                            0.0D, 16.5D, 1.0D,
+                            -112.5D, 0.0D, 0.0D);
+                } finally {
+                    poseStack.popPose();
+                }
                 return;
             }
 
@@ -284,40 +314,24 @@ public final class PickupOutlineRenderer {
 
             poseStack.pushPose();
             try {
-                // 714 bone: pivot [0, 16.4975, -0.025], rotation [0, 90, 90].
+                // The stand's 714 bone is the ordinary SCP-714 model translated
+                // into Gecko coordinates, then rotated [0, 90, 90]. Render the
+                // actual item model through the same ItemRenderer path used by
+                // pickup entities instead of approximating it with white boxes.
                 applyAuthoredBoneTransform(poseStack,
                         0.0D, 16.4975D, -0.025D,
                         0.0D, 90.0D, 90.0D);
 
-                emitAuthoredCube(consumer, poseStack.last(),
-                        -0.7D, 16.25D, -0.35D,
-                        0.2D, 0.5D, 1.0D);
-                emitAuthoredCube(consumer, poseStack.last(),
-                        0.5D, 16.25D, -0.35D,
-                        0.2D, 0.5D, 1.0D);
-                emitAuthoredCube(consumer, poseStack.last(),
-                        -0.7D, 16.25D, 0.65D,
-                        1.4D, 0.5D, 0.2D);
-                emitAuthoredCube(consumer, poseStack.last(),
-                        -0.7D, 16.25D, -0.55D,
-                        1.4D, 0.5D, 0.2D);
-                emitAuthoredCube(consumer, poseStack.last(),
-                        -0.7D, 16.8D, -1.35D,
-                        1.4D, 0.0D, 1.0D);
-                emitAuthoredCube(consumer, poseStack.last(),
-                        -0.7D, 16.195D, -1.35D,
-                        1.4D, 0.0D, 1.0D);
-
-                emitTransformedAuthoredCube(consumer, poseStack,
-                        -0.90555D, 16.2D, -0.9205D,
-                        1.1D, 0.6D, 0.4D,
-                        0.0D, 16.4975D, -0.025D,
-                        0.0D, -45.0D, 0.0D);
-                emitTransformedAuthoredCube(consumer, poseStack,
-                        -0.19445D, 16.2D, -0.9205D,
-                        1.1D, 0.6D, 0.4D,
-                        0.0D, 16.4975D, -0.025D,
-                        0.0D, 45.0D, 0.0D);
+                // ItemDisplayContext.NONE centers baked item coordinates by
+                // subtracting 0.5 on every axis. These offsets reconstruct the
+                // authored stand coordinates, including GeckoLib's mirrored X.
+                poseStack.translate(0.0D, 1.515625D, 0.009375D);
+                poseStack.scale(-1.0F, 1.0F, 1.0F);
+                minecraft.getItemRenderer().renderStatic(
+                        new ItemStack(Scp714Items.SCP_714.get()),
+                        ItemDisplayContext.NONE, LightTexture.FULL_BRIGHT,
+                        OverlayTexture.NO_OVERLAY, poseStack, OUTLINE_BUFFER,
+                        minecraft.level, 0);
             } finally {
                 poseStack.popPose();
             }

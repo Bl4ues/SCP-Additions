@@ -667,9 +667,11 @@ public final class Scp079FacilityMapScreen extends Screen {
                     net.minecraft.core.BlockPos.containing(view));
         }
         if (current != null) {
+            UUID currentId = current.id();
             for (int i = 0; i < options.size(); i++) {
-                if (options.get(i).rooms.stream().anyMatch(room ->
-                        room.id().equals(current.id()))) return i;
+                for (FacilityRoomSnapshot room : options.get(i).rooms) {
+                    if (room.id().equals(currentId)) return i;
+                }
             }
         }
         return 0;

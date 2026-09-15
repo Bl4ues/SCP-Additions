@@ -67,29 +67,7 @@ public abstract class Scp079CrossFloorCameraCostMixin {
 
     private static FacilityRoomSnapshot scpclassifieddirective$currentCameraRoom(
             ServerLevel level, ServerPlayer player) {
-        if (level == null || player == null || player.getServer() == null) {
-            return null;
-        }
-        FacilityCameraDefinition nearest = null;
-        double best = Double.MAX_VALUE;
-        for (FacilityCameraDefinition raw : FacilitySurveillanceSavedData
-                .get(player.getServer()).all()) {
-            if (!raw.dimension().equals(level.dimension().location())) continue;
-            FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
-                    level, raw.id());
-            if (camera == null) continue;
-            double distance = camera.eyePosition().distanceToSqr(
-                    player.position());
-            if (distance < best) {
-                best = distance;
-                nearest = camera;
-            }
-        }
-        return nearest != null && best <= 16.0D
-                ? FacilityMappingManager.roomSnapshotForCamera(level, nearest)
-                : FacilityMappingManager.roomSnapshots(level).stream()
-                .filter(room -> room.containsColumn(player.blockPosition()))
-                .findFirst().orElse(null);
+        return Scp079PlayableManager.currentCameraRoom(player);
     }
 
     private static FacilityRoomSnapshot scpclassifieddirective$roomForCamera(

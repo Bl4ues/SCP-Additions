@@ -78,14 +78,7 @@ public final class Scp079RoomInteractionPolicy {
         }
         if (nearest == null || nearestDistance > 16.0D) return null;
 
-        BlockPos eye = BlockPos.containing(nearest.eyePosition());
-        for (FacilityRoomSnapshot room : rooms) {
-            if (room.containsColumn(eye)) return room;
-        }
-        for (FacilityRoomSnapshot room : rooms) {
-            if (withinExpandedFloor(room, nearest.anchorPos(), 1)) return room;
-        }
-        return null;
+        return FacilityMappingManager.roomSnapshotForCamera(level, nearest);
     }
 
     public static boolean withinExpandedFloor(FacilityRoom room,

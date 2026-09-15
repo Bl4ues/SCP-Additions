@@ -51,7 +51,7 @@ public final class DeathBodiesModulesUi {
             int insertion = indexBeforeLabel(rows, "Preferences");
             expanded.add(insertion, constructor.newInstance(
                     "death_bodies", "enabled", LABEL,
-                    "Leaves an inert, interactable player body at the death location for world and SCP interactions.",
+                    "Leaves an inert, interactable player body at the death location.",
                     true));
             rowsField.set(screen, List.copyOf(expanded));
         } catch (ReflectiveOperationException exception) {

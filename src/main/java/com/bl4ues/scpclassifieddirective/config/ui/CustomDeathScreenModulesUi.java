@@ -51,7 +51,7 @@ public final class CustomDeathScreenModulesUi {
             int insertion = indexAfterLabel(rows, "Custom Loading Screen");
             expanded.add(insertion, constructor.newInstance(
                     "ui", "custom_death_screen", LABEL,
-                    "Replaces Minecraft's death screen with the SCP: Classified Directive termination report.",
+                    "Replaces the death screen with a termination report.",
                     true));
             rowsField.set(screen, List.copyOf(expanded));
         } catch (ReflectiveOperationException exception) {

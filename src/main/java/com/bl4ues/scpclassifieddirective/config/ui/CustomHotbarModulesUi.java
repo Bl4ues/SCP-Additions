@@ -22,7 +22,7 @@ public final class CustomHotbarModulesUi {
             "com.bl4ues.scpclassifieddirective.config.ui.Scp079ModulesScreenExtension$ExtendedToggleScreen";
     private static final String ROW_TYPE =
             "com.bl4ues.scpclassifieddirective.config.ui.Scp079ModulesScreenExtension$Row";
-    private static final String INVENTORY_LABEL = "SCP Inventory";
+    private static final String INVENTORY_LABEL = "Custom Inventory";
     private static final String HOTBAR_LABEL = "Custom Hotbar";
 
     private CustomHotbarModulesUi() {

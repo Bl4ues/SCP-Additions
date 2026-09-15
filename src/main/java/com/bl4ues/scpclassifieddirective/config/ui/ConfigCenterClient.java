@@ -466,11 +466,11 @@ public final class ConfigCenterClient {
 
     private static final class ModulesScreen extends ConfigScreen {
         private static final List<ToggleSpec> SPECS = List.of(
-                new ToggleSpec("inventory", "enabled", "SCP Inventory", "Enables the custom survival-horror inventory.", true),
+                new ToggleSpec("inventory", "enabled", "Custom Inventory", "Enables the custom PDA inventory.", true),
                 new ToggleSpec("inventory", "remember_ui_state", "Remember UI State", "Remembers the selected panel, document and scroll positions until leaving the world.", true),
                 new ToggleSpec("interactions", "enabled", "Contextual Interactions", "Enables SCP Unity-style interaction prompts.", true),
-                new ToggleSpec("interactions", "disable_in_creative", "Hide Prompts in Creative", "Disables custom prompts for Creative players.", false),
-                new ToggleSpec("hud", "enabled", "Custom HUD", "Shows the SCP: Classified Directive health, stamina and blink presentation.", true),
+                new ToggleSpec("interactions", "disable_in_creative", "Hide Prompts in Creative", "Disables Contextual Interaction prompts for Creative players.", false),
+                new ToggleSpec("hud", "enabled", "Custom HUD", "Enables SCP Unity-style health and stamina bars.", true),
                 new ToggleSpec("vitals", "custom_health_enabled", "Custom Health", "Enables custom health behavior.", true),
                 new ToggleSpec("vitals", "stamina_enabled", "Stamina", "Enables stamina drain and regeneration.", true),
                 new ToggleSpec("vitals", "horror_movement_enabled", "Survival-Horror Movement", "Uses slower walking and committed sprinting.", true),
@@ -1914,6 +1914,8 @@ public final class ConfigCenterClient {
     }
 
     private static final class ContextRowButton extends AbstractButton {
+        private static final float SMALL_TEXT_SCALE = 1.10F;
+
         private final ContextRow row;
         private final Runnable action;
 
@@ -1963,8 +1965,12 @@ public final class ConfigCenterClient {
           0xFF1B3948);
   graphics.fill(typeX, typeY, typeX + 3, typeY + 18,
           contextSourceColor(row.view().source()));
-  graphics.drawCenteredString(rowFont, ScpFonts.roboto(type),
-          typeX + 29, typeY + 5, enabled ? TEXT : 0xFF707680);
+  Component typeLabel = ScpFonts.roboto(type);
+  int typeTextWidth = Math.round(rowFont.width(typeLabel)
+          * SMALL_TEXT_SCALE);
+  drawScaledText(graphics, rowFont, typeLabel,
+          typeX + (56 - typeTextWidth) / 2, typeY + 4,
+          enabled ? TEXT : 0xFF707680);
 
   ItemStack targetStack = contextTargetStack(row.rule());
   int textX = typeX + 64;
@@ -1986,9 +1992,10 @@ public final class ConfigCenterClient {
   String source = contextSourceLabel(row.view().source());
   int sourceColor = contextSourceColor(row.view().source());
   Component sourceLabel = ScpFonts.roboto(source);
-  graphics.drawString(rowFont, sourceLabel, textX, getY() + 18,
-          sourceColor, false);
-  int metaX = textX + rowFont.width(sourceLabel) + 7;
+  drawScaledText(graphics, rowFont, sourceLabel, textX, getY() + 18,
+          sourceColor);
+  int metaX = textX + Math.round(rowFont.width(sourceLabel)
+          * SMALL_TEXT_SCALE) + 8;
   StringBuilder meta = new StringBuilder();
   if (row.view().variantCount() > 0) {
       meta.append("· +").append(row.view().variantCount())
@@ -2007,10 +2014,22 @@ public final class ConfigCenterClient {
   if (!meta.isEmpty()) {
       int metaAvailable = Math.max(10,
               getX() + getWidth() - metaX - 8);
-      graphics.drawString(rowFont, ScpFonts.roboto(
-                      rowFont.plainSubstrByWidth(meta.toString(), metaAvailable)),
-              metaX, getY() + 18, MUTED, false);
+      int logicalWidth = Math.max(8,
+              (int) Math.floor(metaAvailable / SMALL_TEXT_SCALE));
+      Component metaLabel = ScpFonts.roboto(
+              rowFont.plainSubstrByWidth(meta.toString(), logicalWidth));
+      drawScaledText(graphics, rowFont, metaLabel,
+              metaX, getY() + 18, MUTED);
   }
+        }
+
+        private static void drawScaledText(GuiGraphics graphics, Font font,
+                Component text, int x, int y, int color) {
+            graphics.pose().pushPose();
+            graphics.pose().translate(x, y, 0.0F);
+            graphics.pose().scale(SMALL_TEXT_SCALE, SMALL_TEXT_SCALE, 1.0F);
+            graphics.drawString(font, text, 0, 0, color, false);
+            graphics.pose().popPose();
         }
     }
 

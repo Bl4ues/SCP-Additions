@@ -84,21 +84,21 @@ public final class AdditionalGameplayModulesUi {
             if (!labels.contains("Custom Oxygen Bar")) {
                 additions.add(constructor.newInstance(
                         "hud", "custom_oxygen_bar", "Custom Oxygen Bar",
-                        "Replaces vanilla air bubbles with a centered survival-horror oxygen meter.",
+                        "Replaces vanilla air bubbles with a centered oxygen meter.",
                         true));
             }
             if (!labels.contains("Disable Text Drop Shadows")) {
                 additions.add(constructor.newInstance(
                         "hud", "disable_text_drop_shadows",
                         "Disable Text Drop Shadows",
-                        "Removes Minecraft's dark offset shadow from rendered text while preserving the text itself.",
+                        "Removes Minecraft's dark offset shadow from rendered text.",
                         true));
             }
             if (!labels.contains("Facility Chat Interface")) {
                 additions.add(constructor.newInstance(
                         "hud", "facility_chat_interface",
                         "Facility Chat Interface",
-                        "Reanchors vanilla chat to the upper-left and presents it as a top-down SCP: Classified Directive communications console.",
+                        "Reanchors vanilla chat to the upper-left and presents it as a top-down communications console.",
                         true));
             }
             if (additions.isEmpty()) return;

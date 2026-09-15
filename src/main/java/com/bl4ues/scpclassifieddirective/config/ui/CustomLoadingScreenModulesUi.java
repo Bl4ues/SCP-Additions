@@ -63,25 +63,25 @@ public final class CustomLoadingScreenModulesUi {
             if (needsMainMenu) {
                 expanded.add(insertion++, constructor.newInstance(
                         "ui", "custom_main_menu", MAIN_MENU_LABEL,
-                        "Replaces Minecraft's title screen with the SCP: Classified Directive menu presentation.",
+                        "Replaces Minecraft's title screen.",
                         true));
             }
             if (needsPauseMenu) {
                 expanded.add(insertion++, constructor.newInstance(
                         "ui", "custom_pause_menu", PAUSE_MENU_LABEL,
-                        "Replaces Minecraft's in-world pause screen with the animated SCP: Classified Directive presentation.",
+                        "Replaces Minecraft's in-world pause screen.",
                         true));
             }
             if (needsLoading) {
                 expanded.add(insertion++, constructor.newInstance(
                         "ui", "custom_loading_screen", LOADING_LABEL,
-                        "Replaces Minecraft's spawn-region loading display with the SCP: Classified Directive presentation.",
+                        "Replaces Minecraft's spawn-region loading display.",
                         true));
             }
             if (needsAdvancement) {
                 expanded.add(insertion, constructor.newInstance(
                         "ui", "custom_advancement_toasts", ACHIEVEMENT_LABEL,
-                        "Replaces achievement popups and their vanilla sounds with the animated SCP: Classified Directive presentation.",
+                        "Replaces achievement popups.",
                         true));
             }
             rowsField.set(screen, List.copyOf(expanded));

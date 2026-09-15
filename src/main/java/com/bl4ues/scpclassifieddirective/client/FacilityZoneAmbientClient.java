@@ -36,7 +36,9 @@ public final class FacilityZoneAmbientClient {
     private static final int INACTIVE_GRACE_TICKS = 20;
 
     private static FacilityZoneAmbientSound active;
+    private static FacilityZoneAmbientSound activeBoost;
     private static FacilityZoneAmbientSound fading;
+    private static FacilityZoneAmbientSound fadingBoost;
     private static Area activeArea = Area.NONE;
     private static int retryTicks;
     private static int inactiveTicks;
@@ -62,7 +64,7 @@ public final class FacilityZoneAmbientClient {
         if (desired.area() != activeArea) {
             transitionTo(minecraft, desired);
         } else if (active != null) {
-            active.setTargetVolume(desired.volume());
+            setLayerVolumes(desired.volume());
         }
 
         if (retryTicks > 0) retryTicks--;
@@ -85,6 +87,10 @@ public final class FacilityZoneAmbientClient {
                 && !minecraft.getSoundManager().isActive(fading)) {
             fading = null;
         }
+        if (fadingBoost != null
+                && !minecraft.getSoundManager().isActive(fadingBoost)) {
+            fadingBoost = null;
+        }
         if (active == null && activeArea.hasAudio()
                 && retryTicks <= 0) {
             start(minecraft, activeArea, desired.volume());
@@ -98,13 +104,21 @@ public final class FacilityZoneAmbientClient {
         if (rooms.isEmpty()) return Selection.NONE;
 
         BlockPos blockPos = minecraft.player.blockPosition();
-        // Reuse Facility Mapping's canonical room resolver instead of doing a
-        // second, stricter containsColumn pass here. That keeps ambience stable
-        // at room borders and in vertically stacked/overlapping rooms.
-        FacilityRoomSnapshot insideRoom =
-                FacilityMappingClientState.roomAt(dimension, blockPos);
-        if (insideRoom != null) {
-            Area insideArea = areaFor(insideRoom);
+        Area insideArea = Area.NONE;
+        boolean insideMappedRoom = false;
+        for (FacilityRoomSnapshot room : rooms) {
+            if (!room.containsColumn(blockPos)) continue;
+            insideMappedRoom = true;
+            Area candidate = areaFor(room);
+            if (candidate.priority() > insideArea.priority()) {
+                insideArea = candidate;
+            }
+        }
+
+        // Ambience considers every authored room occupying this column. A
+        // smaller/unassigned overlapping room must not silence the mapped floor
+        // beneath it; Core Room remains the highest-priority layer.
+        if (insideMappedRoom) {
             return insideArea.hasAudio()
                     ? new Selection(insideArea, insideVolume(insideArea))
                     : Selection.NONE;
@@ -216,11 +230,21 @@ public final class FacilityZoneAmbientClient {
     }
 
     private static void transitionTo(Minecraft minecraft, Selection desired) {
-        if (active != null) {
+        if (active != null || activeBoost != null) {
             if (fading != null) minecraft.getSoundManager().stop(fading);
-            active.beginFadeOut();
-            fading = active;
+            if (fadingBoost != null) {
+                minecraft.getSoundManager().stop(fadingBoost);
+            }
+            if (active != null) {
+                active.beginFadeOut();
+                fading = active;
+            }
+            if (activeBoost != null) {
+                activeBoost.beginFadeOut();
+                fadingBoost = activeBoost;
+            }
             active = null;
+            activeBoost = null;
         }
         activeArea = desired.area();
         retryTicks = 0;
@@ -233,9 +257,32 @@ public final class FacilityZoneAmbientClient {
     private static void start(Minecraft minecraft, Area area, float volume) {
         SoundEvent event = soundFor(area);
         if (event == null) return;
-        active = new FacilityZoneAmbientSound(event, volume);
+        if (activeBoost != null) {
+            minecraft.getSoundManager().stop(activeBoost);
+            activeBoost = null;
+        }
+
+        float primaryVolume = Math.min(1.0F,
+                Math.max(FacilityZoneAmbientSound.MIN_VOLUME, volume));
+        float boostVolume = Math.max(0.0F, volume - 1.0F);
+        active = new FacilityZoneAmbientSound(event, primaryVolume);
         inactiveTicks = 0;
         minecraft.getSoundManager().play(active);
+        if (boostVolume > FacilityZoneAmbientSound.MIN_VOLUME) {
+            activeBoost = new FacilityZoneAmbientSound(event, boostVolume);
+            minecraft.getSoundManager().play(activeBoost);
+        }
+    }
+
+    private static void setLayerVolumes(float volume) {
+        if (active != null) {
+            active.setTargetVolume(Math.min(1.0F,
+                    Math.max(FacilityZoneAmbientSound.MIN_VOLUME, volume)));
+        }
+        if (activeBoost != null) {
+            activeBoost.setTargetVolume(Math.max(
+                    FacilityZoneAmbientSound.MIN_VOLUME, volume - 1.0F));
+        }
     }
 
     private static SoundEvent soundFor(Area area) {
@@ -250,9 +297,13 @@ public final class FacilityZoneAmbientClient {
 
     private static void stopImmediately(Minecraft minecraft) {
         if (active != null) minecraft.getSoundManager().stop(active);
+        if (activeBoost != null) minecraft.getSoundManager().stop(activeBoost);
         if (fading != null) minecraft.getSoundManager().stop(fading);
+        if (fadingBoost != null) minecraft.getSoundManager().stop(fadingBoost);
         active = null;
+        activeBoost = null;
         fading = null;
+        fadingBoost = null;
         activeArea = Area.NONE;
         retryTicks = 0;
         inactiveTicks = 0;

@@ -47,7 +47,7 @@ public final class CrosshairModulesPlacement {
 
     private static final String CROSSHAIR_LABEL = "Custom Crosshair";
     private static final String CROSSHAIR_DESCRIPTION =
-            "Replaces Minecraft's crosshair with a configurable SCP: Classified Directive crosshair.";
+            "Replaces Minecraft's crosshair with a configurable SCP Unity-style crosshair.";
     private static final int ROW_HEIGHT = 22;
     private static final int STATE_WIDTH = 92;
     private static final int GAP = 6;
@@ -207,7 +207,7 @@ public final class CrosshairModulesPlacement {
             int insertAt = currentRows.size();
             for (int i = 0; i < currentRows.size(); i++) {
                 String label = String.valueOf(labelMethod.invoke(currentRows.get(i)));
-                if ("Action Bars in Roboto".equals(label)) return;
+                if ("Custom Action Bar".equals(label)) return;
                 if ("Hide Active Effect Indicators".equals(label)) {
                     insertAt = i + 1;
                 }
@@ -218,8 +218,8 @@ public final class CrosshairModulesPlacement {
                     String.class, boolean.class);
             constructor.setAccessible(true);
             Object row = constructor.newInstance(
-                    "hud", "action_bars_roboto", "Action Bars in Roboto",
-                    "Renders action-bar messages with the SCP Inventory Roboto font.",
+                    "hud", "action_bars_roboto", "Custom Action Bar",
+                    "Replaces action-bar font.",
                     true);
 
             List<Object> updated = new ArrayList<>(currentRows);
@@ -227,7 +227,7 @@ public final class CrosshairModulesPlacement {
             rowsField.set(screen, List.copyOf(updated));
         } catch (ReflectiveOperationException exception) {
             ScpClassifiedDirectiveMod.LOGGER.warn(
-                    "Could not place Action Bars in Roboto in Preferences",
+                    "Could not place Custom Action Bar in Preferences",
                     exception);
         }
     }

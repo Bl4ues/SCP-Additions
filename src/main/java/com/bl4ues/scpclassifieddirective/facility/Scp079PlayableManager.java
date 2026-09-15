@@ -225,16 +225,7 @@ public final class Scp079PlayableManager {
 
     private static FacilityRoomSnapshot roomForCamera(ServerLevel level,
             FacilityCameraDefinition camera) {
-        if (level == null || camera == null) return null;
-        BlockPos eye = BlockPos.containing(camera.eyePosition());
-        for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
-            if (room.containsColumn(eye)) return room;
-        }
-        for (FacilityRoomSnapshot room : FacilityMappingManager.roomSnapshots(level)) {
-            if (Scp079RoomInteractionPolicy.withinExpandedFloor(room,
-                    camera.anchorPos(), 1)) return room;
-        }
-        return null;
+        return FacilityMappingManager.roomSnapshotForCamera(level, camera);
     }
 
     private static boolean adjacent(FacilityRoomSnapshot a,

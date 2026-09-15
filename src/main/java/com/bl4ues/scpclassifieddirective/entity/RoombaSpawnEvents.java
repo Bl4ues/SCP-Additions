@@ -252,14 +252,13 @@ public final class RoombaSpawnEvents {
 
         Set<UUID> occupied = new HashSet<>();
         int count = 0;
-        for (RoombaEntity roomba : level.getEntitiesOfClass(
-                RoombaEntity.class,
-                new AABB(-30_000_000.0D, level.getMinBuildHeight(),
-                        -30_000_000.0D, 30_000_000.0D,
-                        level.getMaxBuildHeight(), 30_000_000.0D),
-                entity -> entity.isAlive() && !entity.isRemoved()
-                        && entity.getPersistentData()
-                                .getBoolean("NaturalRoomba"))) {
+        for (var entity : level.getAllEntities()) {
+            if (!(entity instanceof RoombaEntity roomba)
+                    || !roomba.isAlive() || roomba.isRemoved()
+                    || !roomba.getPersistentData()
+                            .getBoolean("NaturalRoomba")) {
+                continue;
+            }
             UUID roomId = naturalSpawnRoom(level, roomba);
             if (roomId == null || !poolRoomIds.contains(roomId)) continue;
             count++;

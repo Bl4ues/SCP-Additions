@@ -27,12 +27,16 @@ public final class FacilitySurveillanceRegistry {
                 level.dimension().location(), anchorPos, eyePosition, name,
                 baseYaw, basePitch, yawLimit, minPitch, maxPitch, maxZoom);
         FacilitySurveillanceSavedData.get(level.getServer()).put(camera);
+        FacilityMappingManager.cameraRegistryChanged(level);
         return camera;
     }
 
     public static boolean unregister(ServerLevel level, UUID id) {
-        return level != null && FacilitySurveillanceSavedData
+        if (level == null || id == null) return false;
+        boolean removed = FacilitySurveillanceSavedData
                 .get(level.getServer()).remove(id);
+        if (removed) FacilityMappingManager.cameraRemoved(level, id);
+        return removed;
     }
 
     public static FacilityCameraDefinition camera(ServerLevel level, UUID id) {
@@ -44,19 +48,31 @@ public final class FacilitySurveillanceRegistry {
         return normalizePlaceholder(level, camera);
     }
 
+    public static FacilityCameraDefinition cameraAt(ServerLevel level,
+            BlockPos anchorPos) {
+        if (level == null || anchorPos == null) return null;
+        for (FacilityCameraDefinition raw : FacilitySurveillanceSavedData
+                .get(level.getServer()).all()) {
+            if (!raw.dimension().equals(level.dimension().location())
+                    || !raw.anchorPos().equals(anchorPos)) continue;
+            return camera(level, raw.id());
+        }
+        return null;
+    }
+
     public static List<FacilityCameraDefinition> camerasForRoom(
             ServerLevel level, UUID roomId) {
         if (level == null || roomId == null) return List.of();
-        FacilityRoomSnapshot targetRoom = FacilityMappingManager.roomSnapshots(level)
-                .stream().filter(room -> room.id().equals(roomId))
-                .findFirst().orElse(null);
-        if (targetRoom == null) return List.of();
         return FacilitySurveillanceSavedData.get(level.getServer()).all().stream()
                 .filter(camera -> camera.dimension().equals(
                         level.dimension().location()))
                 .map(camera -> normalizePlaceholder(level, camera))
-                .filter(camera -> Scp079RoomInteractionPolicy.withinExpandedFloor(
-                        targetRoom, camera.anchorPos(), 1))
+                .filter(camera -> {
+                    FacilityRoomSnapshot room =
+                            FacilityMappingManager.roomSnapshotForCamera(
+                                    level, camera);
+                    return room != null && roomId.equals(room.id());
+                })
                 .sorted(Comparator.comparing(FacilityCameraDefinition::name,
                         String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(camera -> camera.id().toString()))

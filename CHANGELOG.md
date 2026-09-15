@@ -132,6 +132,7 @@
 
 ## Stealth and movement
 
+- Natural around-player spawn checks for SCP-173 and SCP-939 now treat nearby **Facility Mapping** rooms as authoritative spawn cells, prefer valid positions on their mapped floors, exclude **Creative Safe Zones**, and use the legacy random around-player placement only when no mapped room is nearby;
 - Added a default-enabled server-side module that replaces instant first-person crouch height changes with smooth lowering and rising transitions while retaining Minecraft's canonical server-authoritative collision poses;
 - Crouching players automatically enter Minecraft's low crawling pose when moving into spaces too short for the normal crouch hitbox, then transition back through crouching and standing as clearance becomes available;
 - Added a reusable visual-perception framework for hostile mobs: standing, crouching, and crawling expose configurable visibility values, while local light, distance, line of sight, sustained exposure, invisibility, and per-entity multipliers affect whether a player is acquired as a target;

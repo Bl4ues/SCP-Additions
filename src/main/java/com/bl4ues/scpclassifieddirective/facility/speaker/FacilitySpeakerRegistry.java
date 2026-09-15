@@ -4,6 +4,8 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoomInteractionPolicy;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilityCameraDefinition;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveillanceRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -52,11 +54,10 @@ public final class FacilitySpeakerRegistry {
     public static List<SpeakerEndpoint> speakersForCamera(ServerLevel level,
             BlockPos cameraPos) {
         if (level == null || cameraPos == null) return List.of();
-        FacilityRoomSnapshot room = FacilityMappingManager.roomSnapshots(level)
-                .stream()
-                .filter(candidate -> Scp079RoomInteractionPolicy
-                        .withinExpandedFloor(candidate, cameraPos, 1))
-                .findFirst().orElse(null);
+        FacilityCameraDefinition camera =
+                FacilitySurveillanceRegistry.cameraAt(level, cameraPos);
+        FacilityRoomSnapshot room = camera == null ? null
+                : FacilityMappingManager.roomSnapshotForCamera(level, camera);
         if (room == null) return List.of();
         return speakersForRoom(level, room);
     }

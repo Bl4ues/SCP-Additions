@@ -29,8 +29,8 @@ import java.util.Locale;
 public final class FacilityZoneAmbientClient {
     // The source files are intentionally quiet environmental beds. These gains
     // keep them clearly audible without competing with encounter music.
-    private static final float LCZ_INSIDE_VOLUME = 1.35F;
-    private static final float CORE_INSIDE_VOLUME = 1.70F;
+    private static final float LCZ_INSIDE_VOLUME = 1.08F;
+    private static final float CORE_INSIDE_VOLUME = 2.975F;
     private static final double SPILL_RADIUS = 12.0D;
     private static final int CORE_ROOM_BORDER = 1;
     private static final int RETRY_DELAY_TICKS = 20;

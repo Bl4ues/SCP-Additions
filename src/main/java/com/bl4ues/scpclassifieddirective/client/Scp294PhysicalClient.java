@@ -157,9 +157,13 @@ public final class Scp294PhysicalClient {
                     poseStack.translate(pivotX, pivotY, pivotZ);
                     poseStack.mulPose(Axis.XP.rotationDegrees(22.5F));
                     poseStack.translate(-pivotX, -pivotY, -pivotZ);
+                    // The authored backing plate continues behind the upper
+                    // housing up to Y=25.7, but only the portion below Y=23 is
+                    // actually exposed to the player. Outline only that visible
+                    // outer plane instead of highlighting geometry buried inside.
                     emitModelFrontPlane(consumer, poseStack.last(),
                             5.0D, 19.70D, 0.96D,
-                            14.0D, 25.70D);
+                            14.0D, 23.00D);
                 } finally {
                     poseStack.popPose();
                 }

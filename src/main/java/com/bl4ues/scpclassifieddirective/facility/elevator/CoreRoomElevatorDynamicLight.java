@@ -29,7 +29,7 @@ import java.util.Set;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class CoreRoomElevatorDynamicLight {
-    private static final int LIGHT_LEVEL = 7;
+    private static final int LIGHT_LEVEL = 11;
     private static final int UPDATE_INTERVAL_TICKS = 2;
     private static final int REFRESH_INTERVAL_TICKS = 20;
     private static final double TRACKING_RANGE = 64.0D;

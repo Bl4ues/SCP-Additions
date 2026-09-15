@@ -163,6 +163,7 @@ public final class Scp079PlayableClient {
 
     public static boolean active() { return active; }
     public static boolean cameraMode() { return active && cameraId != null; }
+    public static UUID cameraId() { return cameraId; }
     public static boolean networkAvailable() { return active && networkAvailable; }
     public static ResourceLocation hostDimension() { return hostDimension; }
     public static BlockPos hostPos() { return hostPos; }

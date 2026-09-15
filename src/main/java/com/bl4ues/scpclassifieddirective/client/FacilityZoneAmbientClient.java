@@ -27,7 +27,7 @@ import java.util.Locale;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityZoneAmbientClient {
-    private static final float INSIDE_VOLUME = 0.22F;
+    private static final float INSIDE_VOLUME = 0.55F;
     private static final double SPILL_RADIUS = 12.0D;
     private static final int RETRY_DELAY_TICKS = 100;
 

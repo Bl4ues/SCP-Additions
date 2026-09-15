@@ -72,9 +72,13 @@ public final class Scp079BlackoutAvailabilityClient {
             return;
         }
 
-        FacilityRoomSnapshot current = FacilityMappingClientState.roomAt(
-                Scp079PlayableClient.hostDimension(),
-                BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        FacilityRoomSnapshot current =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (current == null) {
+            current = FacilityMappingClientState.roomAt(
+                    Scp079PlayableClient.hostDimension(),
+                    BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        }
         if (current == null) {
             clear();
             return;

@@ -35,8 +35,11 @@ public final class FacilityMappingToolItem extends Item {
             return InteractionResult.FAIL;
         }
         if (serverPlayer.isShiftKeyDown()) {
-            FacilityMappingManager.openEditor(serverPlayer,
-                    context.getClickedPos());
+            if (!FacilityMappingManager.detachCamera(serverPlayer,
+                    context.getClickedPos())) {
+                FacilityMappingManager.openEditor(serverPlayer,
+                        context.getClickedPos());
+            }
         } else {
             FacilityMappingManager.completeSelection(serverPlayer,
                     context.getClickedPos());
@@ -85,6 +88,12 @@ public final class FacilityMappingToolItem extends Item {
         tooltip.add(Component.literal("Left-click: select the first floor corner")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("Right-click: add the selected floor area")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Left-click a camera: choose its mapped room")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Shift + right-click a camera: detach its room association")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
                 "Shift + right-click: edit a room or cancel in air")

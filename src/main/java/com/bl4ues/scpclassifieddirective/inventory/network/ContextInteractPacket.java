@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSou
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.entity.AbstractScp131Entity;
+import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDeviceAttachmentManager;
@@ -246,9 +247,17 @@ public class ContextInteractPacket {
 
     private static void playTakePickupSound(ServerPlayer player,
             ContextInteractionRegistry.Rule rule) {
-        if (rule != null && "Take".equalsIgnoreCase(rule.action().trim())) {
-            InventoryInteractionSoundFeedback.pickup(player);
+        if (rule == null || !"Take".equalsIgnoreCase(rule.action().trim())) {
+            return;
         }
+        // The SCP-714 stand owns both transfer cues itself so the same sound
+        // also works when contextual interactions are disabled. Do not layer
+        // the generic Take cue on top of its block-local pickup feedback.
+        if (Scp714ContainmentStandModule.TAKE_INTERACTION.equals(
+                rule.interactionKey())) {
+            return;
+        }
+        InventoryInteractionSoundFeedback.pickup(player);
     }
 
     private static boolean isDoorWithOpenState(BlockState state) {

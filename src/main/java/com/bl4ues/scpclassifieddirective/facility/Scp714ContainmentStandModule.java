@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.inventory.capability.IScpInventory;
 import com.bl4ues.scpclassifieddirective.inventory.capability.ScpInventoryCapability;
 import com.bl4ues.scpclassifieddirective.inventory.item.ScpPickupRouter;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
+import com.bl4ues.scpclassifieddirective.inventory.sound.InventoryInteractionSoundFeedback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -158,6 +159,7 @@ public final class Scp714ContainmentStandModule {
                     return InteractionResult.FAIL;
                 }
                 stand.setHasRing(false);
+                InventoryInteractionSoundFeedback.pickup(serverPlayer);
                 return InteractionResult.CONSUME;
             }
 
@@ -171,6 +173,9 @@ public final class Scp714ContainmentStandModule {
             // into the stand always transfers the concrete item instance.
             held.shrink(1);
             stand.setHasRing(true);
+            if (player instanceof ServerPlayer serverPlayer) {
+                InventoryInteractionSoundFeedback.pickup(serverPlayer);
+            }
             return InteractionResult.CONSUME;
         }
 

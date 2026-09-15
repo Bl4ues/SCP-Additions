@@ -519,12 +519,13 @@ public final class Scp079ModulesScreenExtension {
                     graphics.fill(lineX, rowY + 14,
                             panelX + panelWidth - 18, rowY + 15, BORDER);
                 } else {
-                    int descriptionMax = row.serverOwned() ? 62 : 80;
-                    graphics.drawString(font,
-                            ScpFonts.roboto(compact(row.description(), descriptionMax)),
-                            panelX + 18, rowY + 24, MUTED, false);
-                    if (row.serverOwned()) {
-                        Component server = ScpFonts.roboto("SERVER-SIDE");
+                    Component server = row.serverOwned()
+                            ? ScpFonts.roboto("SERVER-SIDE") : null;
+                    int reserved = server == null ? 0 : font.width(server) + 12;
+                    drawFittedDescription(graphics, font, row.description(),
+                            panelX + 18, rowY + 24,
+                            panelWidth - 36 - reserved, MUTED);
+                    if (server != null) {
                         graphics.drawString(font, server,
                                 panelX + panelWidth - 18 - font.width(server),
                                 rowY + 24, PALE_GOLD, false);
@@ -922,9 +923,23 @@ public final class Scp079ModulesScreenExtension {
         }
     }
 
-    private static String compact(String text, int max) {
-        if (text == null) return "";
-        return text.length() <= max ? text
-                : text.substring(0, Math.max(0, max - 3)) + "...";
+    private static void drawFittedDescription(GuiGraphics graphics, Font font,
+            String text, int x, int y, int maxWidth, int color) {
+        Component label = ScpFonts.roboto(text == null ? "" : text);
+        int width = font.width(label);
+        if (width <= maxWidth || width <= 0) {
+            graphics.drawString(font, label, x, y, color, false);
+            return;
+        }
+
+        // Descriptions are deliberately single-line in this compact menu. Fit
+        // the complete copy to the available width instead of amputating it
+        // with an arbitrary character-count ellipsis.
+        float scale = Math.max(0.72F, maxWidth / (float) width);
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, label, 0, 0, color, false);
+        graphics.pose().popPose();
     }
 }

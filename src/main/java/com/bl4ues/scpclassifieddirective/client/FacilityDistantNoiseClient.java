@@ -30,15 +30,15 @@ public final class FacilityDistantNoiseClient {
      * long silent streaks caused by repeatedly failing a second probability roll.
      * Neighboring clients resolve the same window, sound and direction.
      */
-    private static final long WINDOW_TICKS = 360L;
-    private static final long MIN_OFFSET_TICKS = 40L;
-    private static final long OFFSET_RANGE_TICKS = 281L;
+    private static final long WINDOW_TICKS = 720L;
+    private static final long MIN_OFFSET_TICKS = 180L;
+    private static final long OFFSET_RANGE_TICKS = 361L;
     private static final long LATE_GRACE_TICKS = 3L;
 
     private static final double MIN_DISTANCE = 6.5D;
     private static final double DISTANCE_RANGE = 4.5D;
     private static final double MAX_VERTICAL_OFFSET = 1.75D;
-    private static final float PLAYBACK_VOLUME = 1.80F;
+    private static final float PLAYBACK_VOLUME = 2.00F;
 
     private static final long OFFSET_SALT = 0x5343484544554C45L;
     private static final long SOUND_SALT = 0x534F554E445F4944L;

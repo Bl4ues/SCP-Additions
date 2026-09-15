@@ -17,8 +17,10 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.entity.Scp173Entity;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerManager;
+import com.bl4ues.scpclassifieddirective.roamer.RoamerMappedSpawnPreference;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerResult;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerType;
+import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
 
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -134,6 +136,25 @@ public final class Scp173SpawnEvents {
     private static Scp173Entity trySpawnNearPlayer(ServerPlayer player,
             RandomSource random) {
         ServerLevel level = player.serverLevel();
+
+        RoamerMappedSpawnPreference.Search mapped =
+                RoamerMappedSpawnPreference.search(player, random,
+                        MIN_SPAWN_DISTANCE, MAX_FRONT_SPAWN_DISTANCE,
+                        LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN, SPAWN_ATTEMPTS);
+        if (mapped.preferred()) {
+            for (BlockPos pos : mapped.candidates()) {
+                if (!isValidSpawnPosition(level, pos)) continue;
+                Scp173Entity spawned = spawn173(level, pos, player);
+                if (spawned != null) return spawned;
+            }
+            /*
+             * Mapping is authoritative while a nearby cell exists. Failure to
+             * find a legal point inside those cells ends this encounter check;
+             * do not leak the statue into an arbitrary unmapped location.
+             */
+            return null;
+        }
+
         Vec3 forward = horizontal(player.getLookAngle());
         if (forward.lengthSqr() < 0.0001D) {
             forward = new Vec3(0.0D, 0.0D, 1.0D);
@@ -216,6 +237,11 @@ public final class Scp173SpawnEvents {
         AABB box = new AABB(x - ENTITY_HALF_WIDTH, y,
                 z - ENTITY_HALF_WIDTH, x + ENTITY_HALF_WIDTH,
                 y + ENTITY_HEIGHT, z + ENTITY_HALF_WIDTH);
+        if (SafeZoneManager.contains(level, pos.below())
+                || SafeZoneManager.contains(level, pos)
+                || SafeZoneManager.intersects(level, box)) {
+            return false;
+        }
         return level.noCollision(box);
     }
 

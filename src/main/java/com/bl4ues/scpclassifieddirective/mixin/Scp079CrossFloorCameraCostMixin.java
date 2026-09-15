@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilityCameraDefinition;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveillanceRegistry;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveillanceSavedData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,8 +29,8 @@ public abstract class Scp079CrossFloorCameraCostMixin {
     private static boolean scpclassifieddirective$roomSwitchCost(
             ServerLevel level, double baseCost, ServerPlayer player,
             UUID roomId) {
-        FacilityRoomSnapshot current = scpclassifieddirective$currentRoom(
-                level, player.blockPosition());
+        FacilityRoomSnapshot current =
+                scpclassifieddirective$currentCameraRoom(level, player);
         FacilityRoomSnapshot target = scpclassifieddirective$roomById(level,
                 roomId);
         double cost = baseCost * Scp079CameraTravelRules.multiplier(current,
@@ -44,8 +45,8 @@ public abstract class Scp079CrossFloorCameraCostMixin {
     private static boolean scpclassifieddirective$cameraSwitchCost(
             ServerLevel level, double baseCost, ServerPlayer player,
             UUID cameraId) {
-        FacilityRoomSnapshot current = scpclassifieddirective$currentRoom(
-                level, player.blockPosition());
+        FacilityRoomSnapshot current =
+                scpclassifieddirective$currentCameraRoom(level, player);
         FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
                 level, cameraId);
         FacilityRoomSnapshot target = scpclassifieddirective$roomForCamera(
@@ -64,35 +65,35 @@ public abstract class Scp079CrossFloorCameraCostMixin {
         return null;
     }
 
-    private static FacilityRoomSnapshot scpclassifieddirective$currentRoom(
-            ServerLevel level, BlockPos pos) {
-        if (level == null || pos == null) return null;
-        List<FacilityRoomSnapshot> rooms = FacilityMappingManager.roomSnapshots(level);
-        for (FacilityRoomSnapshot room : rooms) {
-            if (room.containsColumn(pos)) return room;
+    private static FacilityRoomSnapshot scpclassifieddirective$currentCameraRoom(
+            ServerLevel level, ServerPlayer player) {
+        if (level == null || player == null || player.getServer() == null) {
+            return null;
         }
-        for (FacilityRoomSnapshot room : rooms) {
-            if (Scp079RoomInteractionPolicy.withinExpandedFloor(room, pos, 4)) {
-                return room;
+        FacilityCameraDefinition nearest = null;
+        double best = Double.MAX_VALUE;
+        for (FacilityCameraDefinition raw : FacilitySurveillanceSavedData
+                .get(player.getServer()).all()) {
+            if (!raw.dimension().equals(level.dimension().location())) continue;
+            FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
+                    level, raw.id());
+            if (camera == null) continue;
+            double distance = camera.eyePosition().distanceToSqr(
+                    player.position());
+            if (distance < best) {
+                best = distance;
+                nearest = camera;
             }
         }
-        return null;
+        return nearest != null && best <= 16.0D
+                ? FacilityMappingManager.roomSnapshotForCamera(level, nearest)
+                : FacilityMappingManager.roomSnapshots(level).stream()
+                .filter(room -> room.containsColumn(player.blockPosition()))
+                .findFirst().orElse(null);
     }
 
     private static FacilityRoomSnapshot scpclassifieddirective$roomForCamera(
             ServerLevel level, FacilityCameraDefinition camera) {
-        if (level == null || camera == null) return null;
-        List<FacilityRoomSnapshot> rooms = FacilityMappingManager.roomSnapshots(level);
-        BlockPos eye = BlockPos.containing(camera.eyePosition());
-        for (FacilityRoomSnapshot room : rooms) {
-            if (room.containsColumn(eye)) return room;
-        }
-        for (FacilityRoomSnapshot room : rooms) {
-            if (Scp079RoomInteractionPolicy.withinExpandedFloor(
-                    room, camera.anchorPos(), 1)) {
-                return room;
-            }
-        }
-        return null;
+        return FacilityMappingManager.roomSnapshotForCamera(level, camera);
     }
 }

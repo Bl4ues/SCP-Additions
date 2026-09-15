@@ -72,6 +72,15 @@ public final class FacilityMappingClientState {
         return null;
     }
 
+    public static FacilityCameraMappingSnapshot cameraById(
+            ResourceLocation dimension, java.util.UUID cameraId) {
+        if (cameraId == null) return null;
+        for (FacilityCameraMappingSnapshot camera : cameras(dimension)) {
+            if (cameraId.equals(camera.cameraId())) return camera;
+        }
+        return null;
+    }
+
     public static FacilityRoomSnapshot roomById(ResourceLocation dimension,
             java.util.UUID roomId) {
         if (roomId == null) return null;

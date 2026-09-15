@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.entity;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModGameRules;
@@ -38,8 +39,9 @@ import java.util.UUID;
  * <p>Unnamed mapped rooms are eligible by default, while Unity-style transit
  * rooms (corridors, hallways, corners and threeways) remain eligible and receive
  * a small selection bias. Rooms occupied by players and directly adjacent rooms
- * are excluded. Safe Zones, Sublevel 3, Heavy Containment and Super Heavy
- * Containment are
+ * are excluded. Existing natural Roombas reserve only their authored spawn cell,
+ * so connected/consecutive mapped rooms remain valid. Safe Zones, Sublevel 3,
+ * Heavy Containment and Super Heavy Containment are
  * always excluded. Standard LCZ labels keep the Unity-style SL1/SL2 split,
  * Entrance Zone uses the same frequency tier as SL1, and other layouts fall
  * back to a height-based preference for upper mapped floors.</p>
@@ -54,8 +56,8 @@ public final class RoombaSpawnEvents {
      * Unity lets Roombas appear in several SL1 hallway/corner/three-way rooms,
      * while SL2 has only the fan hallway. Preserve that strong SL1 bias without
      * making a single Roomba a multi-hour event: the highest tier is 1/16 per
-     * 60-90 second check (~20 minutes for one eligible player), while the
-     * regional cap and room-distance rules keep them sparse.
+     * 60-90 second check (~20 minutes for one eligible player), while mapped
+     * room occupancy and the cell-density budget keep them sparse.
      */
     private static final int PRIMARY_CHANCE_SCALE = 64;
     private static final int MAX_FREQUENCY_WEIGHT = 4;
@@ -65,11 +67,23 @@ public final class RoombaSpawnEvents {
     private static final int PAIR_SEARCH_ATTEMPTS = 28;
     private static final int MIN_SEARCH_RADIUS = 8;
     private static final int MAX_SEARCH_RADIUS = 64;
-    private static final double LOCAL_EXCLUSION_RADIUS = 18.0D;
-    private static final double REGIONAL_RADIUS = 80.0D;
-    private static final int REGIONAL_CAP = 2;
     private static final double SAFE_ROOM_HEIGHT = 3.0D;
     private static final int ADJACENT_ROOM_GAP = 2;
+
+    /*
+     * Natural Roomba density is defined by authored Facility Mapping cells,
+     * never an arbitrary block radius. Two adjacent eligible rooms may each
+     * contain a Roomba, matching SCP: Unity's room-by-room placement model.
+     *
+     * A pool with at least two eligible rooms always allows two Roombas; larger
+     * mapped areas gain roughly one slot per five eligible rooms, capped so a
+     * large custom facility does not eventually become a vacuum-cleaner colony.
+     */
+    private static final int ROOMS_PER_NATURAL_ROOMBA = 5;
+    private static final int MIN_MULTIROOM_CAP = 2;
+    private static final int MAX_NATURAL_ROOMBAS_PER_POOL = 6;
+    private static final String NATURAL_ROOMBA_ROOM_TAG =
+            "NaturalRoombaRoom";
 
     private static final Map<UUID, Long> NEXT_CHECK = new HashMap<>();
 
@@ -98,28 +112,32 @@ public final class RoombaSpawnEvents {
                 + player.getRandom().nextInt(CHECK_JITTER_TICKS + 1));
 
         RandomSource random = player.getRandom();
-        int regionalCount = countRoombas(level, player.getX(), player.getY(),
-                player.getZ(), REGIONAL_RADIUS);
-        if (countRoombas(level, player.getX(), player.getY(), player.getZ(),
-                LOCAL_EXCLUSION_RADIUS) > 0 || regionalCount >= REGIONAL_CAP) {
+        SpawnPool pool = nearbyMappedPatches(level, player);
+        if (pool.patches().isEmpty()
+                || pool.naturalRoombaCount() >= pool.capacity()) {
             return;
         }
 
-        Optional<MappedFloor> floor = findPrimaryFloor(level, player, random);
+        Optional<MappedFloor> floor =
+                findPrimaryFloor(level, player, random, pool);
         if (floor.isEmpty()) return;
 
         MappedFloor mapped = floor.get();
         if (!passesFrequencyRoll(random, mapped.frequencyWeight())) return;
 
-        RoombaEntity primary = spawnAt(level, mapped.floor(), random);
-        if (primary == null || regionalCount > 0
+        RoombaEntity primary = spawnAt(level, mapped.floor(), random,
+                mapped.room().id());
+        if (primary == null
+                || pool.naturalRoombaCount() > 0
+                || pool.capacity() < 2
                 || !isUnitySublevelOne(mapped.room())
                 || random.nextInt(PAIR_CHANCE_BOUND) != 0) {
             return;
         }
 
         findPairFloor(level, mapped, random)
-                .ifPresent(pairFloor -> spawnAt(level, pairFloor, random));
+                .ifPresent(pairFloor -> spawnAt(level, pairFloor, random,
+                        mapped.room().id()));
     }
 
     @SubscribeEvent
@@ -128,8 +146,8 @@ public final class RoombaSpawnEvents {
     }
 
     private static Optional<MappedFloor> findPrimaryFloor(ServerLevel level,
-            ServerPlayer player, RandomSource random) {
-        List<WeightedPatch> patches = nearbyMappedPatches(level, player);
+            ServerPlayer player, RandomSource random, SpawnPool pool) {
+        List<WeightedPatch> patches = pool.patches();
         if (patches.isEmpty()) return Optional.empty();
 
         for (int attempt = 0; attempt < SEARCH_ATTEMPTS; attempt++) {
@@ -143,23 +161,22 @@ public final class RoombaSpawnEvents {
             double distanceSqr = dx * dx + dz * dz;
             if (distanceSqr < MIN_SEARCH_RADIUS * MIN_SEARCH_RADIUS
                     || distanceSqr > MAX_SEARCH_RADIUS * MAX_SEARCH_RADIUS
+                    || pool.occupiedNaturalRooms()
+                            .contains(selected.room().id())
                     || !isUsableMappedFloor(level, floor)) {
                 continue;
             }
-            if (countRoombas(level, x + 0.5D, floor.getY() + 1.0D,
-                    z + 0.5D, LOCAL_EXCLUSION_RADIUS) == 0) {
-                return Optional.of(new MappedFloor(floor.immutable(),
-                        selected.room(), selected.frequencyWeight()));
-            }
+            return Optional.of(new MappedFloor(floor.immutable(),
+                    selected.room(), selected.frequencyWeight()));
         }
         return Optional.empty();
     }
 
-    private static List<WeightedPatch> nearbyMappedPatches(ServerLevel level,
+    private static SpawnPool nearbyMappedPatches(ServerLevel level,
             ServerPlayer player) {
         List<FacilityRoomSnapshot> rooms =
                 FacilityMappingManager.roomSnapshots(level);
-        if (rooms.isEmpty()) return List.of();
+        if (rooms.isEmpty()) return SpawnPool.EMPTY;
 
         /*
          * Roombas are ambient facility life, not jumpscare spawns. Never create
@@ -177,7 +194,7 @@ public final class RoombaSpawnEvents {
                 eligibleRooms.add(room);
             }
         }
-        if (eligibleRooms.isEmpty()) return List.of();
+        if (eligibleRooms.isEmpty()) return SpawnPool.EMPTY;
 
         Map<Integer, Integer> customElevationWeights =
                 customElevationWeights(eligibleRooms);
@@ -199,7 +216,73 @@ public final class RoombaSpawnEvents {
                         area * roomMultiplier, frequencyWeight));
             }
         }
-        return result;
+        if (result.isEmpty()) return SpawnPool.EMPTY;
+
+        Set<UUID> poolRoomIds = new HashSet<>();
+        for (WeightedPatch patch : result) {
+            poolRoomIds.add(patch.room().id());
+        }
+
+        NaturalPopulation population =
+                naturalPopulation(level, poolRoomIds);
+        int capacity = naturalCapacity(poolRoomIds.size());
+        return new SpawnPool(List.copyOf(result),
+                population.occupiedRoomIds(),
+                population.count(), capacity);
+    }
+
+    private static int naturalCapacity(int eligibleRoomCount) {
+        if (eligibleRoomCount <= 0) return 0;
+        if (eligibleRoomCount == 1) return 1;
+        int scaled = (eligibleRoomCount + ROOMS_PER_NATURAL_ROOMBA - 1)
+                / ROOMS_PER_NATURAL_ROOMBA;
+        return Math.min(MAX_NATURAL_ROOMBAS_PER_POOL,
+                Math.max(MIN_MULTIROOM_CAP, scaled));
+    }
+
+    /**
+     * Counts only naturally generated Roombas whose authored spawn cell belongs
+     * to this candidate pool. Manually placed Roombas never consume the natural
+     * encounter budget. Legacy natural Roombas without a stored cell fall back
+     * to the mapped room they currently occupy.
+     */
+    private static NaturalPopulation naturalPopulation(ServerLevel level,
+            Set<UUID> poolRoomIds) {
+        if (poolRoomIds.isEmpty()) return NaturalPopulation.EMPTY;
+
+        Set<UUID> occupied = new HashSet<>();
+        int count = 0;
+        for (RoombaEntity roomba : level.getEntitiesOfClass(
+                RoombaEntity.class,
+                new AABB(-30_000_000.0D, level.getMinBuildHeight(),
+                        -30_000_000.0D, 30_000_000.0D,
+                        level.getMaxBuildHeight(), 30_000_000.0D),
+                entity -> entity.isAlive() && !entity.isRemoved()
+                        && entity.getPersistentData()
+                                .getBoolean("NaturalRoomba"))) {
+            UUID roomId = naturalSpawnRoom(level, roomba);
+            if (roomId == null || !poolRoomIds.contains(roomId)) continue;
+            count++;
+            occupied.add(roomId);
+        }
+        return new NaturalPopulation(Set.copyOf(occupied), count);
+    }
+
+    private static UUID naturalSpawnRoom(ServerLevel level,
+            RoombaEntity roomba) {
+        String stored = roomba.getPersistentData()
+                .getString(NATURAL_ROOMBA_ROOM_TAG);
+        if (!stored.isBlank()) {
+            try {
+                return UUID.fromString(stored);
+            } catch (IllegalArgumentException ignored) {
+                // Legacy/corrupt metadata falls through to current mapping.
+            }
+        }
+
+        FacilityRoom room = FacilityMappingManager.roomForPosition(
+                level, roomba.blockPosition());
+        return room == null ? null : room.id();
     }
 
     private static Set<UUID> occupiedAndAdjacentRooms(ServerLevel level,
@@ -366,7 +449,7 @@ public final class RoombaSpawnEvents {
                     || !isUsableMappedFloor(level, floor)) {
                 continue;
             }
-            if (countRoombas(level, x + 0.5D, floor.getY() + 1.0D,
+            if (countNearbyRoombas(level, x + 0.5D, floor.getY() + 1.0D,
                     z + 0.5D, 1.5D) == 0) {
                 return Optional.of(floor.immutable());
             }
@@ -484,7 +567,7 @@ public final class RoombaSpawnEvents {
     }
 
     private static RoombaEntity spawnAt(ServerLevel level, BlockPos floor,
-            RandomSource random) {
+            RandomSource random, UUID roomId) {
         EntityType<RoombaEntity> type = ScpClassifiedDirectiveModEntities.ROOMBA.get();
         RoombaEntity roomba = type.create(level);
         if (roomba == null) return null;
@@ -497,6 +580,10 @@ public final class RoombaSpawnEvents {
         roomba.setYBodyRot(yaw);
         roomba.setYHeadRot(yaw);
         roomba.getPersistentData().putBoolean("NaturalRoomba", true);
+        if (roomId != null) {
+            roomba.getPersistentData().putString(
+                    NATURAL_ROOMBA_ROOM_TAG, roomId.toString());
+        }
         if (!level.noCollision(roomba, roomba.getBoundingBox())) {
             roomba.discard();
             return null;
@@ -505,12 +592,35 @@ public final class RoombaSpawnEvents {
         return roomba;
     }
 
-    private static int countRoombas(ServerLevel level, double x, double y,
-            double z, double radius) {
+    private static int countNearbyRoombas(ServerLevel level, double x,
+            double y, double z, double radius) {
         AABB area = new AABB(x - radius, y - radius, z - radius,
                 x + radius, y + radius, z + radius);
         return level.getEntitiesOfClass(RoombaEntity.class, area,
                 entity -> entity.isAlive() && !entity.isRemoved()).size();
+    }
+
+    private record SpawnPool(List<WeightedPatch> patches,
+            Set<UUID> occupiedNaturalRooms,
+            int naturalRoombaCount, int capacity) {
+        private static final SpawnPool EMPTY =
+                new SpawnPool(List.of(), Set.of(), 0, 0);
+
+        private SpawnPool {
+            patches = patches == null ? List.of() : List.copyOf(patches);
+            occupiedNaturalRooms = occupiedNaturalRooms == null
+                    ? Set.of() : Set.copyOf(occupiedNaturalRooms);
+        }
+    }
+
+    private record NaturalPopulation(Set<UUID> occupiedRoomIds, int count) {
+        private static final NaturalPopulation EMPTY =
+                new NaturalPopulation(Set.of(), 0);
+
+        private NaturalPopulation {
+            occupiedRoomIds = occupiedRoomIds == null
+                    ? Set.of() : Set.copyOf(occupiedRoomIds);
+        }
     }
 
     private record WeightedPatch(FacilityRoomSnapshot room,

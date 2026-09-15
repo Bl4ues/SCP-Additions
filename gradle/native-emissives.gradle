@@ -119,13 +119,23 @@ gradle.afterProject { evaluatedProject, state ->
 
         // Give GeckoLib-style glowmasks the same shader-native LabPBR emission
         // path as _e-authored materials. Keep the source mask for the existing
-        // vanilla/full-bright fallback render layer.
+        // vanilla/full-bright fallback render layer. The moving elevator cabin
+        // is intentionally excluded: its large cutout entity mesh renders its
+        // lamp through an explicit eyes pass, while LabPBR emission on the base
+        // entity material causes some shader packs to bloom the whole ceiling UV
+        // island into a floating white rectangle.
         evaluatedProject.fileTree(assetsRoot).matching {
             include '**/*_glowmask.png'
         }.files.sort { first, second ->
             first.path <=> second.path
         }.each { File glowmaskFile ->
-            mergeLabPbrEmission(glowmaskFile, '_glowmask')
+            String normalizedPath = glowmaskFile.path.replace('\\', '/')
+            boolean elevatorCarriage = glowmaskFile.name ==
+                    'core_room_elevator_carriage_glowmask.png'
+                    && normalizedPath.contains('/textures/entities/')
+            if (!elevatorCarriage) {
+                mergeLabPbrEmission(glowmaskFile, '_glowmask')
+            }
         }
 
         // The Floor Station is a GeckoLib block entity, but its authored light

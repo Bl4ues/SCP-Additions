@@ -329,8 +329,8 @@ public final class CeilingCameraModule {
 
         private static ServerPlayer trackingTarget(ServerLevel level,
                 FacilityCameraDefinition camera, @Nullable ServerPlayer controller) {
-            List<FacilityRoomSnapshot> rooms = roomSnapshots(level);
-            FacilityRoomSnapshot cameraRoom = roomForCamera(rooms, camera);
+            FacilityRoomSnapshot cameraRoom =
+                    FacilityMappingManager.roomSnapshotForCamera(level, camera);
             if (cameraRoom == null) return null;
 
             ServerPlayer closest = null;

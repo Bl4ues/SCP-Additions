@@ -23,7 +23,6 @@ import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
 /** Client renderers for the authored elevator assets and procedural cables. */
@@ -83,10 +82,11 @@ public final class CoreRoomElevatorClient {
             GeoBlockRenderer<CoreRoomElevatorModule.StationBlockEntity> {
         public StationRenderer(BlockEntityRendererProvider.Context context) {
             super(new StationModel());
-            // The station is a GeckoLib block entity. AutoGlowingGeoLayer is
-            // swallowed by some block-entity/PBR wrappers, which makes its
-            // call panel appear missing in dark scenes. Re-render the authored
-            // glowmask explicitly at full brightness instead.
+            // The station's light artwork is deliberately rendered through a
+            // direct full-bright eyes pass rather than GeckoLib's automatic
+            // lookup. A second additive submission gives the small red panels
+            // enough HDR energy to bloom under BSL/Hysteria without bleaching
+            // the metal body itself.
             addRenderLayer(new GeoRenderLayer<>(this) {
                 @Override
                 public void render(PoseStack poseStack,
@@ -97,9 +97,14 @@ public final class CoreRoomElevatorClient {
                         int packedOverlay) {
                     RenderType emissive = RenderType.eyes(
                             ElevatorAssets.FLOOR_STATION_GLOWMASK);
+                    VertexConsumer emissiveBuffer =
+                            bufferSource.getBuffer(emissive);
                     getRenderer().reRender(bakedModel, poseStack, bufferSource,
-                            animatable, emissive,
-                            bufferSource.getBuffer(emissive), partialTick,
+                            animatable, emissive, emissiveBuffer, partialTick,
+                            FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                            1.0F, 1.0F, 1.0F, 1.0F);
+                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                            animatable, emissive, emissiveBuffer, partialTick,
                             FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
                             1.0F, 1.0F, 1.0F, 1.0F);
                 }
@@ -117,7 +122,10 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorModule.StationBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucent(texture, true);
+            // The station body is opaque/cutout. Keeping it off the translucent
+            // pipeline prevents shader compositing from dimming the emissive
+            // panel that is rendered immediately afterwards.
+            return RenderType.entityCutoutNoCull(texture);
         }
     }
 
@@ -195,7 +203,28 @@ public final class CoreRoomElevatorClient {
         public CarriageRenderer(EntityRendererProvider.Context context) {
             super(context, new CarriageModel());
             shadowRadius = 0.0F;
-            addRenderLayer(new AutoGlowingGeoLayer<>(this));
+
+            // Do not use AutoGlowingGeoLayer here. The carriage is a large
+            // perforated mesh and its automatic translucent material path can
+            // turn the ceiling UV island into a bright rectangular sheet under
+            // shader packs. Re-render only the authored glowmask explicitly.
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        CoreRoomElevatorCarriageEntity animatable,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight,
+                        int packedOverlay) {
+                    RenderType emissive = RenderType.eyes(
+                            ElevatorAssets.CARRIAGE_GLOWMASK);
+                    getRenderer().reRender(bakedModel, poseStack, bufferSource,
+                            animatable, emissive,
+                            bufferSource.getBuffer(emissive), partialTick,
+                            FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
+                            1.0F, 1.0F, 1.0F, 1.0F);
+                }
+            });
         }
 
         @Override
@@ -209,7 +238,10 @@ public final class CoreRoomElevatorClient {
                 CoreRoomElevatorCarriageEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucent(texture, true);
+            // The authored cage relies on cutout holes, not semitransparent
+            // glass. Using the translucent pipeline made the lamp panel and
+            // nearby cage faces feed one another into shader bloom.
+            return RenderType.entityCutoutNoCull(texture);
         }
 
         @Override

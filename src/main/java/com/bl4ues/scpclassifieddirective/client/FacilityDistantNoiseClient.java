@@ -38,7 +38,7 @@ public final class FacilityDistantNoiseClient {
     private static final double MIN_DISTANCE = 6.5D;
     private static final double DISTANCE_RANGE = 4.5D;
     private static final double MAX_VERTICAL_OFFSET = 1.75D;
-    private static final float PLAYBACK_VOLUME = 2.00F;
+    private static final float PLAYBACK_VOLUME = 3.00F;
 
     private static final long OFFSET_SALT = 0x5343484544554C45L;
     private static final long SOUND_SALT = 0x534F554E445F4944L;

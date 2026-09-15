@@ -27,7 +27,10 @@ import java.util.Locale;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityZoneAmbientClient {
-    private static final float INSIDE_VOLUME = 0.85F;
+    // The source files are intentionally quiet environmental beds. These gains
+    // keep them clearly audible without competing with encounter music.
+    private static final float LCZ_INSIDE_VOLUME = 1.35F;
+    private static final float CORE_INSIDE_VOLUME = 1.70F;
     private static final double SPILL_RADIUS = 12.0D;
     private static final int RETRY_DELAY_TICKS = 100;
 
@@ -83,22 +86,15 @@ public final class FacilityZoneAmbientClient {
         if (rooms.isEmpty()) return Selection.NONE;
 
         BlockPos blockPos = minecraft.player.blockPosition();
-        Area insideArea = Area.NONE;
-        boolean insideMappedRoom = false;
-        for (FacilityRoomSnapshot room : rooms) {
-            if (!room.containsColumn(blockPos)) continue;
-            insideMappedRoom = true;
-            Area candidate = areaFor(room);
-            if (candidate.priority() > insideArea.priority()) {
-                insideArea = candidate;
-            }
-        }
-
-        // Entering any mapped room ends spill from a different room. Regions
-        // whose ambience files do not exist yet therefore remain quiet.
-        if (insideMappedRoom) {
+        // Reuse Facility Mapping's canonical room resolver instead of doing a
+        // second, stricter containsColumn pass here. That keeps ambience stable
+        // at room borders and in vertically stacked/overlapping rooms.
+        FacilityRoomSnapshot insideRoom =
+                FacilityMappingClientState.roomAt(dimension, blockPos);
+        if (insideRoom != null) {
+            Area insideArea = areaFor(insideRoom);
             return insideArea.hasAudio()
-                    ? new Selection(insideArea, INSIDE_VOLUME)
+                    ? new Selection(insideArea, insideVolume(insideArea))
                     : Selection.NONE;
         }
 
@@ -123,7 +119,12 @@ public final class FacilityZoneAmbientClient {
         float smooth = proximity * proximity * (3.0F - 2.0F * proximity);
         return new Selection(nearestArea, Math.max(
                 FacilityZoneAmbientSound.MIN_VOLUME,
-                INSIDE_VOLUME * smooth));
+                insideVolume(nearestArea) * smooth));
+    }
+
+    private static float insideVolume(Area area) {
+        return area == Area.CORE_ROOM
+                ? CORE_INSIDE_VOLUME : LCZ_INSIDE_VOLUME;
     }
 
     private static Area areaFor(FacilityRoomSnapshot room) {

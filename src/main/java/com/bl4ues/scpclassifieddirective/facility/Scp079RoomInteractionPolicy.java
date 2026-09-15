@@ -59,26 +59,9 @@ public final class Scp079RoomInteractionPolicy {
 
     private static FacilityRoomSnapshot activeCameraRoom(ServerPlayer player,
             ServerLevel level, List<FacilityRoomSnapshot> rooms) {
-        if (player.getServer() == null || !Scp079PlayableManager.isCameraMode(player)) {
-            return null;
-        }
-        FacilityCameraDefinition nearest = null;
-        double nearestDistance = Double.MAX_VALUE;
-        for (FacilityCameraDefinition stored : FacilitySurveillanceSavedData
-                .get(player.getServer()).all()) {
-            if (!stored.dimension().equals(level.dimension().location())) continue;
-            FacilityCameraDefinition camera = FacilitySurveillanceRegistry.camera(
-                    level, stored.id());
-            if (camera == null) continue;
-            double distance = camera.eyePosition().distanceToSqr(player.position());
-            if (distance < nearestDistance) {
-                nearestDistance = distance;
-                nearest = camera;
-            }
-        }
-        if (nearest == null || nearestDistance > 16.0D) return null;
-
-        return FacilityMappingManager.roomSnapshotForCamera(level, nearest);
+        if (player.getServer() == null
+                || !Scp079PlayableManager.isCameraMode(player)) return null;
+        return Scp079PlayableManager.currentCameraRoom(player);
     }
 
     public static boolean withinExpandedFloor(FacilityRoom room,

@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.mapping.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityCameraMappingSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.init.FacilityMappingItems;
@@ -16,6 +17,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -61,6 +64,8 @@ public final class FacilityMappingSelectionRenderer {
             }
         }
 
+        renderCameraAssociations(minecraft, poseStack, lines);
+
         BlockPos start = FacilityMappingClientState.selectionStart();
         if (start != null) {
             BlockPos end = start;
@@ -83,6 +88,88 @@ public final class FacilityMappingSelectionRenderer {
 
         poseStack.popPose();
         buffers.endBatch(RenderType.lines());
+    }
+
+    private static void renderCameraAssociations(Minecraft minecraft,
+            PoseStack poseStack, VertexConsumer lines) {
+        var dimension = minecraft.level.dimension().location();
+        java.util.UUID selected =
+                FacilityMappingClientState.cameraLinkSelection();
+        for (FacilityCameraMappingSnapshot camera
+                : FacilityMappingClientState.cameras(dimension)) {
+            BlockPos pos = camera.anchorPos();
+            double dx = pos.getX() + 0.5D - minecraft.player.getX();
+            double dy = pos.getY() + 0.5D - minecraft.player.getY();
+            double dz = pos.getZ() + 0.5D - minecraft.player.getZ();
+            if (dx * dx + dy * dy + dz * dz > MAX_RENDER_DISTANCE_SQR
+                    || !minecraft.level.hasChunkAt(pos)) continue;
+
+            BlockState state = minecraft.level.getBlockState(pos);
+            VoxelShape shape = state.getShape(minecraft.level, pos);
+            AABB cameraBox = shape.isEmpty()
+                    ? new AABB(pos).deflate(0.22D)
+                    : shape.bounds().move(pos).inflate(0.035D);
+            boolean active = selected != null
+                    && selected.equals(camera.cameraId());
+            float red = active ? 1.0F : camera.detached() ? 1.0F : 0.20F;
+            float green = active ? 0.86F : camera.detached() ? 0.34F : 0.95F;
+            float blue = active ? 0.18F : camera.detached() ? 0.16F : 0.36F;
+            LevelRenderer.renderLineBox(poseStack, lines, cameraBox,
+                    red, green, blue, 0.96F);
+
+            if (!camera.associated()) continue;
+            FacilityRoomSnapshot room = FacilityMappingClientState.roomById(
+                    dimension, camera.roomId());
+            Vec3 target = nearestRoomAnchor(room, Vec3.atCenterOf(pos));
+            if (target != null) {
+                renderLine(poseStack, lines, Vec3.atCenterOf(pos), target,
+                        0.18F, 1.0F, 0.34F, 0.90F);
+            }
+        }
+    }
+
+    private static Vec3 nearestRoomAnchor(FacilityRoomSnapshot room,
+            Vec3 camera) {
+        if (room == null || camera == null) return null;
+        Vec3 best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (FacilityFloorPatch patch : room.patches()) {
+            Vec3 candidate = new Vec3(
+                    (patch.minX() + patch.maxX() + 1.0D) * 0.5D,
+                    patch.y() + 1.04D,
+                    (patch.minZ() + patch.maxZ() + 1.0D) * 0.5D);
+            double distance = candidate.distanceToSqr(camera);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private static void renderLine(PoseStack poseStack, VertexConsumer lines,
+            Vec3 from, Vec3 to, float red, float green, float blue,
+            float alpha) {
+        Vec3 normal = to.subtract(from);
+        if (normal.lengthSqr() < 1.0E-8D) return;
+        normal = normal.normalize();
+        PoseStack.Pose pose = poseStack.last();
+        int r = Math.round(red * 255.0F);
+        int g = Math.round(green * 255.0F);
+        int b = Math.round(blue * 255.0F);
+        int a = Math.round(alpha * 255.0F);
+        lines.vertex(pose.pose(), (float) from.x, (float) from.y,
+                        (float) from.z)
+                .color(r, g, b, a)
+                .normal(pose.normal(), (float) normal.x,
+                        (float) normal.y, (float) normal.z)
+                .endVertex();
+        lines.vertex(pose.pose(), (float) to.x, (float) to.y,
+                        (float) to.z)
+                .color(r, g, b, a)
+                .normal(pose.normal(), (float) normal.x,
+                        (float) normal.y, (float) normal.z)
+                .endVertex();
     }
 
     private static AABB bounds(FacilityFloorPatch patch) {

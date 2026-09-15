@@ -366,7 +366,9 @@
 - SCP-106 and SCP-173 stop their matching spawn timer while active and restart it after dying or despawning, while SCP-939 keeps checking with its existing population penalty so overlapping SCP-939 encounters remain possible;
 - Added `/disableAllRoamers`, `/enableAllRoamers`, `/despawnAllRoamers`, `/despawnRoamer <scp173|scp106|scp939>`, and `/roamerForceSpawn <scp173|scp106|scp939>`;
 - Added optional Debug Tools displays showing each roamer's state, next check, and latest result;
-- Natural Roomba encounters use Facility Mapping: unnamed mapped rooms and named **Corridor**/**Hallway** rooms outside Safe Zones are eligible, with Corridor/Hallway rooms receiving a small location-selection bias;
+- Natural Roomba encounters use Facility Mapping: unnamed mapped rooms and named **Corridor**, **Hallway**, **Corner**, and **Threeway** transit rooms outside Safe Zones are eligible, reflecting the SCP: Unity room types that can contain Roombas;
+- Roombas never naturally appear in a mapped room occupied by a player or in an immediately adjacent mapped room, while Creative players can still drive natural encounter checks for testing and construction worlds;
+- Increased the natural Roomba encounter rate from its previous multi-hour single-player average while keeping encounters sparse through room-distance rules, a two-Roomba regional cap, and the existing rare second-Roomba behavior;
 - Standard LCZ mappings strongly favor Sublevel 1 over Sublevel 2 and exclude Sublevel 3, while **Entrance Zone uses the same normal spawn-frequency weight as SL1**; Heavy Containment Zone and Super Heavy Containment Zone are excluded, the rare second-Roomba spawn remains specific to eligible LCZ Sublevel 1 rooms, and other custom layouts favor higher eligible mapped floors;
 - Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters.
 

@@ -231,9 +231,13 @@ public final class RoombaSpawnEvents {
     private static boolean adjacent(FacilityRoomSnapshot a,
             FacilityRoomSnapshot b) {
         if (a == null || b == null || a.id().equals(b.id())) return false;
-        if (!a.floorLongLabel().equalsIgnoreCase(b.floorLongLabel())) {
-            return false;
-        }
+
+        /*
+         * Adjacency is physical, not semantic. Two touching mapped rooms may
+         * legitimately resolve to different Floor Station labels (or one may
+         * still be unassigned). Using labels here allowed Roombas to spawn in a
+         * literally adjacent room just because its metadata differed.
+         */
         for (FacilityFloorPatch pa : a.patches()) {
             for (FacilityFloorPatch pb : b.patches()) {
                 if (Math.abs(pa.y() - pb.y()) > 3) continue;

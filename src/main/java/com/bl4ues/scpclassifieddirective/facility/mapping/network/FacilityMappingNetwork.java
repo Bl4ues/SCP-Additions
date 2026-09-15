@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.mapping.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityCameraMappingSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorStationOption;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
@@ -43,6 +44,18 @@ public final class FacilityMappingNetwork {
                 UpdateRoom::encode, UpdateRoom::decode, UpdateRoom::handle);
         ScpClassifiedDirectiveMod.addNetworkMessage(DeleteRoom.class,
                 DeleteRoom::encode, DeleteRoom::decode, DeleteRoom::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(CameraLinkStart.class,
+                CameraLinkStart::encode, CameraLinkStart::decode,
+                CameraLinkStart::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(CameraLinkAssign.class,
+                CameraLinkAssign::encode, CameraLinkAssign::decode,
+                CameraLinkAssign::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(CameraLinkState.class,
+                CameraLinkState::encode, CameraLinkState::decode,
+                CameraLinkState::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(CameraMappingSync.class,
+                CameraMappingSync::encode, CameraMappingSync::decode,
+                CameraMappingSync::handle);
     }
 
     public static void requestSelectionStart(BlockPos pos) {
@@ -84,6 +97,40 @@ public final class FacilityMappingNetwork {
     public static void deleteRoom(UUID id) {
         ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
                 new DeleteRoom(id));
+    }
+
+    public static void requestCameraLinkStart(BlockPos cameraPos) {
+        if (cameraPos != null) {
+            ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                    new CameraLinkStart(cameraPos));
+        }
+    }
+
+    public static void requestCameraLinkAssign(BlockPos roomProbe) {
+        if (roomProbe != null) {
+            ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                    new CameraLinkAssign(roomProbe));
+        }
+    }
+
+    public static void sendCameraLinkState(ServerPlayer player, UUID cameraId) {
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new CameraLinkState(cameraId));
+    }
+
+    public static CameraMappingSync cameraMappingSync(
+            ResourceLocation dimension,
+            List<FacilityCameraMappingSnapshot> cameras) {
+        return new CameraMappingSync(dimension, cameras);
+    }
+
+    public static void sendCameraMappings(ServerPlayer player,
+            ResourceLocation dimension,
+            List<FacilityCameraMappingSnapshot> cameras) {
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                cameraMappingSync(dimension, cameras));
     }
 
     private static void writePatch(FriendlyByteBuf buffer,
@@ -288,6 +335,124 @@ public final class FacilityMappingNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> FacilityMappingManager.deleteRoom(
                     context.getSender(), message.id));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record CameraLinkStart(BlockPos cameraPos) {
+        public CameraLinkStart {
+            cameraPos = cameraPos.immutable();
+        }
+
+        private static void encode(CameraLinkStart message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.cameraPos);
+        }
+
+        private static CameraLinkStart decode(FriendlyByteBuf buffer) {
+            return new CameraLinkStart(buffer.readBlockPos());
+        }
+
+        private static void handle(CameraLinkStart message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> FacilityMappingManager.beginCameraLink(
+                    context.getSender(), message.cameraPos));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record CameraLinkAssign(BlockPos roomProbe) {
+        public CameraLinkAssign {
+            roomProbe = roomProbe.immutable();
+        }
+
+        private static void encode(CameraLinkAssign message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.roomProbe);
+        }
+
+        private static CameraLinkAssign decode(FriendlyByteBuf buffer) {
+            return new CameraLinkAssign(buffer.readBlockPos());
+        }
+
+        private static void handle(CameraLinkAssign message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> FacilityMappingManager.completeCameraLink(
+                    context.getSender(), message.roomProbe));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record CameraLinkState(UUID cameraId) {
+        private static void encode(CameraLinkState message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBoolean(message.cameraId != null);
+            if (message.cameraId != null) buffer.writeUUID(message.cameraId);
+        }
+
+        private static CameraLinkState decode(FriendlyByteBuf buffer) {
+            return new CameraLinkState(buffer.readBoolean()
+                    ? buffer.readUUID() : null);
+        }
+
+        private static void handle(CameraLinkState message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState
+                            .setCameraLinkSelection(message.cameraId)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record CameraMappingSync(ResourceLocation dimension,
+            List<FacilityCameraMappingSnapshot> cameras) {
+        public CameraMappingSync {
+            cameras = cameras == null ? List.of() : List.copyOf(cameras);
+        }
+
+        private static void encode(CameraMappingSync message,
+                FriendlyByteBuf buffer) {
+            buffer.writeResourceLocation(message.dimension);
+            int count = Math.min(4096, message.cameras.size());
+            buffer.writeVarInt(count);
+            for (int index = 0; index < count; index++) {
+                FacilityCameraMappingSnapshot camera =
+                        message.cameras.get(index);
+                buffer.writeUUID(camera.cameraId());
+                buffer.writeBlockPos(camera.anchorPos());
+                buffer.writeBoolean(camera.roomId() != null);
+                if (camera.roomId() != null) buffer.writeUUID(camera.roomId());
+                buffer.writeBoolean(camera.manual());
+                buffer.writeBoolean(camera.detached());
+            }
+        }
+
+        private static CameraMappingSync decode(FriendlyByteBuf buffer) {
+            ResourceLocation dimension = buffer.readResourceLocation();
+            int count = Math.max(0, Math.min(4096, buffer.readVarInt()));
+            List<FacilityCameraMappingSnapshot> cameras =
+                    new ArrayList<>(count);
+            for (int index = 0; index < count; index++) {
+                UUID cameraId = buffer.readUUID();
+                BlockPos anchorPos = buffer.readBlockPos();
+                UUID roomId = buffer.readBoolean() ? buffer.readUUID() : null;
+                boolean manual = buffer.readBoolean();
+                boolean detached = buffer.readBoolean();
+                cameras.add(new FacilityCameraMappingSnapshot(cameraId,
+                        anchorPos, roomId, manual, detached));
+            }
+            return new CameraMappingSync(dimension, cameras);
+        }
+
+        private static void handle(CameraMappingSync message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState
+                            .syncCameras(message.dimension, message.cameras)));
             context.setPacketHandled(true);
         }
     }

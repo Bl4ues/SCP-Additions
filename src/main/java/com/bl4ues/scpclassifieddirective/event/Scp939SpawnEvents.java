@@ -8,6 +8,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -37,6 +38,7 @@ public final class Scp939SpawnEvents {
     private static final int NORMAL_CHANCE_BOUND = 4;
     private static final int OTHER_ROAMER_CHANCE_BOUND = 7;
     private static final int SPAWN_ATTEMPTS = 112;
+    private static final int BEHIND_ATTEMPTS = 76;
     private static final int REGION_SPAWN_ATTEMPTS = 96;
     private static final int LOCAL_Y_SCAN_UP = 4;
     private static final int LOCAL_Y_SCAN_DOWN = 10;
@@ -124,10 +126,13 @@ public final class Scp939SpawnEvents {
 
     private static Scp939Entity trySpawnNatural(ServerPlayer player,
             RandomSource random) {
+        boolean mappingNearby = RoamerMappedSpawnPreference.hasNearbyMapping(
+                player, MAX_DISTANCE, LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN);
         Scp939SpawnRegionRegistry.SpawnRegion region =
                 Scp939SpawnRegionRegistry.chooseNatural(player, random);
         if (region != null) {
-            Scp939Entity regional = trySpawnInRegion(player, random, region);
+            Scp939Entity regional = trySpawnInRegion(player, random, region,
+                    mappingNearby);
             if (regional != null) return regional;
         }
         return trySpawnNearPlayer(player, random);
@@ -135,7 +140,8 @@ public final class Scp939SpawnEvents {
 
     private static Scp939Entity trySpawnInRegion(ServerPlayer player,
             RandomSource random,
-            Scp939SpawnRegionRegistry.SpawnRegion region) {
+            Scp939SpawnRegionRegistry.SpawnRegion region,
+            boolean enforceMappedZone) {
         ServerLevel level = player.serverLevel();
         if (!region.dimension().equals(level.dimension())) return null;
         AABB bounds = region.bounds();
@@ -154,7 +160,7 @@ public final class Scp939SpawnEvents {
             int y = randomBetween(random, minY, maxY);
             int z = randomBetween(random, minZ, maxZ);
             BlockPos pos = new BlockPos(x, y, z);
-            if (!isNaturalSpawnAllowedAt(level, pos)
+            if ((enforceMappedZone && !isNaturalSpawnAllowedAt(level, pos))
                     || !isValidPosition(level, pos)) {
                 continue;
             }
@@ -180,21 +186,86 @@ public final class Scp939SpawnEvents {
                         MIN_DISTANCE, MAX_DISTANCE,
                         LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN, SPAWN_ATTEMPTS,
                         Scp939SpawnEvents::isNaturalSpawnRoom, true);
-        for (BlockPos pos : mapped.candidates()) {
-            if (!isValidPosition(level, pos)) continue;
+        if (mapped.preferred()) {
+            for (BlockPos pos : mapped.candidates()) {
+                if (!isValidPosition(level, pos)) continue;
+                Vec3 spawnPos = Vec3.atBottomCenterOf(pos);
+                if (isDirectlyVisible(player, spawnPos)) continue;
+                Scp939Entity spawned = spawn(level, spawnPos, player);
+                if (spawned != null) return spawned;
+            }
+
+            /*
+             * Any nearby Facility Mapping remains authoritative, including EZ
+             * and LCZ SL1/SL2 where natural SCP-939 spawning is forbidden.
+             * Failure inside mapped play never leaks the encounter outside.
+             */
+            return null;
+        }
+
+        /*
+         * No mapped facility is near this player. Preserve the original
+         * world/modpack behavior so SCP-939 can still occur naturally in packs
+         * that do not use Facility Mapping at all.
+         */
+        Vec3 look = horizontal(player.getLookAngle());
+        if (look.lengthSqr() < 0.0001D) look = new Vec3(0, 0, 1);
+        Vec3 behind = look.scale(-1.0D);
+        Vec3 right = new Vec3(-behind.z, 0.0D, behind.x);
+        int playerY = player.blockPosition().getY();
+
+        for (int attempt = 0; attempt < SPAWN_ATTEMPTS; attempt++) {
+            Vec3 candidate;
+            if (attempt < BEHIND_ATTEMPTS) {
+                double distance = MIN_DISTANCE + random.nextDouble()
+                        * (MAX_DISTANCE - MIN_DISTANCE);
+                double side = (random.nextDouble() - 0.5D) * 15.0D;
+                candidate = player.position().add(behind.scale(distance))
+                        .add(right.scale(side));
+            } else {
+                double angle = random.nextDouble() * Math.PI * 2.0D;
+                double distance = MIN_DISTANCE + random.nextDouble()
+                        * (MAX_DISTANCE - MIN_DISTANCE);
+                candidate = player.position().add(Math.cos(angle) * distance,
+                        0.0D, Math.sin(angle) * distance);
+            }
+
+            int x = Mth.floor(candidate.x);
+            int z = Mth.floor(candidate.z);
+            BlockPos pos = findLocalSpawnPosition(level, x, playerY, z);
+            if (pos == null) pos = findSurfaceSpawnPosition(level, x, z);
+            if (pos == null) continue;
+
             Vec3 spawnPos = Vec3.atBottomCenterOf(pos);
             if (isDirectlyVisible(player, spawnPos)) continue;
             Scp939Entity spawned = spawn(level, spawnPos, player);
             if (spawned != null) return spawned;
         }
-
-        /*
-         * Scheduled SCP-939 encounters are facility-zone encounters. Unlike
-         * SCP-173, they intentionally have no unmapped/world-surface fallback:
-         * if LCZ SL3+, HCZ or SHCZ cannot provide a legal point, this check
-         * simply fails.
-         */
         return null;
+    }
+
+    private static BlockPos findLocalSpawnPosition(ServerLevel level, int x,
+            int playerY, int z) {
+        int scan = Math.max(LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN);
+        for (int offset = 0; offset <= scan; offset++) {
+            if (offset <= LOCAL_Y_SCAN_DOWN) {
+                BlockPos down = new BlockPos(x, playerY - offset, z);
+                if (isValidPosition(level, down)) return down;
+            }
+            if (offset > 0 && offset <= LOCAL_Y_SCAN_UP) {
+                BlockPos up = new BlockPos(x, playerY + offset, z);
+                if (isValidPosition(level, up)) return up;
+            }
+        }
+        return null;
+    }
+
+    private static BlockPos findSurfaceSpawnPosition(ServerLevel level,
+            int x, int z) {
+        BlockPos surface = level.getHeightmapPos(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                new BlockPos(x, 0, z));
+        return isValidPosition(level, surface) ? surface : null;
     }
 
     private static boolean isNaturalSpawnAllowedAt(ServerLevel level,
@@ -313,4 +384,8 @@ public final class Scp939SpawnEvents {
         return level.addFreshEntity(scp939) ? scp939 : null;
     }
 
+    private static Vec3 horizontal(Vec3 value) {
+        Vec3 flat = new Vec3(value.x, 0.0D, value.z);
+        return flat.lengthSqr() <= 0.0001D ? flat : flat.normalize();
+    }
 }

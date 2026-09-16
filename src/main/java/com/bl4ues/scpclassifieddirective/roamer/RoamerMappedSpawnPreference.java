@@ -65,9 +65,9 @@ public final class RoamerMappedSpawnPreference {
         int horizontalMaxZ = Mth.floor(playerZ + maxDistance);
 
         List<PatchWindow> windows = new ArrayList<>();
+        boolean anyMappedPatchNearby = false;
         for (FacilityRoomSnapshot room :
                 FacilityMappingManager.roomSnapshots(level)) {
-            if (!filter.test(room)) continue;
             for (FacilityFloorPatch patch : room.patches()) {
                 int spawnY = patch.y() + 1;
                 int yOffset = spawnY - playerY;
@@ -84,6 +84,9 @@ public final class RoamerMappedSpawnPreference {
                     continue;
                 }
 
+                anyMappedPatchNearby = true;
+                if (!filter.test(room)) continue;
+
                 /*
                  * Do not use the minimum encounter distance to decide whether
                  * mapping is authoritative. A small mapped room close to the
@@ -99,7 +102,8 @@ public final class RoamerMappedSpawnPreference {
         }
 
         if (windows.isEmpty()) {
-            return requireEligibleMappedRoom ? Search.MAPPED_EMPTY : Search.NONE;
+            return requireEligibleMappedRoom && anyMappedPatchNearby
+                    ? Search.MAPPED_EMPTY : Search.NONE;
         }
 
         List<BlockPos> candidates = new ArrayList<>();
@@ -128,6 +132,43 @@ public final class RoamerMappedSpawnPreference {
         }
 
         return new Search(true, List.copyOf(candidates));
+    }
+
+    public static boolean hasNearbyMapping(ServerPlayer player,
+            double maxDistance, int scanUp, int scanDown) {
+        if (player == null || maxDistance <= 0.0D) return false;
+
+        ServerLevel level = player.serverLevel();
+        double playerX = player.getX();
+        double playerZ = player.getZ();
+        int playerY = player.blockPosition().getY();
+        double maxDistanceSqr = maxDistance * maxDistance;
+
+        int horizontalMinX = Mth.floor(playerX - maxDistance);
+        int horizontalMaxX = Mth.floor(playerX + maxDistance);
+        int horizontalMinZ = Mth.floor(playerZ - maxDistance);
+        int horizontalMaxZ = Mth.floor(playerZ + maxDistance);
+
+        for (FacilityRoomSnapshot room :
+                FacilityMappingManager.roomSnapshots(level)) {
+            for (FacilityFloorPatch patch : room.patches()) {
+                int spawnY = patch.y() + 1;
+                int yOffset = spawnY - playerY;
+                if (yOffset > scanUp || yOffset < -scanDown) continue;
+
+                int minX = Math.max(patch.minX(), horizontalMinX);
+                int maxX = Math.min(patch.maxX(), horizontalMaxX);
+                int minZ = Math.max(patch.minZ(), horizontalMinZ);
+                int maxZ = Math.min(patch.maxZ(), horizontalMaxZ);
+                if (minX > maxX || minZ > maxZ) continue;
+
+                if (distanceSqrToWindow(playerX, playerZ,
+                        minX, maxX, minZ, maxZ) <= maxDistanceSqr) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static PatchWindow chooseWindow(List<PatchWindow> windows,

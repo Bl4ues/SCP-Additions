@@ -363,7 +363,7 @@
 ## Roamer spawning and developer tools
 
 - Added natural spawn cycles for SCP-173, SCP-106, and SCP-939, with separate `173spawn`, `106spawn`, and `939spawn` gamerules;
-- Natural SCP-939 placement is restricted to mapped LCZ Sublevel 3 or deeper, Heavy Containment Zone, and Super Heavy Containment Zone rooms; Entrance Zone, LCZ Sublevels 1–2, custom/unmapped areas, and surface fallback placement are excluded from scheduled natural encounters;
+- Natural SCP-939 placement near Facility Mapping is restricted to LCZ Sublevel 3 or deeper, Heavy Containment Zone, and Super Heavy Containment Zone rooms; Entrance Zone and LCZ Sublevels 1–2 remain excluded while mapping is nearby, but worlds/modpacks with no nearby Facility Mapping retain the original hidden near-player/surface fallback behavior;
 - Natural encounters use one global scheduler per SCP; when a global check succeeds, one valid Survival player is selected at random as the encounter target;
 - Safe, Euclid, and Keter use progressively more aggressive initial and recurring encounter-check intervals, while Thaumiel disables natural roamer checks entirely;
 - Each valid Survival player shortens the global check interval by 10%, capped at a 50% reduction with five or more players; player-count changes proportionally rescale the remaining timer instead of restarting it;

@@ -8,7 +8,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -18,12 +17,18 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerManager;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerMappedSpawnPreference;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerResult;
 import com.bl4ues.scpclassifieddirective.roamer.RoamerType;
 import com.bl4ues.scpclassifieddirective.safezone.SafeZoneManager;
+
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Natural SCP-939 encounter scheduler and hidden placement. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
@@ -32,7 +37,6 @@ public final class Scp939SpawnEvents {
     private static final int NORMAL_CHANCE_BOUND = 4;
     private static final int OTHER_ROAMER_CHANCE_BOUND = 7;
     private static final int SPAWN_ATTEMPTS = 112;
-    private static final int BEHIND_ATTEMPTS = 76;
     private static final int REGION_SPAWN_ATTEMPTS = 96;
     private static final int LOCAL_Y_SCAN_UP = 4;
     private static final int LOCAL_Y_SCAN_DOWN = 10;
@@ -40,6 +44,9 @@ public final class Scp939SpawnEvents {
     private static final double MAX_DISTANCE = 27.0D;
     private static final double ENTITY_HALF_WIDTH = 0.60D;
     private static final double ENTITY_HEIGHT = 1.48D;
+    private static final Pattern SUBLEVEL_PATTERN = Pattern.compile(
+            "(?:\\bsublevel\\b|\\bsl)\\s*[-_]?\\s*(\\d+)\\b",
+            Pattern.CASE_INSENSITIVE);
 
     private Scp939SpawnEvents() {
     }
@@ -147,7 +154,10 @@ public final class Scp939SpawnEvents {
             int y = randomBetween(random, minY, maxY);
             int z = randomBetween(random, minZ, maxZ);
             BlockPos pos = new BlockPos(x, y, z);
-            if (!isValidPosition(level, pos)) continue;
+            if (!isNaturalSpawnAllowedAt(level, pos)
+                    || !isValidPosition(level, pos)) {
+                continue;
+            }
             Vec3 spawnPos = Vec3.atBottomCenterOf(pos);
             if (isDirectlyVisible(player, spawnPos)) continue;
             Scp939Entity spawned = spawn(level, spawnPos, player);
@@ -168,81 +178,93 @@ public final class Scp939SpawnEvents {
         RoamerMappedSpawnPreference.Search mapped =
                 RoamerMappedSpawnPreference.search(player, random,
                         MIN_DISTANCE, MAX_DISTANCE,
-                        LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN, SPAWN_ATTEMPTS);
-        if (mapped.preferred()) {
-            for (BlockPos pos : mapped.candidates()) {
-                if (!isValidPosition(level, pos)) continue;
-                Vec3 spawnPos = Vec3.atBottomCenterOf(pos);
-                if (isDirectlyVisible(player, spawnPos)) continue;
-                Scp939Entity spawned = spawn(level, spawnPos, player);
-                if (spawned != null) return spawned;
-            }
-            /*
-             * Nearby mapped cells remain authoritative even when every sampled
-             * point is blocked, visible, or protected by a Safe Zone. Only a
-             * player without nearby mapping uses the legacy random fallback.
-             */
-            return null;
-        }
-
-        Vec3 look = horizontal(player.getLookAngle());
-        if (look.lengthSqr() < 0.0001D) look = new Vec3(0, 0, 1);
-        Vec3 behind = look.scale(-1.0D);
-        Vec3 right = new Vec3(-behind.z, 0.0D, behind.x);
-        int playerY = player.blockPosition().getY();
-
-        for (int attempt = 0; attempt < SPAWN_ATTEMPTS; attempt++) {
-            Vec3 candidate;
-            if (attempt < BEHIND_ATTEMPTS) {
-                double distance = MIN_DISTANCE + random.nextDouble()
-                        * (MAX_DISTANCE - MIN_DISTANCE);
-                double side = (random.nextDouble() - 0.5D) * 15.0D;
-                candidate = player.position().add(behind.scale(distance))
-                        .add(right.scale(side));
-            } else {
-                double angle = random.nextDouble() * Math.PI * 2.0D;
-                double distance = MIN_DISTANCE + random.nextDouble()
-                        * (MAX_DISTANCE - MIN_DISTANCE);
-                candidate = player.position().add(Math.cos(angle) * distance,
-                        0.0D, Math.sin(angle) * distance);
-            }
-
-            int x = Mth.floor(candidate.x);
-            int z = Mth.floor(candidate.z);
-            BlockPos pos = findLocalSpawnPosition(level, x, playerY, z);
-            if (pos == null) pos = findSurfaceSpawnPosition(level, x, z);
-            if (pos == null) continue;
-
+                        LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN, SPAWN_ATTEMPTS,
+                        Scp939SpawnEvents::isNaturalSpawnRoom, true);
+        for (BlockPos pos : mapped.candidates()) {
+            if (!isValidPosition(level, pos)) continue;
             Vec3 spawnPos = Vec3.atBottomCenterOf(pos);
             if (isDirectlyVisible(player, spawnPos)) continue;
             Scp939Entity spawned = spawn(level, spawnPos, player);
             if (spawned != null) return spawned;
         }
+
+        /*
+         * Scheduled SCP-939 encounters are facility-zone encounters. Unlike
+         * SCP-173, they intentionally have no unmapped/world-surface fallback:
+         * if LCZ SL3+, HCZ or SHCZ cannot provide a legal point, this check
+         * simply fails.
+         */
         return null;
     }
 
-    private static BlockPos findLocalSpawnPosition(ServerLevel level, int x,
-            int playerY, int z) {
-        int scan = Math.max(LOCAL_Y_SCAN_UP, LOCAL_Y_SCAN_DOWN);
-        for (int offset = 0; offset <= scan; offset++) {
-            if (offset <= LOCAL_Y_SCAN_DOWN) {
-                BlockPos down = new BlockPos(x, playerY - offset, z);
-                if (isValidPosition(level, down)) return down;
-            }
-            if (offset > 0 && offset <= LOCAL_Y_SCAN_UP) {
-                BlockPos up = new BlockPos(x, playerY + offset, z);
-                if (isValidPosition(level, up)) return up;
+    private static boolean isNaturalSpawnAllowedAt(ServerLevel level,
+            BlockPos spawnPos) {
+        if (level == null || spawnPos == null) return false;
+        BlockPos floor = spawnPos.below();
+        for (FacilityRoomSnapshot room :
+                FacilityMappingManager.roomSnapshots(level)) {
+            if (room.containsFloor(floor) && isNaturalSpawnRoom(room)) {
+                return true;
             }
         }
-        return null;
+        return false;
     }
 
-    private static BlockPos findSurfaceSpawnPosition(ServerLevel level,
-            int x, int z) {
-        BlockPos surface = level.getHeightmapPos(
-                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                new BlockPos(x, 0, z));
-        return isValidPosition(level, surface) ? surface : null;
+    private static boolean isNaturalSpawnRoom(FacilityRoomSnapshot room) {
+        String labels = floorLabels(room);
+        if (isSuperHeavyContainmentZone(labels)
+                || isHeavyContainmentZone(labels)) {
+            return true;
+        }
+        return isLightContainmentZone(labels)
+                && sublevelNumber(labels) >= 3;
+    }
+
+    private static String floorLabels(FacilityRoomSnapshot room) {
+        if (room == null) return "";
+        return ((room.floorLongLabel() == null ? "" : room.floorLongLabel())
+                + " " + (room.floorShortLabel() == null ? ""
+                : room.floorShortLabel())).strip().toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ");
+    }
+
+    private static int sublevelNumber(String labels) {
+        if (labels == null || labels.isBlank()) return -1;
+        Matcher matcher = SUBLEVEL_PATTERN.matcher(labels);
+        if (!matcher.find()) return -1;
+        try {
+            return Integer.parseInt(matcher.group(1));
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
+    }
+
+    private static boolean isLightContainmentZone(String labels) {
+        return labels.contains("light containment zone")
+                || token(labels, "lcz");
+    }
+
+    private static boolean isHeavyContainmentZone(String labels) {
+        return labels.contains("heavy containment zone")
+                || token(labels, "hcz");
+    }
+
+    private static boolean isSuperHeavyContainmentZone(String labels) {
+        return labels.contains("super heavy containment zone")
+                || token(labels, "shcz");
+    }
+
+    private static boolean token(String value, String token) {
+        int index = -1;
+        while ((index = value.indexOf(token, index + 1)) >= 0) {
+            boolean left = index == 0
+                    || !Character.isLetterOrDigit(value.charAt(index - 1));
+            int end = index + token.length();
+            boolean right = end >= value.length()
+                    || !Character.isLetterOrDigit(value.charAt(end));
+            if (left && right) return true;
+        }
+        return false;
     }
 
     private static boolean isValidPosition(ServerLevel level, BlockPos pos) {
@@ -291,8 +313,4 @@ public final class Scp939SpawnEvents {
         return level.addFreshEntity(scp939) ? scp939 : null;
     }
 
-    private static Vec3 horizontal(Vec3 value) {
-        Vec3 flat = new Vec3(value.x, 0.0D, value.z);
-        return flat.lengthSqr() <= 0.0001D ? flat : flat.normalize();
-    }
 }

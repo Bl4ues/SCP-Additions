@@ -363,6 +363,7 @@
 ## Roamer spawning and developer tools
 
 - Added natural spawn cycles for SCP-173, SCP-106, and SCP-939, with separate `173spawn`, `106spawn`, and `939spawn` gamerules;
+- Natural SCP-939 placement is restricted to mapped LCZ Sublevel 3 or deeper, Heavy Containment Zone, and Super Heavy Containment Zone rooms; Entrance Zone, LCZ Sublevels 1–2, custom/unmapped areas, and surface fallback placement are excluded from scheduled natural encounters;
 - Natural encounters use one global scheduler per SCP; when a global check succeeds, one valid Survival player is selected at random as the encounter target;
 - Safe, Euclid, and Keter use progressively more aggressive initial and recurring encounter-check intervals, while Thaumiel disables natural roamer checks entirely;
 - Each valid Survival player shortens the global check interval by 10%, capped at a 50% reduction with five or more players; player-count changes proportionally rescale the remaining timer instead of restarting it;
@@ -373,7 +374,7 @@
 - Natural Roomba encounters use Facility Mapping: unnamed mapped rooms and named **Corridor**, **Hallway**, **Corner**, and **Threeway** transit rooms outside Safe Zones are eligible, reflecting the SCP: Unity room types that can contain Roombas;
 - Roombas never naturally appear in a mapped room occupied by a player or in an immediately adjacent mapped room, while Creative players can still drive natural encounter checks for testing and construction worlds;
 - Increased the natural Roomba encounter rate from its previous multi-hour single-player average while keeping encounters sparse through a Facility Mapping floor-density budget: normal spawns reserve only their mapped room, adjacent/consecutive eligible rooms may each contain a Roomba, and the existing rare second-Roomba behavior can deliberately place a pair in one eligible SL1 room;
-- Natural Roomba population is capped per mapped floor from that floor's number of eligible rooms and spawn-frequency weight, giving common floors roughly one slot per five eligible rooms and progressively lower density on rarer floors, with an additional hard per-floor maximum so long-running worlds cannot eventually fill every room with Roombas;
+- Natural Roomba population is budgeted per mapped floor from that floor's number of eligible rooms and spawn-frequency weight, giving common floors roughly one slot per five eligible rooms and progressively lower density on rarer floors; the budget continues scaling on very large authored floors instead of stopping at an arbitrary absolute cap;
 - Standard LCZ mappings strongly favor Sublevel 1 over Sublevel 2 and exclude Sublevel 3, while **Entrance Zone uses the same normal spawn-frequency weight as SL1**; Heavy Containment Zone and Super Heavy Containment Zone are excluded, the rare second-Roomba spawn remains specific to eligible LCZ Sublevel 1 rooms, and other custom layouts favor higher eligible mapped floors;
 - Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters.
 

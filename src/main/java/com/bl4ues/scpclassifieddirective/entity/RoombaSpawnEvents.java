@@ -78,12 +78,11 @@ public final class RoombaSpawnEvents {
      * At the commonest tier (weight 4), one natural slot is granted per five
      * eligible rooms. Rarer floors scale that budget down with the same weight
      * used by the encounter roll: weight 3 ~= one per 6.7 rooms, weight 2 one
-     * per 10, and weight 1 one per 20. Every non-empty eligible floor can still
-     * eventually contain one, while the hard per-floor cap prevents large maps
-     * from becoming a vacuum-cleaner colony.
+     * per 10, and weight 1 one per 20. Very large authored floors therefore
+     * gain proportionally more slots while preserving the same sparse
+     * room-density target instead of hitting an arbitrary absolute ceiling.
      */
     private static final int ROOMS_PER_NATURAL_ROOMBA = 5;
-    private static final int MAX_NATURAL_ROOMBAS_PER_FLOOR = 6;
     private static final String NATURAL_ROOMBA_ROOM_TAG =
             "NaturalRoombaRoom";
     private static final String NATURAL_ROOMBA_FLOOR_Y_TAG =
@@ -329,9 +328,8 @@ public final class RoombaSpawnEvents {
         long numerator = (long) eligibleRoomCount * weight;
         long denominator = (long) ROOMS_PER_NATURAL_ROOMBA
                 * MAX_FREQUENCY_WEIGHT;
-        int scaled = (int) Math.max(1L,
+        return (int) Math.max(1L,
                 (numerator + denominator - 1L) / denominator);
-        return Math.min(MAX_NATURAL_ROOMBAS_PER_FLOOR, scaled);
     }
 
     private static FloorKey naturalSpawnFloorKey(RoombaEntity roomba,

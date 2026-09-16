@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Shared mapped-room preference for roamers whose natural placement checks are
@@ -34,11 +35,22 @@ public final class RoamerMappedSpawnPreference {
     public static Search search(ServerPlayer player, RandomSource random,
             double minDistance, double maxDistance,
             int scanUp, int scanDown, int attempts) {
+        return search(player, random, minDistance, maxDistance,
+                scanUp, scanDown, attempts, room -> true, false);
+    }
+
+    public static Search search(ServerPlayer player, RandomSource random,
+            double minDistance, double maxDistance,
+            int scanUp, int scanDown, int attempts,
+            Predicate<FacilityRoomSnapshot> roomFilter,
+            boolean requireEligibleMappedRoom) {
         if (player == null || random == null || maxDistance <= 0.0D
                 || attempts <= 0) {
             return Search.NONE;
         }
 
+        Predicate<FacilityRoomSnapshot> filter = roomFilter == null
+                ? room -> true : roomFilter;
         ServerLevel level = player.serverLevel();
         double playerX = player.getX();
         double playerZ = player.getZ();
@@ -55,6 +67,7 @@ public final class RoamerMappedSpawnPreference {
         List<PatchWindow> windows = new ArrayList<>();
         for (FacilityRoomSnapshot room :
                 FacilityMappingManager.roomSnapshots(level)) {
+            if (!filter.test(room)) continue;
             for (FacilityFloorPatch patch : room.patches()) {
                 int spawnY = patch.y() + 1;
                 int yOffset = spawnY - playerY;
@@ -85,7 +98,9 @@ public final class RoamerMappedSpawnPreference {
             }
         }
 
-        if (windows.isEmpty()) return Search.NONE;
+        if (windows.isEmpty()) {
+            return requireEligibleMappedRoom ? Search.MAPPED_EMPTY : Search.NONE;
+        }
 
         List<BlockPos> candidates = new ArrayList<>();
         Set<BlockPos> unique = new HashSet<>();
@@ -148,6 +163,7 @@ public final class RoamerMappedSpawnPreference {
 
     public record Search(boolean preferred, List<BlockPos> candidates) {
         private static final Search NONE = new Search(false, List.of());
+        private static final Search MAPPED_EMPTY = new Search(true, List.of());
 
         public Search {
             candidates = candidates == null ? List.of()

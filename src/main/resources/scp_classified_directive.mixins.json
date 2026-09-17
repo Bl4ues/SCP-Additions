@@ -10,6 +10,7 @@
     "FacilityDiagnosticsActionbarMixin",
     "DecontaminationCheckpointSaveMixin",
     "ServerPlayerSaveTrackingMixin",
+    "TransformConstructionStartupMixin",
     "MineZeroScpBlockJournalMixin",
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",

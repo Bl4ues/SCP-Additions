@@ -7,9 +7,11 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -233,30 +235,46 @@ public final class TransformConstructionClientState {
 
     private static void addGroup(Map<Long, MutableProxyCell> index,
             TransformGroup group) {
-        int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
-        double inv = 1.0D / subdivisions;
         for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                 : group.cells().entrySet()) {
             TransformGroup.GridPos cell = entry.getKey();
             BlockState state = entry.getValue();
             boolean placeholder = state == null || state.isAir();
-            for (int sx = 0; sx < subdivisions; sx++) {
-                for (int sy = 0; sy < subdivisions; sy++) {
-                    for (int sz = 0; sz < subdivisions; sz++) {
-                        AABB local = new AABB(
-                                cell.x() - 0.5D + sx * inv,
-                                cell.y() - 0.5D + sy * inv,
-                                cell.z() - 0.5D + sz * inv,
-                                cell.x() - 0.5D + (sx + 1) * inv,
-                                cell.y() - 0.5D + (sy + 1) * inv,
-                                cell.z() - 0.5D + (sz + 1) * inv);
-                        AABB world = transformedBounds(group, local);
-                        addWorldBox(index, world, group.id(), null, true,
-                                !placeholder,
-                                placeholder ? 0 : state.getLightEmission());
+            AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
+                    cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
+                    cell.z() + 0.5D);
+            addWorldBox(index, transformedBounds(group, selection), group.id(),
+                    null, true, false,
+                    placeholder ? 0 : state.getLightEmission());
+            if (placeholder) continue;
+
+            VoxelShape collision = state.getCollisionShape(
+                    EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
+                    CollisionContext.empty());
+            if (collision.isEmpty()) continue;
+            int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
+            double inv = 1.0D / subdivisions;
+            collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
+                double boxX = maxX - minX;
+                double boxY = maxY - minY;
+                double boxZ = maxZ - minZ;
+                for (int sx = 0; sx < subdivisions; sx++) {
+                    for (int sy = 0; sy < subdivisions; sy++) {
+                        for (int sz = 0; sz < subdivisions; sz++) {
+                            AABB local = new AABB(
+                                    cell.x() - 0.5D + minX + boxX * sx * inv,
+                                    cell.y() - 0.5D + minY + boxY * sy * inv,
+                                    cell.z() - 0.5D + minZ + boxZ * sz * inv,
+                                    cell.x() - 0.5D + minX + boxX * (sx + 1) * inv,
+                                    cell.y() - 0.5D + minY + boxY * (sy + 1) * inv,
+                                    cell.z() - 0.5D + minZ + boxZ * (sz + 1) * inv);
+                            addWorldBox(index, transformedBounds(group, local),
+                                    group.id(), null, false, true,
+                                    state.getLightEmission());
+                        }
                     }
                 }
-            }
+            });
         }
     }
 
@@ -406,6 +424,7 @@ public final class TransformConstructionClientState {
         private VoxelShape selection = Shapes.empty();
         private VoxelShape collision = Shapes.empty();
         private int light;
+        private TransformConstructionManager.ProxyCell frozen;
         private final Set<UUID> groupIds = new LinkedHashSet<>();
         private final Set<UUID> surfaceIds = new LinkedHashSet<>();
 
@@ -417,12 +436,16 @@ public final class TransformConstructionClientState {
             this.light = Math.max(this.light, Math.max(0, Math.min(15, light)));
             if (groupId != null) groupIds.add(groupId);
             if (surfaceId != null) surfaceIds.add(surfaceId);
+            frozen = null;
         }
 
         private TransformConstructionManager.ProxyCell freeze() {
-            return new TransformConstructionManager.ProxyCell(
-                    selection.optimize(), collision.optimize(), light,
-                    Set.copyOf(groupIds), Set.copyOf(surfaceIds));
+            if (frozen == null) {
+                frozen = new TransformConstructionManager.ProxyCell(
+                        selection.optimize(), collision.optimize(), light,
+                        Set.copyOf(groupIds), Set.copyOf(surfaceIds));
+            }
+            return frozen;
         }
     }
 

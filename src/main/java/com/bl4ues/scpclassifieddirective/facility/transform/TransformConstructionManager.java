@@ -17,6 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -34,9 +35,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -492,25 +491,41 @@ public final class TransformConstructionManager {
             GridPos cell = entry.getKey();
             BlockState state = entry.getValue();
             boolean placeholder = state == null || state.isAir();
+            AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
+                    cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
+                    cell.z() + 0.5D);
+            addWorldBox(index, group.dimension(), transformedBounds(group,
+                            selection), group.id(), null, true, false,
+                    placeholder ? 0 : state.getLightEmission());
+            if (placeholder) continue;
+
+            VoxelShape collision = state.getCollisionShape(
+                    EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
+                    CollisionContext.empty());
+            if (collision.isEmpty()) continue;
             int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
-            for (int sx = 0; sx < subdivisions; sx++) {
-                for (int sy = 0; sy < subdivisions; sy++) {
-                    for (int sz = 0; sz < subdivisions; sz++) {
-                        double inv = 1.0D / subdivisions;
-                        AABB local = new AABB(
-                                cell.x() - 0.5D + sx * inv,
-                                cell.y() - 0.5D + sy * inv,
-                                cell.z() - 0.5D + sz * inv,
-                                cell.x() - 0.5D + (sx + 1) * inv,
-                                cell.y() - 0.5D + (sy + 1) * inv,
-                                cell.z() - 0.5D + (sz + 1) * inv);
-                        AABB world = transformedBounds(group, local);
-                        addWorldBox(index, group.dimension(), world,
-                                group.id(), null, true, !placeholder,
-                                placeholder ? 0 : state.getLightEmission());
+            double inv = 1.0D / subdivisions;
+            collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
+                double boxX = maxX - minX;
+                double boxY = maxY - minY;
+                double boxZ = maxZ - minZ;
+                for (int sx = 0; sx < subdivisions; sx++) {
+                    for (int sy = 0; sy < subdivisions; sy++) {
+                        for (int sz = 0; sz < subdivisions; sz++) {
+                            AABB local = new AABB(
+                                    cell.x() - 0.5D + minX + boxX * sx * inv,
+                                    cell.y() - 0.5D + minY + boxY * sy * inv,
+                                    cell.z() - 0.5D + minZ + boxZ * sz * inv,
+                                    cell.x() - 0.5D + minX + boxX * (sx + 1) * inv,
+                                    cell.y() - 0.5D + minY + boxY * (sy + 1) * inv,
+                                    cell.z() - 0.5D + minZ + boxZ * (sz + 1) * inv);
+                            addWorldBox(index, group.dimension(),
+                                    transformedBounds(group, local), group.id(),
+                                    null, false, true, state.getLightEmission());
+                        }
                     }
                 }
-            }
+            });
         }
     }
 
@@ -584,8 +599,8 @@ public final class TransformConstructionManager {
             double u = u0 + (u1 - u0) * ui / 2.0D;
             for (int vi = 0; vi <= 2; vi++) {
                 double v = v0 + (v1 - v0) * vi / 2.0D;
-                Vec3 point = surface.point(u, v);
-                Vec3 normal = surface.normal(u, v).scale(half);
+                Vec3 point = surface.gridPoint(u, v);
+                Vec3 normal = surface.gridNormal(u, v).scale(half);
                 for (int sign : new int[]{-1, 1}) {
                     Vec3 world = point.add(normal.scale(sign));
                     minX = Math.min(minX, world.x);
@@ -688,7 +703,7 @@ public final class TransformConstructionManager {
                 double u = (column + 0.5D) / columns;
                 for (int row = 0; row < rows; row++) {
                     double v = (row + 0.5D) / rows;
-                    double distance = surface.point(u, v).distanceToSqr(world);
+                    double distance = surface.gridPoint(u, v).distanceToSqr(world);
                     if (distance < bestDistance) {
                         bestDistance = distance;
                         best = new SurfaceHit(id, new SurfaceSlot(column, row));
@@ -727,6 +742,7 @@ public final class TransformConstructionManager {
         private VoxelShape selection = Shapes.empty();
         private VoxelShape collision = Shapes.empty();
         private int light;
+        private ProxyCell frozen;
         private final Set<UUID> groupIds = new LinkedHashSet<>();
         private final Set<UUID> surfaceIds = new LinkedHashSet<>();
 
@@ -738,11 +754,15 @@ public final class TransformConstructionManager {
             this.light = Math.max(this.light, Math.max(0, Math.min(15, light)));
             if (groupId != null) groupIds.add(groupId);
             if (surfaceId != null) surfaceIds.add(surfaceId);
+            frozen = null;
         }
 
         private ProxyCell freeze() {
-            return new ProxyCell(selection.optimize(), collision.optimize(),
-                    light, Set.copyOf(groupIds), Set.copyOf(surfaceIds));
+            if (frozen == null) {
+                frozen = new ProxyCell(selection.optimize(), collision.optimize(),
+                        light, Set.copyOf(groupIds), Set.copyOf(surfaceIds));
+            }
+            return frozen;
         }
     }
 

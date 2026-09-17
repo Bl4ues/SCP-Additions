@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
@@ -41,6 +42,8 @@ public final class TransformPoweredBlockRuntime {
             changed |= updateGroups(level, data);
             changed |= updateSurfaces(level, data);
         }
+        // State writes do not advance the structural revision, so this refresh
+        // only updates proxy collision/light and never triggers a full snapshot.
         if (changed) TransformConstructionManager.refresh(server);
     }
 
@@ -60,10 +63,12 @@ public final class TransformPoweredBlockRuntime {
                 BlockState updated = poweredState(state, powered);
                 if (updated.equals(state)) continue;
                 next = next.withCell(entry.getKey(), updated);
+                TransformConstructionNetwork.broadcastGroupCell(level,
+                        original.id(), entry.getKey(), updated);
                 localChanged = true;
             }
             if (localChanged) {
-                data.putGroup(next);
+                data.putGroupState(next);
                 changed = true;
             }
         }
@@ -89,12 +94,14 @@ public final class TransformPoweredBlockRuntime {
                 boolean powered = hasSignal(level, center);
                 BlockState updated = poweredState(state, powered);
                 if (updated.equals(state)) continue;
-                next = next.withAttachment(slot, updated,
-                        entry.getValue().deform());
+                boolean deform = entry.getValue().deform();
+                next = next.withAttachment(slot, updated, deform);
+                TransformConstructionNetwork.broadcastSurfaceSlot(level,
+                        original.id(), slot, updated, deform);
                 localChanged = true;
             }
             if (localChanged) {
-                data.putSurface(next);
+                data.putSurfaceState(next);
                 changed = true;
             }
         }

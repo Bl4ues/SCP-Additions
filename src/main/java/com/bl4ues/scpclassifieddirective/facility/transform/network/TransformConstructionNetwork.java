@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionSavedData;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -66,6 +67,15 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(5, SurfaceSlotState.class,
                 SurfaceSlotState::encode, SurfaceSlotState::decode,
                 SurfaceSlotState::handle);
+        CHANNEL.registerMessage(6, SetSurfaceFlipped.class,
+                SetSurfaceFlipped::encode, SetSurfaceFlipped::decode,
+                SetSurfaceFlipped::handle);
+        CHANNEL.registerMessage(7, AuthorSurfacePoint.class,
+                AuthorSurfacePoint::encode, AuthorSurfacePoint::decode,
+                AuthorSurfacePoint::handle);
+        CHANNEL.registerMessage(8, CancelSurfaceAuthoring.class,
+                CancelSurfaceAuthoring::encode, CancelSurfaceAuthoring::decode,
+                CancelSurfaceAuthoring::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -87,6 +97,18 @@ public final class TransformConstructionNetwork {
 
     public static void delete(UUID id, boolean surface) {
         if (id != null) CHANNEL.sendToServer(new Delete(id, surface));
+    }
+
+    public static void setSurfaceFlipped(UUID id, boolean flipped) {
+        if (id != null) CHANNEL.sendToServer(new SetSurfaceFlipped(id, flipped));
+    }
+
+    public static void authorSurfacePoint(Vec3 point) {
+        if (point != null) CHANNEL.sendToServer(new AuthorSurfacePoint(point));
+    }
+
+    public static void cancelSurfaceAuthoring() {
+        CHANNEL.sendToServer(new CancelSurfaceAuthoring());
     }
 
     /** Tiny runtime-state packet; avoids a full facility snapshot per door frame. */
@@ -300,6 +322,69 @@ public final class TransformConstructionNetwork {
                 }
                 sendSnapshot(sender);
             });
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SetSurfaceFlipped(UUID id, boolean flipped) {
+        private static void encode(SetSurfaceFlipped message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.id);
+            buffer.writeBoolean(message.flipped);
+        }
+
+        private static SetSurfaceFlipped decode(FriendlyByteBuf buffer) {
+            return new SetSurfaceFlipped(buffer.readUUID(),
+                    buffer.readBoolean());
+        }
+
+        private static void handle(SetSurfaceFlipped message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
+                TransformConstructionManager.setSurfaceFlipped(sender,
+                        message.id, message.flipped);
+                sendSnapshot(sender);
+            });
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record AuthorSurfacePoint(Vec3 point) {
+        private static void encode(AuthorSurfacePoint message,
+                FriendlyByteBuf buffer) {
+            writeVec(buffer, message.point);
+        }
+
+        private static AuthorSurfacePoint decode(FriendlyByteBuf buffer) {
+            return new AuthorSurfacePoint(readVec(buffer));
+        }
+
+        private static void handle(AuthorSurfacePoint message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() ->
+                    TransformSurfaceAuthoringManager.selectPoint(
+                            context.getSender(), message.point));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record CancelSurfaceAuthoring() {
+        private static void encode(CancelSurfaceAuthoring message,
+                FriendlyByteBuf buffer) {
+        }
+
+        private static CancelSurfaceAuthoring decode(FriendlyByteBuf buffer) {
+            return new CancelSurfaceAuthoring();
+        }
+
+        private static void handle(CancelSurfaceAuthoring message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() ->
+                    TransformSurfaceAuthoringManager.cancel(context.getSender()));
             context.setPacketHandled(true);
         }
     }

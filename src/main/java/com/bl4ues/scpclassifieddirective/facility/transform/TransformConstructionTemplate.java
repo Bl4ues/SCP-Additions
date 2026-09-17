@@ -238,7 +238,7 @@ public final class TransformConstructionTemplate {
 
     public record SurfaceTemplate(Vec3 bottomStart, Vec3 bottomEnd,
             Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
-            Map<SurfaceSlot, SurfaceAttachment> attachments) {
+            Map<SurfaceSlot, SurfaceAttachment> attachments, boolean flipped) {
         public SurfaceTemplate {
             bottomStart = bottomStart == null ? Vec3.ZERO : bottomStart;
             bottomEnd = bottomEnd == null ? Vec3.ZERO : bottomEnd;
@@ -255,7 +255,7 @@ public final class TransformConstructionTemplate {
                     relative(surface.bottomEnd(), origin),
                     relative(surface.topStart(), origin),
                     relative(surface.topEnd(), origin), surface.curveOffset(),
-                    surface.attachments());
+                    surface.attachments(), surface.flipped());
         }
 
         private ConstructionSurface instantiate(ResourceLocation dimension,
@@ -265,7 +265,7 @@ public final class TransformConstructionTemplate {
                     absolute(bottomEnd, target, yaw),
                     absolute(topStart, target, yaw),
                     absolute(topEnd, target, yaw), rotateY(curveOffset, yaw),
-                    attachments);
+                    attachments, flipped);
         }
 
         private CompoundTag save() {
@@ -275,6 +275,7 @@ public final class TransformConstructionTemplate {
             putVec(tag, "TopStart", topStart);
             putVec(tag, "TopEnd", topEnd);
             putVec(tag, "CurveOffset", curveOffset);
+            tag.putBoolean("Flipped", flipped);
             ListTag list = new ListTag();
             for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
                     : attachments.entrySet()) {
@@ -306,7 +307,7 @@ public final class TransformConstructionTemplate {
             return new SurfaceTemplate(getVec(tag, "BottomStart"),
                     getVec(tag, "BottomEnd"), getVec(tag, "TopStart"),
                     getVec(tag, "TopEnd"), getVec(tag, "CurveOffset"),
-                    attachments);
+                    attachments, tag.getBoolean("Flipped"));
         }
     }
 }

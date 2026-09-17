@@ -19,7 +19,8 @@ import java.util.UUID;
  */
 public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
-        Vec3 curveOffset, Map<SurfaceSlot, SurfaceAttachment> attachments) {
+        Vec3 curveOffset, Map<SurfaceSlot, SurfaceAttachment> attachments,
+        boolean flipped) {
     private static final int ARC_SAMPLES = 32;
 
     public ConstructionSurface {
@@ -34,6 +35,13 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         curveOffset = curveOffset == null ? Vec3.ZERO : curveOffset;
         attachments = attachments == null ? Map.of()
                 : Map.copyOf(attachments);
+    }
+
+    public ConstructionSurface(UUID id, ResourceLocation dimension,
+            Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
+            Vec3 curveOffset, Map<SurfaceSlot, SurfaceAttachment> attachments) {
+        this(id, dimension, bottomStart, bottomEnd, topStart, topEnd,
+                curveOffset, attachments, false);
     }
 
     public static ConstructionSurface wall(ResourceLocation dimension,
@@ -79,8 +87,9 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     public Vec3 normal(double u, double v) {
         Vec3 tangent = tangent(u, v);
         Vec3 vertical = vertical(u);
-        return TransformMath.safeNormalize(tangent.cross(vertical),
+        Vec3 base = TransformMath.safeNormalize(tangent.cross(vertical),
                 new Vec3(0.0D, 0.0D, 1.0D));
+        return flipped ? base.scale(-1.0D) : base;
     }
 
     /**
@@ -165,7 +174,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             Vec3 nextCurveOffset) {
         ConstructionSurface geometry = new ConstructionSurface(id, dimension,
                 nextBottomStart, nextBottomEnd, nextTopStart, nextTopEnd,
-                nextCurveOffset, Map.of());
+                nextCurveOffset, Map.of(), flipped);
         if (attachments.isEmpty()) return geometry;
 
         int oldColumns = columns();
@@ -185,7 +194,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         }
         return new ConstructionSurface(id, dimension, nextBottomStart,
                 nextBottomEnd, nextTopStart, nextTopEnd, nextCurveOffset,
-                remapped);
+                remapped, flipped);
     }
 
     public ConstructionSurface withAttachment(SurfaceSlot slot,
@@ -194,7 +203,13 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new LinkedHashMap<>(attachments);
         next.put(slot, new SurfaceAttachment(state, deform));
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, next);
+                topStart, topEnd, curveOffset, next, flipped);
+    }
+
+    public ConstructionSurface withFlipped(boolean nextFlipped) {
+        if (nextFlipped == flipped) return this;
+        return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
+                topStart, topEnd, curveOffset, attachments, nextFlipped);
     }
 
     public ConstructionSurface withoutAttachment(SurfaceSlot slot) {
@@ -203,7 +218,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new LinkedHashMap<>(attachments);
         next.remove(slot);
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, next);
+                topStart, topEnd, curveOffset, next, flipped);
     }
 
     public CompoundTag save() {
@@ -215,6 +230,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         putVec(tag, "TopStart", topStart);
         putVec(tag, "TopEnd", topEnd);
         putVec(tag, "CurveOffset", curveOffset);
+        tag.putBoolean("Flipped", flipped);
         ListTag list = new ListTag();
         for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
                 : attachments.entrySet()) {
@@ -249,7 +265,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         return new ConstructionSurface(tag.getUUID("Id"), dimension,
                 getVec(tag, "BottomStart"), getVec(tag, "BottomEnd"),
                 getVec(tag, "TopStart"), getVec(tag, "TopEnd"),
-                getVec(tag, "CurveOffset"), attachments);
+                getVec(tag, "CurveOffset"), attachments,
+                tag.getBoolean("Flipped"));
     }
 
     private static void putVec(CompoundTag tag, String key, Vec3 value) {

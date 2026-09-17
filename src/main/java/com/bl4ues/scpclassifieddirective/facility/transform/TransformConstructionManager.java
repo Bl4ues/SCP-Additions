@@ -207,6 +207,22 @@ public final class TransformConstructionManager {
         return true;
     }
 
+    public static boolean setSurfaceFlipped(ServerPlayer player, UUID id,
+            boolean flipped) {
+        if (!canEdit(player) || id == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        ConstructionSurface surface = data.surface(id);
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())) return false;
+        ConstructionSurface next = surface.withFlipped(flipped);
+        if (!canOccupy(level, null, next, null, id)) return false;
+        data.putSurface(next);
+        refresh(level.getServer());
+        return true;
+    }
+
     public static boolean removeGroup(ServerPlayer player, UUID id) {
         if (!canEdit(player) || id == null || player.getServer() == null) {
             return false;

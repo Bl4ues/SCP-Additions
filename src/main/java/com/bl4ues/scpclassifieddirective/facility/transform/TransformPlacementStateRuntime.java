@@ -39,7 +39,8 @@ public final class TransformPlacementStateRuntime {
                 || event.getHand() != InteractionHand.MAIN_HAND
                 || !(event.getLevel() instanceof ServerLevel level)
                 || !(event.getItemStack().getItem() instanceof BlockItem item)
-                || !event.getState().is(TransformConstructionModule.getProxy())) {
+                || !level.getBlockState(event.getPos()).is(
+                        TransformConstructionModule.getProxy())) {
             return;
         }
 

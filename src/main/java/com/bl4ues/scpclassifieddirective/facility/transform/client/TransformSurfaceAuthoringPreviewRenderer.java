@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -31,12 +32,13 @@ public final class TransformSurfaceAuthoringPreviewRenderer {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null
                 || !minecraft.player.isCreative()
-                || !holdingSurfaceTool(minecraft)
-                || TransformSurfaceAuthoringState.start() == null) return;
+                || !holdingSurfaceTool(minecraft)) return;
 
         Vec3 start = TransformSurfaceAuthoringState.start();
         Vec3 end = TransformSurfaceAuthoringState.end();
-        Vec3 hit = hit(minecraft);
+        Vec3 hit = TransformSurfaceAuthoringMath.resolve(minecraft.player,
+                blockHit(minecraft), start, end,
+                minecraft.player.isShiftKeyDown());
         if (hit == null) return;
 
         PoseStack pose = event.getPoseStack();
@@ -47,7 +49,11 @@ public final class TransformSurfaceAuthoringPreviewRenderer {
         pose.pushPose();
         pose.translate(-camera.x, -camera.y, -camera.z);
 
-        if (end == null) {
+        if (start == null) {
+            marker(pose, lines, hit, 0.115D, 0.20F, 0.78F, 1.0F);
+            drawPixelGuides(pose, lines, hit,
+                    minecraft.player.isShiftKeyDown() ? 1.0F : 0.45F);
+        } else if (end == null) {
             Vec3 candidate = new Vec3(hit.x, start.y, hit.z);
             boolean valid = candidate.distanceToSqr(start) >= 0.04D;
             marker(pose, lines, start, 0.12D, 0.20F, 1.0F, 0.35F);
@@ -96,11 +102,24 @@ public final class TransformSurfaceAuthoringPreviewRenderer {
         buffers.endBatch(RenderType.lines());
     }
 
-    private static Vec3 hit(Minecraft minecraft) {
+    private static Vec3 blockHit(Minecraft minecraft) {
         HitResult hit = minecraft.hitResult;
         return hit instanceof BlockHitResult blockHit
                 && hit.getType() == HitResult.Type.BLOCK
                 ? blockHit.getLocation() : null;
+    }
+
+    private static void drawPixelGuides(PoseStack pose, VertexConsumer lines,
+            Vec3 point, float alpha) {
+        double half = 1.0D / 16.0D;
+        line(pose, lines, point.add(-half, 0.0D, -half),
+                point.add(half, 0.0D, -half), 0.24F, 0.72F, 1.0F, alpha);
+        line(pose, lines, point.add(half, 0.0D, -half),
+                point.add(half, 0.0D, half), 0.24F, 0.72F, 1.0F, alpha);
+        line(pose, lines, point.add(half, 0.0D, half),
+                point.add(-half, 0.0D, half), 0.24F, 0.72F, 1.0F, alpha);
+        line(pose, lines, point.add(-half, 0.0D, half),
+                point.add(-half, 0.0D, -half), 0.24F, 0.72F, 1.0F, alpha);
     }
 
     private static boolean holdingSurfaceTool(Minecraft minecraft) {

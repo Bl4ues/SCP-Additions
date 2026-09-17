@@ -296,9 +296,10 @@ public final class TransformConstructionClientRenderer {
     private static VertexFrame deformedFrame(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, double x, double y, double z,
             Vec3 localNormal) {
-        double u = (slot.column() + x) / surface.columns();
+        double localX = surface.flipped() ? 1.0D - x : x;
+        double u = (slot.column() + localX) / surface.columns();
         double v = (slot.row() + y) / surface.rows();
-        Vec3 tangent = surface.gridTangent(u, v);
+        Vec3 tangent = surface.gridFrameTangent(u, v);
         Vec3 normal = surface.gridNormal(u, v);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u));
@@ -315,7 +316,7 @@ public final class TransformConstructionClientRenderer {
             Vec3 localNormal) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 tangent = surface.gridTangent(u, v);
+        Vec3 tangent = surface.gridFrameTangent(u, v);
         Vec3 normal = surface.gridNormal(u, v);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u));

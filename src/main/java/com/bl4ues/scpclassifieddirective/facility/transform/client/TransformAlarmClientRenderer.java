@@ -136,7 +136,7 @@ public final class TransformAlarmClientRenderer {
             if (alarm == null) continue;
             SURFACE_HOSTS.put(key, alarm);
 
-            Vec3 tangent = surface.gridTangent(u, v);
+            Vec3 tangent = surface.gridFrameTangent(u, v);
             Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                     surface.gridVertical(u));
             pose.pushPose();

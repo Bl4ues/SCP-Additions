@@ -131,6 +131,16 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         return tangent(gridParameter(u), v);
     }
 
+    /**
+     * Local +X used by rigid payloads. Flipping a wall reverses both local X
+     * and local Z, which is a real 180-degree rotation around local vertical
+     * rather than an impossible mirror transform.
+     */
+    public Vec3 gridFrameTangent(double u, double v) {
+        Vec3 value = gridTangent(u, v);
+        return flipped ? value.scale(-1.0D) : value;
+    }
+
     public Vec3 gridVertical(double u) {
         return vertical(gridParameter(u));
     }

@@ -138,7 +138,7 @@ public final class TransformBlockEntityClientRenderer {
             if (host == null) continue;
             SURFACE_HOSTS.put(key, host);
 
-            Vec3 tangent = surface.gridTangent(u, v);
+            Vec3 tangent = surface.gridFrameTangent(u, v);
             Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                     surface.gridVertical(u));
             pose.pushPose();

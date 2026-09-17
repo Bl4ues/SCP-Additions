@@ -56,7 +56,7 @@ public final class TransformSurfaceGeometry {
             ConstructionSurface.SurfaceSlot slot, AABB local) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 tangent = surface.gridTangent(u, v);
+        Vec3 tangent = surface.gridFrameTangent(u, v);
         Vec3 normal = surface.gridNormal(u, v);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u));
@@ -73,7 +73,8 @@ public final class TransformSurfaceGeometry {
     private static AABB deformedBounds(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, AABB local) {
         return bounds((x, y, z) -> {
-            double u = (slot.column() + x) / surface.columns();
+            double localX = surface.flipped() ? 1.0D - x : x;
+            double u = (slot.column() + localX) / surface.columns();
             double v = (slot.row() + y) / surface.rows();
             Vec3 normal = surface.gridNormal(u, v);
             return surface.gridPoint(u, v).add(normal.scale(z));

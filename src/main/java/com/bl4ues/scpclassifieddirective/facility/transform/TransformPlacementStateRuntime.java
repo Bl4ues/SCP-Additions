@@ -166,7 +166,7 @@ public final class TransformPlacementStateRuntime {
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 x = surface.gridTangent(u, v);
+        Vec3 x = surface.gridFrameTangent(u, v);
         Vec3 z = surface.gridNormal(u, v);
         Vec3 y = TransformMath.safeNormalize(z.cross(x),
                 surface.gridVertical(u));

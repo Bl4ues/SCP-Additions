@@ -80,6 +80,9 @@ public final class SurfaceConstructionToolItem extends Item {
                 "Static blocks bend with the surface; equipment attaches rigidly.")
                 .withStyle(ChatFormatting.DARK_GRAY));
         tooltip.add(Component.literal(
+                "V while aiming at a placed surface block toggles Deform / Rigid.")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal(
                 "Shift + right-click air: cancel the pending baseline.")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }

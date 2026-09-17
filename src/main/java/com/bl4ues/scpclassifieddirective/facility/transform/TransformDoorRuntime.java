@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,7 +25,6 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -99,7 +99,7 @@ public final class TransformDoorRuntime {
             Map.Entry<CellKey, PendingDoor> entry = iterator.next();
             PendingDoor door = entry.getValue();
             if (tick < door.nextTick()) continue;
-            ServerLevel level = server.getLevel(door.dimension());
+            ServerLevel level = levelById(server, door.dimension());
             if (level == null || !advance(level, entry.getKey(), door, tick)) {
                 iterator.remove();
             }
@@ -116,7 +116,7 @@ public final class TransformDoorRuntime {
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 server);
         for (TransformGroup group : data.groups()) {
-            ServerLevel level = dimensionLevel(server, group);
+            ServerLevel level = levelById(server, group.dimension());
             if (level == null) continue;
             for (Map.Entry<GridPos, BlockState> entry : group.cells().entrySet()) {
                 DoorAddress address = address(entry.getValue());
@@ -163,8 +163,7 @@ public final class TransformDoorRuntime {
             Block next = nextIndex < family.opening().size()
                     ? family.opening().get(nextIndex).get()
                     : family.open().get();
-            setState(level, group, key.cell(), copyFacing(current, next),
-                    false);
+            setState(level, group, key.cell(), copyFacing(current, next), false);
             if (nextIndex >= family.opening().size()) return false;
         } else {
             if (address.stage() != DoorStage.CLOSING) return false;
@@ -179,9 +178,8 @@ public final class TransformDoorRuntime {
         }
         Map<CellKey, PendingDoor> map = PENDING.get(level.getServer());
         if (map != null) {
-            map.put(key, new PendingDoor(level.dimension().location(),
-                    family.id(), pending.opening(),
-                    tick + Math.max(1, family.frameDelay())));
+            map.put(key, new PendingDoor(level.dimension().location(), family.id(),
+                    pending.opening(), tick + Math.max(1, family.frameDelay())));
         }
         return true;
     }
@@ -197,14 +195,11 @@ public final class TransformDoorRuntime {
         level.playSound(null, center.x, center.y, center.z,
                 (opening ? family.openingSound() : family.closingSound()).get(),
                 SoundSource.BLOCKS, 1.0F, 1.0F);
-        // Opening direct-use doors become passable immediately; powered heavy
-        // doors switch collision according to their authored transition frame.
         setState(level, group, cell, first, true);
         CellKey key = new CellKey(group.id(), cell);
         PENDING.computeIfAbsent(level.getServer(), ignored -> new HashMap<>())
-                .put(key, new PendingDoor(level.dimension().location(),
-                        family.id(), opening,
-                        level.getServer().getTickCount()
+                .put(key, new PendingDoor(level.dimension().location(), family.id(),
+                        opening, level.getServer().getTickCount()
                                 + Math.max(1, family.frameDelay())));
     }
 
@@ -212,9 +207,7 @@ public final class TransformDoorRuntime {
             GridPos cell, BlockState state, boolean refreshCollision) {
         TransformConstructionSavedData.get(level.getServer()).putGroup(
                 group.withCell(cell, state));
-        if (refreshCollision) {
-            TransformConstructionManager.refresh(level.getServer());
-        }
+        if (refreshCollision) TransformConstructionManager.refresh(level.getServer());
     }
 
     private static DoorHit nearestDoor(ServerLevel level, Vec3 world,
@@ -278,10 +271,10 @@ public final class TransformDoorRuntime {
         return level.hasNeighborSignal(pos) || level.hasNeighborSignal(pos.above());
     }
 
-    private static ServerLevel dimensionLevel(MinecraftServer server,
-            TransformGroup group) {
+    private static ServerLevel levelById(MinecraftServer server,
+            ResourceLocation dimension) {
         for (ServerLevel level : server.getAllLevels()) {
-            if (level.dimension().location().equals(group.dimension())) return level;
+            if (level.dimension().location().equals(dimension)) return level;
         }
         return null;
     }

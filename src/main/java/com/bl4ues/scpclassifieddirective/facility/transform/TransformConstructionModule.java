@@ -1,12 +1,14 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import com.bl4ues.scpclassifieddirective.item.OffGridConstructionToolItem;
 import com.bl4ues.scpclassifieddirective.item.SurfaceConstructionToolItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
@@ -18,6 +20,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 
@@ -68,6 +71,11 @@ public final class TransformConstructionModule {
                 SurfaceConstructionToolItem::new);
     }
 
+    @SubscribeEvent
+    public static void commonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(TransformConstructionNetwork::register);
+    }
+
     public static final class TransformProxyBlock extends Block {
         private TransformProxyBlock() {
             super(BlockBehaviour.Properties.of()
@@ -93,18 +101,27 @@ public final class TransformConstructionModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
+            if (level instanceof Level world && world.isClientSide) {
+                return TransformConstructionClientBridge.selection(pos);
+            }
             return TransformConstructionManager.proxySelectionShape(level, pos);
         }
 
         @Override
         public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
+            if (level instanceof Level world && world.isClientSide) {
+                return TransformConstructionClientBridge.collision(pos);
+            }
             return TransformConstructionManager.proxyCollisionShape(level, pos);
         }
 
         @Override
         public VoxelShape getOcclusionShape(BlockState state, BlockGetter level,
                 BlockPos pos) {
+            if (level instanceof Level world && world.isClientSide) {
+                return TransformConstructionClientBridge.collision(pos);
+            }
             return TransformConstructionManager.proxyCollisionShape(level, pos);
         }
 

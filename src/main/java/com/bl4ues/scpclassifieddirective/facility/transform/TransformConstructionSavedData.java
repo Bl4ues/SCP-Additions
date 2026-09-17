@@ -18,6 +18,7 @@ public final class TransformConstructionSavedData extends SavedData {
 
     private final Map<UUID, TransformGroup> groups = new LinkedHashMap<>();
     private final Map<UUID, ConstructionSurface> surfaces = new LinkedHashMap<>();
+    private long revision;
 
     private TransformConstructionSavedData() {
     }
@@ -52,6 +53,10 @@ public final class TransformConstructionSavedData extends SavedData {
         return List.copyOf(surfaces.values());
     }
 
+    public synchronized long revision() {
+        return revision;
+    }
+
     public synchronized TransformGroup group(UUID id) {
         return id == null ? null : groups.get(id);
     }
@@ -63,23 +68,27 @@ public final class TransformConstructionSavedData extends SavedData {
     public synchronized void putGroup(TransformGroup group) {
         if (group == null) return;
         groups.put(group.id(), group);
+        revision++;
         setDirty();
     }
 
     public synchronized void putSurface(ConstructionSurface surface) {
         if (surface == null) return;
         surfaces.put(surface.id(), surface);
+        revision++;
         setDirty();
     }
 
     public synchronized boolean removeGroup(UUID id) {
         if (id == null || groups.remove(id) == null) return false;
+        revision++;
         setDirty();
         return true;
     }
 
     public synchronized boolean removeSurface(UUID id) {
         if (id == null || surfaces.remove(id) == null) return false;
+        revision++;
         setDirty();
         return true;
     }

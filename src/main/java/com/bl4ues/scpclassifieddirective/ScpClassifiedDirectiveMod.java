@@ -35,6 +35,7 @@ import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.TeslaGateTerminalTableModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.network.FacilityMappingNetwork;
+import com.bl4ues.scpclassifieddirective.facility.mapping.network.FacilityFineGeometryNetwork;
 import com.bl4ues.scpclassifieddirective.facility.UBlocksModule;
 import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.LeftDoorButtons;
@@ -125,6 +126,7 @@ public class ScpClassifiedDirectiveMod {
         ScpEntityNetwork.register();
         SafeZoneNetwork.register();
         FacilityMappingNetwork.register();
+        FacilityFineGeometryNetwork.register();
         StealthNetwork.register();
         com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork.register();
         com.bl4ues.scpclassifieddirective.network.Scp079SpeechNetwork.register();

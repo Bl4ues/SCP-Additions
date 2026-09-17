@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructio
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.EmptyBlockGetter;
@@ -27,7 +28,6 @@ import java.util.UUID;
 public final class TransformConstructionClientState {
     private static final int GROUP_SUBDIVISIONS = 3;
     private static final double SURFACE_SELECTION_THICKNESS = 0.055D;
-    private static final double SURFACE_BLOCK_THICKNESS = 0.92D;
 
     private static ResourceLocation dimension;
     private static List<TransformGroup> groups = List.of();
@@ -291,10 +291,10 @@ public final class TransformConstructionClientState {
                 addWorldBox(index, surfaceSlotBounds(surface, column, row,
                                 SURFACE_SELECTION_THICKNESS),
                         null, surface.id(), true, false, 0);
-                if (attachment != null && !attachment.state().isAir()) {
-                    addWorldBox(index, surfaceSlotBounds(surface, column, row,
-                                    SURFACE_BLOCK_THICKNESS),
-                            null, surface.id(), false, true,
+                if (attachment == null || attachment.state().isAir()) continue;
+                for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
+                        surface, slot, attachment)) {
+                    addWorldBox(index, collision, null, surface.id(), false, true,
                             attachment.state().getLightEmission());
                 }
             }

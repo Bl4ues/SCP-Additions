@@ -11,6 +11,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformCons
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -30,12 +31,21 @@ import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * World-space rendering for off-grid cells and curved surface payloads. Static
  * surface models are deformed vertex-by-vertex; rigid attachments keep their
- * shape and inherit the local surface frame.
+ * shape and inherit the local surface frame. Surface geometry is cached until
+ * the authored surface snapshot changes, so a large curved facility does not
+ * repeatedly rebuild baked-model quads and spline transforms every frame.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -45,8 +55,14 @@ public final class TransformConstructionClientRenderer {
             Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH,
             Direction.WEST, Direction.EAST, null
     };
+    private static final Map<UUID, CachedSurface> SURFACE_MESHES =
+            new HashMap<>();
 
     private TransformConstructionClientRenderer() {
+    }
+
+    public static void clearSurfaceCache() {
+        SURFACE_MESHES.clear();
     }
 
     @SubscribeEvent
@@ -99,6 +115,10 @@ public final class TransformConstructionClientRenderer {
         }
         pose.popPose();
         buffers.endBatch();
+
+        Set<UUID> current = surfaces.stream().map(ConstructionSurface::id)
+                .collect(Collectors.toSet());
+        SURFACE_MESHES.keySet().removeIf(id -> !current.contains(id));
     }
 
     private static void renderGroup(Minecraft minecraft, PoseStack pose,
@@ -132,21 +152,64 @@ public final class TransformConstructionClientRenderer {
             MultiBufferSource.BufferSource buffers, ConstructionSurface surface,
             Vec3 camera) {
         Vec3 center = surface.gridPoint(0.5D, 0.5D);
-        if (center.distanceToSqr(camera) > MAX_RENDER_DISTANCE_SQR) return;
-        VertexConsumer consumer = buffers.getBuffer(RenderType.cutoutMipped());
+        double radius = Math.max(surface.width(), surface.height()) * 0.75D + 2.0D;
+        if (center.distanceToSqr(camera)
+                > (192.0D + radius) * (192.0D + radius)) return;
+
+        CachedSurface cached = SURFACE_MESHES.get(surface.id());
+        if (cached == null || !cached.surface().equals(surface)) {
+            cached = buildSurfaceMesh(minecraft, surface);
+            SURFACE_MESHES.put(surface.id(), cached);
+        }
+        for (Map.Entry<RenderType, List<PreparedVertex>> layer
+                : cached.layers().entrySet()) {
+            VertexConsumer consumer = buffers.getBuffer(layer.getKey());
+            for (PreparedVertex vertex : layer.getValue()) {
+                BlockPos sample = BlockPos.containing(vertex.position());
+                int light = minecraft.level.hasChunkAt(sample)
+                        ? LevelRenderer.getLightColor(minecraft.level,
+                                vertex.state(), sample)
+                        : vertex.fallbackLight();
+                consumer.vertex(pose.last().pose(),
+                                (float) vertex.position().x,
+                                (float) vertex.position().y,
+                                (float) vertex.position().z)
+                        .color(vertex.red(), vertex.green(), vertex.blue(), 255)
+                        .uv(vertex.u(), vertex.v())
+                        .overlayCoords(OverlayTexture.NO_OVERLAY)
+                        .uv2(light)
+                        .normal(pose.last().normal(),
+                                (float) vertex.normal().x,
+                                (float) vertex.normal().y,
+                                (float) vertex.normal().z)
+                        .endVertex();
+            }
+        }
+    }
+
+    private static CachedSurface buildSurfaceMesh(Minecraft minecraft,
+            ConstructionSurface surface) {
+        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
         for (Map.Entry<ConstructionSurface.SurfaceSlot,
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
             BlockState state = entry.getValue().state();
             if (state == null || state.isAir()
-                    || state.getRenderShape() == RenderShape.INVISIBLE) continue;
-            renderSurfaceBlock(minecraft, pose, consumer, surface,
-                    entry.getKey(), entry.getValue());
+                    || state.getRenderShape() != RenderShape.MODEL) continue;
+            RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
+            List<PreparedVertex> output = layers.computeIfAbsent(renderType,
+                    ignored -> new ArrayList<>());
+            appendSurfaceBlock(minecraft, output, surface, entry.getKey(),
+                    entry.getValue());
         }
+        Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
+        layers.forEach((type, vertices) -> immutable.put(type,
+                List.copyOf(vertices)));
+        return new CachedSurface(surface, Map.copyOf(immutable));
     }
 
-    private static void renderSurfaceBlock(Minecraft minecraft, PoseStack pose,
-            VertexConsumer consumer, ConstructionSurface surface,
+    private static void appendSurfaceBlock(Minecraft minecraft,
+            List<PreparedVertex> output, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment) {
         BlockState state = attachment.state();
@@ -161,14 +224,14 @@ public final class TransformConstructionClientRenderer {
             random.setSeed(42L);
             for (BakedQuad quad : model.getQuads(state, side, random,
                     ModelData.EMPTY, null)) {
-                emitQuad(minecraft, pose, consumer, surface, slot, attachment,
-                        quad, lightPos, packedLight);
+                prepareQuad(minecraft, output, surface, slot, attachment, quad,
+                        lightPos, packedLight);
             }
         }
     }
 
-    private static void emitQuad(Minecraft minecraft, PoseStack pose,
-            VertexConsumer consumer, ConstructionSurface surface,
+    private static void prepareQuad(Minecraft minecraft,
+            List<PreparedVertex> output, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment, BakedQuad quad,
             BlockPos lightPos, int fallbackLight) {
@@ -193,21 +256,8 @@ public final class TransformConstructionClientRenderer {
             VertexFrame frame = attachment.deform()
                     ? deformedFrame(surface, slot, x, y, z, quadNormal)
                     : rigidFrame(surface, slot, x, y, z, quadNormal);
-            BlockPos sample = BlockPos.containing(frame.position());
-            int light = minecraft.level.hasChunkAt(sample)
-                    ? LevelRenderer.getLightColor(minecraft.level,
-                            attachment.state(), sample) : fallbackLight;
-            consumer.vertex(pose.last().pose(), (float) frame.position().x,
-                            (float) frame.position().y,
-                            (float) frame.position().z)
-                    .color(red, green, blue, 255)
-                    .uv(u, v)
-                    .overlayCoords(OverlayTexture.NO_OVERLAY)
-                    .uv2(light)
-                    .normal(pose.last().normal(), (float) frame.normal().x,
-                            (float) frame.normal().y,
-                            (float) frame.normal().z)
-                    .endVertex();
+            output.add(new PreparedVertex(attachment.state(), frame.position(),
+                    frame.normal(), u, v, red, green, blue, fallbackLight));
         }
     }
 
@@ -364,5 +414,14 @@ public final class TransformConstructionClientRenderer {
     }
 
     private record VertexFrame(Vec3 position, Vec3 normal) {
+    }
+
+    private record PreparedVertex(BlockState state, Vec3 position, Vec3 normal,
+            float u, float v, int red, int green, int blue,
+            int fallbackLight) {
+    }
+
+    private record CachedSurface(ConstructionSurface surface,
+            Map<RenderType, List<PreparedVertex>> layers) {
     }
 }

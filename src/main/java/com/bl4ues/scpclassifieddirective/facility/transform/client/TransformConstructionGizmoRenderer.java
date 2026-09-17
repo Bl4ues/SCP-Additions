@@ -36,7 +36,11 @@ public final class TransformConstructionGizmoRenderer {
         if (minecraft.player == null || minecraft.level == null) return;
         if (!minecraft.player.getMainHandItem().is(
                 TransformConstructionModule.getOffGridTool())
+                && !minecraft.player.getOffhandItem().is(
+                TransformConstructionModule.getOffGridTool())
                 && !minecraft.player.getMainHandItem().is(
+                TransformConstructionModule.getSurfaceTool())
+                && !minecraft.player.getOffhandItem().is(
                 TransformConstructionModule.getSurfaceTool())) return;
         Selection selection = TransformConstructionClientState.selection();
         if (selection == null) return;
@@ -50,7 +54,13 @@ public final class TransformConstructionGizmoRenderer {
         VertexConsumer lines = buffers.getBuffer(RenderType.lines());
         pose.pushPose();
         pose.translate(-camera.x, -camera.y, -camera.z);
-        if (TransformConstructionClientState.mode() == EditMode.ROTATE
+        if (selection.type() == SelectionType.SURFACE
+                && selection.handle() == SurfaceHandle.CENTER) {
+            ConstructionSurface surface = TransformConstructionClientState.surface(
+                    selection.id());
+            if (surface != null) drawCurveNormal(pose, lines, origin,
+                    surface.gridNormal(0.5D, 0.5D));
+        } else if (TransformConstructionClientState.mode() == EditMode.ROTATE
                 && selection.type() == SelectionType.GROUP) {
             drawRotationRings(pose, lines, origin);
         } else {
@@ -58,6 +68,24 @@ public final class TransformConstructionGizmoRenderer {
         }
         pose.popPose();
         buffers.endBatch(RenderType.lines());
+    }
+
+    private static void drawCurveNormal(PoseStack pose, VertexConsumer lines,
+            Vec3 origin, Vec3 normal) {
+        Vec3 direction = normal.lengthSqr() < 1.0E-8D
+                ? new Vec3(0.0D, 0.0D, 1.0D) : normal.normalize();
+        Vec3 end = origin.add(direction.scale(1.15D));
+        line(pose, lines, origin, end, 1.0F, 0.82F, 0.18F, 1.0F);
+        Vec3 helper = Math.abs(direction.y) > 0.85D
+                ? new Vec3(1.0D, 0.0D, 0.0D)
+                : new Vec3(0.0D, 1.0D, 0.0D);
+        Vec3 sideA = direction.cross(helper).normalize().scale(0.12D);
+        Vec3 sideB = direction.cross(sideA).normalize().scale(0.12D);
+        Vec3 back = end.subtract(direction.scale(0.22D));
+        line(pose, lines, end, back.add(sideA), 1.0F, 0.82F, 0.18F, 1.0F);
+        line(pose, lines, end, back.subtract(sideA), 1.0F, 0.82F, 0.18F, 1.0F);
+        line(pose, lines, end, back.add(sideB), 1.0F, 0.82F, 0.18F, 1.0F);
+        line(pose, lines, end, back.subtract(sideB), 1.0F, 0.82F, 0.18F, 1.0F);
     }
 
     private static void drawAxes(PoseStack pose, VertexConsumer lines,

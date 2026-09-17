@@ -5,7 +5,6 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -125,7 +124,7 @@ public final class TransformSurfaceDoorRuntime {
                     continue;
                 }
                 Vec3 center = center(surface, entry.getKey());
-                boolean powered = powered(level, center);
+                boolean powered = TransformPowerQuery.powered(level, center);
                 if (address.stage() == DoorStage.CLOSED && powered) {
                     start(level, surface, entry.getKey(), address.family(), true);
                 } else if (address.stage() == DoorStage.OPEN && !powered) {
@@ -238,8 +237,10 @@ public final class TransformSurfaceDoorRuntime {
 
     private static Vec3 center(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot) {
-        return surface.gridPoint((slot.column() + 0.5D) / surface.columns(),
-                (slot.row() + 0.5D) / surface.rows());
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        return surface.gridPoint(u, v)
+                .add(surface.gridNormal(u, v).scale(0.5D));
     }
 
     private static DoorAddress address(BlockState state) {
@@ -274,11 +275,6 @@ public final class TransformSurfaceDoorRuntime {
             next = next.setValue(HorizontalDirectionalBlock.FACING, facing);
         }
         return next;
-    }
-
-    private static boolean powered(ServerLevel level, Vec3 center) {
-        BlockPos pos = BlockPos.containing(center);
-        return level.hasNeighborSignal(pos) || level.hasNeighborSignal(pos.above());
     }
 
     private static ServerLevel levelById(MinecraftServer server,

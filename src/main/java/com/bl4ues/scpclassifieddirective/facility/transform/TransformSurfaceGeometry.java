@@ -64,7 +64,10 @@ public final class TransformSurfaceGeometry {
         return bounds((x, y, z) -> center
                 .add(tangent.scale(x - 0.5D))
                 .add(vertical.scale(y - 0.5D))
-                .add(normal.scale(z - 0.5D)), local);
+                // The authored surface is the BACK face of the placed block.
+                // This keeps walls/equipment on the chosen side instead of
+                // burying half of every payload through the guide plane.
+                .add(normal.scale(z)), local);
     }
 
     private static AABB deformedBounds(ConstructionSurface surface,
@@ -73,7 +76,7 @@ public final class TransformSurfaceGeometry {
             double u = (slot.column() + x) / surface.columns();
             double v = (slot.row() + y) / surface.rows();
             Vec3 normal = surface.gridNormal(u, v);
-            return surface.gridPoint(u, v).add(normal.scale(z - 0.5D));
+            return surface.gridPoint(u, v).add(normal.scale(z));
         }, local);
     }
 

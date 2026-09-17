@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,6 +10,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -57,9 +59,12 @@ public final class TransformPlacementStateRuntime {
 
         if (match.group != null) {
             TransformGroup group = match.group;
-            BlockState local = localizeForGroup(contextual, group);
+            BlockState local = localizeForGroup(contextual, group,
+                    match.gridPos, hit.getLocation());
             if (local.equals(group.cells().get(match.gridPos))) return;
-            data.putGroup(group.withCell(match.gridPos, local));
+            data.putGroupState(group.withCell(match.gridPos, local));
+            TransformConstructionNetwork.broadcastGroupCell(level, group.id(),
+                    match.gridPos, local);
         } else if (match.surface != null) {
             ConstructionSurface surface = match.surface;
             ConstructionSurface.SurfaceAttachment old =
@@ -68,8 +73,10 @@ public final class TransformPlacementStateRuntime {
             BlockState local = localizeForSurface(contextual, surface,
                     match.surfaceSlot);
             if (local.equals(old.state())) return;
-            data.putSurface(surface.withAttachment(match.surfaceSlot, local,
+            data.putSurfaceState(surface.withAttachment(match.surfaceSlot, local,
                     old.deform()));
+            TransformConstructionNetwork.broadcastSurfaceSlot(level,
+                    surface.id(), match.surfaceSlot, local, old.deform());
         }
         TransformConstructionManager.refresh(level.getServer());
     }
@@ -101,9 +108,10 @@ public final class TransformPlacementStateRuntime {
                     : surface.attachments().entrySet()) {
                 if (entry.getValue().state().getBlock() != item.getBlock()) continue;
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                Vec3 center = surface.gridPoint(
-                        (slot.column() + 0.5D) / surface.columns(),
-                        (slot.row() + 0.5D) / surface.rows());
+                double u = (slot.column() + 0.5D) / surface.columns();
+                double v = (slot.row() + 0.5D) / surface.rows();
+                Vec3 center = surface.gridPoint(u, v)
+                        .add(surface.gridNormal(u, v).scale(0.5D));
                 double candidate = center.distanceToSqr(world);
                 if (candidate < distance) {
                     distance = candidate;
@@ -115,14 +123,22 @@ public final class TransformPlacementStateRuntime {
     }
 
     private static BlockState localizeForGroup(BlockState state,
-            TransformGroup group) {
+            TransformGroup group, TransformGroup.GridPos cell, Vec3 worldHit) {
         Vec3 x = TransformMath.rotate(new Vec3(1, 0, 0), group.rotationX(),
                 group.rotationY(), group.rotationZ());
         Vec3 y = TransformMath.rotate(new Vec3(0, 1, 0), group.rotationX(),
                 group.rotationY(), group.rotationZ());
         Vec3 z = TransformMath.rotate(new Vec3(0, 0, 1), group.rotationX(),
                 group.rotationY(), group.rotationZ());
-        return localize(state, x, y, z);
+        state = localize(state, x, y, z);
+        if (!state.hasProperty(BlockStateProperties.ATTACH_FACE)) return state;
+
+        Vec3 localHit = TransformMath.worldToLocal(group.origin(), worldHit,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        Vec3 delta = localHit.subtract(cell.x(), cell.y(), cell.z());
+        Direction towardSupport = dominantDirection(delta);
+        Direction outward = towardSupport.getOpposite();
+        return attachToLocalFace(state, outward);
     }
 
     private static BlockState localizeForSurface(BlockState state,
@@ -133,7 +149,29 @@ public final class TransformPlacementStateRuntime {
         Vec3 z = surface.gridNormal(u, v);
         Vec3 y = TransformMath.safeNormalize(z.cross(x),
                 surface.gridVertical(u));
-        return localize(state, x, y, z);
+        state = localize(state, x, y, z);
+        // Surface payloads extend from local Z=0 toward +Z. Wall controls need
+        // their support behind them on the authored plane, so SOUTH is the
+        // canonical local outward direction regardless of world-space curve.
+        if (state.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            state = attachToLocalFace(state, Direction.SOUTH);
+        }
+        return state;
+    }
+
+    private static BlockState attachToLocalFace(BlockState state,
+            Direction outward) {
+        if (!state.hasProperty(BlockStateProperties.ATTACH_FACE)) return state;
+        AttachFace face = outward == Direction.UP ? AttachFace.FLOOR
+                : outward == Direction.DOWN ? AttachFace.CEILING
+                : AttachFace.WALL;
+        state = state.setValue(BlockStateProperties.ATTACH_FACE, face);
+        if (outward.getAxis().isHorizontal()
+                && state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+            state = state.setValue(BlockStateProperties.HORIZONTAL_FACING,
+                    outward);
+        }
+        return state;
     }
 
     private static BlockState localize(BlockState state, Vec3 localX,
@@ -182,6 +220,17 @@ public final class TransformPlacementStateRuntime {
             return x >= 0 ? Direction.EAST : Direction.WEST;
         }
         return z >= 0 ? Direction.SOUTH : Direction.NORTH;
+    }
+
+    private static Direction dominantDirection(Vec3 delta) {
+        double ax = Math.abs(delta.x);
+        double ay = Math.abs(delta.y);
+        double az = Math.abs(delta.z);
+        if (ay >= ax && ay >= az) {
+            return delta.y >= 0.0D ? Direction.UP : Direction.DOWN;
+        }
+        if (ax >= az) return delta.x >= 0.0D ? Direction.EAST : Direction.WEST;
+        return delta.z >= 0.0D ? Direction.SOUTH : Direction.NORTH;
     }
 
     private static final class Match {

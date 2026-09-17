@@ -77,12 +77,12 @@ public final class TransformConstructionClientControls {
             case GLFW.GLFW_KEY_G -> {
                 finishDrag();
                 TransformConstructionClientState.setMode(EditMode.MOVE);
-                status("Move mode: hold Attack and drag the selected axis");
+                status("Move");
             }
             case GLFW.GLFW_KEY_R -> {
                 finishDrag();
                 TransformConstructionClientState.setMode(EditMode.ROTATE);
-                status("Rotate mode: X/Y/Z then mouse wheel");
+                status("Rotate");
             }
             case GLFW.GLFW_KEY_X -> {
                 finishDrag();
@@ -128,13 +128,14 @@ public final class TransformConstructionClientControls {
             return;
         }
 
-        Vec3 axis = TransformConstructionClientState.axisVector();
+        Vec3 axis = dragAxis(selection);
         Vec3 handle = selection.type() == SelectionType.GROUP
                 ? groupHandle(selection) : surfaceHandle(selection);
-        if (handle == null) {
+        if (handle == null || axis == null || axis.lengthSqr() < 1.0E-8D) {
             finishDrag();
             return;
         }
+        axis = axis.normalize();
         double parameter = axisParameter(player.getEyePosition(),
                 player.getViewVector(1.0F), handle, axis);
         if (!Double.isFinite(parameter)) return;
@@ -165,15 +166,20 @@ public final class TransformConstructionClientControls {
         LocalPlayer player = minecraft.player;
         Selection selection = TransformConstructionClientState.selection();
         if (player == null || selection == null || minecraft.screen != null
-                || !player.isCreative() || !holdingEditorTool(player)) return;
+                || !player.isCreative() || !holdingEditorTool(player)
+                || !player.isShiftKeyDown()) {
+            // Ordinary wheel input must remain ordinary hotbar scrolling. Tool
+            // edits deliberately require Shift so authoring never traps the
+            // selected slot in the player's hand.
+            return;
+        }
 
         finishDrag();
         double sign = scroll > 0.0D ? 1.0D : -1.0D;
-        boolean shift = player.isShiftKeyDown();
         if (selection.type() == SelectionType.GROUP) {
-            editGroup(selection, sign, shift);
+            editGroup(selection, sign);
         } else {
-            editSurface(selection, sign, shift);
+            editSurface(selection, sign);
         }
         event.setCanceled(true);
     }
@@ -199,7 +205,7 @@ public final class TransformConstructionClientControls {
         if (best != null) {
             finishDrag();
             TransformConstructionClientState.selectGroup(best.id());
-            status("Off-grid grid selected: G/R, X/Y/Z; drag or wheel");
+            status("Off-grid grid selected");
         }
     }
 
@@ -238,16 +244,16 @@ public final class TransformConstructionClientControls {
             finishDrag();
             TransformConstructionClientState.selectSurface(bestSurface.id(),
                     bestHandle);
-            status("Surface handle selected: G, X/Y/Z; hold Attack to drag");
+            status(bestHandle == SurfaceHandle.CENTER
+                    ? "Curve handle selected" : "Surface handle selected");
         }
     }
 
-    private static void editGroup(Selection selection, double sign,
-            boolean shift) {
+    private static void editGroup(Selection selection, double sign) {
         TransformGroup group = TransformConstructionClientState.group(selection.id());
         if (group == null) return;
         if (TransformConstructionClientState.mode() == EditMode.ROTATE) {
-            float step = (float) (sign * (shift ? 15.0D : 5.0D));
+            float step = (float) (sign * 5.0D);
             float x = group.rotationX();
             float y = group.rotationY();
             float z = group.rotationZ();
@@ -261,7 +267,7 @@ public final class TransformConstructionClientControls {
             TransformConstructionNetwork.updateGroup(group.id(), group.origin(),
                     x, y, z);
         } else {
-            double step = sign * (shift ? 0.5D : 1.0D / 16.0D);
+            double step = sign / 16.0D;
             Vec3 origin = group.origin().add(
                     TransformConstructionClientState.axisVector().scale(step));
             TransformConstructionClientState.upsertGroup(group.withTransform(origin,
@@ -271,18 +277,29 @@ public final class TransformConstructionClientControls {
         }
     }
 
-    private static void editSurface(Selection selection, double sign,
-            boolean shift) {
+    private static void editSurface(Selection selection, double sign) {
         ConstructionSurface surface = TransformConstructionClientState.surface(
                 selection.id());
         if (surface == null) return;
         if (TransformConstructionClientState.mode() == EditMode.ROTATE) {
-            status("Surface angle is defined by its four corner handles");
+            status("Use the corner handles to tilt the surface");
             return;
         }
-        double step = sign * (shift ? 0.5D : 1.0D / 16.0D);
+        Vec3 axis = selection.handle() == SurfaceHandle.CENTER
+                ? surface.gridNormal(0.5D, 0.5D)
+                : TransformConstructionClientState.axisVector();
         applySurfaceDelta(surface, selection.handle(),
-                TransformConstructionClientState.axisVector().scale(step), true);
+                axis.normalize().scale(sign / 16.0D), true);
+    }
+
+    private static Vec3 dragAxis(Selection selection) {
+        if (selection.type() != SelectionType.SURFACE
+                || selection.handle() != SurfaceHandle.CENTER) {
+            return TransformConstructionClientState.axisVector();
+        }
+        ConstructionSurface surface = TransformConstructionClientState.surface(
+                selection.id());
+        return surface == null ? null : surface.gridNormal(0.5D, 0.5D);
     }
 
     private static void previewGroupDrag(DragState state, Vec3 movement) {
@@ -312,7 +329,7 @@ public final class TransformConstructionClientControls {
             case TOP_START -> ts = ts.add(delta);
             case TOP_END -> te = te.add(delta);
             // A quadratic control contributes 1/2 of its offset at u=.5, so
-            // double the movement to make the visible center handle track 1:1.
+            // double movement keeps the visible center handle tracking 1:1.
             case CENTER -> curve = curve.add(delta.scale(2.0D));
         }
         TransformConstructionClientState.upsertSurface(surface.withGeometry(
@@ -396,8 +413,13 @@ public final class TransformConstructionClientControls {
     }
 
     private static boolean holdingEditorTool(LocalPlayer player) {
-        return player.getMainHandItem().is(TransformConstructionModule.getOffGridTool())
+        return player.getMainHandItem().is(
+                        TransformConstructionModule.getOffGridTool())
+                || player.getOffhandItem().is(
+                        TransformConstructionModule.getOffGridTool())
                 || player.getMainHandItem().is(
+                        TransformConstructionModule.getSurfaceTool())
+                || player.getOffhandItem().is(
                         TransformConstructionModule.getSurfaceTool());
     }
 

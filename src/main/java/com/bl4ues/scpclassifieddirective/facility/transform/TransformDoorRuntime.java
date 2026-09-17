@@ -6,7 +6,6 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -134,7 +133,8 @@ public final class TransformDoorRuntime {
                 }
                 if (address.family().directUse()
                         || pending.containsKey(key)) continue;
-                boolean powered = powered(level, group.cellCenter(entry.getKey()));
+                boolean powered = TransformPowerQuery.powered(level,
+                        group.cellCenter(entry.getKey()));
                 if (address.stage() == DoorStage.CLOSED && powered) {
                     start(level, group, entry.getKey(), address.family(), true);
                 } else if (address.stage() == DoorStage.OPEN && !powered) {
@@ -267,11 +267,6 @@ public final class TransformDoorRuntime {
             next = next.setValue(HorizontalDirectionalBlock.FACING, facing);
         }
         return next;
-    }
-
-    private static boolean powered(ServerLevel level, Vec3 center) {
-        BlockPos pos = BlockPos.containing(center);
-        return level.hasNeighborSignal(pos) || level.hasNeighborSignal(pos.above());
     }
 
     private static ServerLevel levelById(MinecraftServer server,

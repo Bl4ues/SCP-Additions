@@ -7,6 +7,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
@@ -18,9 +20,8 @@ import java.util.Map;
 
 /**
  * Conservative redstone adapter for ordinary transformed blocks whose state is
- * represented by POWERED (and optionally LIT). Door-like OPEN blocks and Alarm
- * are handled by their dedicated runtimes so their authored timing/animation is
- * not flattened into a generic boolean update.
+ * represented by POWERED (and optionally LIT). Interactive controls, door-like
+ * OPEN blocks and Alarm use their dedicated runtimes instead.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -112,6 +113,8 @@ public final class TransformPoweredBlockRuntime {
         return state != null
                 && state.hasProperty(BlockStateProperties.POWERED)
                 && !state.hasProperty(BlockStateProperties.OPEN)
+                && !(state.getBlock() instanceof ButtonBlock)
+                && !(state.getBlock() instanceof LeverBlock)
                 && !AlarmModule.isController(state);
     }
 

@@ -21,6 +21,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -99,15 +100,27 @@ public final class TransformConstructionClientRenderer {
                 TransformConstructionModule.getSurfaceTool())
                 || minecraft.player.getOffhandItem().is(
                         TransformConstructionModule.getSurfaceTool());
-        if (offGridTool || surfaceTool) {
+        Selection selection = TransformConstructionClientState.selection();
+        boolean placingBlock = minecraft.player.getMainHandItem().getItem()
+                instanceof BlockItem;
+        boolean showSelectedGroup = placingBlock && selection != null
+                && selection.type() == SelectionType.GROUP;
+        boolean showSelectedSurface = placingBlock && selection != null
+                && selection.type() == SelectionType.SURFACE;
+        if (offGridTool || surfaceTool || showSelectedGroup
+                || showSelectedSurface) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-            if (offGridTool) {
+            if (offGridTool || showSelectedGroup) {
                 for (TransformGroup group : groups) {
+                    if (showSelectedGroup && !offGridTool
+                            && !group.id().equals(selection.id())) continue;
                     renderGroupGrid(pose, lines, group, camera);
                 }
             }
-            if (surfaceTool) {
+            if (surfaceTool || showSelectedSurface) {
                 for (ConstructionSurface surface : surfaces) {
+                    if (showSelectedSurface && !surfaceTool
+                            && !surface.id().equals(selection.id())) continue;
                     renderSurfaceGrid(pose, lines, surface, camera);
                 }
             }
@@ -270,7 +283,7 @@ public final class TransformConstructionClientRenderer {
         Vec3 normal = surface.gridNormal(u, v);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u));
-        Vec3 position = surface.gridPoint(u, v).add(normal.scale(z - 0.5D));
+        Vec3 position = surface.gridPoint(u, v).add(normal.scale(z));
         Vec3 transformedNormal = TransformMath.safeNormalize(
                 tangent.scale(localNormal.x)
                         .add(vertical.scale(localNormal.y))
@@ -290,7 +303,7 @@ public final class TransformConstructionClientRenderer {
         Vec3 position = surface.gridPoint(u, v)
                 .add(tangent.scale(x - 0.5D))
                 .add(vertical.scale(y - 0.5D))
-                .add(normal.scale(z - 0.5D));
+                .add(normal.scale(z));
         Vec3 transformedNormal = TransformMath.safeNormalize(
                 tangent.scale(localNormal.x)
                         .add(vertical.scale(localNormal.y))
@@ -407,7 +420,8 @@ public final class TransformConstructionClientRenderer {
                 .color(r, g, b, a)
                 .normal(current.normal(), (float) direction.x,
                         (float) direction.y, (float) direction.z).endVertex();
-        lines.vertex(current.pose(), (float) to.x, (float) to.y, (float) to.z)
+        lines.vertex(current.pose(), (float) to.x, (float) to.y,
+                        (float) to.z)
                 .color(r, g, b, a)
                 .normal(current.normal(), (float) direction.x,
                         (float) direction.y, (float) direction.z).endVertex();

@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructio
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionSavedData;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringManager;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -76,6 +77,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(8, CancelSurfaceAuthoring.class,
                 CancelSurfaceAuthoring::encode, CancelSurfaceAuthoring::decode,
                 CancelSurfaceAuthoring::handle);
+        CHANNEL.registerMessage(9, BlockedPlacement.class,
+                BlockedPlacement::encode, BlockedPlacement::decode,
+                BlockedPlacement::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -109,6 +113,12 @@ public final class TransformConstructionNetwork {
 
     public static void cancelSurfaceAuthoring() {
         CHANNEL.sendToServer(new CancelSurfaceAuthoring());
+    }
+
+    public static void sendBlockedPlacement(ServerPlayer player, BlockPos pos) {
+        if (player == null || pos == null) return;
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                new BlockedPlacement(pos));
     }
 
     /** Tiny runtime-state packet; avoids a full facility snapshot per door frame. */
@@ -385,6 +395,26 @@ public final class TransformConstructionNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() ->
                     TransformSurfaceAuthoringManager.cancel(context.getSender()));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record BlockedPlacement(BlockPos pos) {
+        private static void encode(BlockedPlacement message,
+                FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(message.pos);
+        }
+
+        private static BlockedPlacement decode(FriendlyByteBuf buffer) {
+            return new BlockedPlacement(buffer.readBlockPos());
+        }
+
+        private static void handle(BlockedPlacement message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
+                            .flashBlocked(message.pos)));
             context.setPacketHandled(true);
         }
     }

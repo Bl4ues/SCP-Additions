@@ -126,6 +126,16 @@ public final class TransformConstructionClientRenderer {
             }
             buffers.endBatch(RenderType.lines());
         }
+        BlockPos blocked = TransformConstructionClientState.blockedPlacement();
+        if (blocked != null && minecraft.level.hasChunkAt(blocked)) {
+            VertexConsumer warningLines = buffers.getBuffer(RenderType.lines());
+            float pulse = (float) (0.45D + 0.55D * Math.abs(
+                    Math.sin(System.currentTimeMillis() / 90.0D)));
+            LevelRenderer.renderLineBox(pose, warningLines,
+                    new AABB(blocked).inflate(0.012D),
+                    1.0F, 0.08F, 0.04F, pulse);
+            buffers.endBatch(RenderType.lines());
+        }
         pose.popPose();
         buffers.endBatch();
 

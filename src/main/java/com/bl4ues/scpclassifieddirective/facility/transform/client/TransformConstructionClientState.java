@@ -47,6 +47,8 @@ public final class TransformConstructionClientState {
     private static SurfaceHandle hoveredSurfaceHandle;
     private static final Deque<UndoEntry> UNDO = new ArrayDeque<>();
     private static final int UNDO_LIMIT = 64;
+    private static BlockPos blockedPlacement;
+    private static long blockedPlacementUntil;
 
     static {
         TransformConstructionClientBridge.install(
@@ -85,6 +87,8 @@ public final class TransformConstructionClientState {
         hoveredSurfaceId = null;
         hoveredSurfaceHandle = null;
         UNDO.clear();
+        blockedPlacement = null;
+        blockedPlacementUntil = 0L;
     }
 
     public static ResourceLocation dimension() {
@@ -298,6 +302,20 @@ public final class TransformConstructionClientState {
         if (entry.equals(last)) return;
         UNDO.addLast(entry);
         while (UNDO.size() > UNDO_LIMIT) UNDO.removeFirst();
+    }
+
+    public static void flashBlocked(BlockPos pos) {
+        blockedPlacement = pos == null ? null : pos.immutable();
+        blockedPlacementUntil = System.currentTimeMillis() + 900L;
+    }
+
+    public static BlockPos blockedPlacement() {
+        if (blockedPlacement == null) return null;
+        if (System.currentTimeMillis() > blockedPlacementUntil) {
+            blockedPlacement = null;
+            blockedPlacementUntil = 0L;
+        }
+        return blockedPlacement;
     }
 
     public static boolean undoLast() {

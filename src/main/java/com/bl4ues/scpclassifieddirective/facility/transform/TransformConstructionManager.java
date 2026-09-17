@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface.SurfaceAttachment;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface.SurfaceSlot;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -273,7 +274,11 @@ public final class TransformConstructionManager {
             if (group.cells().size() >= MAX_GROUP_CELLS
                     && !group.cells().containsKey(target)) return false;
             TransformGroup next = group.withCell(target, payload);
-            if (!canOccupy(level, next, null, group.id(), null)) {
+            BlockPos obstruction = firstObstruction(level, next, null,
+                    group.id(), null);
+            if (obstruction != null) {
+                TransformConstructionNetwork.sendBlockedPlacement(player,
+                        obstruction);
                 player.displayClientMessage(Component.literal(
                         "That off-grid block would intersect existing geometry."),
                         true);
@@ -290,6 +295,13 @@ public final class TransformConstructionManager {
         if (surfaceHit != null) {
             ConstructionSurface surface = data.surface(surfaceHit.surfaceId());
             if (surface.attachments().containsKey(surfaceHit.slot())) {
+                double u = (surfaceHit.slot().column() + 0.5D)
+                        / surface.columns();
+                double v = (surfaceHit.slot().row() + 0.5D)
+                        / surface.rows();
+                TransformConstructionNetwork.sendBlockedPlacement(player,
+                        BlockPos.containing(surface.gridPoint(u, v).add(
+                                surface.gridNormal(u, v).scale(0.5D))));
                 player.displayClientMessage(Component.literal(
                         "That surface cell is already occupied."), true);
                 return true;
@@ -297,7 +309,11 @@ public final class TransformConstructionManager {
             boolean deform = !payload.hasBlockEntity();
             ConstructionSurface next = surface.withAttachment(surfaceHit.slot(),
                     payload, deform);
-            if (!canOccupy(level, null, next, null, surface.id())) {
+            BlockPos obstruction = firstObstruction(level, null, next, null,
+                    surface.id());
+            if (obstruction != null) {
+                TransformConstructionNetwork.sendBlockedPlacement(player,
+                        obstruction);
                 player.displayClientMessage(Component.literal(
                         "That surface block would intersect existing geometry."),
                         true);
@@ -435,6 +451,13 @@ public final class TransformConstructionManager {
     private static boolean canOccupy(ServerLevel level, TransformGroup group,
             ConstructionSurface surface, UUID replacingGroup,
             UUID replacingSurface) {
+        return firstObstruction(level, group, surface, replacingGroup,
+                replacingSurface) == null;
+    }
+
+    private static BlockPos firstObstruction(ServerLevel level,
+            TransformGroup group, ConstructionSurface surface,
+            UUID replacingGroup, UUID replacingSurface) {
         SpatialIndex base = buildIndex(level.getServer(), null, null,
                 replacingGroup, replacingSurface);
         SpatialIndex candidate = new SpatialIndex();
@@ -450,7 +473,7 @@ public final class TransformConstructionManager {
                     && !occupied.collision().isEmpty()
                     && Shapes.joinIsNotEmpty(cell.collision(),
                             occupied.collision(), BooleanOp.AND)) {
-                return false;
+                return pos;
             }
             if (cell.collision().isEmpty()) continue;
             BlockState existing = level.getBlockState(pos);
@@ -461,10 +484,10 @@ public final class TransformConstructionManager {
                     CollisionContext.empty());
             if (!worldShape.isEmpty() && Shapes.joinIsNotEmpty(
                     cell.collision(), worldShape, BooleanOp.AND)) {
-                return false;
+                return pos;
             }
         }
-        return true;
+        return null;
     }
 
     private static ProxyCell proxyCell(BlockGetter getter, BlockPos pos) {

@@ -145,6 +145,7 @@
     "client.Scp079HostFailureAudioMixin",
     "client.Scp079FacilityMapScreenAccessor",
     "client.Scp079FacilityMapNetworkMixin",
+    "client.Scp079FacilityMapFineGeometryMixin",
     "client.Scp079FacilityMapTravelPromptMixin",
     "client.Scp079FacilityMapWarpInputMixin",
     "client.Scp079LeaveRoleWarpInputMixin",

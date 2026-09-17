@@ -30,15 +30,18 @@ import java.util.UUID;
 
 /**
  * Sub-block polygon editor for Facility Mapping. G enters geometry edit on the
- * floor under the crosshair, I splits the nearest edge, Delete removes a
- * selected vertex, and holding Attack drags the selected vertex on its floor
- * plane. Shift snaps movement to 1/16 block.
+ * floor under the crosshair, I splits the nearest edge, C bends the nearest
+ * edge through the crosshair, Delete removes a selected vertex, and holding
+ * Attack drags the selected vertex on its floor plane. Shift snaps movement to
+ * 1/16 block.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityMappingGeometryEditorClient {
     private static final double HANDLE_RADIUS_SQR = 0.42D * 0.42D;
     private static final double MAX_EDIT_DISTANCE = 48.0D;
+    private static final int CURVE_SEGMENTS = 8;
+    private static final int MAX_VERTICES = 64;
 
     private static UUID roomId;
     private static int patchIndex = -1;
@@ -62,6 +65,7 @@ public final class FacilityMappingGeometryEditorClient {
         switch (event.getKey()) {
             case GLFW.GLFW_KEY_G -> selectUnderCrosshair(minecraft);
             case GLFW.GLFW_KEY_I -> insertVertex(minecraft);
+            case GLFW.GLFW_KEY_C -> curveNearestEdge(minecraft);
             case GLFW.GLFW_KEY_DELETE, GLFW.GLFW_KEY_BACKSPACE -> removeVertex();
             case GLFW.GLFW_KEY_ESCAPE -> clear();
             default -> { }
@@ -178,7 +182,7 @@ public final class FacilityMappingGeometryEditorClient {
                 world.x, world.z, outline);
         changed = false;
         dragging = false;
-        status("Fine mapping edit: hold Attack to drag; I splits edge; Delete removes vertex; Shift snaps 1/16");
+        status("Fine mapping: Attack drag; I split; C curve edge; Delete remove; Shift snaps 1/16");
     }
 
     private static void insertVertex(Minecraft minecraft) {
@@ -186,7 +190,7 @@ public final class FacilityMappingGeometryEditorClient {
         Vec3 point = rayPlane(minecraft.player, floorY + 1.01D);
         if (point == null) return;
         int edge = nearestEdge(point.x, point.z, preview);
-        if (edge < 0 || preview.size() >= 64) return;
+        if (edge < 0 || preview.size() >= MAX_VERTICES) return;
         FacilityFloorPatch.Vertex a = preview.get(edge);
         FacilityFloorPatch.Vertex b = preview.get((edge + 1) % preview.size());
         FacilityFloorPatch.Vertex inserted = closestPoint(point.x, point.z, a, b);
@@ -197,6 +201,61 @@ public final class FacilityMappingGeometryEditorClient {
         changed = true;
         pushPreview();
         status("Mapping segment split; new vertex selected");
+    }
+
+    private static void curveNearestEdge(Minecraft minecraft) {
+        if (roomId == null || preview.size() < 3 || minecraft.player == null) return;
+        Vec3 point = rayPlane(minecraft.player, floorY + 1.01D);
+        if (point == null) return;
+        int edge = nearestEdge(point.x, point.z, preview);
+        if (edge < 0) return;
+        int available = MAX_VERTICES - preview.size();
+        int segments = Math.min(CURVE_SEGMENTS, available + 1);
+        if (segments < 2) {
+            status("Mapping outline has reached its 64-vertex authoring limit");
+            return;
+        }
+
+        FacilityFloorPatch.Vertex a = preview.get(edge);
+        FacilityFloorPatch.Vertex b = preview.get((edge + 1) % preview.size());
+        FacilityFloorPatch.Vertex control = new FacilityFloorPatch.Vertex(
+                point.x, point.z);
+        List<FacilityFloorPatch.Vertex> next = new ArrayList<>(
+                preview.size() + segments - 1);
+        for (int index = 0; index < preview.size(); index++) {
+            next.add(preview.get(index));
+            if (index != edge) continue;
+            for (int sample = 1; sample < segments; sample++) {
+                double t = sample / (double) segments;
+                next.add(quadratic(a, control, b, t));
+            }
+        }
+        FacilityFloorPatch patch = FacilityFloorPatch.polygon(floorY, next);
+        if (patch == null) return;
+        preview = List.copyOf(next);
+        selectedVertex = Math.min(edge + segments / 2, preview.size() - 1);
+        changed = true;
+        if (minecraft.level != null) {
+            FacilityMappingClientState.replaceRoomPatch(
+                    minecraft.level.dimension().location(), roomId, patchIndex,
+                    patch);
+        }
+        pushPreview();
+        status("Mapping edge curved through crosshair; sampled into "
+                + segments + " smooth segments");
+    }
+
+    private static FacilityFloorPatch.Vertex quadratic(
+            FacilityFloorPatch.Vertex a, FacilityFloorPatch.Vertex control,
+            FacilityFloorPatch.Vertex b, double t) {
+        double inverse = 1.0D - t;
+        return new FacilityFloorPatch.Vertex(
+                inverse * inverse * a.x()
+                        + 2.0D * inverse * t * control.x()
+                        + t * t * b.x(),
+                inverse * inverse * a.z()
+                        + 2.0D * inverse * t * control.z()
+                        + t * t * b.z());
     }
 
     private static void removeVertex() {

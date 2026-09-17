@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -205,8 +206,11 @@ public final class TransformSurfaceDoorRuntime {
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment previous, BlockState state,
             boolean refreshCollision) {
-        TransformConstructionSavedData.get(level.getServer()).putSurface(
-                surface.withAttachment(slot, state, previous.deform()));
+        ConstructionSurface next = surface.withAttachment(slot, state,
+                previous.deform());
+        TransformConstructionSavedData.get(level.getServer()).putSurfaceState(next);
+        TransformConstructionNetwork.broadcastSurfaceSlot(level, surface.id(), slot,
+                state, previous.deform());
         if (refreshCollision) TransformConstructionManager.refresh(level.getServer());
     }
 

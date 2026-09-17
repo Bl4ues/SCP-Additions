@@ -93,7 +93,7 @@ public final class FacilityMappingToolItem extends Item {
                 "G while aiming at a room: edit its precise floor outline")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Fine edit: hold Attack to drag; I splits an edge; Delete removes a vertex")
+                "Fine edit: Attack drags; I splits; C curves an edge; Delete removes")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
                 "Shift while dragging: snap vertices to 1/16 block")

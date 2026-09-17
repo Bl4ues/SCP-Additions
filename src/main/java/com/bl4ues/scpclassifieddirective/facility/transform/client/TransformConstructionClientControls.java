@@ -81,6 +81,7 @@ public final class TransformConstructionClientControls {
         if (player == null || minecraft.screen != null || !player.isCreative()
                 || !holdingEditorTool(player)) return;
 
+        boolean selectedSurface = false;
         if (holdingSurfaceTool(player)
                 && TransformSurfaceAuthoringState.step() == 0) {
             HoveredHandle hovered = findHoveredSurfaceHandle(player);
@@ -90,10 +91,23 @@ public final class TransformConstructionClientControls {
                         hovered.surfaceId(), hovered.handle());
                 TransformConstructionClientState.setHoveredSurface(
                         hovered.surfaceId(), hovered.handle());
+                selectedSurface = true;
+            } else {
+                AimedSurface aimed = findAimedSurface(player);
+                if (aimed != null) {
+                    finishDrag();
+                    TransformConstructionClientState.selectSurface(
+                            aimed.surfaceId(), SurfaceHandle.CENTER);
+                    TransformConstructionClientState.setHoveredSurface(
+                            aimed.surfaceId(), SurfaceHandle.CENTER);
+                    status("Surface selected");
+                    selectedSurface = true;
+                }
             }
         }
 
-        if (TransformConstructionClientState.selection() != null) {
+        if (selectedSurface
+                || TransformConstructionClientState.selection() != null) {
             // Editing uses the attack binding as a drag button. Consuming it
             // here prevents the arm from punching the air every client tick.
             event.setCanceled(true);
@@ -345,6 +359,65 @@ public final class TransformConstructionClientControls {
                 if (distance <= radius * radius && distance < bestDistance) {
                     bestDistance = distance;
                     best = new HoveredHandle(surface.id(), handle);
+                }
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Empty construction surfaces intentionally have no vanilla proxy hitbox.
+     * Selection therefore uses the same kind of mathematical cell-ray test as
+     * block placement, so an authored plane remains selectable without
+     * becoming a physical obstruction.
+     */
+    private static AimedSurface findAimedSurface(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return null;
+
+        Vec3 eye = player.getEyePosition();
+        Vec3 ray = player.getViewVector(1.0F).normalize();
+        double maxDistance = HANDLE_MAX_DISTANCE;
+        HitResult vanillaHit = minecraft.hitResult;
+        if (vanillaHit instanceof BlockHitResult blockHit
+                && vanillaHit.getType() == HitResult.Type.BLOCK
+                && !minecraft.level.getBlockState(blockHit.getBlockPos()).is(
+                        TransformConstructionModule.getProxy())) {
+            maxDistance = Math.min(maxDistance,
+                    eye.distanceTo(blockHit.getLocation()) + 0.05D);
+        }
+
+        AimedSurface best = null;
+        double bestDistance = maxDistance + 1.0D;
+        for (ConstructionSurface surface
+                : TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location())) {
+            int columns = surface.columns();
+            int rows = surface.rows();
+            for (int column = 0; column < columns; column++) {
+                double u = (column + 0.5D) / columns;
+                for (int row = 0; row < rows; row++) {
+                    double v = (row + 0.5D) / rows;
+                    Vec3 center = surface.gridPoint(u, v);
+                    Vec3 tangent = surface.gridTangent(u, v).normalize();
+                    Vec3 normal = surface.gridNormal(u, v).normalize();
+                    Vec3 vertical = normal.cross(tangent).normalize();
+
+                    double denominator = ray.dot(normal);
+                    if (Math.abs(denominator) < 1.0E-6D) continue;
+                    double distance = center.subtract(eye).dot(normal)
+                            / denominator;
+                    if (distance < 0.0D || distance > maxDistance
+                            || distance >= bestDistance) continue;
+
+                    Vec3 hit = eye.add(ray.scale(distance));
+                    Vec3 local = hit.subtract(center);
+                    if (Math.abs(local.dot(tangent)) > 0.62D
+                            || Math.abs(local.dot(vertical)) > 0.62D) {
+                        continue;
+                    }
+                    bestDistance = distance;
+                    best = new AimedSurface(surface.id(), hit);
                 }
             }
         }
@@ -674,6 +747,9 @@ public final class TransformConstructionClientControls {
 
     private record HoveredHandle(java.util.UUID surfaceId,
             SurfaceHandle handle) {
+    }
+
+    private record AimedSurface(java.util.UUID surfaceId, Vec3 hit) {
     }
 
     private record DragState(Selection selection, EditMode mode, Axis axis,

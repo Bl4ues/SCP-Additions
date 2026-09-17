@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,26 @@ public final class FacilityMappingClientState {
             List<FacilityRoomSnapshot> rooms) {
         if (dimension == null) return;
         ROOMS.put(dimension, rooms == null ? List.of() : List.copyOf(rooms));
+    }
+
+    public static void replaceRoomPatch(ResourceLocation dimension,
+            java.util.UUID roomId, int patchIndex, FacilityFloorPatch patch) {
+        if (dimension == null || roomId == null || patch == null) return;
+        List<FacilityRoomSnapshot> current = ROOMS.get(dimension);
+        if (current == null || current.isEmpty()) return;
+        List<FacilityRoomSnapshot> rooms = new ArrayList<>(current);
+        for (int roomIndex = 0; roomIndex < rooms.size(); roomIndex++) {
+            FacilityRoomSnapshot room = rooms.get(roomIndex);
+            if (!roomId.equals(room.id()) || patchIndex < 0
+                    || patchIndex >= room.patches().size()) continue;
+            List<FacilityFloorPatch> patches = new ArrayList<>(room.patches());
+            patches.set(patchIndex, patch);
+            rooms.set(roomIndex, new FacilityRoomSnapshot(room.id(),
+                    room.dimension(), patches, room.name(), room.floorStation(),
+                    room.floorLongLabel(), room.floorShortLabel()));
+            ROOMS.put(dimension, List.copyOf(rooms));
+            return;
+        }
     }
 
     public static List<FacilityRoomSnapshot> rooms(ResourceLocation dimension) {
@@ -126,8 +147,7 @@ public final class FacilityMappingClientState {
             BlockPos pos) {
         int best = Integer.MAX_VALUE;
         for (FacilityFloorPatch patch : room.patches()) {
-            if (pos.getX() >= patch.minX() && pos.getX() <= patch.maxX()
-                    && pos.getZ() >= patch.minZ() && pos.getZ() <= patch.maxZ()) {
+            if (patch.containsXZ(pos.getX() + 0.5D, pos.getZ() + 0.5D)) {
                 best = Math.min(best, Math.abs(pos.getY() - patch.y()));
             }
         }

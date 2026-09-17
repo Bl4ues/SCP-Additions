@@ -292,6 +292,7 @@
 
 - Added a redstone-operated **Blast Door** for large secure facility entrances;
 - Added a functional animated **Alarm** that reacts to redstone or nearby open electric doors, projects a shader-compatible rotating wall light, and can be mounted at wall centers, shared edges, or shared corners;
+- Added Creative-only transformed facility construction tools for off-grid block grids and resizable, tiltable, curved surfaces, preserving block states, collision, lighting, animated doors, Alarm behavior, compatible BlockEntity rendering, and precise Facility Mapping geometry for future procedural room placement;
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
 - Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;

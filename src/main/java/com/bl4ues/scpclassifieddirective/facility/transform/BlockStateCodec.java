@@ -8,11 +8,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /** Small codec wrapper so transformed construction data stays registry-safe. */
-final class BlockStateCodec {
+public final class BlockStateCodec {
     private BlockStateCodec() {
     }
 
-    static CompoundTag save(BlockState state) {
+    public static CompoundTag save(BlockState state) {
         CompoundTag wrapper = new CompoundTag();
         BlockState safe = state == null ? Blocks.AIR.defaultBlockState() : state;
         DataResult<Tag> encoded = BlockState.CODEC.encodeStart(NbtOps.INSTANCE, safe);
@@ -20,7 +20,7 @@ final class BlockStateCodec {
         return wrapper;
     }
 
-    static BlockState load(CompoundTag wrapper) {
+    public static BlockState load(CompoundTag wrapper) {
         if (wrapper == null || !wrapper.contains("Value")) {
             return Blocks.AIR.defaultBlockState();
         }

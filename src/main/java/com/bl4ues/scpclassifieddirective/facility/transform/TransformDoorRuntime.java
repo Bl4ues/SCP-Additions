@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -205,8 +206,10 @@ public final class TransformDoorRuntime {
 
     private static void setState(ServerLevel level, TransformGroup group,
             GridPos cell, BlockState state, boolean refreshCollision) {
-        TransformConstructionSavedData.get(level.getServer()).putGroup(
-                group.withCell(cell, state));
+        TransformGroup next = group.withCell(cell, state);
+        TransformConstructionSavedData.get(level.getServer()).putGroupState(next);
+        TransformConstructionNetwork.broadcastGroupCell(level, group.id(), cell,
+                state);
         if (refreshCollision) TransformConstructionManager.refresh(level.getServer());
     }
 

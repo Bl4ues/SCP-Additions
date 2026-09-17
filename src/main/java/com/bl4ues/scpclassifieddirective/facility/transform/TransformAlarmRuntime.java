@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
@@ -17,7 +18,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +54,8 @@ public final class TransformAlarmRuntime {
             changed |= updateGroups(level, data, transformedDoors, tick);
             changed |= updateSurfaces(level, data, transformedDoors, tick);
         }
+        // ACTIVE changes affect proxy light, so rebuild the physical proxy index
+        // once for the batch. Quiet state writes keep this out of full snapshots.
         if (changed) TransformConstructionManager.refresh(server);
     }
 
@@ -75,8 +77,10 @@ public final class TransformAlarmRuntime {
                 boolean active = shouldBeActive(level, center, doors);
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
                 if (active != wasActive) {
-                    current = current.withCell(entry.getKey(),
-                            state.setValue(AlarmModule.ACTIVE, active));
+                    BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
+                    current = current.withCell(entry.getKey(), updated);
+                    TransformConstructionNetwork.broadcastGroupCell(level,
+                            original.id(), entry.getKey(), updated);
                     groupChanged = true;
                 }
                 if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
@@ -84,7 +88,7 @@ public final class TransformAlarmRuntime {
                 }
             }
             if (groupChanged) {
-                data.putGroup(current);
+                data.putGroupState(current);
                 changed = true;
             }
         }
@@ -109,15 +113,15 @@ public final class TransformAlarmRuntime {
                 BlockState state = attachment.state();
                 if (!isAlarm(state)) continue;
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                Vec3 center = original.gridPoint(
-                        (slot.column() + 0.5D) / original.columns(),
-                        (slot.row() + 0.5D) / original.rows());
+                Vec3 center = surfaceCenter(original, slot);
                 boolean active = shouldBeActive(level, center, doors);
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
                 if (active != wasActive) {
-                    current = current.withAttachment(slot,
-                            state.setValue(AlarmModule.ACTIVE, active),
+                    BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
+                    current = current.withAttachment(slot, updated,
                             attachment.deform());
+                    TransformConstructionNetwork.broadcastSurfaceSlot(level,
+                            original.id(), slot, updated, attachment.deform());
                     surfaceChanged = true;
                 }
                 if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
@@ -125,7 +129,7 @@ public final class TransformAlarmRuntime {
                 }
             }
             if (surfaceChanged) {
-                data.putSurface(current);
+                data.putSurfaceState(current);
                 changed = true;
             }
         }
@@ -198,7 +202,25 @@ public final class TransformAlarmRuntime {
                 }
             }
         }
+        for (ConstructionSurface surface : data.surfaces()) {
+            if (!surface.dimension().equals(dimension)) continue;
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                if (FacilityModule.isElectricDoorOpenOrOpening(
+                        entry.getValue().state())) {
+                    result.add(new DoorPoint(surfaceCenter(surface,
+                            entry.getKey())));
+                }
+            }
+        }
         return result;
+    }
+
+    private static Vec3 surfaceCenter(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot) {
+        return surface.gridPoint((slot.column() + 0.5D) / surface.columns(),
+                (slot.row() + 0.5D) / surface.rows());
     }
 
     private static void playLoop(ServerLevel level, Vec3 center) {

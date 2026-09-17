@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.transform.BlockStateCodec;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionSavedData;
@@ -9,7 +10,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -57,6 +60,12 @@ public final class TransformConstructionNetwork {
                 UpdateSurface::handle);
         CHANNEL.registerMessage(3, Delete.class,
                 Delete::encode, Delete::decode, Delete::handle);
+        CHANNEL.registerMessage(4, GroupCellState.class,
+                GroupCellState::encode, GroupCellState::decode,
+                GroupCellState::handle);
+        CHANNEL.registerMessage(5, SurfaceSlotState.class,
+                SurfaceSlotState::encode, SurfaceSlotState::decode,
+                SurfaceSlotState::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -78,6 +87,27 @@ public final class TransformConstructionNetwork {
 
     public static void delete(UUID id, boolean surface) {
         if (id != null) CHANNEL.sendToServer(new Delete(id, surface));
+    }
+
+    /** Tiny runtime-state packet; avoids a full facility snapshot per door frame. */
+    public static void broadcastGroupCell(ServerLevel level, UUID groupId,
+            TransformGroup.GridPos cell, BlockState state) {
+        if (level == null || groupId == null || cell == null || state == null) {
+            return;
+        }
+        CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
+                new GroupCellState(groupId, cell, state));
+    }
+
+    /** Tiny runtime-state packet for one rigid/deformed surface attachment. */
+    public static void broadcastSurfaceSlot(ServerLevel level, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, BlockState state,
+            boolean deform) {
+        if (level == null || surfaceId == null || slot == null || state == null) {
+            return;
+        }
+        CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
+                new SurfaceSlotState(surfaceId, slot, state, deform));
     }
 
     public static void sendSnapshot(ServerPlayer player) {
@@ -129,6 +159,14 @@ public final class TransformConstructionNetwork {
     private static Vec3 readVec(FriendlyByteBuf buffer) {
         return new Vec3(buffer.readDouble(), buffer.readDouble(),
                 buffer.readDouble());
+    }
+
+    private static void writeState(FriendlyByteBuf buffer, BlockState state) {
+        buffer.writeNbt(BlockStateCodec.save(state));
+    }
+
+    private static BlockState readState(FriendlyByteBuf buffer) {
+        return BlockStateCodec.load(buffer.readNbt());
     }
 
     public record Snapshot(ResourceLocation dimension, List<TransformGroup> groups,
@@ -202,8 +240,6 @@ public final class TransformConstructionNetwork {
                 TransformConstructionManager.updateGroup(sender, message.id,
                         message.origin, message.rotationX, message.rotationY,
                         message.rotationZ);
-                // Always return the authoritative value. Invalid drag previews
-                // therefore snap back instead of lingering only on this client.
                 sendSnapshot(sender);
             });
             context.setPacketHandled(true);
@@ -264,6 +300,79 @@ public final class TransformConstructionNetwork {
                 }
                 sendSnapshot(sender);
             });
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record GroupCellState(UUID groupId, TransformGroup.GridPos cell,
+            BlockState state) {
+        private static void encode(GroupCellState message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.groupId);
+            buffer.writeVarInt(message.cell.x());
+            buffer.writeVarInt(message.cell.y());
+            buffer.writeVarInt(message.cell.z());
+            writeState(buffer, message.state);
+        }
+
+        private static GroupCellState decode(FriendlyByteBuf buffer) {
+            return new GroupCellState(buffer.readUUID(),
+                    new TransformGroup.GridPos(buffer.readVarInt(),
+                            buffer.readVarInt(), buffer.readVarInt()),
+                    readState(buffer));
+        }
+
+        private static void handle(GroupCellState message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> {
+                        var client = com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.class;
+                        TransformGroup group = com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
+                                .group(message.groupId);
+                        if (group != null) {
+                            com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
+                                    .upsertGroup(group.withCell(message.cell,
+                                            message.state));
+                        }
+                    }));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SurfaceSlotState(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, BlockState state,
+            boolean deform) {
+        private static void encode(SurfaceSlotState message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+            writeState(buffer, message.state);
+            buffer.writeBoolean(message.deform);
+        }
+
+        private static SurfaceSlotState decode(FriendlyByteBuf buffer) {
+            return new SurfaceSlotState(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()), readState(buffer),
+                    buffer.readBoolean());
+        }
+
+        private static void handle(SurfaceSlotState message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> {
+                        ConstructionSurface surface = com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
+                                .surface(message.surfaceId);
+                        if (surface != null) {
+                            com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
+                                    .upsertSurface(surface.withAttachment(
+                                            message.slot, message.state,
+                                            message.deform));
+                        }
+                    }));
             context.setPacketHandled(true);
         }
     }

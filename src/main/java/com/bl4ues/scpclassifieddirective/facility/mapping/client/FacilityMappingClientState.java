@@ -4,13 +4,16 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityCameraMappingSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import com.bl4ues.scpclassifieddirective.facility.mapping.network.FacilityFineGeometryNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /** Client copy used by the map tool and SCP-079 map renderer. */
 public final class FacilityMappingClientState {
@@ -18,8 +21,10 @@ public final class FacilityMappingClientState {
             new HashMap<>();
     private static final Map<ResourceLocation, List<FacilityCameraMappingSnapshot>>
             CAMERAS = new HashMap<>();
+    private static final Map<ResourceLocation, Map<FinePatchKey, FacilityFloorPatch>>
+            FINE_PATCHES = new HashMap<>();
     private static BlockPos selectionStart;
-    private static java.util.UUID cameraLinkSelection;
+    private static UUID cameraLinkSelection;
 
     private FacilityMappingClientState() {
     }
@@ -32,11 +37,11 @@ public final class FacilityMappingClientState {
         return selectionStart;
     }
 
-    public static void setCameraLinkSelection(java.util.UUID cameraId) {
+    public static void setCameraLinkSelection(UUID cameraId) {
         cameraLinkSelection = cameraId;
     }
 
-    public static java.util.UUID cameraLinkSelection() {
+    public static UUID cameraLinkSelection() {
         return cameraLinkSelection;
     }
 
@@ -44,11 +49,47 @@ public final class FacilityMappingClientState {
             List<FacilityRoomSnapshot> rooms) {
         if (dimension == null) return;
         ROOMS.put(dimension, rooms == null ? List.of() : List.copyOf(rooms));
+        reapplyFineGeometry(dimension);
+    }
+
+    public static void syncFineGeometry(ResourceLocation dimension,
+            List<FacilityFineGeometryNetwork.PatchGeometry> geometry) {
+        if (dimension == null) return;
+        Map<FinePatchKey, FacilityFloorPatch> fine = new LinkedHashMap<>();
+        if (geometry != null) {
+            for (FacilityFineGeometryNetwork.PatchGeometry entry : geometry) {
+                if (entry == null) continue;
+                FacilityFloorPatch patch = FacilityFloorPatch.polygon(entry.y(),
+                        entry.vertices());
+                if (patch != null) {
+                    fine.put(new FinePatchKey(entry.roomId(), entry.patchIndex()),
+                            patch);
+                }
+            }
+        }
+        FINE_PATCHES.put(dimension, fine);
+        reapplyFineGeometry(dimension);
     }
 
     public static void replaceRoomPatch(ResourceLocation dimension,
-            java.util.UUID roomId, int patchIndex, FacilityFloorPatch patch) {
+            UUID roomId, int patchIndex, FacilityFloorPatch patch) {
         if (dimension == null || roomId == null || patch == null) return;
+        FINE_PATCHES.computeIfAbsent(dimension, ignored -> new LinkedHashMap<>())
+                .put(new FinePatchKey(roomId, patchIndex), patch);
+        replaceRoomPatchInternal(dimension, roomId, patchIndex, patch);
+    }
+
+    private static void reapplyFineGeometry(ResourceLocation dimension) {
+        Map<FinePatchKey, FacilityFloorPatch> fine = FINE_PATCHES.get(dimension);
+        if (fine == null || fine.isEmpty()) return;
+        for (Map.Entry<FinePatchKey, FacilityFloorPatch> entry : fine.entrySet()) {
+            replaceRoomPatchInternal(dimension, entry.getKey().roomId,
+                    entry.getKey().patchIndex, entry.getValue());
+        }
+    }
+
+    private static void replaceRoomPatchInternal(ResourceLocation dimension,
+            UUID roomId, int patchIndex, FacilityFloorPatch patch) {
         List<FacilityRoomSnapshot> current = ROOMS.get(dimension);
         if (current == null || current.isEmpty()) return;
         List<FacilityRoomSnapshot> rooms = new ArrayList<>(current);
@@ -94,7 +135,7 @@ public final class FacilityMappingClientState {
     }
 
     public static FacilityCameraMappingSnapshot cameraById(
-            ResourceLocation dimension, java.util.UUID cameraId) {
+            ResourceLocation dimension, UUID cameraId) {
         if (cameraId == null) return null;
         for (FacilityCameraMappingSnapshot camera : cameras(dimension)) {
             if (cameraId.equals(camera.cameraId())) return camera;
@@ -103,7 +144,7 @@ public final class FacilityMappingClientState {
     }
 
     public static FacilityRoomSnapshot roomById(ResourceLocation dimension,
-            java.util.UUID roomId) {
+            UUID roomId) {
         if (roomId == null) return null;
         for (FacilityRoomSnapshot room : rooms(dimension)) {
             if (roomId.equals(room.id())) return room;
@@ -185,5 +226,9 @@ public final class FacilityMappingClientState {
         cameraLinkSelection = null;
         ROOMS.clear();
         CAMERAS.clear();
+        FINE_PATCHES.clear();
+    }
+
+    private record FinePatchKey(UUID roomId, int patchIndex) {
     }
 }

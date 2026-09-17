@@ -53,14 +53,18 @@ public final class FacilityMappingSelectionRenderer {
         for (FacilityRoomSnapshot room : FacilityMappingClientState.rooms(
                 minecraft.level.dimension().location())) {
             for (FacilityFloorPatch patch : room.patches()) {
-                double centerX = (patch.minX() + patch.maxX() + 1.0D) * 0.5D;
-                double centerZ = (patch.minZ() + patch.maxZ() + 1.0D) * 0.5D;
-                double dx = centerX - minecraft.player.getX();
-                double dz = centerZ - minecraft.player.getZ();
+                Vec3 center = patchCenter(patch);
+                double dx = center.x - minecraft.player.getX();
+                double dz = center.z - minecraft.player.getZ();
                 if (dx * dx + dz * dz > MAX_RENDER_DISTANCE_SQR) continue;
-                LevelRenderer.renderLineBox(poseStack, lines,
-                        bounds(patch).inflate(0.005D),
-                        0.18F, 0.82F, 1.0F, 0.78F);
+                if (patch.isPolygon()) {
+                    renderPatchOutline(poseStack, lines, patch,
+                            0.18F, 0.82F, 1.0F, 0.90F);
+                } else {
+                    LevelRenderer.renderLineBox(poseStack, lines,
+                            bounds(patch).inflate(0.005D),
+                            0.18F, 0.82F, 1.0F, 0.78F);
+                }
             }
         }
 
@@ -88,6 +92,19 @@ public final class FacilityMappingSelectionRenderer {
 
         poseStack.popPose();
         buffers.endBatch(RenderType.lines());
+    }
+
+    private static void renderPatchOutline(PoseStack poseStack,
+            VertexConsumer lines, FacilityFloorPatch patch, float red,
+            float green, float blue, float alpha) {
+        var outline = patch.outline();
+        double y = patch.y() + 1.015D;
+        for (int index = 0; index < outline.size(); index++) {
+            FacilityFloorPatch.Vertex a = outline.get(index);
+            FacilityFloorPatch.Vertex b = outline.get((index + 1) % outline.size());
+            renderLine(poseStack, lines, new Vec3(a.x(), y, a.z()),
+                    new Vec3(b.x(), y, b.z()), red, green, blue, alpha);
+        }
     }
 
     private static void renderCameraAssociations(Minecraft minecraft,
@@ -134,10 +151,7 @@ public final class FacilityMappingSelectionRenderer {
         Vec3 best = null;
         double bestDistance = Double.MAX_VALUE;
         for (FacilityFloorPatch patch : room.patches()) {
-            Vec3 candidate = new Vec3(
-                    (patch.minX() + patch.maxX() + 1.0D) * 0.5D,
-                    patch.y() + 1.04D,
-                    (patch.minZ() + patch.maxZ() + 1.0D) * 0.5D);
+            Vec3 candidate = patchCenter(patch).add(0.0D, 0.025D, 0.0D);
             double distance = candidate.distanceToSqr(camera);
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -145,6 +159,22 @@ public final class FacilityMappingSelectionRenderer {
             }
         }
         return best;
+    }
+
+    private static Vec3 patchCenter(FacilityFloorPatch patch) {
+        if (patch.isPolygon()) {
+            double x = 0.0D;
+            double z = 0.0D;
+            for (FacilityFloorPatch.Vertex vertex : patch.vertices()) {
+                x += vertex.x();
+                z += vertex.z();
+            }
+            double count = patch.vertices().size();
+            return new Vec3(x / count, patch.y() + 1.0D, z / count);
+        }
+        return new Vec3((patch.minX() + patch.maxX() + 1.0D) * 0.5D,
+                patch.y() + 1.0D,
+                (patch.minZ() + patch.maxZ() + 1.0D) * 0.5D);
     }
 
     private static void renderLine(PoseStack poseStack, VertexConsumer lines,

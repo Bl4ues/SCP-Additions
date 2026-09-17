@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.init.FacilityMappingItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -24,7 +25,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +47,9 @@ public final class FacilityMappingGeometryEditorClient {
     private static int floorY;
     private static boolean dragging;
     private static boolean changed;
+    private static final Deque<List<FacilityFloorPatch.Vertex>> UNDO =
+            new ArrayDeque<>();
+    private static final int UNDO_LIMIT = 64;
 
     private FacilityMappingGeometryEditorClient() {
     }
@@ -74,6 +80,11 @@ public final class FacilityMappingGeometryEditorClient {
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.screen != null || !player.isCreative()
                 || !holdingTool(player)) return;
+
+        if (event.getKey() == GLFW.GLFW_KEY_Z && Screen.hasControlDown()) {
+            undo();
+            return;
+        }
 
         switch (event.getKey()) {
             case GLFW.GLFW_KEY_G -> {
@@ -129,6 +140,7 @@ public final class FacilityMappingGeometryEditorClient {
         FacilityFloorPatch.Vertex old = next.get(selectedVertex);
         if (Math.abs(old.x() - x) < 1.0E-5D
                 && Math.abs(old.z() - z) < 1.0E-5D) return;
+        if (!dragging) remember();
         next.set(selectedVertex, new FacilityFloorPatch.Vertex(x, z));
         FacilityFloorPatch patch = FacilityFloorPatch.polygon(floorY, next);
         if (patch == null) return;
@@ -158,8 +170,13 @@ public final class FacilityMappingGeometryEditorClient {
         for (int index = 0; index < preview.size(); index++) {
             FacilityFloorPatch.Vertex a = preview.get(index);
             FacilityFloorPatch.Vertex b = preview.get((index + 1) % preview.size());
+            boolean aligned = Math.abs(a.x() - b.x()) < 1.0E-5D
+                    || Math.abs(a.z() - b.z()) < 1.0E-5D;
             line(pose, lines, new Vec3(a.x(), y, a.z()),
-                    new Vec3(b.x(), y, b.z()), 0.15F, 1.0F, 0.32F, 1.0F);
+                    new Vec3(b.x(), y, b.z()),
+                    aligned ? 0.15F : 1.0F,
+                    aligned ? 1.0F : 0.80F,
+                    aligned ? 0.32F : 0.16F, 1.0F);
             drawHandle(pose, lines, a.x(), y, a.z(),
                     index == selectedVertex);
             FacilityFloorPatch.Vertex midpoint = new FacilityFloorPatch.Vertex(
@@ -205,6 +222,7 @@ public final class FacilityMappingGeometryEditorClient {
                 world.x, world.z, outline);
         changed = false;
         dragging = false;
+        UNDO.clear();
         status("Precision edit opened");
     }
 
@@ -217,6 +235,7 @@ public final class FacilityMappingGeometryEditorClient {
         FacilityFloorPatch.Vertex a = preview.get(edge);
         FacilityFloorPatch.Vertex b = preview.get((edge + 1) % preview.size());
         FacilityFloorPatch.Vertex inserted = closestPoint(point.x, point.z, a, b);
+        remember();
         List<FacilityFloorPatch.Vertex> next = new ArrayList<>(preview);
         next.add(edge + 1, inserted);
         preview = List.copyOf(next);
@@ -243,6 +262,7 @@ public final class FacilityMappingGeometryEditorClient {
         FacilityFloorPatch.Vertex b = preview.get((edge + 1) % preview.size());
         FacilityFloorPatch.Vertex control = new FacilityFloorPatch.Vertex(
                 point.x, point.z);
+        remember();
         List<FacilityFloorPatch.Vertex> next = new ArrayList<>(
                 preview.size() + segments - 1);
         for (int index = 0; index < preview.size(); index++) {
@@ -279,6 +299,7 @@ public final class FacilityMappingGeometryEditorClient {
 
     private static void removeVertex() {
         if (roomId == null || selectedVertex < 0 || preview.size() <= 3) return;
+        remember();
         List<FacilityFloorPatch.Vertex> next = new ArrayList<>(preview);
         next.remove(selectedVertex);
         preview = List.copyOf(next);
@@ -286,6 +307,38 @@ public final class FacilityMappingGeometryEditorClient {
         changed = true;
         pushPreview();
         status("Vertex removed");
+    }
+
+    private static void remember() {
+        if (preview.isEmpty()) return;
+        List<FacilityFloorPatch.Vertex> snapshot = List.copyOf(preview);
+        if (snapshot.equals(UNDO.peekLast())) return;
+        UNDO.addLast(snapshot);
+        while (UNDO.size() > UNDO_LIMIT) UNDO.removeFirst();
+    }
+
+    private static void undo() {
+        if (roomId == null) return;
+        finishDrag();
+        List<FacilityFloorPatch.Vertex> previous = UNDO.pollLast();
+        if (previous == null || previous.size() < 3) {
+            status("Nothing to undo");
+            return;
+        }
+        FacilityFloorPatch patch = FacilityFloorPatch.polygon(floorY, previous);
+        if (patch == null) return;
+        preview = List.copyOf(previous);
+        selectedVertex = Mth.clamp(selectedVertex, 0, preview.size() - 1);
+        changed = false;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level != null) {
+            FacilityMappingClientState.replaceRoomPatch(
+                    minecraft.level.dimension().location(), roomId, patchIndex,
+                    patch);
+        }
+        FacilityFineGeometryNetwork.requestPatchUpdate(roomId, patchIndex,
+                floorY, preview);
+        status("Undo");
     }
 
     private static void finishDrag() {
@@ -308,6 +361,7 @@ public final class FacilityMappingGeometryEditorClient {
         selectedVertex = -1;
         preview = List.of();
         changed = false;
+        UNDO.clear();
     }
 
     private static Vec3 rayPlane(LocalPlayer player, double planeY) {

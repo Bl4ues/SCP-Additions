@@ -3,9 +3,11 @@ package com.bl4ues.scpclassifieddirective.facility.mapping.client;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.mapping.network.FacilityMappingNetwork;
 import com.bl4ues.scpclassifieddirective.init.FacilityMappingItems;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -16,6 +18,22 @@ import net.minecraftforge.fml.common.Mod;
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityMappingToolClientEvents {
     private FacilityMappingToolClientEvents() {
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onInteractionKeyMapping(
+            InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isAttack() || !FacilityMappingGeometryEditorClient.isEditing()) {
+            return;
+        }
+        var player = Minecraft.getInstance().player;
+        if (player == null || !player.isCreative()
+                || !player.getMainHandItem().is(FacilityMappingItems.getTool())
+                && !player.getOffhandItem().is(FacilityMappingItems.getTool())) {
+            return;
+        }
+        FacilityMappingGeometryEditorClient.selectVertexUnderCrosshair();
+        event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

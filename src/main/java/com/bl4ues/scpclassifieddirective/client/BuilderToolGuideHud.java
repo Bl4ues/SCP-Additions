@@ -220,6 +220,7 @@ public final class BuilderToolGuideHud {
             lines.add(new Line("Del", "remove vertex"));
             lines.add(new Line("G / Esc", "finish precision edit"));
             lines.add(new Line("Shift", "snap drag to 1/16"));
+            lines.add(new Line("Ctrl+Z", "undo"));
         } else if (FacilityMappingClientState.cameraLinkSelection() != null) {
             lines.add(new Line("LMB", "assign camera to room"));
             lines.add(new Line("Shift+RMB", "cancel"));

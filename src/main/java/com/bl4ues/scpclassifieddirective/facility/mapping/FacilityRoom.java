@@ -64,6 +64,15 @@ public record FacilityRoom(UUID id, ResourceLocation dimension,
                 floorStation);
     }
 
+    public FacilityRoom withReplacedPatch(int index,
+            FacilityFloorPatch patch) {
+        if (index < 0 || index >= patches.size() || patch == null) return this;
+        List<FacilityFloorPatch> next = new ArrayList<>(patches);
+        next.set(index, patch);
+        return new FacilityRoom(id, dimension, compact(next), name,
+                floorStation);
+    }
+
     public FacilityRoom merge(FacilityRoom other) {
         if (other == null) return this;
         List<FacilityFloorPatch> next = new ArrayList<>(patches);

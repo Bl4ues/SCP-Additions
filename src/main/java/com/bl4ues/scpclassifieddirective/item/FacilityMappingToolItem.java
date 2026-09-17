@@ -90,6 +90,15 @@ public final class FacilityMappingToolItem extends Item {
         tooltip.add(Component.literal("Right-click: add the selected floor area")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
+                "G while aiming at a room: edit its precise floor outline")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Fine edit: hold Attack to drag; I splits an edge; Delete removes a vertex")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Shift while dragging: snap vertices to 1/16 block")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal(
                 "Left-click a camera: choose its mapped room")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(

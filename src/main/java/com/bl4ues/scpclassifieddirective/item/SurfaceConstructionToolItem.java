@@ -62,13 +62,22 @@ public final class SurfaceConstructionToolItem extends Item {
                 "Authors resizable, tiltable and curved block surfaces.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Right-click twice: define a horizontal baseline; the wall starts 3 blocks high.")
+                "Right-click twice: define the wall baseline; it starts 3 blocks high.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Surface handles can move independently; the center handle bends the grid.")
+                "Left-click the surface: select the nearest corner or center handle.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Static blocks bend with the surface; block-entity equipment attaches rigidly.")
+                "G + X/Y/Z: hold Attack and drag a handle along that axis.")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Corner handles tilt/resize the wall; the center handle bends it.")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Shift while dragging snaps to the 1/16-block authoring grid.")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal(
+                "Static blocks bend with the surface; equipment attaches rigidly.")
                 .withStyle(ChatFormatting.DARK_GRAY));
         tooltip.add(Component.literal(
                 "Shift + right-click air: cancel the pending baseline.")

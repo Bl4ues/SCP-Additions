@@ -52,7 +52,19 @@ public final class OffGridConstructionToolItem extends Item {
                 "Place blocks on transformed cells to extend their local grid.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "G/R + X/Y/Z and mouse wheel edit the selected grid.")
+                "Left-click a transformed cell: select its local grid.")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "G/R: move or rotate; X/Y/Z selects the world-space axis.")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Move: hold Attack and drag the axis, or use the mouse wheel.")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal(
+                "Rotate: mouse wheel in 5 degree steps; Shift uses 15 degrees.")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal(
+                "Shift while moving snaps to the 1/16-block authoring grid.")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

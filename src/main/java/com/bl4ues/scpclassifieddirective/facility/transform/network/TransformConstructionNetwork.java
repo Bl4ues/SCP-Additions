@@ -197,9 +197,15 @@ public final class TransformConstructionNetwork {
         private static void handle(UpdateGroup message,
                 Supplier<NetworkEvent.Context> contextSupplier) {
             NetworkEvent.Context context = contextSupplier.get();
-            context.enqueueWork(() -> TransformConstructionManager.updateGroup(
-                    context.getSender(), message.id, message.origin,
-                    message.rotationX, message.rotationY, message.rotationZ));
+            context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
+                TransformConstructionManager.updateGroup(sender, message.id,
+                        message.origin, message.rotationX, message.rotationY,
+                        message.rotationZ);
+                // Always return the authoritative value. Invalid drag previews
+                // therefore snap back instead of lingering only on this client.
+                sendSnapshot(sender);
+            });
             context.setPacketHandled(true);
         }
     }
@@ -225,10 +231,13 @@ public final class TransformConstructionNetwork {
         private static void handle(UpdateSurface message,
                 Supplier<NetworkEvent.Context> contextSupplier) {
             NetworkEvent.Context context = contextSupplier.get();
-            context.enqueueWork(() -> TransformConstructionManager.updateSurface(
-                    context.getSender(), message.id, message.bottomStart,
-                    message.bottomEnd, message.topStart, message.topEnd,
-                    message.curveOffset));
+            context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
+                TransformConstructionManager.updateSurface(sender, message.id,
+                        message.bottomStart, message.bottomEnd, message.topStart,
+                        message.topEnd, message.curveOffset);
+                sendSnapshot(sender);
+            });
             context.setPacketHandled(true);
         }
     }
@@ -247,13 +256,13 @@ public final class TransformConstructionNetwork {
                 Supplier<NetworkEvent.Context> contextSupplier) {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
                 if (message.surface) {
-                    TransformConstructionManager.removeSurface(context.getSender(),
-                            message.id);
+                    TransformConstructionManager.removeSurface(sender, message.id);
                 } else {
-                    TransformConstructionManager.removeGroup(context.getSender(),
-                            message.id);
+                    TransformConstructionManager.removeGroup(sender, message.id);
                 }
+                sendSnapshot(sender);
             });
             context.setPacketHandled(true);
         }

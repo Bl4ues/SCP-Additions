@@ -83,6 +83,53 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new Vec3(0.0D, 0.0D, 1.0D));
     }
 
+    /**
+     * Converts an evenly-spaced grid fraction into the quadratic parameter.
+     * The authoring grid therefore follows arc length instead of bunching cells
+     * around one end of a strongly curved wall.
+     */
+    public double gridParameter(double fraction) {
+        double targetFraction = Math.max(0.0D, Math.min(1.0D, fraction));
+        if (targetFraction <= 0.0D || targetFraction >= 1.0D) {
+            return targetFraction;
+        }
+        double[] lengths = new double[ARC_SAMPLES + 1];
+        Vec3 previous = point(0.0D, 0.5D);
+        double total = 0.0D;
+        for (int index = 1; index <= ARC_SAMPLES; index++) {
+            Vec3 current = point(index / (double) ARC_SAMPLES, 0.5D);
+            total += current.distanceTo(previous);
+            lengths[index] = total;
+            previous = current;
+        }
+        if (total < 1.0E-8D) return targetFraction;
+        double target = total * targetFraction;
+        for (int index = 1; index <= ARC_SAMPLES; index++) {
+            if (lengths[index] < target) continue;
+            double segment = lengths[index] - lengths[index - 1];
+            double local = segment < 1.0E-8D ? 0.0D
+                    : (target - lengths[index - 1]) / segment;
+            return ((index - 1) + local) / ARC_SAMPLES;
+        }
+        return 1.0D;
+    }
+
+    public Vec3 gridPoint(double u, double v) {
+        return point(gridParameter(u), v);
+    }
+
+    public Vec3 gridTangent(double u, double v) {
+        return tangent(gridParameter(u), v);
+    }
+
+    public Vec3 gridVertical(double u) {
+        return vertical(gridParameter(u));
+    }
+
+    public Vec3 gridNormal(double u, double v) {
+        return normal(gridParameter(u), v);
+    }
+
     public double width() {
         double length = 0.0D;
         Vec3 previous = point(0.0D, 0.5D);
@@ -116,9 +163,29 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     public ConstructionSurface withGeometry(Vec3 nextBottomStart,
             Vec3 nextBottomEnd, Vec3 nextTopStart, Vec3 nextTopEnd,
             Vec3 nextCurveOffset) {
+        ConstructionSurface geometry = new ConstructionSurface(id, dimension,
+                nextBottomStart, nextBottomEnd, nextTopStart, nextTopEnd,
+                nextCurveOffset, Map.of());
+        if (attachments.isEmpty()) return geometry;
+
+        int oldColumns = columns();
+        int oldRows = rows();
+        int newColumns = geometry.columns();
+        int newRows = geometry.rows();
+        Map<SurfaceSlot, SurfaceAttachment> remapped = new LinkedHashMap<>();
+        for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
+                : attachments.entrySet()) {
+            double u = (entry.getKey().column() + 0.5D) / oldColumns;
+            double v = (entry.getKey().row() + 0.5D) / oldRows;
+            int column = Math.max(0, Math.min(newColumns - 1,
+                    (int) Math.floor(u * newColumns)));
+            int row = Math.max(0, Math.min(newRows - 1,
+                    (int) Math.floor(v * newRows)));
+            remapped.putIfAbsent(new SurfaceSlot(column, row), entry.getValue());
+        }
         return new ConstructionSurface(id, dimension, nextBottomStart,
                 nextBottomEnd, nextTopStart, nextTopEnd, nextCurveOffset,
-                attachments);
+                remapped);
     }
 
     public ConstructionSurface withAttachment(SurfaceSlot slot,

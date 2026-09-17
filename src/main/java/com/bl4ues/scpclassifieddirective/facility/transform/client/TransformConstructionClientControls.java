@@ -5,6 +5,8 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringState;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Axis;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.EditMode;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
@@ -12,8 +14,10 @@ import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformCons
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SurfaceHandle;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.phys.BlockHitResult;
@@ -32,6 +36,8 @@ import org.lwjgl.glfw.GLFW;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class TransformConstructionClientControls {
+    private static final double HANDLE_BASE_RADIUS = 0.24D;
+    private static final double HANDLE_MAX_DISTANCE = 32.0D;
     private static DragState drag;
 
     private TransformConstructionClientControls() {
@@ -59,9 +65,39 @@ public final class TransformConstructionClientControls {
             hit = blockHit.getLocation();
         }
         if (offGrid) selectNearestGroup(hit);
-        else selectNearestSurface(hit);
+        else if (TransformSurfaceAuthoringState.step() == 0) {
+            selectNearestSurface(hit);
+        }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onInteractionKeyMapping(
+            InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isAttack()) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.screen != null || !player.isCreative()
+                || !holdingEditorTool(player)) return;
+
+        if (holdingSurfaceTool(player)
+                && TransformSurfaceAuthoringState.step() == 0) {
+            HoveredHandle hovered = findHoveredSurfaceHandle(player);
+            if (hovered != null) {
+                finishDrag();
+                TransformConstructionClientState.selectSurface(
+                        hovered.surfaceId(), hovered.handle());
+                TransformConstructionClientState.setHoveredSurface(
+                        hovered.surfaceId(), hovered.handle());
+            }
+        }
+
+        if (TransformConstructionClientState.selection() != null) {
+            // Editing uses the attack binding as a drag button. Consuming it
+            // here prevents the arm from punching the air every client tick.
+            event.setCanceled(true);
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -70,34 +106,72 @@ public final class TransformConstructionClientControls {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.screen != null || !player.isCreative()
-                || TransformConstructionClientState.selection() == null) return;
-        if (!holdingEditorTool(player)) return;
+                || !holdingEditorTool(player)) return;
 
+        if (event.getKey() == GLFW.GLFW_KEY_Z && Screen.hasControlDown()) {
+            finishDrag();
+            status(TransformConstructionClientState.undoLast()
+                    ? "Undo" : "Nothing to undo");
+            return;
+        }
+
+        if (event.getKey() == GLFW.GLFW_KEY_ESCAPE
+                && TransformSurfaceAuthoringState.active()) {
+            finishDrag();
+            TransformSurfaceAuthoringState.clear();
+            TransformConstructionNetwork.cancelSurfaceAuthoring();
+            status("Surface selection cancelled");
+            return;
+        }
+
+        Selection selection = TransformConstructionClientState.selection();
+        if (selection == null) return;
         switch (event.getKey()) {
             case GLFW.GLFW_KEY_G -> {
                 finishDrag();
                 TransformConstructionClientState.setMode(EditMode.MOVE);
-                status("Move");
+                status("Move mode");
             }
             case GLFW.GLFW_KEY_R -> {
                 finishDrag();
-                TransformConstructionClientState.setMode(EditMode.ROTATE);
-                status("Rotate");
+                if (selection.type() == SelectionType.GROUP) {
+                    TransformConstructionClientState.setMode(EditMode.ROTATE);
+                    status("Rotate mode");
+                } else {
+                    status("Tilt surfaces with their edge and corner handles");
+                }
             }
             case GLFW.GLFW_KEY_X -> {
                 finishDrag();
                 TransformConstructionClientState.setAxis(Axis.X);
-                status("Axis X");
+                status("X axis");
             }
             case GLFW.GLFW_KEY_Y -> {
                 finishDrag();
                 TransformConstructionClientState.setAxis(Axis.Y);
-                status("Axis Y");
+                status("Y axis");
             }
             case GLFW.GLFW_KEY_Z -> {
                 finishDrag();
                 TransformConstructionClientState.setAxis(Axis.Z);
-                status("Axis Z");
+                status("Z axis");
+            }
+            case GLFW.GLFW_KEY_F -> {
+                finishDrag();
+                if (selection.type() == SelectionType.SURFACE) {
+                    ConstructionSurface surface =
+                            TransformConstructionClientState.surface(selection.id());
+                    if (surface != null) {
+                        TransformConstructionClientState.remember(selection);
+                        ConstructionSurface next =
+                                surface.withFlipped(!surface.flipped());
+                        TransformConstructionClientState.upsertSurface(next);
+                        TransformConstructionNetwork.setSurfaceFlipped(next.id(),
+                                next.flipped());
+                        status(next.flipped()
+                                ? "Placement side flipped" : "Placement side normal");
+                    }
+                }
             }
             case GLFW.GLFW_KEY_DELETE, GLFW.GLFW_KEY_BACKSPACE -> {
                 finishDrag();
@@ -116,10 +190,13 @@ public final class TransformConstructionClientControls {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
+        if (player == null) return;
+
+        updateSurfaceHover(player);
+
         Selection selection = TransformConstructionClientState.selection();
-        if (player == null || selection == null || minecraft.screen != null
-                || !player.isCreative() || !holdingEditorTool(player)
-                || TransformConstructionClientState.mode() != EditMode.MOVE) {
+        if (selection == null || minecraft.screen != null
+                || !player.isCreative() || !holdingEditorTool(player)) {
             finishDrag();
             return;
         }
@@ -128,6 +205,15 @@ public final class TransformConstructionClientControls {
             return;
         }
 
+        if (TransformConstructionClientState.mode() == EditMode.ROTATE
+                && selection.type() == SelectionType.GROUP) {
+            tickRotationDrag(player, selection);
+        } else {
+            tickMoveDrag(player, selection);
+        }
+    }
+
+    private static void tickMoveDrag(LocalPlayer player, Selection selection) {
         Vec3 axis = dragAxis(selection);
         Vec3 handle = selection.type() == SelectionType.GROUP
                 ? groupHandle(selection) : surfaceHandle(selection);
@@ -139,23 +225,64 @@ public final class TransformConstructionClientControls {
         double parameter = axisParameter(player.getEyePosition(),
                 player.getViewVector(1.0F), handle, axis);
         if (!Double.isFinite(parameter)) return;
-        if (drag == null || !drag.matches(selection)) {
-            drag = DragState.begin(selection, parameter);
+        if (drag == null || !drag.matches(selection, EditMode.MOVE,
+                TransformConstructionClientState.axis())) {
+            drag = DragState.begin(selection, EditMode.MOVE,
+                    TransformConstructionClientState.axis(), parameter);
             return;
         }
 
         double delta = parameter - drag.startParameter();
-        if (player.isShiftKeyDown()) {
-            delta = Math.rint(delta * 16.0D) / 16.0D;
-        }
         if (Math.abs(delta - drag.lastDelta()) < 1.0E-5D) return;
+        rememberDragIfNeeded();
         drag = drag.withLastDelta(delta);
         Vec3 movement = axis.scale(delta);
         if (selection.type() == SelectionType.GROUP) {
-            previewGroupDrag(drag, movement);
+            previewGroupDrag(drag, movement, player.isShiftKeyDown());
         } else {
-            previewSurfaceDrag(drag, movement);
+            previewSurfaceDrag(drag, movement, player.isShiftKeyDown());
         }
+    }
+
+    private static void tickRotationDrag(LocalPlayer player,
+            Selection selection) {
+        TransformGroup group = TransformConstructionClientState.group(
+                selection.id());
+        if (group == null) {
+            finishDrag();
+            return;
+        }
+        Vec3 axis = TransformConstructionClientState.axisVector();
+        double angle = rotationParameter(player.getEyePosition(),
+                player.getViewVector(1.0F), group.origin(), axis);
+        if (!Double.isFinite(angle)) return;
+        if (drag == null || !drag.matches(selection, EditMode.ROTATE,
+                TransformConstructionClientState.axis())) {
+            drag = DragState.begin(selection, EditMode.ROTATE,
+                    TransformConstructionClientState.axis(), angle);
+            return;
+        }
+
+        double delta = Mth.wrapDegrees(Math.toDegrees(
+                angle - drag.startParameter()));
+        if (player.isShiftKeyDown()) {
+            delta = Math.rint(delta / 5.0D) * 5.0D;
+        }
+        if (Math.abs(delta - drag.lastDelta()) < 1.0E-4D) return;
+        rememberDragIfNeeded();
+        drag = drag.withLastDelta(delta);
+        TransformGroup base = drag.baseGroup();
+        if (base == null) return;
+        float rx = base.rotationX();
+        float ry = base.rotationY();
+        float rz = base.rotationZ();
+        switch (drag.axis()) {
+            case X -> rx += (float) delta;
+            case Y -> ry += (float) delta;
+            case Z -> rz += (float) delta;
+        }
+        TransformConstructionClientState.upsertGroup(base.withTransform(
+                base.origin(), rx, ry, rz));
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -167,14 +294,10 @@ public final class TransformConstructionClientControls {
         Selection selection = TransformConstructionClientState.selection();
         if (player == null || selection == null || minecraft.screen != null
                 || !player.isCreative() || !holdingEditorTool(player)
-                || !player.isShiftKeyDown()) {
-            // Ordinary wheel input must remain ordinary hotbar scrolling. Tool
-            // edits deliberately require Shift so authoring never traps the
-            // selected slot in the player's hand.
-            return;
-        }
+                || !player.isShiftKeyDown()) return;
 
         finishDrag();
+        TransformConstructionClientState.remember(selection);
         double sign = scroll > 0.0D ? 1.0D : -1.0D;
         if (selection.type() == SelectionType.GROUP) {
             editGroup(selection, sign);
@@ -182,6 +305,50 @@ public final class TransformConstructionClientControls {
             editSurface(selection, sign);
         }
         event.setCanceled(true);
+    }
+
+    private static void updateSurfaceHover(LocalPlayer player) {
+        if (!holdingSurfaceTool(player)
+                || TransformSurfaceAuthoringState.step() != 0) {
+            TransformConstructionClientState.clearHoveredSurface();
+            return;
+        }
+        HoveredHandle hovered = findHoveredSurfaceHandle(player);
+        if (hovered == null) {
+            TransformConstructionClientState.clearHoveredSurface();
+        } else {
+            TransformConstructionClientState.setHoveredSurface(
+                    hovered.surfaceId(), hovered.handle());
+        }
+    }
+
+    private static HoveredHandle findHoveredSurfaceHandle(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return null;
+        Vec3 eye = player.getEyePosition();
+        Vec3 view = player.getViewVector(1.0F).normalize();
+        HoveredHandle best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (ConstructionSurface surface
+                : TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location())) {
+            for (SurfaceHandle handle : SurfaceHandle.values()) {
+                Vec3 point = handlePosition(surface, handle);
+                double rayDistance = point.subtract(eye).dot(view);
+                if (rayDistance < 0.0D || rayDistance > HANDLE_MAX_DISTANCE) {
+                    continue;
+                }
+                Vec3 rayPoint = eye.add(view.scale(rayDistance));
+                double distance = point.distanceToSqr(rayPoint);
+                double radius = HANDLE_BASE_RADIUS
+                        + Math.min(0.18D, rayDistance * 0.008D);
+                if (distance <= radius * radius && distance < bestDistance) {
+                    bestDistance = distance;
+                    best = new HoveredHandle(surface.id(), handle);
+                }
+            }
+        }
+        return best;
     }
 
     private static void selectNearestGroup(Vec3 hit) {
@@ -215,28 +382,16 @@ public final class TransformConstructionClientControls {
         ConstructionSurface bestSurface = null;
         SurfaceHandle bestHandle = SurfaceHandle.CENTER;
         double bestDistance = 6.25D;
-        for (ConstructionSurface surface : TransformConstructionClientState.surfaces(
-                minecraft.level.dimension().location())) {
+        for (ConstructionSurface surface
+                : TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location())) {
             for (SurfaceHandle handle : SurfaceHandle.values()) {
-                double distance = handlePosition(surface, handle).distanceToSqr(hit);
+                double distance = handlePosition(surface, handle)
+                        .distanceToSqr(hit);
                 if (distance < bestDistance) {
                     bestDistance = distance;
                     bestSurface = surface;
                     bestHandle = handle;
-                }
-            }
-            if (bestSurface == null) {
-                for (int i = 0; i <= 16; i++) {
-                    double u = i / 16.0D;
-                    for (int j = 0; j <= 8; j++) {
-                        double v = j / 8.0D;
-                        double distance = surface.gridPoint(u, v).distanceToSqr(hit);
-                        if (distance < bestDistance) {
-                            bestDistance = distance;
-                            bestSurface = surface;
-                            bestHandle = SurfaceHandle.CENTER;
-                        }
-                    }
                 }
             }
         }
@@ -267,9 +422,10 @@ public final class TransformConstructionClientControls {
             TransformConstructionNetwork.updateGroup(group.id(), group.origin(),
                     x, y, z);
         } else {
-            double step = sign / 16.0D;
             Vec3 origin = group.origin().add(
-                    TransformConstructionClientState.axisVector().scale(step));
+                    TransformConstructionClientState.axisVector()
+                            .scale(sign / 16.0D));
+            origin = snap16(origin);
             TransformConstructionClientState.upsertGroup(group.withTransform(origin,
                     group.rotationX(), group.rotationY(), group.rotationZ()));
             TransformConstructionNetwork.updateGroup(group.id(), origin,
@@ -281,15 +437,11 @@ public final class TransformConstructionClientControls {
         ConstructionSurface surface = TransformConstructionClientState.surface(
                 selection.id());
         if (surface == null) return;
-        if (TransformConstructionClientState.mode() == EditMode.ROTATE) {
-            status("Use the corner handles to tilt the surface");
-            return;
-        }
         Vec3 axis = selection.handle() == SurfaceHandle.CENTER
                 ? surface.gridNormal(0.5D, 0.5D)
                 : TransformConstructionClientState.axisVector();
         applySurfaceDelta(surface, selection.handle(),
-                axis.normalize().scale(sign / 16.0D), true);
+                axis.normalize().scale(sign / 16.0D), true, true);
     }
 
     private static Vec3 dragAxis(Selection selection) {
@@ -302,22 +454,25 @@ public final class TransformConstructionClientControls {
         return surface == null ? null : surface.gridNormal(0.5D, 0.5D);
     }
 
-    private static void previewGroupDrag(DragState state, Vec3 movement) {
+    private static void previewGroupDrag(DragState state, Vec3 movement,
+            boolean snap) {
         if (state.baseGroup() == null) return;
         TransformGroup base = state.baseGroup();
+        Vec3 origin = base.origin().add(movement);
+        if (snap) origin = snap16(origin);
         TransformConstructionClientState.upsertGroup(base.withTransform(
-                base.origin().add(movement), base.rotationX(), base.rotationY(),
-                base.rotationZ()));
+                origin, base.rotationX(), base.rotationY(), base.rotationZ()));
     }
 
-    private static void previewSurfaceDrag(DragState state, Vec3 movement) {
+    private static void previewSurfaceDrag(DragState state, Vec3 movement,
+            boolean snap) {
         if (state.baseSurface() == null) return;
         applySurfaceDelta(state.baseSurface(), state.selection().handle(),
-                movement, false);
+                movement, false, snap);
     }
 
     private static void applySurfaceDelta(ConstructionSurface surface,
-            SurfaceHandle handle, Vec3 delta, boolean send) {
+            SurfaceHandle handle, Vec3 delta, boolean send, boolean snap) {
         Vec3 bs = surface.bottomStart();
         Vec3 be = surface.bottomEnd();
         Vec3 ts = surface.topStart();
@@ -328,22 +483,77 @@ public final class TransformConstructionClientControls {
             case BOTTOM_END -> be = be.add(delta);
             case TOP_START -> ts = ts.add(delta);
             case TOP_END -> te = te.add(delta);
-            // A quadratic control contributes 1/2 of its offset at u=.5, so
-            // double movement keeps the visible center handle tracking 1:1.
+            case BOTTOM_EDGE -> {
+                bs = bs.add(delta);
+                be = be.add(delta);
+            }
+            case TOP_EDGE -> {
+                ts = ts.add(delta);
+                te = te.add(delta);
+            }
+            case START_EDGE -> {
+                bs = bs.add(delta);
+                ts = ts.add(delta);
+            }
+            case END_EDGE -> {
+                be = be.add(delta);
+                te = te.add(delta);
+            }
+            // A quadratic control contributes half of its offset at u=.5, so
+            // doubling movement keeps the visible center tracking the cursor.
             case CENTER -> curve = curve.add(delta.scale(2.0D));
         }
-        TransformConstructionClientState.upsertSurface(surface.withGeometry(
-                bs, be, ts, te, curve));
+
+        if (snap) {
+            switch (handle) {
+                case BOTTOM_START -> bs = snap16(bs);
+                case BOTTOM_END -> be = snap16(be);
+                case TOP_START -> ts = snap16(ts);
+                case TOP_END -> te = snap16(te);
+                case BOTTOM_EDGE -> {
+                    bs = snap16(bs);
+                    be = snap16(be);
+                }
+                case TOP_EDGE -> {
+                    ts = snap16(ts);
+                    te = snap16(te);
+                }
+                case START_EDGE -> {
+                    bs = snap16(bs);
+                    ts = snap16(ts);
+                }
+                case END_EDGE -> {
+                    be = snap16(be);
+                    te = snap16(te);
+                }
+                case CENTER -> {
+                    Vec3 geometricCenter = bs.add(be).add(ts).add(te)
+                            .scale(0.25D);
+                    Vec3 visibleCenter = geometricCenter.add(curve.scale(0.5D));
+                    Vec3 snappedCenter = snap16(visibleCenter);
+                    curve = snappedCenter.subtract(geometricCenter).scale(2.0D);
+                }
+            }
+        }
+
+        ConstructionSurface next = surface.withGeometry(bs, be, ts, te, curve);
+        TransformConstructionClientState.upsertSurface(next);
         if (send) {
             TransformConstructionNetwork.updateSurface(surface.id(), bs, be, ts,
                     te, curve);
         }
     }
 
+    private static void rememberDragIfNeeded() {
+        if (drag == null || drag.remembered()) return;
+        TransformConstructionClientState.remember(drag.selection());
+        drag = drag.withRemembered();
+    }
+
     private static void finishDrag() {
         if (drag == null) return;
         Selection selection = drag.selection();
-        if (Math.abs(drag.lastDelta()) > 1.0E-5D) {
+        if (drag.remembered() && Math.abs(drag.lastDelta()) > 1.0E-5D) {
             if (selection.type() == SelectionType.GROUP) {
                 TransformGroup current = TransformConstructionClientState.group(
                         selection.id());
@@ -377,6 +587,25 @@ public final class TransformConstructionClientControls {
         return surface == null ? null : handlePosition(surface, selection.handle());
     }
 
+    public static Vec3 handlePosition(ConstructionSurface surface,
+            SurfaceHandle handle) {
+        return switch (handle) {
+            case BOTTOM_START -> surface.bottomStart();
+            case BOTTOM_END -> surface.bottomEnd();
+            case TOP_START -> surface.topStart();
+            case TOP_END -> surface.topEnd();
+            case BOTTOM_EDGE -> surface.bottomStart().add(surface.bottomEnd())
+                    .scale(0.5D);
+            case TOP_EDGE -> surface.topStart().add(surface.topEnd())
+                    .scale(0.5D);
+            case START_EDGE -> surface.bottomStart().add(surface.topStart())
+                    .scale(0.5D);
+            case END_EDGE -> surface.bottomEnd().add(surface.topEnd())
+                    .scale(0.5D);
+            case CENTER -> surface.gridPoint(0.5D, 0.5D);
+        };
+    }
+
     private static double axisParameter(Vec3 eye, Vec3 view, Vec3 origin,
             Vec3 axis) {
         Vec3 u = axis.normalize();
@@ -392,15 +621,26 @@ public final class TransformConstructionClientControls {
         return (b * e - d) / denominator;
     }
 
-    private static Vec3 handlePosition(ConstructionSurface surface,
-            SurfaceHandle handle) {
-        return switch (handle) {
-            case BOTTOM_START -> surface.bottomStart();
-            case BOTTOM_END -> surface.bottomEnd();
-            case TOP_START -> surface.topStart();
-            case TOP_END -> surface.topEnd();
-            case CENTER -> surface.gridPoint(0.5D, 0.5D);
-        };
+    private static double rotationParameter(Vec3 eye, Vec3 view, Vec3 origin,
+            Vec3 axis) {
+        Vec3 normal = axis.normalize();
+        double denominator = view.normalize().dot(normal);
+        if (Math.abs(denominator) < 1.0E-5D) return Double.NaN;
+        double t = origin.subtract(eye).dot(normal) / denominator;
+        if (!Double.isFinite(t) || t < 0.0D || t > 64.0D) {
+            return Double.NaN;
+        }
+        Vec3 radial = eye.add(view.normalize().scale(t)).subtract(origin);
+        if (radial.lengthSqr() < 1.0E-7D) return Double.NaN;
+        Vec3 basisA = Math.abs(normal.y) < 0.85D
+                ? normal.cross(new Vec3(0.0D, 1.0D, 0.0D)).normalize()
+                : new Vec3(1.0D, 0.0D, 0.0D);
+        Vec3 basisB = normal.cross(basisA).normalize();
+        return Math.atan2(radial.dot(basisB), radial.dot(basisA));
+    }
+
+    private static Vec3 snap16(Vec3 point) {
+        return TransformSurfaceAuthoringMath.snap16(point);
     }
 
     private static void deleteSelection() {
@@ -412,15 +652,19 @@ public final class TransformConstructionClientControls {
                 selection.type() == SelectionType.SURFACE);
     }
 
+    private static boolean holdingSurfaceTool(LocalPlayer player) {
+        return player.getMainHandItem().is(
+                        TransformConstructionModule.getSurfaceTool())
+                || player.getOffhandItem().is(
+                        TransformConstructionModule.getSurfaceTool());
+    }
+
     private static boolean holdingEditorTool(LocalPlayer player) {
         return player.getMainHandItem().is(
                         TransformConstructionModule.getOffGridTool())
                 || player.getOffhandItem().is(
                         TransformConstructionModule.getOffGridTool())
-                || player.getMainHandItem().is(
-                        TransformConstructionModule.getSurfaceTool())
-                || player.getOffhandItem().is(
-                        TransformConstructionModule.getSurfaceTool());
+                || holdingSurfaceTool(player);
     }
 
     private static void status(String text) {
@@ -428,11 +672,16 @@ public final class TransformConstructionClientControls {
         if (player != null) player.displayClientMessage(Component.literal(text), true);
     }
 
-    private record DragState(Selection selection, double startParameter,
-            double lastDelta, TransformGroup baseGroup,
-            ConstructionSurface baseSurface) {
-        private static DragState begin(Selection selection, double parameter) {
-            return new DragState(selection, parameter, 0.0D,
+    private record HoveredHandle(java.util.UUID surfaceId,
+            SurfaceHandle handle) {
+    }
+
+    private record DragState(Selection selection, EditMode mode, Axis axis,
+            double startParameter, double lastDelta, boolean remembered,
+            TransformGroup baseGroup, ConstructionSurface baseSurface) {
+        private static DragState begin(Selection selection, EditMode mode,
+                Axis axis, double parameter) {
+            return new DragState(selection, mode, axis, parameter, 0.0D, false,
                     selection.type() == SelectionType.GROUP
                             ? TransformConstructionClientState.group(selection.id())
                             : null,
@@ -441,15 +690,22 @@ public final class TransformConstructionClientControls {
                             : null);
         }
 
-        private boolean matches(Selection other) {
+        private boolean matches(Selection other, EditMode currentMode,
+                Axis currentAxis) {
             return other != null && selection.type() == other.type()
                     && selection.id().equals(other.id())
-                    && selection.handle() == other.handle();
+                    && selection.handle() == other.handle()
+                    && mode == currentMode && axis == currentAxis;
         }
 
         private DragState withLastDelta(double delta) {
-            return new DragState(selection, startParameter, delta, baseGroup,
-                    baseSurface);
+            return new DragState(selection, mode, axis, startParameter, delta,
+                    remembered, baseGroup, baseSurface);
+        }
+
+        private DragState withRemembered() {
+            return new DragState(selection, mode, axis, startParameter,
+                    lastDelta, true, baseGroup, baseSurface);
         }
     }
 }

@@ -381,27 +381,85 @@ public final class TransformConstructionClientRenderer {
                 previous = current;
             }
         }
-        if (active) renderHandles(pose, lines, surface, selected.handle());
+        if (active) {
+            renderAlignedBoundary(pose, lines, surface);
+            renderHandles(pose, lines, surface, selected.handle());
+            renderSurfaceSides(pose, lines, surface);
+        }
+    }
+
+    private static void renderAlignedBoundary(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface) {
+        boundaryLine(pose, lines, surface.bottomStart(), surface.bottomEnd(),
+                surface.curveOffset().lengthSqr() < 1.0E-8D);
+        boundaryLine(pose, lines, surface.topStart(), surface.topEnd(),
+                surface.curveOffset().lengthSqr() < 1.0E-8D);
+        boundaryLine(pose, lines, surface.bottomStart(), surface.topStart(), true);
+        boundaryLine(pose, lines, surface.bottomEnd(), surface.topEnd(), true);
+    }
+
+    private static void boundaryLine(PoseStack pose, VertexConsumer lines,
+            Vec3 a, Vec3 b, boolean straight) {
+        boolean aligned = straight && principalAxisAligned(b.subtract(a));
+        line(pose, lines, a, b, aligned ? 0.20F : 1.0F,
+                aligned ? 1.0F : 0.82F, aligned ? 0.28F : 0.12F, 1.0F);
+    }
+
+    private static boolean principalAxisAligned(Vec3 delta) {
+        if (delta.lengthSqr() < 1.0E-8D) return false;
+        Vec3 n = delta.normalize();
+        double max = Math.max(Math.abs(n.x),
+                Math.max(Math.abs(n.y), Math.abs(n.z)));
+        return max >= 0.9995D;
+    }
+
+    private static void renderSurfaceSides(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface) {
+        Vec3 center = surface.gridPoint(0.5D, 0.5D);
+        Vec3 normal = surface.gridNormal(0.5D, 0.5D);
+        Vec3 placement = center.add(normal.scale(0.55D));
+        Vec3 interior = center.subtract(normal.scale(0.55D));
+        line(pose, lines, center, placement, 1.0F, 0.30F, 0.18F, 0.95F);
+        line(pose, lines, center, interior, 0.20F, 1.0F, 0.30F, 0.95F);
     }
 
     private static void renderHandles(PoseStack pose, VertexConsumer lines,
             ConstructionSurface surface, SurfaceHandle selected) {
+        UUID hoveredId = TransformConstructionClientState.hoveredSurfaceId();
+        SurfaceHandle hovered = hoveredId != null
+                && hoveredId.equals(surface.id())
+                ? TransformConstructionClientState.hoveredSurfaceHandle() : null;
         for (SurfaceHandle handle : SurfaceHandle.values()) {
-            Vec3 point = switch (handle) {
-                case BOTTOM_START -> surface.bottomStart();
-                case BOTTOM_END -> surface.bottomEnd();
-                case TOP_START -> surface.topStart();
-                case TOP_END -> surface.topEnd();
-                case CENTER -> surface.gridPoint(0.5D, 0.5D);
-            };
-            double size = handle == selected ? 0.13D : 0.09D;
-            AABB box = new AABB(point.x - size, point.y - size,
-                    point.z - size, point.x + size, point.y + size,
-                    point.z + size);
-            LevelRenderer.renderLineBox(pose, lines, box,
-                    handle == selected ? 1.0F : 0.22F,
-                    handle == selected ? 0.35F : 1.0F,
-                    0.18F, 1.0F);
+            Vec3 point = TransformConstructionClientControls.handlePosition(
+                    surface, handle);
+            boolean active = handle == selected;
+            boolean hot = handle == hovered;
+            float red = active ? 1.0F : hot ? 0.30F : 0.22F;
+            float green = active ? 0.35F : hot ? 0.70F : 1.0F;
+            float blue = active ? 0.18F : hot ? 1.0F : 0.18F;
+            if (handle == SurfaceHandle.BOTTOM_EDGE
+                    || handle == SurfaceHandle.TOP_EDGE
+                    || handle == SurfaceHandle.START_EDGE
+                    || handle == SurfaceHandle.END_EDGE) {
+                Vec3 tangent = surface.gridTangent(0.5D, 0.5D);
+                Vec3 vertical = surface.gridVertical(0.5D);
+                double size = active ? 0.15D : 0.105D;
+                Vec3 a = point.add(tangent.scale(size));
+                Vec3 b = point.add(vertical.scale(size));
+                Vec3 c = point.subtract(tangent.scale(size));
+                Vec3 d = point.subtract(vertical.scale(size));
+                line(pose, lines, a, b, red, green, blue, 1.0F);
+                line(pose, lines, b, c, red, green, blue, 1.0F);
+                line(pose, lines, c, d, red, green, blue, 1.0F);
+                line(pose, lines, d, a, red, green, blue, 1.0F);
+            } else {
+                double size = active ? 0.13D : 0.09D;
+                AABB box = new AABB(point.x - size, point.y - size,
+                        point.z - size, point.x + size, point.y + size,
+                        point.z + size);
+                LevelRenderer.renderLineBox(pose, lines, box,
+                        red, green, blue, 1.0F);
+            }
         }
     }
 

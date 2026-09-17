@@ -6,6 +6,10 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructio
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.EmptyBlockGetter;
@@ -16,7 +20,9 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,6 +43,10 @@ public final class TransformConstructionClientState {
     private static Selection selection;
     private static EditMode mode = EditMode.MOVE;
     private static Axis axis = Axis.X;
+    private static UUID hoveredSurfaceId;
+    private static SurfaceHandle hoveredSurfaceHandle;
+    private static final Deque<UndoEntry> UNDO = new ArrayDeque<>();
+    private static final int UNDO_LIMIT = 64;
 
     static {
         TransformConstructionClientBridge.install(
@@ -72,6 +82,9 @@ public final class TransformConstructionClientState {
         surfaces = List.of();
         proxyCells = Map.of();
         selection = null;
+        hoveredSurfaceId = null;
+        hoveredSurfaceHandle = null;
+        UNDO.clear();
     }
 
     public static ResourceLocation dimension() {
@@ -107,7 +120,37 @@ public final class TransformConstructionClientState {
 
     public static VoxelShape proxySelectionShape(BlockPos pos) {
         TransformConstructionManager.ProxyCell cell = proxyCell(pos);
-        return cell == null ? Shapes.empty() : cell.selection();
+        if (cell == null) return Shapes.empty();
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) return cell.selection();
+        boolean editor = minecraft.player.getMainHandItem().is(
+                        TransformConstructionModule.getOffGridTool())
+                || minecraft.player.getOffhandItem().is(
+                        TransformConstructionModule.getOffGridTool())
+                || minecraft.player.getMainHandItem().is(
+                        TransformConstructionModule.getSurfaceTool())
+                || minecraft.player.getOffhandItem().is(
+                        TransformConstructionModule.getSurfaceTool());
+        if (editor) return cell.selection();
+
+        boolean placing = minecraft.player.getMainHandItem().getItem()
+                instanceof BlockItem;
+        if (placing && selection != null) {
+            if (selection.type() == SelectionType.GROUP
+                    && cell.groupIds().contains(selection.id())) {
+                return cell.selection();
+            }
+            if (selection.type() == SelectionType.SURFACE
+                    && cell.surfaceIds().contains(selection.id())) {
+                return cell.selection();
+            }
+        }
+
+        // Empty authoring layouts must not steal the crosshair from normal
+        // building. Once an actual payload has collision, its selectable shape
+        // behaves like the physical block it represents.
+        return cell.collision().isEmpty() ? Shapes.empty() : cell.selection();
     }
 
     public static VoxelShape proxyCollisionShape(BlockPos pos) {
@@ -176,15 +219,21 @@ public final class TransformConstructionClientState {
     }
 
     public static void selectGroup(UUID id) {
+        boolean same = selection != null
+                && selection.type() == SelectionType.GROUP
+                && id != null && id.equals(selection.id());
         selection = id == null ? null
                 : new Selection(SelectionType.GROUP, id, SurfaceHandle.CENTER);
-        mode = EditMode.MOVE;
+        if (!same) mode = EditMode.MOVE;
     }
 
     public static void selectSurface(UUID id, SurfaceHandle handle) {
+        boolean same = selection != null
+                && selection.type() == SelectionType.SURFACE
+                && id != null && id.equals(selection.id());
         selection = id == null ? null : new Selection(SelectionType.SURFACE, id,
                 handle == null ? SurfaceHandle.CENTER : handle);
-        mode = EditMode.MOVE;
+        if (!same) mode = EditMode.MOVE;
     }
 
     public static void clearSelection() {
@@ -213,6 +262,70 @@ public final class TransformConstructionClientState {
             case Y -> new Vec3(0.0D, 1.0D, 0.0D);
             case Z -> new Vec3(0.0D, 0.0D, 1.0D);
         };
+    }
+
+    public static void setHoveredSurface(UUID id, SurfaceHandle handle) {
+        hoveredSurfaceId = id;
+        hoveredSurfaceHandle = handle;
+    }
+
+    public static void clearHoveredSurface() {
+        hoveredSurfaceId = null;
+        hoveredSurfaceHandle = null;
+    }
+
+    public static UUID hoveredSurfaceId() {
+        return hoveredSurfaceId;
+    }
+
+    public static SurfaceHandle hoveredSurfaceHandle() {
+        return hoveredSurfaceHandle;
+    }
+
+    public static void remember(Selection target) {
+        if (target == null) return;
+        UndoEntry entry;
+        if (target.type() == SelectionType.GROUP) {
+            TransformGroup group = group(target.id());
+            if (group == null) return;
+            entry = new UndoEntry(SelectionType.GROUP, group, null);
+        } else {
+            ConstructionSurface surface = surface(target.id());
+            if (surface == null) return;
+            entry = new UndoEntry(SelectionType.SURFACE, null, surface);
+        }
+        UndoEntry last = UNDO.peekLast();
+        if (entry.equals(last)) return;
+        UNDO.addLast(entry);
+        while (UNDO.size() > UNDO_LIMIT) UNDO.removeFirst();
+    }
+
+    public static boolean undoLast() {
+        UndoEntry entry = UNDO.pollLast();
+        if (entry == null) return false;
+        if (entry.type() == SelectionType.GROUP && entry.group() != null) {
+            TransformGroup group = entry.group();
+            upsertGroup(group);
+            TransformConstructionNetwork.updateGroup(group.id(), group.origin(),
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            selectGroup(group.id());
+            return true;
+        }
+        if (entry.type() == SelectionType.SURFACE && entry.surface() != null) {
+            ConstructionSurface surface = entry.surface();
+            ConstructionSurface current = surface(surface.id());
+            upsertSurface(surface);
+            TransformConstructionNetwork.updateSurface(surface.id(),
+                    surface.bottomStart(), surface.bottomEnd(),
+                    surface.topStart(), surface.topEnd(), surface.curveOffset());
+            if (current == null || current.flipped() != surface.flipped()) {
+                TransformConstructionNetwork.setSurfaceFlipped(surface.id(),
+                        surface.flipped());
+            }
+            selectSurface(surface.id(), SurfaceHandle.CENTER);
+            return true;
+        }
+        return false;
     }
 
     private static void rebuildProxyCells() {
@@ -453,10 +566,15 @@ public final class TransformConstructionClientState {
     public enum EditMode { MOVE, ROTATE }
     public enum Axis { X, Y, Z }
     public enum SurfaceHandle {
-        BOTTOM_START, BOTTOM_END, TOP_START, TOP_END, CENTER
+        BOTTOM_START, BOTTOM_END, TOP_START, TOP_END,
+        BOTTOM_EDGE, TOP_EDGE, START_EDGE, END_EDGE, CENTER
     }
 
     public record Selection(SelectionType type, UUID id,
             SurfaceHandle handle) {
+    }
+
+    private record UndoEntry(SelectionType type, TransformGroup group,
+            ConstructionSurface surface) {
     }
 }

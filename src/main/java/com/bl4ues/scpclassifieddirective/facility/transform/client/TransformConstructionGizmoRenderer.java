@@ -160,13 +160,8 @@ public final class TransformConstructionGizmoRenderer {
                 selection.id());
         if (surface == null) return null;
         SurfaceHandle handle = selection.handle();
-        return switch (handle) {
-            case BOTTOM_START -> surface.bottomStart();
-            case BOTTOM_END -> surface.bottomEnd();
-            case TOP_START -> surface.topStart();
-            case TOP_END -> surface.topEnd();
-            case CENTER -> surface.gridPoint(0.5D, 0.5D);
-        };
+        return TransformConstructionClientControls.handlePosition(surface,
+                handle);
     }
 
     private static void line(PoseStack pose, VertexConsumer lines, Vec3 a,

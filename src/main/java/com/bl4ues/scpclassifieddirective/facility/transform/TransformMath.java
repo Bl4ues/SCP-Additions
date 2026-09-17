@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -15,6 +16,25 @@ public final class TransformMath {
                 (float) Math.toRadians(xDegrees),
                 (float) Math.toRadians(yDegrees),
                 (float) Math.toRadians(zDegrees));
+    }
+
+    /**
+     * Rotation whose local X/Y/Z axes match the supplied world-space frame.
+     * The frame is normalized/orthogonalized first so spline rounding cannot
+     * leak scale or shear into GeckoLib/BlockEntity renderers.
+     */
+    public static Quaternionf frameQuaternion(Vec3 xAxis, Vec3 yAxis,
+            Vec3 zAxis) {
+        Vec3 x = safeNormalize(xAxis, new Vec3(1.0D, 0.0D, 0.0D));
+        Vec3 z = safeNormalize(zAxis, new Vec3(0.0D, 0.0D, 1.0D));
+        Vec3 y = safeNormalize(yAxis, z.cross(x));
+        z = safeNormalize(x.cross(y), z);
+        y = safeNormalize(z.cross(x), y);
+        Matrix3f matrix = new Matrix3f(
+                (float) x.x, (float) x.y, (float) x.z,
+                (float) y.x, (float) y.y, (float) y.z,
+                (float) z.x, (float) z.y, (float) z.z).transpose();
+        return new Quaternionf().setFromNormalized(matrix);
     }
 
     public static Vec3 rotate(Vec3 vector, float xDegrees, float yDegrees,

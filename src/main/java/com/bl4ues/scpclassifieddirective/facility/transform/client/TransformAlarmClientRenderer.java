@@ -126,7 +126,8 @@ public final class TransformAlarmClientRenderer {
             ConstructionSurface.SurfaceSlot slot = entry.getKey();
             double u = (slot.column() + 0.5D) / surface.columns();
             double v = (slot.row() + 0.5D) / surface.rows();
-            Vec3 center = surface.gridPoint(u, v);
+            Vec3 normal = surface.gridNormal(u, v);
+            Vec3 center = surface.gridPoint(u, v).add(normal.scale(0.5D));
             if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) continue;
 
             SurfaceKey key = new SurfaceKey(surface.id(), slot);
@@ -136,7 +137,6 @@ public final class TransformAlarmClientRenderer {
             SURFACE_HOSTS.put(key, alarm);
 
             Vec3 tangent = surface.gridTangent(u, v);
-            Vec3 normal = surface.gridNormal(u, v);
             Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                     surface.gridVertical(u));
             pose.pushPose();

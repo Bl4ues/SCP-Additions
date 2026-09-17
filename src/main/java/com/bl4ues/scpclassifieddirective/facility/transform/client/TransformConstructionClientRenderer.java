@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SelectionType;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SurfaceHandle;
+import com.bl4ues.scpclassifieddirective.init.FacilityMappingItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -100,6 +101,10 @@ public final class TransformConstructionClientRenderer {
                 TransformConstructionModule.getSurfaceTool())
                 || minecraft.player.getOffhandItem().is(
                         TransformConstructionModule.getSurfaceTool());
+        boolean mappingTool = minecraft.player.getMainHandItem().is(
+                FacilityMappingItems.getTool())
+                || minecraft.player.getOffhandItem().is(
+                        FacilityMappingItems.getTool());
         Selection selection = TransformConstructionClientState.selection();
         boolean placingBlock = minecraft.player.getMainHandItem().getItem()
                 instanceof BlockItem;
@@ -107,7 +112,7 @@ public final class TransformConstructionClientRenderer {
                 && selection.type() == SelectionType.GROUP;
         boolean showSelectedSurface = placingBlock && selection != null
                 && selection.type() == SelectionType.SURFACE;
-        if (offGridTool || surfaceTool || showSelectedGroup
+        if (offGridTool || surfaceTool || mappingTool || showSelectedGroup
                 || showSelectedSurface) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
             if (offGridTool || showSelectedGroup) {
@@ -122,6 +127,10 @@ public final class TransformConstructionClientRenderer {
                     if (showSelectedSurface && !surfaceTool
                             && !surface.id().equals(selection.id())) continue;
                     renderSurfaceGrid(pose, lines, surface, camera);
+                }
+            } else if (mappingTool) {
+                for (ConstructionSurface surface : surfaces) {
+                    renderSurfaceMappingGuide(pose, lines, surface, camera);
                 }
             }
             buffers.endBatch(RenderType.lines());
@@ -354,6 +363,38 @@ public final class TransformConstructionClientRenderer {
                         r, g, b, 0.95F);
             }
         }
+    }
+
+    private static void renderSurfaceMappingGuide(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface, Vec3 camera) {
+        Vec3 center = surface.gridPoint(0.5D, 0.0D);
+        if (center.distanceToSqr(camera) > MAX_RENDER_DISTANCE_SQR) return;
+
+        int samples = Math.max(8, Math.min(64, surface.columns() * 3));
+        Vec3 previous = surface.gridPoint(0.0D, 0.0D);
+        for (int sample = 1; sample <= samples; sample++) {
+            double u = sample / (double) samples;
+            Vec3 current = surface.gridPoint(u, 0.0D);
+            line(pose, lines, previous, current,
+                    1.0F, 0.80F, 0.15F, 0.92F);
+            previous = current;
+        }
+
+        Vec3 normal = surface.gridNormal(0.5D, 0.0D).normalize();
+        Vec3 interior = normal.scale(-1.0D);
+        Vec3 insideEnd = center.add(interior.scale(0.72D));
+        line(pose, lines, center, insideEnd,
+                0.18F, 1.0F, 0.30F, 1.0F);
+
+        Vec3 tangent = surface.gridTangent(0.5D, 0.0D).normalize();
+        Vec3 left = insideEnd.subtract(interior.scale(0.18D))
+                .add(tangent.scale(0.10D));
+        Vec3 right = insideEnd.subtract(interior.scale(0.18D))
+                .subtract(tangent.scale(0.10D));
+        line(pose, lines, insideEnd, left,
+                0.18F, 1.0F, 0.30F, 1.0F);
+        line(pose, lines, insideEnd, right,
+                0.18F, 1.0F, 0.30F, 1.0F);
     }
 
     private static void renderSurfaceGrid(PoseStack pose, VertexConsumer lines,

@@ -54,7 +54,6 @@ import java.util.WeakHashMap;
 public final class TransformConstructionManager {
     private static final int GROUP_SUBDIVISIONS = 3;
     private static final double SURFACE_SELECTION_THICKNESS = 0.055D;
-    private static final double SURFACE_BLOCK_THICKNESS = 0.92D;
     private static final int MAX_GROUP_CELLS = 16_384;
     private static final int MAX_SURFACE_SLOTS = 65_536;
 
@@ -541,9 +540,9 @@ public final class TransformConstructionManager {
                         SURFACE_SELECTION_THICKNESS);
                 addWorldBox(index, surface.dimension(), selection, null,
                         surface.id(), true, false, 0);
-                if (attachment != null && !attachment.state().isAir()) {
-                    AABB collision = surfaceSlotBounds(surface, column, row,
-                            SURFACE_BLOCK_THICKNESS);
+                if (attachment == null || attachment.state().isAir()) continue;
+                for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
+                        surface, slot, attachment)) {
                     addWorldBox(index, surface.dimension(), collision, null,
                             surface.id(), false, true,
                             attachment.state().getLightEmission());

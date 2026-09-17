@@ -10,9 +10,11 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** Client copy used by the map tool and SCP-079 map renderer. */
@@ -48,7 +50,20 @@ public final class FacilityMappingClientState {
     public static void sync(ResourceLocation dimension,
             List<FacilityRoomSnapshot> rooms) {
         if (dimension == null) return;
-        ROOMS.put(dimension, rooms == null ? List.of() : List.copyOf(rooms));
+        List<FacilityRoomSnapshot> snapshot = rooms == null
+                ? List.of() : List.copyOf(rooms);
+        ROOMS.put(dimension, snapshot);
+
+        // Precision previews are optimistic client overlays. If a room is
+        // deleted through its editor, discard any cached polygon fragments for
+        // that room immediately instead of leaving ghost handles/patches behind.
+        Map<FinePatchKey, FacilityFloorPatch> fine = FINE_PATCHES.get(dimension);
+        if (fine != null && !fine.isEmpty()) {
+            Set<UUID> roomIds = new HashSet<>();
+            for (FacilityRoomSnapshot room : snapshot) roomIds.add(room.id());
+            fine.keySet().removeIf(key -> !roomIds.contains(key.roomId()));
+            if (fine.isEmpty()) FINE_PATCHES.remove(dimension);
+        }
         reapplyFineGeometry(dimension);
     }
 
@@ -117,6 +132,10 @@ public final class FacilityMappingClientState {
         if (dimension == null) return;
         CAMERAS.put(dimension,
                 cameras == null ? List.of() : List.copyOf(cameras));
+        if (cameraLinkSelection != null
+                && cameraById(dimension, cameraLinkSelection) == null) {
+            cameraLinkSelection = null;
+        }
     }
 
     public static List<FacilityCameraMappingSnapshot> cameras(

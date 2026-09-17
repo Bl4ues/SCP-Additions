@@ -124,6 +124,7 @@ public final class BuilderToolGuideHud {
                     lines.add(new Line("X Y Z", "choose axis"));
                     lines.add(new Line("Shift+Wheel", "precise step"));
                 }
+                lines.add(new Line("V", "bend / rigid aimed block"));
                 lines.add(new Line("Del", "delete surface"));
                 lines.add(new Line("Hotbar", "switch to blocks and place"));
             } else {

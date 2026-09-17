@@ -16,6 +16,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
@@ -47,7 +49,12 @@ public final class TransformConstructionClientControls {
         if (!event.getLevel().getBlockState(event.getPos()).is(
                 TransformConstructionModule.getProxy())) return;
 
-        Vec3 hit = event.getHitVec().getLocation();
+        Vec3 hit = Vec3.atCenterOf(event.getPos());
+        HitResult currentHit = minecraft.hitResult;
+        if (currentHit instanceof BlockHitResult blockHit
+                && blockHit.getBlockPos().equals(event.getPos())) {
+            hit = blockHit.getLocation();
+        }
         if (offGrid) selectNearestGroup(hit);
         else selectNearestSurface(hit);
         event.setCanceled(true);

@@ -224,6 +224,62 @@ public final class TransformConstructionManager {
         return true;
     }
 
+    public static boolean placeSurfaceBlock(ServerPlayer player, UUID surfaceId,
+            SurfaceSlot slot, Vec3 hit) {
+        if (!canEdit(player) || surfaceId == null || slot == null || hit == null
+                || !(player.level() instanceof ServerLevel level)
+                || !(player.getMainHandItem().getItem()
+                        instanceof BlockItem blockItem)) {
+            return false;
+        }
+        if (player.getEyePosition().distanceToSqr(hit) > 36.0D * 36.0D) {
+            return false;
+        }
+
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())
+                || slot.column() < 0 || slot.column() >= surface.columns()
+                || slot.row() < 0 || slot.row() >= surface.rows()) {
+            return false;
+        }
+
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 center = surface.gridPoint(u, v);
+        if (center.distanceToSqr(hit) > 2.25D) return false;
+
+        if (surface.attachments().containsKey(slot)) {
+            TransformConstructionNetwork.sendBlockedPlacement(player,
+                    BlockPos.containing(center.add(
+                            surface.gridNormal(u, v).scale(0.5D))));
+            player.displayClientMessage(Component.literal(
+                    "That surface cell is already occupied."), true);
+            return true;
+        }
+
+        BlockState payload = TransformPlacementStateRuntime.surfacePlacementState(
+                player, blockItem, surface, slot, hit);
+        boolean deform = !payload.hasBlockEntity();
+        ConstructionSurface next = surface.withAttachment(slot, payload, deform);
+        BlockPos obstruction = firstObstruction(level, null, next, null,
+                surface.id());
+        if (obstruction != null) {
+            TransformConstructionNetwork.sendBlockedPlacement(player,
+                    obstruction);
+            player.displayClientMessage(Component.literal(
+                    "That surface block would intersect existing geometry."),
+                    true);
+            return true;
+        }
+
+        data.putSurface(next);
+        refresh(level.getServer());
+        return true;
+    }
+
     public static boolean removeGroup(ServerPlayer player, UUID id) {
         if (!canEdit(player) || id == null || player.getServer() == null) {
             return false;
@@ -401,7 +457,7 @@ public final class TransformConstructionManager {
                 if (!level.hasChunkAt(pos)) continue;
                 ProxyCell cell = next.cell(dimension, pos);
                 BlockState current = level.getBlockState(pos);
-                if (cell == null) {
+                if (cell == null || !materialize(cell)) {
                     if (current.is(TransformConstructionModule.getProxy())) {
                         level.setBlock(pos, Blocks.AIR.defaultBlockState(),
                                 net.minecraft.world.level.block.Block.UPDATE_ALL);
@@ -431,7 +487,7 @@ public final class TransformConstructionManager {
             }
             ProxyCell cell = index.cell(dimension, pos);
             BlockState current = level.getBlockState(pos);
-            if (cell != null && (current.isAir()
+            if (cell != null && materialize(cell) && (current.isAir()
                     || current.is(TransformConstructionModule.getProxy())
                     || current.canBeReplaced())) {
                 level.setBlock(pos,
@@ -441,6 +497,11 @@ public final class TransformConstructionManager {
                         net.minecraft.world.level.block.Block.UPDATE_ALL);
             }
         }
+    }
+
+    private static boolean materialize(ProxyCell cell) {
+        return cell != null && (!cell.groupIds().isEmpty()
+                || !cell.collision().isEmpty() || cell.light() > 0);
     }
 
     private static boolean canOccupy(ServerLevel level, TransformGroup group,

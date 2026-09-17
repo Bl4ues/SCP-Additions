@@ -81,6 +81,27 @@ public final class TransformPlacementStateRuntime {
         TransformConstructionManager.refresh(level.getServer());
     }
 
+    public static BlockState surfacePlacementState(ServerPlayer player,
+            BlockItem item, ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, Vec3 hit) {
+        if (player == null || item == null || surface == null || slot == null) {
+            return item == null ? net.minecraft.world.level.block.Blocks.AIR
+                    .defaultBlockState() : item.getBlock().defaultBlockState();
+        }
+        Vec3 safeHit = hit == null
+                ? surface.gridPoint(
+                        (slot.column() + 0.5D) / surface.columns(),
+                        (slot.row() + 0.5D) / surface.rows()) : hit;
+        BlockHitResult virtualHit = new BlockHitResult(safeHit,
+                Direction.NORTH, net.minecraft.core.BlockPos.containing(safeHit),
+                false);
+        BlockState contextual = item.getBlock().getStateForPlacement(
+                new BlockPlaceContext(new UseOnContext(player,
+                        InteractionHand.MAIN_HAND, virtualHit)));
+        if (contextual == null) contextual = item.getBlock().defaultBlockState();
+        return localizeForSurface(contextual, surface, slot);
+    }
+
     private static Match nearestMatching(TransformConstructionSavedData data,
             ServerLevel level, Vec3 world, BlockItem item) {
         Match best = null;

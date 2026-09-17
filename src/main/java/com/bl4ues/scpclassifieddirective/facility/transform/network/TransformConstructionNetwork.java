@@ -80,6 +80,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(9, BlockedPlacement.class,
                 BlockedPlacement::encode, BlockedPlacement::decode,
                 BlockedPlacement::handle);
+        CHANNEL.registerMessage(10, PlaceSurfaceBlock.class,
+                PlaceSurfaceBlock::encode, PlaceSurfaceBlock::decode,
+                PlaceSurfaceBlock::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -113,6 +116,12 @@ public final class TransformConstructionNetwork {
 
     public static void cancelSurfaceAuthoring() {
         CHANNEL.sendToServer(new CancelSurfaceAuthoring());
+    }
+
+    public static void placeSurfaceBlock(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, Vec3 hit) {
+        if (surfaceId == null || slot == null || hit == null) return;
+        CHANNEL.sendToServer(new PlaceSurfaceBlock(surfaceId, slot, hit));
     }
 
     public static void sendBlockedPlacement(ServerPlayer player, BlockPos pos) {
@@ -395,6 +404,33 @@ public final class TransformConstructionNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() ->
                     TransformSurfaceAuthoringManager.cancel(context.getSender()));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record PlaceSurfaceBlock(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, Vec3 hit) {
+        private static void encode(PlaceSurfaceBlock message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+            writeVec(buffer, message.hit);
+        }
+
+        private static PlaceSurfaceBlock decode(FriendlyByteBuf buffer) {
+            return new PlaceSurfaceBlock(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()), readVec(buffer));
+        }
+
+        private static void handle(PlaceSurfaceBlock message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() ->
+                    TransformConstructionManager.placeSurfaceBlock(
+                            context.getSender(), message.surfaceId,
+                            message.slot, message.hit));
             context.setPacketHandled(true);
         }
     }

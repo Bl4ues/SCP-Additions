@@ -77,35 +77,10 @@ public final class FacilityMappingToolItem extends Item {
     public void appendHoverText(ItemStack stack, Level level,
             List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal(
-                "Defines room floors used by facility surveillance maps.")
+                "Authors room floors, precise outlines and camera associations.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Only select the floor area of the room; height is not needed.")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal(
-                "Overlapping selections are added to the same mapped room.")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Left-click: select the first floor corner")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Right-click: add the selected floor area")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal(
-                "G while aiming at a room: edit its precise floor outline")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal(
-                "Fine edit: Attack drags; I splits; C curves an edge; Delete removes")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal(
-                "Shift while dragging: snap vertices to 1/16 block")
+                "Contextual builder controls are shown on-screen while held.")
                 .withStyle(ChatFormatting.DARK_GRAY));
-        tooltip.add(Component.literal(
-                "Left-click a camera: choose its mapped room")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal(
-                "Shift + right-click a camera: detach its room association")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal(
-                "Shift + right-click: edit a room or cancel in air")
-                .withStyle(ChatFormatting.GRAY));
     }
 }

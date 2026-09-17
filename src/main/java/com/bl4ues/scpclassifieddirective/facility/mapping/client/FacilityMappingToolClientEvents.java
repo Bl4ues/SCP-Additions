@@ -7,6 +7,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -17,11 +18,19 @@ public final class FacilityMappingToolClientEvents {
     private FacilityMappingToolClientEvents() {
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLeftClick(PlayerInteractEvent.LeftClickBlock event) {
         if (event.getHand() != InteractionHand.MAIN_HAND
                 || !event.getItemStack().is(FacilityMappingItems.getTool())
                 || !event.getEntity().isCreative()) return;
+
+        if (FacilityMappingGeometryEditorClient.isEditing()) {
+            FacilityMappingGeometryEditorClient.selectVertexUnderCrosshair();
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            return;
+        }
+
         var dimension = event.getLevel().dimension().location();
         if (FacilityMappingClientState.cameraLinkSelection() != null) {
             FacilityMappingNetwork.requestCameraLinkAssign(event.getPos());

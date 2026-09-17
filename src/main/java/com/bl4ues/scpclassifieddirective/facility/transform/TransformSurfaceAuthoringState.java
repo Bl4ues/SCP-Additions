@@ -44,7 +44,7 @@ public final class TransformSurfaceAuthoringState {
             if (candidate.distanceToSqr(start) >= 0.04D) end = candidate;
             return;
         }
-        clear();
+        if (Math.abs(hit.y - start.y) >= 0.125D) clear();
     }
 
     public static void clear() {

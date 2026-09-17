@@ -28,13 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Sub-block polygon editor for Facility Mapping. G enters geometry edit on the
- * floor under the crosshair, I splits the nearest edge, C bends the nearest
- * edge through the crosshair, Delete removes a selected vertex, and holding
- * Attack drags the selected vertex on its floor plane. Shift snaps movement to
- * 1/16 block.
- */
+/** Sub-block polygon editor for Facility Mapping room floors. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityMappingGeometryEditorClient {
@@ -54,6 +48,25 @@ public final class FacilityMappingGeometryEditorClient {
     private FacilityMappingGeometryEditorClient() {
     }
 
+    public static boolean isEditing() {
+        return roomId != null;
+    }
+
+    /** Selects the visible precision handle instead of starting a new room. */
+    public static boolean selectVertexUnderCrosshair() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (roomId == null || preview.isEmpty() || minecraft.player == null) {
+            return false;
+        }
+        Vec3 point = rayPlane(minecraft.player, floorY + 1.01D);
+        if (point == null) return false;
+        int vertex = nearestVertex(point.x, point.z, preview);
+        if (vertex < 0) return false;
+        selectedVertex = vertex;
+        finishDrag();
+        return true;
+    }
+
     @SubscribeEvent
     public static void onKey(InputEvent.Key event) {
         if (event.getAction() != GLFW.GLFW_PRESS) return;
@@ -63,7 +76,13 @@ public final class FacilityMappingGeometryEditorClient {
                 || !holdingTool(player)) return;
 
         switch (event.getKey()) {
-            case GLFW.GLFW_KEY_G -> selectUnderCrosshair(minecraft);
+            case GLFW.GLFW_KEY_G -> {
+                if (roomId == null) selectUnderCrosshair(minecraft);
+                else {
+                    clear();
+                    status("Precision edit closed");
+                }
+            }
             case GLFW.GLFW_KEY_I -> insertVertex(minecraft);
             case GLFW.GLFW_KEY_C -> curveNearestEdge(minecraft);
             case GLFW.GLFW_KEY_DELETE, GLFW.GLFW_KEY_BACKSPACE -> removeVertex();
@@ -77,6 +96,14 @@ public final class FacilityMappingGeometryEditorClient {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
+        if (roomId != null && minecraft.level != null
+                && FacilityMappingClientState.roomById(
+                        minecraft.level.dimension().location(), roomId) == null) {
+            // A room can be deleted from its metadata screen while precision
+            // edit is still active. Never leave orphaned handles behind.
+            clear();
+            return;
+        }
         if (player == null || minecraft.level == null || minecraft.screen != null
                 || !player.isCreative() || !holdingTool(player)
                 || roomId == null || selectedVertex < 0
@@ -85,8 +112,7 @@ public final class FacilityMappingGeometryEditorClient {
             return;
         }
 
-        boolean attack = minecraft.options.keyAttack.isDown();
-        if (!attack) {
+        if (!minecraft.options.keyAttack.isDown()) {
             finishDrag();
             return;
         }
@@ -109,11 +135,8 @@ public final class FacilityMappingGeometryEditorClient {
         preview = List.copyOf(next);
         dragging = true;
         changed = true;
-        if (minecraft.level != null) {
-            FacilityMappingClientState.replaceRoomPatch(
-                    minecraft.level.dimension().location(), roomId, patchIndex,
-                    patch);
-        }
+        FacilityMappingClientState.replaceRoomPatch(
+                minecraft.level.dimension().location(), roomId, patchIndex, patch);
     }
 
     @SubscribeEvent
@@ -182,7 +205,7 @@ public final class FacilityMappingGeometryEditorClient {
                 world.x, world.z, outline);
         changed = false;
         dragging = false;
-        status("Fine mapping: Attack drag; I split; C curve edge; Delete remove; Shift snaps 1/16");
+        status("Precision edit opened");
     }
 
     private static void insertVertex(Minecraft minecraft) {
@@ -200,7 +223,7 @@ public final class FacilityMappingGeometryEditorClient {
         selectedVertex = edge + 1;
         changed = true;
         pushPreview();
-        status("Mapping segment split; new vertex selected");
+        status("Vertex added");
     }
 
     private static void curveNearestEdge(Minecraft minecraft) {
@@ -212,7 +235,7 @@ public final class FacilityMappingGeometryEditorClient {
         int available = MAX_VERTICES - preview.size();
         int segments = Math.min(CURVE_SEGMENTS, available + 1);
         if (segments < 2) {
-            status("Mapping outline has reached its 64-vertex authoring limit");
+            status("64-vertex limit reached");
             return;
         }
 
@@ -235,14 +258,10 @@ public final class FacilityMappingGeometryEditorClient {
         preview = List.copyOf(next);
         selectedVertex = Math.min(edge + segments / 2, preview.size() - 1);
         changed = true;
-        if (minecraft.level != null) {
-            FacilityMappingClientState.replaceRoomPatch(
-                    minecraft.level.dimension().location(), roomId, patchIndex,
-                    patch);
-        }
+        FacilityMappingClientState.replaceRoomPatch(
+                minecraft.level.dimension().location(), roomId, patchIndex, patch);
         pushPreview();
-        status("Mapping edge curved through crosshair; sampled into "
-                + segments + " smooth segments");
+        status("Edge curved");
     }
 
     private static FacilityFloorPatch.Vertex quadratic(
@@ -266,6 +285,7 @@ public final class FacilityMappingGeometryEditorClient {
         selectedVertex = Mth.clamp(selectedVertex, 0, preview.size() - 1);
         changed = true;
         pushPreview();
+        status("Vertex removed");
     }
 
     private static void finishDrag() {
@@ -287,6 +307,7 @@ public final class FacilityMappingGeometryEditorClient {
         patchIndex = -1;
         selectedVertex = -1;
         preview = List.of();
+        changed = false;
     }
 
     private static Vec3 rayPlane(LocalPlayer player, double planeY) {

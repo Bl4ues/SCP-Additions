@@ -68,14 +68,10 @@ public final class SafeZoneToolItem extends Item {
     public void appendHoverText(ItemStack stack, Level level,
             List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal(
-                "Defines areas where roamers cannot spawn.")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Left-click: select the first corner")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Right-click: create the Safe Zone")
+                "Defines and edits Creative Safe Zones.")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal(
-                "Shift + right-click: edit a zone or cancel in air")
-                .withStyle(ChatFormatting.GRAY));
+                "Contextual builder controls are shown on-screen while held.")
+                .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

@@ -18,6 +18,11 @@ public final class TransformConstructionSavedData extends SavedData {
 
     private final Map<UUID, TransformGroup> groups = new LinkedHashMap<>();
     private final Map<UUID, ConstructionSurface> surfaces = new LinkedHashMap<>();
+    /**
+     * Structural/editor revision only. Runtime BlockState animation updates use
+     * quiet writes plus tiny delta packets instead of rebroadcasting the entire
+     * authored facility every animation frame.
+     */
     private long revision;
 
     private TransformConstructionSavedData() {
@@ -66,16 +71,32 @@ public final class TransformConstructionSavedData extends SavedData {
     }
 
     public synchronized void putGroup(TransformGroup group) {
+        putGroup(group, true);
+    }
+
+    public synchronized void putGroupState(TransformGroup group) {
+        putGroup(group, false);
+    }
+
+    private void putGroup(TransformGroup group, boolean structural) {
         if (group == null) return;
         groups.put(group.id(), group);
-        revision++;
+        if (structural) revision++;
         setDirty();
     }
 
     public synchronized void putSurface(ConstructionSurface surface) {
+        putSurface(surface, true);
+    }
+
+    public synchronized void putSurfaceState(ConstructionSurface surface) {
+        putSurface(surface, false);
+    }
+
+    private void putSurface(ConstructionSurface surface, boolean structural) {
         if (surface == null) return;
         surfaces.put(surface.id(), surface);
-        revision++;
+        if (structural) revision++;
         setDirty();
     }
 

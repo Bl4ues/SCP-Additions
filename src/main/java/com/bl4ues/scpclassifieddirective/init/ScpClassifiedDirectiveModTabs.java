@@ -11,6 +11,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
 import com.bl4ues.scpclassifieddirective.scp1576.Scp1576Module;
 import com.bl4ues.scpclassifieddirective.scp914.Scp914Module;
@@ -84,6 +85,8 @@ public class ScpClassifiedDirectiveModTabs {
                 new ItemStack(UnifiedReaderItems.SCREWDRIVER.get()),
                 new ItemStack(ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get()),
                 new ItemStack(FacilityMappingItems.getTool()),
+                new ItemStack(TransformConstructionModule.getOffGridTool()),
+                new ItemStack(TransformConstructionModule.getSurfaceTool()),
                 new ItemStack(DocumentItems.getDocument()),
                 new ItemStack(ScpClassifiedDirectiveModItems.SCP_ROLE_SELECTOR.get()));
     }

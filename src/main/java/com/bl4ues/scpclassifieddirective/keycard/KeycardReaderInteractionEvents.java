@@ -15,6 +15,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
+import com.bl4ues.scpclassifieddirective.facility.HeavyDoorControlPanelAccess;
+import net.minecraft.server.level.ServerLevel;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
 
@@ -63,9 +65,13 @@ public final class KeycardReaderInteractionEvents {
         KeycardReaderLevels.ReaderDescriptor descriptor =
                 KeycardReaderLevels.describe(level.getBlockState(pos));
         if (descriptor != null) {
-            return descriptor.level() == requestedLevel
+            boolean changed = descriptor.level() == requestedLevel
                     || KeycardReaderLevels.replaceLevel(level, pos,
                             requestedLevel);
+            if (changed && level instanceof ServerLevel serverLevel) {
+                synchronizeOppositeReaders(serverLevel, pos, requestedLevel);
+            }
+            return changed;
         }
 
         if (level.getBlockEntity(pos)
@@ -74,6 +80,23 @@ public final class KeycardReaderInteractionEvents {
             return true;
         }
         return false;
+    }
+
+    private static void synchronizeOppositeReaders(
+            ServerLevel level, BlockPos configuredPos, int requestedLevel) {
+        BlockPos door = HeavyDoorControlPanelAccess.doorForKeycardReader(
+                level, configuredPos);
+        if (door == null) return;
+        for (BlockPos other : HeavyDoorControlPanelAccess
+                .keycardReadersForDoor(level, door)) {
+            if (other.equals(configuredPos)) continue;
+            KeycardReaderLevels.ReaderDescriptor descriptor =
+                    KeycardReaderLevels.describe(level.getBlockState(other));
+            if (descriptor != null && descriptor.level() != requestedLevel) {
+                KeycardReaderLevels.replaceLevel(level, other,
+                        requestedLevel);
+            }
+        }
     }
 
     public static boolean tryHandleInteraction(ServerPlayer player, BlockPos pos,

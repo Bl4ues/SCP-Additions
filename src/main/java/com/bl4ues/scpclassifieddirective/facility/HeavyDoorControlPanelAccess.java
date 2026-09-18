@@ -247,6 +247,45 @@ public final class HeavyDoorControlPanelAccess {
         return null;
     }
 
+    public static Set<BlockPos> keycardReadersForDoor(ServerLevel level,
+            BlockPos doorPos) {
+        if (level == null || doorPos == null) return Set.of();
+        return Set.copyOf(inspect(level, doorPos).readers());
+    }
+
+    public static BlockPos doorForKeycardReader(ServerLevel level,
+            BlockPos readerPos) {
+        if (level == null || readerPos == null) return null;
+        for (int yOffset = 0; yOffset <= 2; yOffset++) {
+            for (Direction direction : HORIZONTAL) {
+                BlockPos candidate = readerPos.relative(direction)
+                        .below(yOffset);
+                if (!level.hasChunkAt(candidate)) continue;
+                BlockState state = level.getBlockState(candidate);
+                if (!FacilityModule.isFacilityDoor(state)) continue;
+                if (inspect(level, candidate).readers().contains(readerPos)) {
+                    return candidate.immutable();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static int keycardRequiredLevel(ServerLevel level,
+            BlockPos doorPos) {
+        if (level == null || doorPos == null) return 0;
+        int required = 0;
+        for (BlockPos readerPos : inspect(level, doorPos).readers()) {
+            var descriptor = com.bl4ues.scpclassifieddirective.keycard
+                    .KeycardReaderLevels.describe(
+                            level.getBlockState(readerPos));
+            if (descriptor != null) {
+                required = Math.max(required, descriptor.level());
+            }
+        }
+        return required;
+    }
+
     private static ControlSnapshot inspect(ServerLevel level, BlockPos doorPos) {
         BlockState doorState = level.getBlockState(doorPos);
         if (DecontaminationStructure.isOwnedDoor(level, doorPos, doorState)) {

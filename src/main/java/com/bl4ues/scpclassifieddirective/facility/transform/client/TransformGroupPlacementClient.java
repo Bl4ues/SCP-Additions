@@ -250,6 +250,12 @@ public final class TransformGroupPlacementClient {
         return Math.max(0.0D, value);
     }
 
+    private static boolean interactive(BlockState state) {
+        return state != null && (state.getBlock() instanceof ButtonBlock
+                || state.getBlock() instanceof LeverBlock
+                || FacilityModule.isFacilityDoor(state));
+    }
+
     private static Hit intersectState(Vec3 origin, Vec3 ray,
             TransformGroup.GridPos cell, BlockState state, boolean guideCell) {
         if (guideCell || state == null || state.isAir()) {

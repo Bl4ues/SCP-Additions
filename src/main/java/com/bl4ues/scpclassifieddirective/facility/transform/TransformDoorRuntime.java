@@ -271,8 +271,8 @@ public final class TransformDoorRuntime {
                 && FacilityModule.isDoorPassable(state)
                 != FacilityModule.isDoorPassable(group.cells().get(cell));
         if (refreshCollision || passabilityChanged) {
-            TransformConstructionManager.refreshGroupRuntime(
-                    level.getServer(), group.id());
+            TransformConstructionManager.refreshGroupCellRuntime(
+                    level.getServer(), group.id(), cell);
         }
     }
 

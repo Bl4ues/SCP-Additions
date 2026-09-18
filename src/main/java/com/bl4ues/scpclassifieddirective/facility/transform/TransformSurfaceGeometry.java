@@ -158,6 +158,40 @@ public final class TransformSurfaceGeometry {
         }, local);
     }
 
+    /**
+     * Maps one logical Surface-cell coordinate into world space. Local X/Y/Z
+     * keep vanilla block conventions; only the cell frame bends with the
+     * authored wall. This is shared by raycast/grid rendering so the visible
+     * grid and the clickable grid cannot drift apart.
+     */
+    public static Vec3 logicalPoint(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, boolean deform,
+            int normalSign, boolean overlay, double x, double y, double z) {
+        if (surface == null || slot == null) return Vec3.ZERO;
+        int side = normalSign < 0 ? -1 : 1;
+        double depthOffset = overlay && side > 0 ? 1.0D : 0.0D;
+        if (deform) {
+            double baseX = surface.flipped() ? 1.0D - x : x;
+            double localX = side < 0 ? 1.0D - baseX : baseX;
+            double u = (slot.column() + localX) / surface.columns();
+            double v = (slot.row() + y) / surface.rows();
+            Vec3 normal = surface.gridNormal(u, v).scale(side);
+            return surface.gridPoint(u, v)
+                    .add(normal.scale(z + depthOffset));
+        }
+
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 normal = surface.gridNormal(u, v).scale(side);
+        Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
+                surface.gridVertical(u, v));
+        return surface.gridPoint(u, v)
+                .add(tangent.scale(x - 0.5D))
+                .add(vertical.scale(y - 0.5D))
+                .add(normal.scale(z + depthOffset));
+    }
+
     public static Vec3 cellCenter(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, int normalSign,
             boolean overlay) {

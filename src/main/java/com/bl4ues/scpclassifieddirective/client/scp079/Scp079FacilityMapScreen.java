@@ -813,14 +813,13 @@ public final class Scp079FacilityMapScreen extends Screen {
         java.util.Set<UUID> plusRooms = new java.util.LinkedHashSet<>();
         java.util.Set<UUID> minusRooms = new java.util.LinkedHashSet<>();
         for (FacilityRoomSnapshot room : floor.rooms()) {
-            boolean heightMatches = false;
-            for (FacilityFloorPatch patch : room.patches()) {
-                if (y >= patch.y() - 0.75D && y <= patch.y() + 5.25D) {
-                    heightMatches = true;
-                    break;
-                }
-            }
-            if (!heightMatches) continue;
+            int elevation = roomElevation(room);
+            // Door controllers belong to the floor they rise from. The old
+            // +5.25 block window could adopt a door from the next authored
+            // level when two rooms overlapped in X/Z, creating convincing
+            // phantom markers on curved corridors.
+            double relativeY = y - elevation;
+            if (relativeY < -0.35D || relativeY > 3.35D) continue;
             FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
             if (geometry == null || geometry.empty()) continue;
             if (geometry.contains(plus.x, plus.z)) plusRooms.add(room.id());

@@ -629,8 +629,8 @@ public final class TransformConstructionNetwork {
                                 .group(message.groupId);
                         if (group != null) {
                             com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
-                                    .upsertGroup(group.withCell(message.cell,
-                                            message.state));
+                                    .applyGroupCellState(message.groupId,
+                                            message.cell, message.state);
                         }
                     }));
             context.setPacketHandled(true);
@@ -665,9 +665,9 @@ public final class TransformConstructionNetwork {
                                 .surface(message.surfaceId);
                         if (surface != null) {
                             com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
-                                    .upsertSurface(surface.withAttachment(
+                                    .applySurfaceSlotState(message.surfaceId,
                                             message.slot, message.state,
-                                            message.deform));
+                                            message.deform);
                         }
                     }));
             context.setPacketHandled(true);

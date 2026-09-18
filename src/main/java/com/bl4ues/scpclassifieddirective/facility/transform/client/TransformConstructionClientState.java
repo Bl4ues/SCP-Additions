@@ -218,6 +218,72 @@ public final class TransformConstructionClientState {
         rebuildProxyCells();
     }
 
+    /**
+     * Applies one runtime cell state without rebuilding the whole client
+     * collision index unless the physical shape actually changed.
+     *
+     * Door animation frames and powered-state visuals are deliberately cheap;
+     * only passability/light/collision transitions rebuild proxy geometry.
+     */
+    public static void applyGroupCellState(UUID groupId,
+            TransformGroup.GridPos cell, BlockState state) {
+        if (groupId == null || cell == null || state == null) return;
+        ArrayList<TransformGroup> next = new ArrayList<>(groups);
+        for (int index = 0; index < next.size(); index++) {
+            TransformGroup current = next.get(index);
+            if (!groupId.equals(current.id())) continue;
+            BlockState previous = current.cells().get(cell);
+            next.set(index, current.withCell(cell, state));
+            groups = List.copyOf(next);
+            if (physicsChanged(previous, state)) rebuildProxyCells();
+            return;
+        }
+    }
+
+    public static void applySurfaceSlotState(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, BlockState state,
+            boolean deform) {
+        if (surfaceId == null || slot == null || state == null) return;
+        ArrayList<ConstructionSurface> next = new ArrayList<>(surfaces);
+        for (int index = 0; index < next.size(); index++) {
+            ConstructionSurface current = next.get(index);
+            if (!surfaceId.equals(current.id())) continue;
+            ConstructionSurface.SurfaceAttachment previous =
+                    current.attachments().get(slot);
+            next.set(index, current.withAttachment(slot, state, deform));
+            surfaces = List.copyOf(next);
+            if (previous == null || previous.deform() != deform
+                    || physicsChanged(previous.state(), state)) {
+                rebuildProxyCells();
+            }
+            return;
+        }
+    }
+
+    private static boolean physicsChanged(BlockState previous,
+            BlockState next) {
+        if (previous == null || next == null) return previous != next;
+        if (previous.getLightEmission() != next.getLightEmission()) return true;
+
+        boolean previousDoor = FacilityModule.isFacilityDoor(previous);
+        boolean nextDoor = FacilityModule.isFacilityDoor(next);
+        if (previousDoor || nextDoor) {
+            if (previousDoor != nextDoor) return true;
+            // Intermediate animation frames may use different block models but
+            // are physically equivalent until the doorway becomes passable.
+            return FacilityModule.isDoorPassable(previous)
+                    != FacilityModule.isDoorPassable(next);
+        }
+
+        VoxelShape before = previous.getCollisionShape(
+                EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
+                CollisionContext.empty());
+        VoxelShape after = next.getCollisionShape(
+                EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
+                CollisionContext.empty());
+        return !before.toAabbs().equals(after.toAabbs());
+    }
+
     public static void upsertGroup(TransformGroup replacement) {
         if (replacement == null || dimension == null
                 || !dimension.equals(replacement.dimension())) return;

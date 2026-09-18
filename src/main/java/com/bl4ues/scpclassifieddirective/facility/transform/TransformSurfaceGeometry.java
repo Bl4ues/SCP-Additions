@@ -22,22 +22,33 @@ public final class TransformSurfaceGeometry {
     public static List<AABB> collisionBoxes(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment) {
+        return collisionBoxes(surface, slot, attachment, 1);
+    }
+
+    public static List<AABB> collisionBoxes(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceAttachment attachment,
+            int normalSign) {
         if (surface == null || slot == null || attachment == null
                 || attachment.state().isAir()) return List.of();
+        int side = normalSign < 0 ? -1 : 1;
         VoxelShape shape = attachment.state().getCollisionShape(
                 EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
                 CollisionContext.empty());
         if (shape.isEmpty()) return List.of();
         List<AABB> result = new ArrayList<>();
         for (AABB box : shape.toAabbs()) {
-            if (attachment.deform()) addDeformed(surface, slot, box, result);
-            else addRigid(surface, slot, box, result);
+            if (attachment.deform()) {
+                addDeformed(surface, slot, box, side, result);
+            } else {
+                addRigid(surface, slot, box, side, result);
+            }
         }
         return List.copyOf(result);
     }
 
     private static void addDeformed(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, AABB box,
+            ConstructionSurface.SurfaceSlot slot, AABB box, int side,
             List<AABB> output) {
         int uSteps = box.getXsize() < 1.0E-5D ? 1 : CURVE_U_SUBDIVISIONS;
         int vSteps = surface.heightCurveOffset().lengthSqr() < 1.0E-8D
@@ -54,13 +65,13 @@ public final class TransformSurfaceGeometry {
                         : box.minY + dy * (vy + 1);
                 output.add(deformedBounds(surface, slot,
                         new AABB(minX, minY, box.minZ,
-                                maxX, maxY, box.maxZ)));
+                                maxX, maxY, box.maxZ), side));
             }
         }
     }
 
     private static void addRigid(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, AABB box,
+            ConstructionSurface.SurfaceSlot slot, AABB box, int side,
             List<AABB> output) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
@@ -87,7 +98,8 @@ public final class TransformSurfaceGeometry {
                     double maxZ = sz == subdivisions - 1 ? box.maxZ
                             : box.minZ + dz * (sz + 1);
                     output.add(rigidBounds(surface, slot,
-                            new AABB(minX, minY, minZ, maxX, maxY, maxZ)));
+                            new AABB(minX, minY, minZ, maxX, maxY, maxZ),
+                            side));
                 }
             }
         }
@@ -100,11 +112,11 @@ public final class TransformSurfaceGeometry {
     }
 
     private static AABB rigidBounds(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, AABB local) {
+            ConstructionSurface.SurfaceSlot slot, AABB local, int side) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 tangent = surface.gridFrameTangent(u, v);
-        Vec3 normal = surface.gridNormal(u, v);
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 normal = surface.gridNormal(u, v).scale(side);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u, v));
         Vec3 center = surface.gridPoint(u, v);
@@ -118,12 +130,13 @@ public final class TransformSurfaceGeometry {
     }
 
     private static AABB deformedBounds(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, AABB local) {
+            ConstructionSurface.SurfaceSlot slot, AABB local, int side) {
         return bounds((x, y, z) -> {
-            double localX = surface.flipped() ? 1.0D - x : x;
+            double baseX = surface.flipped() ? 1.0D - x : x;
+            double localX = side < 0 ? 1.0D - baseX : baseX;
             double u = (slot.column() + localX) / surface.columns();
             double v = (slot.row() + y) / surface.rows();
-            Vec3 normal = surface.gridNormal(u, v);
+            Vec3 normal = surface.gridNormal(u, v).scale(side);
             return surface.gridPoint(u, v).add(normal.scale(z));
         }, local);
     }

@@ -914,10 +914,21 @@ public final class TransformConstructionClientState {
         Map<ConstructionSurface.SurfaceSlot,
                 ConstructionSurface.SurfaceAttachment> attachments =
                 attachment == null ? Map.of() : Map.of(slot, attachment);
+        Map<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> overlays =
+                new LinkedHashMap<>();
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.overlays().entrySet()) {
+            if (entry.getKey().slot().equals(slot)) {
+                overlays.put(entry.getKey(), entry.getValue());
+            }
+        }
         ConstructionSurface single = new ConstructionSurface(surface.id(),
                 surface.dimension(), surface.bottomStart(), surface.bottomEnd(),
                 surface.topStart(), surface.topEnd(), surface.curveOffset(),
-                surface.heightCurveOffset(), attachments, surface.flipped());
+                surface.heightCurveOffset(), attachments, overlays,
+                surface.flipped());
         Map<Long, MutableProxyCell> mutable = new LinkedHashMap<>();
         addSurfaceSlot(mutable, single, slot);
         return freezeContribution(mutable);
@@ -1053,11 +1064,24 @@ public final class TransformConstructionClientState {
         addWorldBox(index, surfaceSlotBounds(surface, column, row,
                         SURFACE_SELECTION_THICKNESS),
                 null, surface.id(), true, false, 0);
-        if (attachment == null || attachment.state().isAir()) return;
-        for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
-                surface, slot, attachment)) {
-            addWorldBox(index, collision, null, surface.id(), false, true,
-                    attachment.state().getLightEmission());
+        if (attachment != null && !attachment.state().isAir()) {
+            for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
+                    surface, slot, attachment)) {
+                addWorldBox(index, collision, null, surface.id(), false, true,
+                        attachment.state().getLightEmission());
+            }
+        }
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> overlay
+                : surface.overlays().entrySet()) {
+            if (!overlay.getKey().slot().equals(slot)
+                    || overlay.getValue().state().isAir()) continue;
+            for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
+                    surface, slot, overlay.getValue(),
+                    overlay.getKey().normalSign())) {
+                addWorldBox(index, collision, null, surface.id(), false, true,
+                        overlay.getValue().state().getLightEmission());
+            }
         }
     }
 

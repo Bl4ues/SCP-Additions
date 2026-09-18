@@ -1088,11 +1088,23 @@ public final class TransformConstructionManager {
         AABB selection = surfaceSlotBounds(surface, slot.column(), slot.row(),
                 SURFACE_SELECTION_THICKNESS);
         addWorldBox(index, owner, selection, true, false, 0);
-        if (attachment == null || attachment.state().isAir()) return;
-        for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
-                surface, slot, attachment)) {
-            addWorldBox(index, owner, collision, false, true,
-                    attachment.state().getLightEmission());
+        if (attachment != null && !attachment.state().isAir()) {
+            for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
+                    surface, slot, attachment)) {
+                addWorldBox(index, owner, collision, false, true,
+                        attachment.state().getLightEmission());
+            }
+        }
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                SurfaceAttachment> overlay : surface.overlays().entrySet()) {
+            if (!overlay.getKey().slot().equals(slot)
+                    || overlay.getValue().state().isAir()) continue;
+            for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
+                    surface, slot, overlay.getValue(),
+                    overlay.getKey().normalSign())) {
+                addWorldBox(index, owner, collision, false, true,
+                        overlay.getValue().state().getLightEmission());
+            }
         }
     }
 

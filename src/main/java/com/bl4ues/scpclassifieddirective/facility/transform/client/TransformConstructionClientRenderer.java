@@ -127,7 +127,17 @@ public final class TransformConstructionClientRenderer {
         if (offGridTool || surfaceTool || mappingTool || showSelectedGroup
                 || showSelectedSurface) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-            if ((offGridTool || showSelectedGroup)
+            if (offGridTool) {
+                for (TransformGroup group : groups) {
+                    if (selection != null
+                            && selection.type() == SelectionType.GROUP
+                            && group.id().equals(selection.id())) {
+                        renderGroupGrid(pose, lines, group, camera);
+                    } else {
+                        renderGroupOutline(pose, lines, group, camera);
+                    }
+                }
+            } else if (showSelectedGroup
                     && selection != null
                     && selection.type() == SelectionType.GROUP) {
                 TransformGroup selectedGroup =
@@ -451,6 +461,54 @@ public final class TransformConstructionClientRenderer {
                         .add(vertical.scale(localNormal.y))
                         .add(normal.scale(localNormal.z)), normal);
         return new VertexFrame(position, transformedNormal);
+    }
+
+    private static void renderGroupOutline(PoseStack pose,
+            VertexConsumer lines, TransformGroup group, Vec3 camera) {
+        if (group.cells().isEmpty()) return;
+        double minX = Double.POSITIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        for (TransformGroup.GridPos cell : group.cells().keySet()) {
+            minX = Math.min(minX, cell.x() - 0.5D);
+            minY = Math.min(minY, cell.y() - 0.5D);
+            minZ = Math.min(minZ, cell.z() - 0.5D);
+            maxX = Math.max(maxX, cell.x() + 0.5D);
+            maxY = Math.max(maxY, cell.y() + 0.5D);
+            maxZ = Math.max(maxZ, cell.z() + 0.5D);
+        }
+        Vec3 localCenter = new Vec3((minX + maxX) * 0.5D,
+                (minY + maxY) * 0.5D, (minZ + maxZ) * 0.5D);
+        Vec3 worldCenter = TransformMath.localToWorld(group.origin(),
+                localCenter, group.rotationX(), group.rotationY(),
+                group.rotationZ());
+        if (worldCenter.distanceToSqr(camera) > MAX_RENDER_DISTANCE_SQR) return;
+
+        Vec3[] corners = new Vec3[8];
+        int index = 0;
+        for (int yi = 0; yi < 2; yi++) {
+            for (int zi = 0; zi < 2; zi++) {
+                for (int xi = 0; xi < 2; xi++) {
+                    Vec3 local = new Vec3(xi == 0 ? minX : maxX,
+                            yi == 0 ? minY : maxY,
+                            zi == 0 ? minZ : maxZ);
+                    corners[index++] = TransformMath.localToWorld(
+                            group.origin(), local, group.rotationX(),
+                            group.rotationY(), group.rotationZ());
+                }
+            }
+        }
+        int[][] edges = {
+                {0,1},{2,3},{4,5},{6,7},{0,2},{1,3},{4,6},{5,7},
+                {0,4},{1,5},{2,6},{3,7}
+        };
+        for (int[] edge : edges) {
+            line(pose, lines, corners[edge[0]], corners[edge[1]],
+                    0.12F, 1.0F, 0.28F, 0.72F);
+        }
     }
 
     private static void renderGroupGrid(PoseStack pose, VertexConsumer lines,

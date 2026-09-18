@@ -181,7 +181,7 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean shouldBeActive(ServerLevel level, Vec3 center,
-            List<DoorPoint> transformedDoors, boolean logicalPower) {
+            DoorIndex transformedDoors, boolean logicalPower) {
         if (logicalPower || hasVanillaDoor(level, center)) {
             return true;
         }

@@ -18,9 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Server-side Alarm adapter for transformed construction. A transformed Alarm
@@ -49,16 +47,13 @@ public final class TransformAlarmRuntime {
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 server);
         for (ServerLevel level : server.getAllLevels()) {
-            DoorIndex transformedDoors = transformedDoors(data,
-                    level.dimension().location());
-            updateGroups(level, data, transformedDoors, tick);
-            updateSurfaces(level, data, transformedDoors, tick);
+            updateGroups(level, data, tick);
+            updateSurfaces(level, data, tick);
         }
     }
 
     private static boolean updateGroups(ServerLevel level,
-            TransformConstructionSavedData data, DoorIndex doors,
-            int tick) {
+            TransformConstructionSavedData data, int tick) {
         boolean changed = false;
         for (TransformGroup original : data.groups()) {
             if (!original.dimension().equals(level.dimension().location())) {
@@ -71,10 +66,11 @@ public final class TransformAlarmRuntime {
                 BlockState state = entry.getValue();
                 if (!isAlarm(state)) continue;
                 Vec3 center = original.cellCenter(entry.getKey());
-                boolean active = shouldBeActive(level, center, doors,
+                boolean active = shouldBeActive(level, center,
                         TransformPowerQuery.powered(level, original,
                                 entry.getKey())
-                                || adjacentOpenDoor(original, entry.getKey()));
+                                || adjacentOpenDoor(original, entry.getKey(),
+                                        state));
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
                 if (active != wasActive) {
                     BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
@@ -100,8 +96,7 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean updateSurfaces(ServerLevel level,
-            TransformConstructionSavedData data, DoorIndex doors,
-            int tick) {
+            TransformConstructionSavedData data, int tick) {
         boolean changed = false;
         for (ConstructionSurface original : data.surfaces()) {
             if (!original.dimension().equals(level.dimension().location())) {
@@ -119,7 +114,7 @@ public final class TransformAlarmRuntime {
                 if (!isAlarm(state)) continue;
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
                 Vec3 center = surfaceCenter(original, slot);
-                boolean active = shouldBeActive(level, center, doors,
+                boolean active = shouldBeActive(level, center,
                         TransformPowerQuery.powered(level, original, slot)
                                 || adjacentOpenDoor(original, slot));
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
@@ -148,18 +143,32 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean adjacentOpenDoor(TransformGroup group,
-            TransformGroup.GridPos cell) {
-        for (net.minecraft.core.Direction direction
-                : net.minecraft.core.Direction.values()) {
-            BlockState state = group.cells().get(cell.offset(
+            TransformGroup.GridPos cell, BlockState alarmState) {
+        if (group == null || cell == null || alarmState == null) return false;
+
+        // A wall-mounted Alarm lives in the air cell in front of its support.
+        // Door adjacency is defined from that support cell, just as it is for
+        // the real vanilla-grid Alarm footprint. This naturally catches an
+        // Alarm above/beside a door without inventing room-wide range checks.
+        TransformGroup.GridPos support = cell;
+        if (alarmState.hasProperty(AlarmModule.FACING)) {
+            Direction outward = alarmState.getValue(AlarmModule.FACING);
+            support = cell.offset(-outward.getStepX(), -outward.getStepY(),
+                    -outward.getStepZ());
+        }
+        if (electricOpenDoor(group.cells().get(support))) return true;
+        for (Direction direction : Direction.values()) {
+            TransformGroup.GridPos neighbor = support.offset(
                     direction.getStepX(), direction.getStepY(),
-                    direction.getStepZ()));
-            if (state != null
-                    && FacilityModule.isElectricDoorOpenOrOpening(state)) {
-                return true;
-            }
+                    direction.getStepZ());
+            if (electricOpenDoor(group.cells().get(neighbor))) return true;
         }
         return false;
+    }
+
+    private static boolean electricOpenDoor(BlockState state) {
+        return state != null
+                && FacilityModule.isElectricDoorOpenOrOpening(state);
     }
 
     private static boolean adjacentOpenDoor(ConstructionSurface surface,
@@ -186,11 +195,8 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean shouldBeActive(ServerLevel level, Vec3 center,
-            DoorIndex transformedDoors, boolean logicalPower) {
-        if (logicalPower || hasVanillaDoor(level, center)) {
-            return true;
-        }
-        return transformedDoors.hasNear(center);
+            boolean logicalPower) {
+        return logicalPower || hasVanillaDoor(level, center);
     }
 
     private static boolean hasVanillaDoor(ServerLevel level, Vec3 center) {
@@ -217,80 +223,10 @@ public final class TransformAlarmRuntime {
         return false;
     }
 
-    private static DoorIndex transformedDoors(
-            TransformConstructionSavedData data,
-            net.minecraft.resources.ResourceLocation dimension) {
-        DoorIndex result = new DoorIndex();
-        for (TransformGroup group : data.groups()) {
-            if (!group.dimension().equals(dimension)) continue;
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                if (FacilityModule.isElectricDoorOpenOrOpening(entry.getValue())) {
-                    result.add(group.cellCenter(entry.getKey()));
-                }
-            }
-        }
-        for (ConstructionSurface surface : data.surfaces()) {
-            if (!surface.dimension().equals(dimension)) continue;
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                if (FacilityModule.isElectricDoorOpenOrOpening(
-                        entry.getValue().state())) {
-                    result.add(surfaceCenter(surface, entry.getKey()));
-                }
-            }
-        }
-        return result;
-    }
-
-    private static Vec3 surfaceCenter(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot) {
-        return surface.gridPoint((slot.column() + 0.5D) / surface.columns(),
-                (slot.row() + 0.5D) / surface.rows());
-    }
-
     private static void playLoop(ServerLevel level, Vec3 center) {
         level.playSound(null, center.x, center.y, center.z,
                 AlarmModule.LOOP.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
-    /**
-     * Per-tick broad phase for transformed open doors. Alarm checks happen
-     * every two ticks, so an O(alarms * doors) linear scan becomes visible in
-     * authored facilities surprisingly quickly. Bucket by vanilla cell only as
-     * a broad phase; the final distance test remains in exact world space.
-     */
-    private static final class DoorIndex {
-        private static final int CELL_RADIUS = 2;
-        private final Map<Long, List<Vec3>> byCell = new HashMap<>();
 
-        private void add(Vec3 position) {
-            if (position == null) return;
-            long key = BlockPos.containing(position).asLong();
-            byCell.computeIfAbsent(key, ignored -> new ArrayList<>())
-                    .add(position);
-        }
-
-        private boolean hasNear(Vec3 center) {
-            if (center == null || byCell.isEmpty()) return false;
-            BlockPos base = BlockPos.containing(center);
-            for (int dx = -CELL_RADIUS; dx <= CELL_RADIUS; dx++) {
-                for (int dy = -CELL_RADIUS; dy <= CELL_RADIUS; dy++) {
-                    for (int dz = -CELL_RADIUS; dz <= CELL_RADIUS; dz++) {
-                        List<Vec3> points = byCell.get(
-                                base.offset(dx, dy, dz).asLong());
-                        if (points == null) continue;
-                        for (Vec3 point : points) {
-                            if (point.distanceToSqr(center)
-                                    <= TRANSFORMED_DOOR_RANGE_SQR) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-    }
 }

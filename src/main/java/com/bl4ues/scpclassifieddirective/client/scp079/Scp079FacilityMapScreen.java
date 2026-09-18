@@ -405,20 +405,32 @@ public final class Scp079FacilityMapScreen extends Screen {
             int clipLeft = 0;
             int clipRight = graphics.guiWidth() - 1;
             for (int index = 0; index + 1 < intersections.size(); index += 2) {
-                double worldX0 = intersections.get(index);
-                double worldX1 = intersections.get(index + 1);
-                int rawX0 = transform.sx(worldX0);
-                int rawX1 = transform.sx(worldX1);
-                int left = Math.min(rawX0, rawX1);
-                int right = Math.max(rawX0, rawX1);
-                if (right < clipLeft || left > clipRight) continue;
-                int x0 = Mth.clamp(left, clipLeft, clipRight);
-                int x1 = Mth.clamp(right, clipLeft, clipRight);
-                if (x1 == x0 && Math.abs(worldX1 - worldX0) > 1.0E-7D) {
-                    if (x0 < clipRight) x1 = x0 + 1;
-                    else if (x0 > clipLeft) x0--;
+                double screenX0 = transform.fx(intersections.get(index));
+                double screenX1 = transform.fx(intersections.get(index + 1));
+                double left = Math.min(screenX0, screenX1);
+                double right = Math.max(screenX0, screenX1);
+                if (right < clipLeft || left > clipRight + 1.0D) continue;
+
+                left = Math.max(left, clipLeft);
+                right = Math.min(right, clipRight + 1.0D);
+                if (right <= left + 1.0E-8D) continue;
+
+                int first = (int) Math.floor(left);
+                int last = (int) Math.floor(Math.nextDown(right));
+                if (first == last) {
+                    plotMapPixel(graphics, first, y, fill,
+                            Mth.clamp(right - left, 0.0D, 1.0D));
+                    continue;
                 }
-                if (x1 > x0) graphics.fill(x0, y, x1, y + 1, fill);
+
+                double firstCoverage = 1.0D - (left - first);
+                plotMapPixel(graphics, first, y, fill, firstCoverage);
+                if (last > first + 1) {
+                    graphics.fill(first + 1, y, last, y + 1, fill);
+                }
+                double lastCoverage = right - last;
+                plotMapPixel(graphics, last, y, fill,
+                        Mth.clamp(lastCoverage, 0.0D, 1.0D));
             }
         }
 
@@ -770,18 +782,17 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static boolean belongsToFloor(double x, double y, double z,
             FloorGroup floor,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
-        // Doors live on/next to a room boundary. They do not inherit the much
-        // taller camera-association column, otherwise a door from a stacked
-        // room can be projected onto the current floor as a phantom marker.
-        final double horizontalTolerance = 0.72D;
+        // A map door represents an opening in a mapped room boundary, not just
+        // any door whose BlockPos happens to be somewhere inside the room.
+        // Requiring contour proximity also prevents stacked/nearby doors from
+        // becoming phantom markers in the middle of curved corridors.
+        final double boundaryToleranceSqr = 1.35D * 1.35D;
         final double doorColumnHeight = 5.25D;
         for (FacilityRoomSnapshot room : floor.rooms()) {
             FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
             if (geometry == null || geometry.empty()
-                    || !geometry.intersects(x - horizontalTolerance,
-                    z - horizontalTolerance,
-                    horizontalTolerance * 2.0D,
-                    horizontalTolerance * 2.0D)) {
+                    || distanceToBoundarySqr(x, z, geometry)
+                    > boundaryToleranceSqr) {
                 continue;
             }
             for (FacilityFloorPatch patch : room.patches()) {
@@ -792,6 +803,21 @@ public final class Scp079FacilityMapScreen extends Screen {
             }
         }
         return false;
+    }
+
+    private static double distanceToBoundarySqr(double x, double z,
+            FacilityRoomOutlineGeometry geometry) {
+        double best = Double.POSITIVE_INFINITY;
+        for (List<FacilityFloorPatch.Vertex> contour : geometry.contours()) {
+            for (int index = 0; index < contour.size(); index++) {
+                FacilityFloorPatch.Vertex a = contour.get(index);
+                FacilityFloorPatch.Vertex b = contour.get(
+                        (index + 1) % contour.size());
+                best = Math.min(best, pointSegmentDistanceSqr(x, z,
+                        a.x(), a.z(), b.x(), b.z()));
+            }
+        }
+        return best;
     }
 
     private static MapDoorMarker marker(double x, double z,

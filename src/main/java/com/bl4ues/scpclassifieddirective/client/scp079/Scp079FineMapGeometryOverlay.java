@@ -34,7 +34,6 @@ public final class Scp079FineMapGeometryOverlay {
     private Scp079FineMapGeometryOverlay() {
     }
 
-    @SubscribeEvent
     public static void afterRender(ScreenEvent.Render.Post event) {
         if (!(event.getScreen() instanceof Scp079FacilityMapScreen screen)) return;
         Minecraft minecraft = Minecraft.getInstance();

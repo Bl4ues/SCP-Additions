@@ -241,13 +241,19 @@ public final class Scp079FacilityMapScreen extends Screen {
                 line = shade(line, tone);
             }
 
-            for (long packed : cells) {
+            Set<Long> rectangularCells = rectangularRoomCells(room);
+            for (long packed : rectangularCells) {
                 int cellX = unpackX(packed);
                 int cellZ = unpackZ(packed);
                 graphics.fill(transform.sx(cellX), transform.sy(cellZ),
                         transform.sx(cellX + 1), transform.sy(cellZ + 1), fill);
             }
-            renderRoomOutline(graphics, cells, transform, line);
+            renderRoomOutline(graphics, rectangularCells, transform, line);
+            for (FacilityFloorPatch patch : room.patches()) {
+                if (!patch.isPolygon()) continue;
+                fillPolygon(graphics, patch, transform, fill);
+                outlinePolygon(graphics, patch, transform, line);
+            }
 
             if (!room.name().isBlank()) {
                 RoomBounds rb = RoomBounds.of(room);
@@ -279,8 +285,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         if (leaveConfirmation || floorMenuOpen) return null;
         List<FacilityRoomSnapshot> candidates = new ArrayList<>();
         for (FacilityRoomSnapshot room : floor.rooms) {
-            if (roomContainsScreen(cellsByRoom.get(room),
-                    mouseX, mouseY, transform)) {
+            if (roomContainsScreen(room, mouseX, mouseY, transform)) {
                 candidates.add(room);
             }
         }
@@ -705,10 +710,6 @@ public final class Scp079FacilityMapScreen extends Screen {
         for (FacilityFloorPatch patch : room.patches()) {
             for (int x = patch.minX(); x <= patch.maxX(); x++) {
                 for (int z = patch.minZ(); z <= patch.maxZ(); z++) {
-                    // Polygon patches are no longer treated as their bounding
-                    // rectangle. The exact sub-block outline is still drawn by
-                    // the fine-geometry pass; this raster is only the fill and
-                    // hover mask behind it.
                     if (patch.containsXZ(x + 0.5D, z + 0.5D)) {
                         cells.add(pack(x, z));
                     }
@@ -718,11 +719,97 @@ public final class Scp079FacilityMapScreen extends Screen {
         return cells;
     }
 
-    private static boolean roomContainsScreen(Set<Long> cells,
+    private static Set<Long> rectangularRoomCells(FacilityRoomSnapshot room) {
+        Set<Long> cells = new HashSet<>();
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (patch.isPolygon()) continue;
+            for (int x = patch.minX(); x <= patch.maxX(); x++) {
+                for (int z = patch.minZ(); z <= patch.maxZ(); z++) {
+                    cells.add(pack(x, z));
+                }
+            }
+        }
+        return cells;
+    }
+
+    private static boolean roomContainsScreen(FacilityRoomSnapshot room,
             double mouseX, double mouseY, MapTransform t) {
-        int worldX = Mth.floor((mouseX - t.originX) / t.scale);
-        int worldZ = Mth.floor((mouseY - t.originY) / t.scale);
-        return cells.contains(pack(worldX, worldZ));
+        double worldX = (mouseX - t.originX) / t.scale;
+        double worldZ = (mouseY - t.originY) / t.scale;
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (patch.containsXZ(worldX, worldZ)) return true;
+        }
+        return false;
+    }
+
+    private static void fillPolygon(GuiGraphics graphics,
+            FacilityFloorPatch patch, MapTransform t, int color) {
+        List<FacilityFloorPatch.Vertex> vertices = patch.outline();
+        if (vertices.size() < 3) return;
+        int minY = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        for (FacilityFloorPatch.Vertex vertex : vertices) {
+            int y = t.sy(vertex.z());
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        }
+        minY = Math.max(MAP_TOP, minY);
+        maxY = Math.min(graphics.guiHeight() - MAP_BOTTOM, maxY);
+        List<Double> intersections = new ArrayList<>(vertices.size());
+        for (int y = minY; y <= maxY; y++) {
+            intersections.clear();
+            double scanZ = (y + 0.5D - t.originY) / t.scale;
+            for (int index = 0; index < vertices.size(); index++) {
+                FacilityFloorPatch.Vertex a = vertices.get(index);
+                FacilityFloorPatch.Vertex b = vertices.get(
+                        (index + 1) % vertices.size());
+                if ((a.z() > scanZ) == (b.z() > scanZ)) continue;
+                double dz = b.z() - a.z();
+                if (Math.abs(dz) < 1.0E-10D) continue;
+                double ratio = (scanZ - a.z()) / dz;
+                intersections.add(a.x() + (b.x() - a.x()) * ratio);
+            }
+            intersections.sort(Double::compare);
+            for (int index = 0; index + 1 < intersections.size(); index += 2) {
+                int x0 = t.sx(intersections.get(index));
+                int x1 = t.sx(intersections.get(index + 1));
+                if (x1 > x0) graphics.fill(x0, y, x1, y + 1, color);
+            }
+        }
+    }
+
+    private static void outlinePolygon(GuiGraphics graphics,
+            FacilityFloorPatch patch, MapTransform t, int color) {
+        List<FacilityFloorPatch.Vertex> vertices = patch.outline();
+        for (int index = 0; index < vertices.size(); index++) {
+            FacilityFloorPatch.Vertex a = vertices.get(index);
+            FacilityFloorPatch.Vertex b = vertices.get(
+                    (index + 1) % vertices.size());
+            drawMapLine(graphics, t.sx(a.x()), t.sy(a.z()),
+                    t.sx(b.x()), t.sy(b.z()), color);
+        }
+    }
+
+    private static void drawMapLine(GuiGraphics graphics, int x0, int y0,
+            int x1, int y1, int color) {
+        int dx = Math.abs(x1 - x0);
+        int sx = x0 < x1 ? 1 : -1;
+        int dy = -Math.abs(y1 - y0);
+        int sy = y0 < y1 ? 1 : -1;
+        int error = dx + dy;
+        while (true) {
+            graphics.fill(x0, y0, x0 + 1, y0 + 1, color);
+            if (x0 == x1 && y0 == y1) return;
+            int twice = error * 2;
+            if (twice >= dy) {
+                error += dy;
+                x0 += sx;
+            }
+            if (twice <= dx) {
+                error += dx;
+                y0 += sy;
+            }
+        }
     }
 
     private static long pack(int x, int z) {

@@ -492,6 +492,8 @@ public final class TransformConstructionManager {
 
     public static synchronized void refresh(MinecraftServer server) {
         if (server == null) return;
+        // Structural edits can add/remove transformed redstone sources.
+        TransformPowerQuery.invalidate(server);
         SpatialIndex previous = INDEXES.get(server);
         SpatialIndex next = buildIndex(server);
         INDEXES.put(server, next);

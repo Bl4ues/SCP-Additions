@@ -69,9 +69,16 @@ public final class TransformGroupPlacementClient {
             Vec3 localHit = TransformMath.worldToLocal(target.group().origin(),
                     target.worldHit(), target.group().rotationX(),
                     target.group().rotationY(), target.group().rotationZ());
-            Vec3 outside = localHit.add(
-                    Vec3.atLowerCornerOf(target.face().getNormal()).scale(0.501D));
-            TransformGroup.GridPos next = nearestCell(outside);
+            BlockState sourceState = target.group().cells().get(target.source());
+            TransformGroup.GridPos next;
+            if (sourceState == null || sourceState.isAir()) {
+                next = target.source();
+            } else {
+                next = target.source().offset(
+                        target.face().getStepX(),
+                        target.face().getStepY(),
+                        target.face().getStepZ());
+            }
             TransformConstructionNetwork.placeGroupBlock(target.group().id(),
                     target.source(), next, target.face(), target.worldHit());
             event.setCanceled(true);
@@ -101,83 +108,14 @@ public final class TransformGroupPlacementClient {
      * its world cell is occupied by a normal block and therefore has no proxy.
      */
     static UUID findAimedGroup(LocalPlayer player) {
-        if (player == null) return null;
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) return null;
-        Vec3 eye = player.getEyePosition();
-        Vec3 worldRay = player.getViewVector(1.0F).normalize();
-        double limit = MAX_DISTANCE;
-
-        HitResult vanilla = minecraft.hitResult;
-        if (vanilla instanceof BlockHitResult blockHit
-                && vanilla.getType() == HitResult.Type.BLOCK) {
-            // Allow the transformed local cell sharing the clicked vanilla block
-            // to remain selectable, but never pick through a whole wall.
-            limit = Math.min(limit,
-                    eye.distanceTo(blockHit.getLocation()) + 0.90D);
-        }
-
-        UUID bestId = null;
-        double bestDistance = limit + 1.0D;
-        for (TransformGroup group : TransformConstructionClientState.groups(
-                minecraft.level.dimension().location())) {
-            Vec3 localEye = TransformMath.worldToLocal(group.origin(), eye,
-                    group.rotationX(), group.rotationY(), group.rotationZ());
-            Vec3 localRay = TransformMath.inverseRotate(worldRay,
-                    group.rotationX(), group.rotationY(), group.rotationZ())
-                    .normalize();
-            for (TransformGroup.GridPos cell : group.cells().keySet()) {
-                Hit hit = intersect(localEye, localRay, cell);
-                if (hit == null || hit.distance() < 0.0D
-                        || hit.distance() > limit
-                        || hit.distance() >= bestDistance) continue;
-                bestDistance = hit.distance();
-                bestId = group.id();
-            }
-        }
-        return bestId;
+        GridTarget target = trace(player, false, state -> true);
+        return target == null ? null : target.group().id();
     }
 
     static BlockState findAimedPayloadState(LocalPlayer player) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (player == null || minecraft.level == null) return null;
-        Vec3 eye = player.getEyePosition();
-        Vec3 worldRay = player.getViewVector(1.0F).normalize();
-        double limit = MAX_DISTANCE;
-
-        HitResult vanilla = minecraft.hitResult;
-        if (vanilla instanceof BlockHitResult blockHit
-                && vanilla.getType() == HitResult.Type.BLOCK
-                && !minecraft.level.getBlockState(blockHit.getBlockPos()).is(
-                        com.bl4ues.scpclassifieddirective.facility.transform
-                                .TransformConstructionModule.getProxy())) {
-            limit = Math.min(limit,
-                    eye.distanceTo(blockHit.getLocation()) + 0.08D);
-        }
-
-        BlockState bestState = null;
-        double bestDistance = limit + 1.0D;
-        for (TransformGroup group : TransformConstructionClientState.groups(
-                minecraft.level.dimension().location())) {
-            Vec3 localEye = TransformMath.worldToLocal(group.origin(), eye,
-                    group.rotationX(), group.rotationY(), group.rotationZ());
-            Vec3 localRay = TransformMath.inverseRotate(worldRay,
-                    group.rotationX(), group.rotationY(), group.rotationZ())
-                    .normalize();
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                BlockState state = entry.getValue();
-                if (state == null || state.isAir()) continue;
-                Hit hit = intersectState(localEye, localRay, entry.getKey(),
-                        state, false);
-                if (hit == null || hit.distance() < 0.0D
-                        || hit.distance() > limit
-                        || hit.distance() >= bestDistance) continue;
-                bestDistance = hit.distance();
-                bestState = state;
-            }
-        }
-        return bestState;
+        GridTarget target = trace(player, true,
+                state -> state != null && !state.isAir());
+        return target == null ? null : target.state();
     }
 
     static PayloadTarget findPayloadTarget(LocalPlayer player) {
@@ -190,76 +128,52 @@ public final class TransformGroupPlacementClient {
 
     private static PayloadTarget findPayloadTarget(LocalPlayer player,
             boolean interactiveOnly) {
-        Minecraft minecraft = Minecraft.getInstance();
-        Vec3 eye = player.getEyePosition();
-        Vec3 worldRay = player.getViewVector(1.0F).normalize();
-
-        double limit = MAX_DISTANCE;
-        HitResult vanilla = minecraft.hitResult;
-        if (vanilla instanceof BlockHitResult blockHit
-                && vanilla.getType() == HitResult.Type.BLOCK
-                && !minecraft.level.getBlockState(blockHit.getBlockPos())
-                        .is(com.bl4ues.scpclassifieddirective.facility.transform
-                                .TransformConstructionModule.getProxy())) {
-            // The transformed payload may sit just in front of / inside the
-            // clicked vanilla wall. Permit that shared-cell epsilon, but never
-            // raycast through unrelated solid geometry.
-            limit = Math.min(limit, eye.distanceTo(blockHit.getLocation()) + 0.08D);
-        }
-
-        PayloadTarget best = null;
-        double bestDistance = limit + 1.0D;
-        for (TransformGroup group : TransformConstructionClientState.groups(
-                minecraft.level.dimension().location())) {
-            Vec3 localEye = TransformMath.worldToLocal(group.origin(), eye,
-                    group.rotationX(), group.rotationY(), group.rotationZ());
-            Vec3 localRay = TransformMath.inverseRotate(worldRay,
-                    group.rotationX(), group.rotationY(), group.rotationZ())
-                    .normalize();
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                BlockState state = entry.getValue();
-                if (state == null || state.isAir()
-                        || interactiveOnly && !interactive(state)) {
-                    continue;
-                }
-                Hit hit = intersectState(localEye, localRay, entry.getKey(),
-                        state, false);
-                if (hit == null || hit.distance() < 0.0D
-                        || hit.distance() > limit
-                        || hit.distance() >= bestDistance) continue;
-                bestDistance = hit.distance();
-                best = new PayloadTarget(group, entry.getKey(), state,
-                        hit.face(), eye.add(worldRay.scale(hit.distance())),
-                        hit.distance());
-            }
-        }
-        return best;
-    }
-
-    private static boolean interactive(BlockState state) {
-        return state != null && (state.getBlock() instanceof ButtonBlock
-                || state.getBlock() instanceof LeverBlock
-                || FacilityModule.isFacilityDoor(state));
+        GridTarget target = trace(player, true, state ->
+                state != null && !state.isAir()
+                        && (!interactiveOnly || interactive(state)));
+        if (target == null) return null;
+        return new PayloadTarget(target.group(), target.cell(), target.state(),
+                target.hit().face(), target.worldHit(),
+                target.hit().distance());
     }
 
     static Target findTarget(LocalPlayer player) {
+        GridTarget target = trace(player, false, state -> true);
+        if (target == null) return null;
+        return new Target(target.group(), target.cell(),
+                target.hit().face(), target.worldHit());
+    }
+
+    /**
+     * Raycasts transformed construction exactly like a small local block world:
+     * project the ray once into each group's frame, walk logical cells with a
+     * 3-D DDA, and only then test the authored block shape when requested.
+     *
+     * Cost follows ray length (<= 32 blocks), not group size. More importantly,
+     * no world-space proxy/AABB is allowed to decide which local cell was hit.
+     */
+    private static GridTarget trace(LocalPlayer player, boolean payloadShape,
+            java.util.function.Predicate<BlockState> accepted) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (player == null || minecraft.level == null) return null;
         Vec3 eye = player.getEyePosition();
         Vec3 worldRay = player.getViewVector(1.0F).normalize();
-
         double limit = MAX_DISTANCE;
+
         HitResult vanilla = minecraft.hitResult;
         if (vanilla instanceof BlockHitResult blockHit
                 && vanilla.getType() == HitResult.Type.BLOCK
-                && !minecraft.level.getBlockState(blockHit.getBlockPos())
-                        .is(com.bl4ues.scpclassifieddirective.facility.transform
+                && !minecraft.level.getBlockState(blockHit.getBlockPos()).is(
+                        com.bl4ues.scpclassifieddirective.facility.transform
                                 .TransformConstructionModule.getProxy())) {
-            limit = Math.min(limit, eye.distanceTo(blockHit.getLocation()) + 0.04D);
+            // A transformed cell can legitimately share the vanilla cell at a
+            // wall seam. Permit a small amount beyond that face, but never ray
+            // through unrelated world geometry.
+            limit = Math.min(limit,
+                    eye.distanceTo(blockHit.getLocation()) + 0.18D);
         }
 
-        Selection selected = TransformConstructionClientState.selection();
-        Target best = null;
+        GridTarget best = null;
         double bestDistance = limit + 1.0D;
         for (TransformGroup group : TransformConstructionClientState.groups(
                 minecraft.level.dimension().location())) {
@@ -268,28 +182,72 @@ public final class TransformGroupPlacementClient {
             Vec3 localRay = TransformMath.inverseRotate(worldRay,
                     group.rotationX(), group.rotationY(), group.rotationZ())
                     .normalize();
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                boolean guideCell = entry.getValue().isAir()
-                        && selected != null
-                        && selected.type() == SelectionType.GROUP
-                        && group.id().equals(selected.id());
-                if (entry.getValue().isAir() && !guideCell) continue;
-                // Placement authors against the clean local 1x1x1 grid
-                // cell, not the payload's visual/collision AABB. Wall-mounted
-                // blocks, doors and thin controls therefore resolve the same
-                // local face a vanilla block would expose before the group's
-                // transform is applied.
-                Hit hit = intersect(localEye, localRay, entry.getKey());
-                if (hit == null || hit.distance() < 0.0D
-                        || hit.distance() > limit
-                        || hit.distance() >= bestDistance) continue;
-                bestDistance = hit.distance();
-                Vec3 worldHit = eye.add(worldRay.scale(hit.distance()));
-                best = new Target(group, entry.getKey(), hit.face(), worldHit);
+            GridTarget candidate = traceGroup(group, localEye, localRay,
+                    Math.min(limit, bestDistance), payloadShape, accepted, eye,
+                    worldRay);
+            if (candidate != null
+                    && candidate.hit().distance() < bestDistance) {
+                bestDistance = candidate.hit().distance();
+                best = candidate;
             }
         }
         return best;
+    }
+
+    private static GridTarget traceGroup(TransformGroup group, Vec3 localEye,
+            Vec3 localRay, double limit, boolean payloadShape,
+            java.util.function.Predicate<BlockState> accepted,
+            Vec3 worldEye, Vec3 worldRay) {
+        TransformGroup.GridPos cell = nearestCell(localEye);
+        double travelled = 0.0D;
+
+        // A 32-block unit ray crosses at most ~56 cell planes diagonally.
+        // 128 leaves plenty of numerical headroom without an unbounded walk.
+        for (int step = 0; step < 128 && travelled <= limit + EPSILON; step++) {
+            if (group.cells().containsKey(cell)) {
+                BlockState state = group.cells().get(cell);
+                if (accepted.test(state)) {
+                    Hit hit = payloadShape
+                            ? intersectState(localEye, localRay, cell, state,
+                                    false)
+                            : intersect(localEye, localRay, cell);
+                    if (hit != null && hit.distance() >= -EPSILON
+                            && hit.distance() <= limit + EPSILON) {
+                        Vec3 worldHit = worldEye.add(
+                                worldRay.scale(hit.distance()));
+                        return new GridTarget(group, cell, state, hit, worldHit);
+                    }
+                }
+            }
+
+            double tx = nextBoundary(localEye.x, localRay.x, cell.x());
+            double ty = nextBoundary(localEye.y, localRay.y, cell.y());
+            double tz = nextBoundary(localEye.z, localRay.z, cell.z());
+            double next = Math.min(tx, Math.min(ty, tz));
+            if (!Double.isFinite(next) || next > limit + EPSILON) break;
+
+            int dx = Math.abs(tx - next) <= 1.0E-7D
+                    ? (localRay.x >= 0.0D ? 1 : -1) : 0;
+            int dy = Math.abs(ty - next) <= 1.0E-7D
+                    ? (localRay.y >= 0.0D ? 1 : -1) : 0;
+            int dz = Math.abs(tz - next) <= 1.0E-7D
+                    ? (localRay.z >= 0.0D ? 1 : -1) : 0;
+            if (dx == 0 && dy == 0 && dz == 0) break;
+            cell = cell.offset(dx, dy, dz);
+            travelled = Math.max(travelled + EPSILON, next);
+        }
+        return null;
+    }
+
+    private static double nextBoundary(double origin, double direction,
+            int cell) {
+        if (Math.abs(direction) < EPSILON) {
+            return Double.POSITIVE_INFINITY;
+        }
+        double boundary = direction > 0.0D ? cell + 0.5D : cell - 0.5D;
+        double value = (boundary - origin) / direction;
+        if (value < -EPSILON) return Double.POSITIVE_INFINITY;
+        return Math.max(0.0D, value);
     }
 
     private static Hit intersectState(Vec3 origin, Vec3 ray,
@@ -395,11 +353,19 @@ public final class TransformGroupPlacementClient {
     private record Hit(double distance, Direction face) {
     }
 
+    private record GridTarget(TransformGroup group,
+            TransformGroup.GridPos cell, BlockState state, Hit hit,
+            Vec3 worldHit) {
+    }
+
     static record Target(TransformGroup group, TransformGroup.GridPos source,
             Direction face, Vec3 worldHit) {
         TransformGroup.GridPos adjacentCell() {
-            return source.offset(face.getStepX(), face.getStepY(),
-                    face.getStepZ());
+            BlockState sourceState = group.cells().get(source);
+            return sourceState == null || sourceState.isAir()
+                    ? source
+                    : source.offset(face.getStepX(), face.getStepY(),
+                            face.getStepZ());
         }
     }
 

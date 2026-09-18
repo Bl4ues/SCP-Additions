@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -22,12 +23,14 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class TransformLogicalBreakClient {
+    private static boolean attackLatch;
+
     private TransformLogicalBreakClient() {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onAttack(InputEvent.InteractionKeyMappingTriggered event) {
-        if (!event.isAttack()) return;
+        if (!event.isAttack() || attackLatch) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null || minecraft.screen != null
@@ -63,8 +66,17 @@ public final class TransformLogicalBreakClient {
             TransformConstructionNetwork.breakSurfaceSlot(
                     surface.surface().id(), surface.slot());
         }
+        attackLatch = true;
         event.setCanceled(true);
         event.setSwingHand(true);
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        if (!Minecraft.getInstance().options.keyAttack.isDown()) {
+            attackLatch = false;
+        }
     }
 
     private static boolean holdingEditorTool(LocalPlayer player) {

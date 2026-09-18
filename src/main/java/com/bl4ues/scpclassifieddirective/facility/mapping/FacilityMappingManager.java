@@ -73,9 +73,10 @@ public final class FacilityMappingManager {
         }
         if (!(player.level() instanceof ServerLevel level)) return;
 
-        FacilityFloorPatch patch = FacilityFloorPatch.between(
+        FacilityFloorPatch initialPatch = FacilityFloorPatch.between(
                 pending.first(), pos);
-        patch = FacilitySurfaceBoundaryConformer.conform(level, patch);
+        FacilityFloorPatch patch = FacilitySurfaceBoundaryConformer.conform(
+                level, initialPatch);
         int xSpan = patch.maxX() - patch.minX() + 1;
         int zSpan = patch.maxZ() - patch.minZ() + 1;
         if (patch.area() <= 0L || patch.area() > MAX_PATCH_AREA

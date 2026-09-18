@@ -463,14 +463,14 @@ public final class Scp079FacilityMapScreen extends Screen {
                     : unavailable ? 0xFF4C5D64
                     : locked ? 0xFF61747B : 0xFFB8D8E1;
             boolean keycard = marker.requiredLevel() > 0;
-            if (keycard && !open) {
-                renderClosedKeycardBadge(graphics, marker, transform,
-                        locked);
-            } else {
-                renderDoorPath(graphics, marker, transform, color,
-                        open && !locked);
-                if (keycard) {
+            renderDoorPath(graphics, marker, transform, color,
+                    open && !locked);
+            if (keycard) {
+                if (open && !locked) {
                     renderOpenKeycardLevel(graphics, marker, transform, color);
+                } else {
+                    renderClosedKeycardBadge(graphics, marker, transform,
+                            locked);
                 }
             }
         }
@@ -576,17 +576,30 @@ public final class Scp079FacilityMapScreen extends Screen {
         String value = Integer.toString(marker.requiredLevel());
         int badge = locked ? 0xFF66747A : 0xFFF1FAFD;
         graphics.fill(x - 4, y - 4, x + 5, y + 5, badge);
-        Scp079UiTheme.drawCenteredInControl(graphics, font, value,
-                x, y - 4, 9, 0.70F, 0xFF071116);
+        drawCenteredMapLabel(graphics, value, x, y, 0.70F, 0xFF071116);
     }
 
     private void renderOpenKeycardLevel(GuiGraphics graphics,
             MapDoorMarker marker, MapTransform transform, int color) {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
-        String value = Integer.toString(marker.requiredLevel());
-        Scp079UiTheme.drawCenteredInControl(graphics, font, value,
-                x, y - 5, 10, 0.78F, 0xFFF1FAFD);
+        drawCenteredMapLabel(graphics,
+                Integer.toString(marker.requiredLevel()),
+                x, y, 0.78F, 0xFFF1FAFD);
+    }
+
+    private void drawCenteredMapLabel(GuiGraphics graphics, String value,
+            int centerX, int centerY, float scale, int color) {
+        if (value == null || value.isEmpty()) return;
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(centerX, centerY, 0.0F);
+        pose.scale(scale, scale, 1.0F);
+        float x = -font.width(value) * 0.5F;
+        float y = -font.lineHeight * 0.5F + 0.5F;
+        graphics.drawString(font, value, Math.round(x), Math.round(y),
+                color, false);
+        pose.popPose();
     }
 
     private void renderDoorHoverHelp(GuiGraphics graphics,

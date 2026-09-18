@@ -20,7 +20,9 @@ import java.util.UUID;
 public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
         Vec3 curveOffset, Vec3 heightCurveOffset,
-        Map<SurfaceSlot, SurfaceAttachment> attachments, boolean flipped) {
+        Map<SurfaceSlot, SurfaceAttachment> attachments,
+        Map<SurfaceOverlaySlot, SurfaceAttachment> overlays,
+        boolean flipped) {
     private static final int ARC_SAMPLES = 32;
     private static final int METRIC_CACHE_LIMIT = 192;
     private static final Map<GeometryKey, GeometryMetrics> METRICS =
@@ -46,6 +48,16 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 ? Vec3.ZERO : heightCurveOffset;
         attachments = attachments == null ? Map.of()
                 : Map.copyOf(attachments);
+        overlays = overlays == null ? Map.of() : Map.copyOf(overlays);
+    }
+
+    /** Compatibility constructor for every pre-overlay authored surface. */
+    public ConstructionSurface(UUID id, ResourceLocation dimension,
+            Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
+            Vec3 curveOffset, Vec3 heightCurveOffset,
+            Map<SurfaceSlot, SurfaceAttachment> attachments, boolean flipped) {
+        this(id, dimension, bottomStart, bottomEnd, topStart, topEnd,
+                curveOffset, heightCurveOffset, attachments, Map.of(), flipped);
     }
 
     public ConstructionSurface(UUID id, ResourceLocation dimension,
@@ -314,8 +326,9 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             Vec3 nextCurveOffset, Vec3 nextHeightCurveOffset) {
         ConstructionSurface geometry = new ConstructionSurface(id, dimension,
                 nextBottomStart, nextBottomEnd, nextTopStart, nextTopEnd,
-                nextCurveOffset, nextHeightCurveOffset, Map.of(), flipped);
-        if (attachments.isEmpty()) return geometry;
+                nextCurveOffset, nextHeightCurveOffset, Map.of(), Map.of(),
+                flipped);
+        if (attachments.isEmpty() && overlays.isEmpty()) return geometry;
 
         int oldColumns = columns();
         int oldRows = rows();
@@ -324,17 +337,33 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Map<SurfaceSlot, SurfaceAttachment> remapped = new LinkedHashMap<>();
         for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
                 : attachments.entrySet()) {
-            double u = (entry.getKey().column() + 0.5D) / oldColumns;
-            double v = (entry.getKey().row() + 0.5D) / oldRows;
-            int column = Math.max(0, Math.min(newColumns - 1,
-                    (int) Math.floor(u * newColumns)));
-            int row = Math.max(0, Math.min(newRows - 1,
-                    (int) Math.floor(v * newRows)));
-            remapped.putIfAbsent(new SurfaceSlot(column, row), entry.getValue());
+            SurfaceSlot mapped = remapSlot(entry.getKey(), oldColumns, oldRows,
+                    newColumns, newRows);
+            remapped.putIfAbsent(mapped, entry.getValue());
+        }
+        Map<SurfaceOverlaySlot, SurfaceAttachment> remappedOverlays =
+                new LinkedHashMap<>();
+        for (Map.Entry<SurfaceOverlaySlot, SurfaceAttachment> entry
+                : overlays.entrySet()) {
+            SurfaceSlot mapped = remapSlot(entry.getKey().slot(), oldColumns,
+                    oldRows, newColumns, newRows);
+            remappedOverlays.putIfAbsent(new SurfaceOverlaySlot(mapped,
+                    entry.getKey().normalSign()), entry.getValue());
         }
         return new ConstructionSurface(id, dimension, nextBottomStart,
                 nextBottomEnd, nextTopStart, nextTopEnd, nextCurveOffset,
-                nextHeightCurveOffset, remapped, flipped);
+                nextHeightCurveOffset, remapped, remappedOverlays, flipped);
+    }
+
+    private static SurfaceSlot remapSlot(SurfaceSlot slot, int oldColumns,
+            int oldRows, int newColumns, int newRows) {
+        double u = (slot.column() + 0.5D) / oldColumns;
+        double v = (slot.row() + 0.5D) / oldRows;
+        int column = Math.max(0, Math.min(newColumns - 1,
+                (int) Math.floor(u * newColumns)));
+        int row = Math.max(0, Math.min(newRows - 1,
+                (int) Math.floor(v * newRows)));
+        return new SurfaceSlot(column, row);
     }
 
     public ConstructionSurface withAttachment(SurfaceSlot slot,
@@ -343,14 +372,44 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new LinkedHashMap<>(attachments);
         next.put(slot, new SurfaceAttachment(state, deform));
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, heightCurveOffset, next, flipped);
+                topStart, topEnd, curveOffset, heightCurveOffset, next,
+                overlays, flipped);
+    }
+
+    public SurfaceAttachment overlay(SurfaceSlot slot, int normalSign) {
+        if (slot == null) return null;
+        return overlays.get(new SurfaceOverlaySlot(slot, normalSign));
+    }
+
+    public ConstructionSurface withOverlay(SurfaceSlot slot, int normalSign,
+            BlockState state, boolean deform) {
+        if (slot == null) return this;
+        Map<SurfaceOverlaySlot, SurfaceAttachment> next =
+                new LinkedHashMap<>(overlays);
+        next.put(new SurfaceOverlaySlot(slot, normalSign),
+                new SurfaceAttachment(state, deform));
+        return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
+                topStart, topEnd, curveOffset, heightCurveOffset, attachments,
+                next, flipped);
+    }
+
+    public ConstructionSurface withoutOverlay(SurfaceSlot slot,
+            int normalSign) {
+        SurfaceOverlaySlot key = new SurfaceOverlaySlot(slot, normalSign);
+        if (slot == null || !overlays.containsKey(key)) return this;
+        Map<SurfaceOverlaySlot, SurfaceAttachment> next =
+                new LinkedHashMap<>(overlays);
+        next.remove(key);
+        return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
+                topStart, topEnd, curveOffset, heightCurveOffset, attachments,
+                next, flipped);
     }
 
     public ConstructionSurface withFlipped(boolean nextFlipped) {
         if (nextFlipped == flipped) return this;
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset, attachments,
-                nextFlipped);
+                overlays, nextFlipped);
     }
 
     public ConstructionSurface withoutAttachment(SurfaceSlot slot) {
@@ -359,7 +418,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new LinkedHashMap<>(attachments);
         next.remove(slot);
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, heightCurveOffset, next, flipped);
+                topStart, topEnd, curveOffset, heightCurveOffset, next,
+                overlays, flipped);
     }
 
     public CompoundTag save() {
@@ -385,6 +445,19 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             list.add(attachment);
         }
         tag.put("Attachments", list);
+        ListTag overlayList = new ListTag();
+        for (Map.Entry<SurfaceOverlaySlot, SurfaceAttachment> entry
+                : overlays.entrySet()) {
+            CompoundTag attachment = new CompoundTag();
+            attachment.putInt("Column", entry.getKey().slot().column());
+            attachment.putInt("Row", entry.getKey().slot().row());
+            attachment.putInt("NormalSign", entry.getKey().normalSign());
+            attachment.putBoolean("Deform", entry.getValue().deform());
+            attachment.put("State", BlockStateCodec.save(
+                    entry.getValue().state()));
+            overlayList.add(attachment);
+        }
+        tag.put("Overlays", overlayList);
         return tag;
     }
 
@@ -404,13 +477,27 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                     BlockStateCodec.load(attachment.getCompound("State")),
                     attachment.getBoolean("Deform")));
         }
+        Map<SurfaceOverlaySlot, SurfaceAttachment> overlays =
+                new LinkedHashMap<>();
+        ListTag overlayList = tag.getList("Overlays", Tag.TAG_COMPOUND);
+        for (int index = 0; index < overlayList.size(); index++) {
+            CompoundTag attachment = overlayList.getCompound(index);
+            SurfaceSlot slot = new SurfaceSlot(attachment.getInt("Column"),
+                    attachment.getInt("Row"));
+            overlays.put(new SurfaceOverlaySlot(slot,
+                            attachment.getInt("NormalSign")),
+                    new SurfaceAttachment(
+                            BlockStateCodec.load(
+                                    attachment.getCompound("State")),
+                            attachment.getBoolean("Deform")));
+        }
         return new ConstructionSurface(tag.getUUID("Id"), dimension,
                 getVec(tag, "BottomStart"), getVec(tag, "BottomEnd"),
                 getVec(tag, "TopStart"), getVec(tag, "TopEnd"),
                 getVec(tag, "CurveOffset"),
                 tag.contains("HeightCurveOffset", Tag.TAG_COMPOUND)
                         ? getVec(tag, "HeightCurveOffset") : Vec3.ZERO,
-                attachments, tag.getBoolean("Flipped"));
+                attachments, overlays, tag.getBoolean("Flipped"));
     }
 
     private static void putVec(CompoundTag tag, String key, Vec3 value) {
@@ -428,6 +515,17 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public record SurfaceSlot(int column, int row) {
+    }
+
+    public record SurfaceOverlaySlot(SurfaceSlot slot, int normalSign) {
+        public SurfaceOverlaySlot {
+            slot = slot == null ? new SurfaceSlot(0, 0) : slot;
+            normalSign = normalSign < 0 ? -1 : 1;
+        }
+
+        public SurfaceOverlaySlot(int column, int row, int normalSign) {
+            this(new SurfaceSlot(column, row), normalSign);
+        }
     }
 
     public record SurfaceAttachment(BlockState state, boolean deform) {

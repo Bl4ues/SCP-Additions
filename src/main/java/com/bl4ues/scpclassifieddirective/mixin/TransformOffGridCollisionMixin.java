@@ -40,11 +40,17 @@ public abstract class TransformOffGridCollisionMixin {
             cir.setReturnValue(offGrid);
             return;
         }
+        // A full vanilla cube already occupies every point this transformed
+        // contribution could add inside the current BlockPos. This is by far
+        // the common case for walls/floors and avoids any shape composition.
+        if (vanilla == Shapes.block()) return;
 
-        VoxelShape free = Shapes.joinUnoptimized(offGrid, vanilla,
-                BooleanOp.ONLY_FIRST);
-        if (!free.isEmpty()) {
-            cir.setReturnValue(Shapes.or(vanilla, free).optimize());
-        }
+        // (offGrid - vanilla) U vanilla is exactly offGrid U vanilla.
+        // The previous implementation paid for a subtraction, another union
+        // and optimize() on BlockState#getCollisionShape, one of Minecraft's
+        // hottest paths. Keep the equivalent unoptimized union and let the
+        // collision iterator consume its already-cached component shapes.
+        cir.setReturnValue(Shapes.joinUnoptimized(vanilla, offGrid,
+                BooleanOp.OR));
     }
 }

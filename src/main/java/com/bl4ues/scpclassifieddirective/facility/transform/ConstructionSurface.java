@@ -298,7 +298,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new LinkedHashMap<>(attachments);
         next.remove(slot);
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, next, flipped);
+                topStart, topEnd, curveOffset, heightCurveOffset, next, flipped);
     }
 
     public CompoundTag save() {

@@ -54,17 +54,11 @@ public final class FacilityMappingClientState {
                 ? List.of() : List.copyOf(rooms);
         ROOMS.put(dimension, snapshot);
 
-        // Precision previews are optimistic client overlays. If a room is
-        // deleted through its editor, discard any cached polygon fragments for
-        // that room immediately instead of leaving ghost handles/patches behind.
-        Map<FinePatchKey, FacilityFloorPatch> fine = FINE_PATCHES.get(dimension);
-        if (fine != null && !fine.isEmpty()) {
-            Set<UUID> roomIds = new HashSet<>();
-            for (FacilityRoomSnapshot room : snapshot) roomIds.add(room.id());
-            fine.keySet().removeIf(key -> !roomIds.contains(key.roomId()));
-            if (fine.isEmpty()) FINE_PATCHES.remove(dimension);
-        }
-        reapplyFineGeometry(dimension);
+        // RoomSync now carries precise polygon vertices itself. Any fine-geometry
+        // cache predating this authoritative snapshot is only an optimistic
+        // editor preview and must not be allowed to overwrite the accepted room
+        // geometry afterwards.
+        FINE_PATCHES.remove(dimension);
     }
 
     public static void syncFineGeometry(ResourceLocation dimension,

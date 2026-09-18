@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -29,28 +30,29 @@ public abstract class TransformOffGridCollisionMixin {
             BlockGetter level, BlockPos pos, CollisionContext context,
             CallbackInfoReturnable<VoxelShape> cir) {
         if (!(level instanceof Level world) || pos == null) return;
+        BlockState self = (BlockState) (Object) this;
+        if (self.is(com.bl4ues.scpclassifieddirective.facility.transform
+                .TransformConstructionModule.getProxy())) {
+            // Proxy collision already is the complete transformed shape.
+            return;
+        }
 
-        VoxelShape offGrid = world.isClientSide
-                ? TransformConstructionClientBridge.offGridCollision(pos)
-                : TransformConstructionManager.offGridCollisionShape(level, pos);
-        if (offGrid == null || offGrid.isEmpty()) return;
+        VoxelShape transformed = world.isClientSide
+                ? TransformConstructionClientBridge.transformedCollision(pos)
+                : TransformConstructionManager.transformedCollisionShape(
+                        level, pos);
+        if (transformed == null || transformed.isEmpty()) return;
 
         VoxelShape vanilla = cir.getReturnValue();
         if (vanilla == null || vanilla.isEmpty()) {
-            cir.setReturnValue(offGrid);
+            cir.setReturnValue(transformed);
             return;
         }
         // A full vanilla cube already occupies every point this transformed
-        // contribution could add inside the current BlockPos. This is by far
-        // the common case for walls/floors and avoids any shape composition.
+        // contribution could add inside the current BlockPos.
         if (vanilla == Shapes.block()) return;
 
-        // (offGrid - vanilla) U vanilla is exactly offGrid U vanilla.
-        // The previous implementation paid for a subtraction, another union
-        // and optimize() on BlockState#getCollisionShape, one of Minecraft's
-        // hottest paths. Keep the equivalent unoptimized union and let the
-        // collision iterator consume its already-cached component shapes.
-        cir.setReturnValue(Shapes.joinUnoptimized(vanilla, offGrid,
+        cir.setReturnValue(Shapes.joinUnoptimized(vanilla, transformed,
                 BooleanOp.OR));
     }
 }

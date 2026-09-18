@@ -165,9 +165,12 @@ public final class FacilitySurfaceBoundaryConformer {
                 }
             }
             if (best == null) continue;
+            FaceEdge clippedEdge = clipToPatch(best, patch);
+            if (clippedEdge == null) continue;
 
-            Vec3 midpoint = best.a().add(best.b()).scale(0.5D);
-            Vec3 tangent = horizontal(best.b().subtract(best.a()));
+            Vec3 midpoint = clippedEdge.a().add(clippedEdge.b()).scale(0.5D);
+            Vec3 tangent = horizontal(clippedEdge.b().subtract(
+                    clippedEdge.a()));
             if (tangent.lengthSqr() < 1.0E-10D) continue;
             tangent = tangent.normalize();
             Vec3 normal = new Vec3(-tangent.z, 0.0D, tangent.x);
@@ -175,7 +178,11 @@ public final class FacilitySurfaceBoundaryConformer {
                 normal = normal.scale(-1.0D);
             }
             Vec3 outward = normal.scale(-1.0D);
-            addStrip(result, best.a(), best.b(), outward, distance);
+            // Only the part of the transformed wall that actually crosses the
+            // authored floor selection may clip it. Do not extend end caps or
+            // invent a continuation toward the player's second corner.
+            addStrip(result, clippedEdge.a(), clippedEdge.b(), outward,
+                    distance);
         }
         return result;
     }
@@ -215,6 +222,44 @@ public final class FacilitySurfaceBoundaryConformer {
                 TransformMath.localToWorld(group.origin(), b,
                         group.rotationX(), group.rotationY(),
                         group.rotationZ()));
+    }
+
+    private static FaceEdge clipToPatch(FaceEdge edge,
+            FacilityFloorPatch patch) {
+        double minX = patch.minX();
+        double maxX = patch.maxX() + 1.0D;
+        double minZ = patch.minZ();
+        double maxZ = patch.maxZ() + 1.0D;
+        double x0 = edge.a().x;
+        double z0 = edge.a().z;
+        double dx = edge.b().x - x0;
+        double dz = edge.b().z - z0;
+        double[] range = {0.0D, 1.0D};
+        if (!clip(-dx, x0 - minX, range)
+                || !clip(dx, maxX - x0, range)
+                || !clip(-dz, z0 - minZ, range)
+                || !clip(dz, maxZ - z0, range)) {
+            return null;
+        }
+        if (range[1] - range[0] < 1.0E-6D) return null;
+        Vec3 a = new Vec3(x0 + dx * range[0], edge.a().y,
+                z0 + dz * range[0]);
+        Vec3 b = new Vec3(x0 + dx * range[1], edge.b().y,
+                z0 + dz * range[1]);
+        return new FaceEdge(a, b);
+    }
+
+    private static boolean clip(double p, double q, double[] range) {
+        if (Math.abs(p) < 1.0E-12D) return q >= 0.0D;
+        double r = q / p;
+        if (p < 0.0D) {
+            if (r > range[1]) return false;
+            if (r > range[0]) range[0] = r;
+        } else {
+            if (r < range[0]) return false;
+            if (r < range[1]) range[1] = r;
+        }
+        return true;
     }
 
     private static double pointSegmentDistanceSqr(double px, double pz,
@@ -266,22 +311,20 @@ public final class FacilitySurfaceBoundaryConformer {
             addStrip(result, a, b, outward, distance);
         }
 
-        // A wall is a boundary, not a finite carpet strip. Extend its first and
-        // last tangents so a selection that begins slightly before/after the
-        // authored Surface is clipped by the curve rather than by an artificial
-        // perpendicular cap at the endpoint.
+        // Tiny endpoint padding closes floating-point seams between authored
+        // segments without turning a finite wall into an infinite cutting plane.
+        double seam = 0.02D;
         if (first != null && firstNext != null && firstOutward != null) {
             Vec3 tangent = horizontal(firstNext.subtract(first));
             if (tangent.lengthSqr() > 1.0E-10D) {
-                Vec3 extended = first.subtract(tangent.normalize()
-                        .scale(distance));
+                Vec3 extended = first.subtract(tangent.normalize().scale(seam));
                 addStrip(result, extended, first, firstOutward, distance);
             }
         }
         if (lastPrevious != null && last != null && lastOutward != null) {
             Vec3 tangent = horizontal(last.subtract(lastPrevious));
             if (tangent.lengthSqr() > 1.0E-10D) {
-                Vec3 extended = last.add(tangent.normalize().scale(distance));
+                Vec3 extended = last.add(tangent.normalize().scale(seam));
                 addStrip(result, last, extended, lastOutward, distance);
             }
         }

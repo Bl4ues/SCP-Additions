@@ -72,6 +72,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     private FacilityRoomSnapshot pressedRoom;
     private MapDoorMarker hoveredDoor;
     private MapDoorMarker pressedDoor;
+    private boolean doorPromptActive;
     private final Map<UUID, FacilityRoomOutlineGeometry> roomGeometryCache =
             new HashMap<>();
     private List<MapDoorMarker> cachedDoorMarkers = List.of();
@@ -92,6 +93,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY,
             float partialTick) {
+        doorPromptActive = false;
         graphics.fill(0, 0, width, height, 0xFF06121A);
         Scp079UiTheme.renderFrame(graphics, width, height);
 
@@ -465,7 +467,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             }
         }
         if (hoveredDoor != null) {
-            renderDoorHoverHelp(graphics, hoveredDoor, mouseX, mouseY);
+            renderDoorHoverHelp(graphics, hoveredDoor);
         }
     }
 
@@ -578,35 +580,79 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private void renderDoorHoverHelp(GuiGraphics graphics,
-            MapDoorMarker marker, int mouseX, int mouseY) {
+            MapDoorMarker marker) {
         if (!marker.controllable()
                 || marker.source() != DoorSource.NETWORK
                 || marker.pos() == null) {
             return;
         }
-        String primary = doorOpen(marker) ? "LMB  CLOSE" : "LMB  OPEN";
-        primary += "   " + mapCost(Scp079PlayableManager.DOOR_ACTION_COST);
-        String lock = marker.lockable()
-                ? "RMB  LOCK   "
-                    + mapCost(Scp079PlayableManager.DOOR_LOCK_COST)
-                : "";
-        int boxW = Math.max(136, Math.max(
-                Scp079UiTheme.scaledWidth(font, primary, 0.92F),
-                lock.isBlank() ? 0
-                        : Scp079UiTheme.scaledWidth(font, lock, 0.92F)) + 16);
-        int boxH = lock.isBlank() ? 24 : 36;
-        int x = Mth.clamp(mouseX + 12, 4,
-                Math.max(4, width - boxW - 4));
-        int y = Mth.clamp(mouseY + 12, 4,
-                Math.max(4, height - boxH - 4));
-        graphics.fill(x, y, x + boxW, y + boxH, 0xD90A151C);
-        border(graphics, x, y, boxW, boxH, 0xFF8AAAB6);
-        Scp079UiTheme.draw(graphics, font, primary, x + 8, y + 7,
-                0.92F, 0xFFE6F4F8);
-        if (!lock.isBlank()) {
-            Scp079UiTheme.draw(graphics, font, lock, x + 8, y + 19,
-                    0.92F, 0xFF9FC0CB);
+        doorPromptActive = true;
+
+        final int right = 36;
+        final int top = 62;
+        final int height = 25;
+        final int keyWidth = 37;
+        final int rowGap = 4;
+        final float scale = 1.01F;
+
+        String primary = (doorOpen(marker) ? "CLOSE DOOR" : "OPEN DOOR")
+                + " (" + mapCost(Scp079PlayableManager.DOOR_ACTION_COST) + ")";
+        String secondary = marker.lockable()
+                ? "LOCK DOOR (" + mapCost(
+                        Scp079PlayableManager.DOOR_LOCK_COST) + ")" : "";
+
+        int textWidth = Scp079UiTheme.scaledWidth(font, primary, scale);
+        if (!secondary.isBlank()) {
+            textWidth = Math.max(textWidth,
+                    Scp079UiTheme.scaledWidth(font, secondary, scale));
         }
+        int panelWidth = Math.max(190, Math.min(430,
+                textWidth + keyWidth + 29));
+        int x = width - right - panelWidth;
+
+        renderDoorPromptRow(graphics, x, top, panelWidth, height,
+                primary, "LMB", keyWidth, scale);
+        if (!secondary.isBlank()) {
+            renderDoorPromptRow(graphics, x, top + height + rowGap,
+                    panelWidth, height, secondary, "RMB", keyWidth, scale);
+        }
+    }
+
+    private void renderDoorPromptRow(GuiGraphics graphics, int x, int y,
+            int width, int height, String label, String key, int keyWidth,
+            float scale) {
+        graphics.fill(x, y, x + width, y + height, 0xD20A1D27);
+        border(graphics, x, y, width, height, 0xFF557F91);
+        int keyX = x + width - keyWidth - 7;
+        int keyY = y + 3;
+        int keyH = height - 8;
+        graphics.fill(keyX, keyY, keyX + keyWidth, keyY + keyH,
+                0xE8D9EDF2);
+        border(graphics, keyX, keyY, keyWidth, keyH, 0xFFF3FFFF);
+        Scp079UiTheme.drawCenteredInControl(graphics, font, key,
+                keyX + keyWidth * 0.5F, keyY, keyH, 0.92F, 0xFF142631);
+
+        int available = keyX - x - 12;
+        String drawn = label;
+        String suffix = "...";
+        while (!drawn.isEmpty()
+                && Scp079UiTheme.scaledWidth(font, drawn, scale) > available) {
+            drawn = drawn.substring(0, drawn.length() - 1);
+        }
+        if (!drawn.equals(label) && !drawn.isEmpty()) {
+            while (!drawn.isEmpty()
+                    && Scp079UiTheme.scaledWidth(font,
+                    drawn + suffix, scale) > available) {
+                drawn = drawn.substring(0, drawn.length() - 1);
+            }
+            drawn = drawn.stripTrailing() + suffix;
+        }
+        Scp079UiTheme.draw(graphics, font, drawn,
+                x + 8, y + 9, scale, Scp079UiTheme.TEXT);
+    }
+
+    public boolean doorPromptActive() {
+        return doorPromptActive;
     }
 
     private String mapCost(double base) {

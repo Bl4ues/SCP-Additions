@@ -797,6 +797,8 @@ public final class Scp079FacilityMapScreen extends Screen {
         // which could adopt an unrelated door into the middle of a curved room.
         Vec3 plus = new Vec3(x, 0.0D, z).add(horizontal.scale(0.72D));
         Vec3 minus = new Vec3(x, 0.0D, z).subtract(horizontal.scale(0.72D));
+        java.util.Set<UUID> plusRooms = new java.util.LinkedHashSet<>();
+        java.util.Set<UUID> minusRooms = new java.util.LinkedHashSet<>();
         for (FacilityRoomSnapshot room : floor.rooms()) {
             boolean heightMatches = false;
             for (FacilityFloorPatch patch : room.patches()) {
@@ -808,13 +810,16 @@ public final class Scp079FacilityMapScreen extends Screen {
             if (!heightMatches) continue;
             FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
             if (geometry == null || geometry.empty()) continue;
-            if (geometry.contains(plus.x, plus.z)
-                    || geometry.contains(minus.x, minus.z)
-                    || geometry.contains(x, z)) {
-                return true;
-            }
+            if (geometry.contains(plus.x, plus.z)) plusRooms.add(room.id());
+            if (geometry.contains(minus.x, minus.z)) minusRooms.add(room.id());
         }
-        return false;
+
+        // A mapped door must actually separate mapped space: one side can be
+        // outside the map, or the two sides can belong to different rooms.
+        // If both probes land in the same room set, the door is internal to the
+        // polygon and must not become a phantom marker.
+        if (plusRooms.isEmpty() && minusRooms.isEmpty()) return false;
+        return !plusRooms.equals(minusRooms);
     }
 
     private static MapDoorMarker marker(double x, double z,

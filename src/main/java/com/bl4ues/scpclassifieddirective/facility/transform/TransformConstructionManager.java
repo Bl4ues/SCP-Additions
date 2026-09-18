@@ -632,6 +632,26 @@ public final class TransformConstructionManager {
         refreshOwner(server, surfaceId, true, false);
     }
 
+    public static synchronized void refreshGroupCell(MinecraftServer server,
+            UUID groupId, GridPos cell) {
+        refreshGroupCell(server, groupId, cell, true);
+    }
+
+    public static synchronized void refreshGroupCellRuntime(
+            MinecraftServer server, UUID groupId, GridPos cell) {
+        refreshGroupCell(server, groupId, cell, false);
+    }
+
+    public static synchronized void refreshSurfaceSlot(MinecraftServer server,
+            UUID surfaceId, SurfaceSlot slot) {
+        refreshSurfaceSlot(server, surfaceId, slot, true);
+    }
+
+    public static synchronized void refreshSurfaceSlotRuntime(
+            MinecraftServer server, UUID surfaceId, SurfaceSlot slot) {
+        refreshSurfaceSlot(server, surfaceId, slot, false);
+    }
+
     /**
      * Rebuild only one logical owner. This is the normal editing/runtime path;
      * full refresh() is reserved for startup/recovery.
@@ -684,20 +704,116 @@ public final class TransformConstructionManager {
             ConstructionSurface surface = data.surface(id);
             if (surface != null) {
                 addSurface(index, surface);
-                OwnerKey key = OwnerKey.surface(surface.dimension(), id);
-                affected.computeIfAbsent(surface.dimension(), ignored ->
-                        new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+                for (OwnerKey key : index.ownerKeys(id, true)) {
+                    affected.computeIfAbsent(key.dimension(), ignored ->
+                            new LinkedHashSet<>()).addAll(
+                                    index.ownerPositions(key));
+                }
             }
         } else {
             TransformGroup group = data.group(id);
             if (group != null) {
                 addGroup(index, group);
-                OwnerKey key = OwnerKey.group(group.dimension(), id);
-                affected.computeIfAbsent(group.dimension(), ignored ->
-                        new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+                for (OwnerKey key : index.ownerKeys(id, false)) {
+                    affected.computeIfAbsent(key.dimension(), ignored ->
+                            new LinkedHashSet<>()).addAll(
+                                    index.ownerPositions(key));
+                }
             }
         }
 
+        materializeAffected(server, index, affected);
+    }
+
+    private static void refreshGroupCell(MinecraftServer server,
+            UUID id, GridPos cell, boolean invalidatePower) {
+        if (server == null || id == null || cell == null) return;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        TransformGroup group = data.group(id);
+
+        if (invalidatePower) {
+            if (group == null) {
+                for (ServerLevel level : server.getAllLevels()) {
+                    TransformPowerQuery.removeGroup(server,
+                            level.dimension().location(), id);
+                }
+            } else {
+                TransformPowerQuery.refreshGroup(server, group);
+            }
+        }
+
+        SpatialIndex index = INDEXES.get(server);
+        if (index == null) {
+            refresh(server);
+            return;
+        }
+
+        LogicalPart part = LogicalPart.group(cell);
+        Map<ResourceLocation, Set<Long>> affected = new LinkedHashMap<>();
+        for (OwnerKey key : index.ownerKeys(id, false)) {
+            if (!part.equals(key.part())) continue;
+            affected.computeIfAbsent(key.dimension(), ignored ->
+                    new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+            index.removeOwner(key);
+        }
+
+        if (group != null && group.cells().containsKey(cell)) {
+            addGroupCell(index, group, cell);
+            OwnerKey key = OwnerKey.groupCell(group.dimension(), id, cell);
+            affected.computeIfAbsent(group.dimension(), ignored ->
+                    new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+        }
+        materializeAffected(server, index, affected);
+    }
+
+    private static void refreshSurfaceSlot(MinecraftServer server,
+            UUID id, SurfaceSlot slot, boolean invalidatePower) {
+        if (server == null || id == null || slot == null) return;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        ConstructionSurface surface = data.surface(id);
+
+        if (invalidatePower) {
+            if (surface == null) {
+                for (ServerLevel level : server.getAllLevels()) {
+                    TransformPowerQuery.removeSurface(server,
+                            level.dimension().location(), id);
+                }
+            } else {
+                TransformPowerQuery.refreshSurface(server, surface);
+            }
+        }
+
+        SpatialIndex index = INDEXES.get(server);
+        if (index == null) {
+            refresh(server);
+            return;
+        }
+
+        LogicalPart part = LogicalPart.surface(slot);
+        Map<ResourceLocation, Set<Long>> affected = new LinkedHashMap<>();
+        for (OwnerKey key : index.ownerKeys(id, true)) {
+            if (!part.equals(key.part())) continue;
+            affected.computeIfAbsent(key.dimension(), ignored ->
+                    new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+            index.removeOwner(key);
+        }
+
+        if (surface != null
+                && slot.column() >= 0 && slot.column() < surface.columns()
+                && slot.row() >= 0 && slot.row() < surface.rows()) {
+            addSurfaceSlot(index, surface, slot);
+            OwnerKey key = OwnerKey.surfaceSlot(surface.dimension(), id, slot);
+            affected.computeIfAbsent(surface.dimension(), ignored ->
+                    new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+        }
+        materializeAffected(server, index, affected);
+    }
+
+    private static void materializeAffected(MinecraftServer server,
+            SpatialIndex index,
+            Map<ResourceLocation, Set<Long>> affected) {
         for (Map.Entry<ResourceLocation, Set<Long>> entry
                 : affected.entrySet()) {
             ServerLevel level = levelByDimension(server, entry.getKey());
@@ -890,60 +1006,64 @@ public final class TransformConstructionManager {
     }
 
     private static void addGroup(SpatialIndex index, TransformGroup group) {
-        for (Map.Entry<GridPos, BlockState> entry : group.cells().entrySet()) {
-            GridPos cell = entry.getKey();
-            BlockState state = entry.getValue();
-            boolean placeholder = state == null || state.isAir();
-            if (placeholder) {
-                AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
-                        cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
-                        cell.z() + 0.5D);
-                addWorldBox(index, group.dimension(), transformedBounds(group,
-                                selection), group.id(), null, true, false, 0);
-                continue;
-            }
+        for (GridPos cell : group.cells().keySet()) {
+            addGroupCell(index, group, cell);
+        }
+    }
 
-            // Authoring selection deliberately stays a clean local 1x1x1 cell.
-            // Physical collision below remains derived from the payload VoxelShape.
-            // Mixing both made thin wall controls and animated doors almost
-            // impossible to select after rotation.
+    private static void addGroupCell(SpatialIndex index, TransformGroup group,
+            GridPos cell) {
+        BlockState state = group.cells().get(cell);
+        if (state == null) return;
+        OwnerKey owner = OwnerKey.groupCell(group.dimension(), group.id(), cell);
+        boolean placeholder = state.isAir();
+        if (placeholder) {
             AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
                     cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
                     cell.z() + 0.5D);
-            addWorldBox(index, group.dimension(),
-                    transformedBounds(group, selection), group.id(), null,
-                    true, false, state.getLightEmission());
+            addWorldBox(index, owner, transformedBounds(group, selection),
+                    true, false, 0);
+            return;
+        }
 
-            VoxelShape collision = FacilityModule.isFacilityDoor(state)
-                    && FacilityModule.isDoorPassable(state)
-                    ? Shapes.empty()
-                    : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
-                            BlockPos.ZERO, CollisionContext.empty());
-            if (collision.isEmpty()) continue;
-            int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
-            double inv = 1.0D / subdivisions;
-            collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
-                double boxX = maxX - minX;
-                double boxY = maxY - minY;
-                double boxZ = maxZ - minZ;
-                for (int sx = 0; sx < subdivisions; sx++) {
-                    for (int sy = 0; sy < subdivisions; sy++) {
-                        for (int sz = 0; sz < subdivisions; sz++) {
-                            AABB local = new AABB(
-                                    cell.x() - 0.5D + minX + boxX * sx * inv,
-                                    cell.y() - 0.5D + minY + boxY * sy * inv,
-                                    cell.z() - 0.5D + minZ + boxZ * sz * inv,
-                                    cell.x() - 0.5D + minX + boxX * (sx + 1) * inv,
-                                    cell.y() - 0.5D + minY + boxY * (sy + 1) * inv,
-                                    cell.z() - 0.5D + minZ + boxZ * (sz + 1) * inv);
-                            addWorldBox(index, group.dimension(),
-                                    transformedBounds(group, local), group.id(),
-                                    null, false, true, state.getLightEmission());
-                        }
+        AABB selection = new AABB(cell.x() - 0.5D,
+                cell.y() - 0.5D, cell.z() - 0.5D,
+                cell.x() + 0.5D, cell.y() + 0.5D, cell.z() + 0.5D);
+        addWorldBox(index, owner, transformedBounds(group, selection),
+                true, false, state.getLightEmission());
+
+        VoxelShape collision = FacilityModule.isFacilityDoor(state)
+                && FacilityModule.isDoorPassable(state)
+                ? Shapes.empty()
+                : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
+                        BlockPos.ZERO, CollisionContext.empty());
+        if (collision.isEmpty()) return;
+        int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
+        double inv = 1.0D / subdivisions;
+        collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
+            double boxX = maxX - minX;
+            double boxY = maxY - minY;
+            double boxZ = maxZ - minZ;
+            for (int sx = 0; sx < subdivisions; sx++) {
+                for (int sy = 0; sy < subdivisions; sy++) {
+                    for (int sz = 0; sz < subdivisions; sz++) {
+                        AABB local = new AABB(
+                                cell.x() - 0.5D + minX + boxX * sx * inv,
+                                cell.y() - 0.5D + minY + boxY * sy * inv,
+                                cell.z() - 0.5D + minZ + boxZ * sz * inv,
+                                cell.x() - 0.5D + minX
+                                        + boxX * (sx + 1) * inv,
+                                cell.y() - 0.5D + minY
+                                        + boxY * (sy + 1) * inv,
+                                cell.z() - 0.5D + minZ
+                                        + boxZ * (sz + 1) * inv);
+                        addWorldBox(index, owner,
+                                transformedBounds(group, local),
+                                false, true, state.getLightEmission());
                     }
                 }
-            });
-        }
+            }
+        });
     }
 
     private static void addSurface(SpatialIndex index,
@@ -952,20 +1072,24 @@ public final class TransformConstructionManager {
         int rows = surface.rows();
         for (int column = 0; column < columns; column++) {
             for (int row = 0; row < rows; row++) {
-                SurfaceSlot slot = new SurfaceSlot(column, row);
-                SurfaceAttachment attachment = surface.attachments().get(slot);
-                AABB selection = surfaceSlotBounds(surface, column, row,
-                        SURFACE_SELECTION_THICKNESS);
-                addWorldBox(index, surface.dimension(), selection, null,
-                        surface.id(), true, false, 0);
-                if (attachment == null || attachment.state().isAir()) continue;
-                for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
-                        surface, slot, attachment)) {
-                    addWorldBox(index, surface.dimension(), collision, null,
-                            surface.id(), false, true,
-                            attachment.state().getLightEmission());
-                }
+                addSurfaceSlot(index, surface, new SurfaceSlot(column, row));
             }
+        }
+    }
+
+    private static void addSurfaceSlot(SpatialIndex index,
+            ConstructionSurface surface, SurfaceSlot slot) {
+        OwnerKey owner = OwnerKey.surfaceSlot(surface.dimension(),
+                surface.id(), slot);
+        SurfaceAttachment attachment = surface.attachments().get(slot);
+        AABB selection = surfaceSlotBounds(surface, slot.column(), slot.row(),
+                SURFACE_SELECTION_THICKNESS);
+        addWorldBox(index, owner, selection, true, false, 0);
+        if (attachment == null || attachment.state().isAir()) return;
+        for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
+                surface, slot, attachment)) {
+            addWorldBox(index, owner, collision, false, true,
+                    attachment.state().getLightEmission());
         }
     }
 
@@ -1033,8 +1157,8 @@ public final class TransformConstructionManager {
     }
 
     private static void addWorldBox(SpatialIndex index,
-            ResourceLocation dimension, AABB worldBox, UUID groupId,
-            UUID surfaceId, boolean selection, boolean collision, int light) {
+            OwnerKey owner, AABB worldBox, boolean selection,
+            boolean collision, int light) {
         int minX = (int) Math.floor(worldBox.minX);
         int minY = (int) Math.floor(worldBox.minY);
         int minZ = (int) Math.floor(worldBox.minZ);
@@ -1050,8 +1174,7 @@ public final class TransformConstructionManager {
                     AABB clipped = intersect(worldBox, cell);
                     if (clipped == null) continue;
                     AABB local = clipped.move(-x, -y, -z);
-                    index.add(dimension, pos, local, groupId, surfaceId,
-                            selection, collision, light);
+                    index.add(owner, pos, local, selection, collision, light);
                 }
             }
         }
@@ -1209,14 +1332,28 @@ public final class TransformConstructionManager {
         }
     }
 
-    private record OwnerKey(ResourceLocation dimension, UUID id,
-            boolean surface) {
-        private static OwnerKey group(ResourceLocation dimension, UUID id) {
-            return new OwnerKey(dimension, id, false);
+    private record LogicalPart(int x, int y, int z) {
+        private static LogicalPart group(GridPos cell) {
+            return new LogicalPart(cell.x(), cell.y(), cell.z());
         }
 
-        private static OwnerKey surface(ResourceLocation dimension, UUID id) {
-            return new OwnerKey(dimension, id, true);
+        private static LogicalPart surface(SurfaceSlot slot) {
+            return new LogicalPart(slot.column(), slot.row(), 0);
+        }
+    }
+
+    private record OwnerKey(ResourceLocation dimension, UUID id,
+            boolean surface, LogicalPart part) {
+        private static OwnerKey groupCell(ResourceLocation dimension, UUID id,
+                GridPos cell) {
+            return new OwnerKey(dimension, id, false,
+                    LogicalPart.group(cell));
+        }
+
+        private static OwnerKey surfaceSlot(ResourceLocation dimension, UUID id,
+                SurfaceSlot slot) {
+            return new OwnerKey(dimension, id, true,
+                    LogicalPart.surface(slot));
         }
     }
 
@@ -1228,20 +1365,19 @@ public final class TransformConstructionManager {
         private final Map<ResourceLocation, Map<Long, ProxyCell>> frozen =
                 new LinkedHashMap<>();
 
-        private void add(ResourceLocation dimension, BlockPos pos, AABB local,
-                UUID groupId, UUID surfaceId, boolean selection,
-                boolean collision, int light) {
-            OwnerKey owner = groupId != null
-                    ? OwnerKey.group(dimension, groupId)
-                    : OwnerKey.surface(dimension, surfaceId);
+        private void add(OwnerKey owner, BlockPos pos, AABB local,
+                boolean selection, boolean collision, int light) {
+            UUID groupId = owner.surface() ? null : owner.id();
+            UUID surfaceId = owner.surface() ? owner.id() : null;
             long packed = pos.asLong();
             owners.computeIfAbsent(owner, ignored -> new LinkedHashMap<>())
                     .computeIfAbsent(packed, ignored -> new MutableProxyCell())
                     .add(local, groupId, surfaceId, selection, collision, light);
-            cells.computeIfAbsent(dimension, ignored -> new LinkedHashMap<>())
+            cells.computeIfAbsent(owner.dimension(),
+                            ignored -> new LinkedHashMap<>())
                     .computeIfAbsent(packed, ignored -> new LinkedHashSet<>())
                     .add(owner);
-            Map<Long, ProxyCell> cache = frozen.get(dimension);
+            Map<Long, ProxyCell> cache = frozen.get(owner.dimension());
             if (cache != null) cache.remove(packed);
         }
 

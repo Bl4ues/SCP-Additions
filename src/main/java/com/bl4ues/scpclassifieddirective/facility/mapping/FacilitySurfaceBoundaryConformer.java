@@ -45,11 +45,14 @@ public final class FacilitySurfaceBoundaryConformer {
         for (ConstructionSurface surface
                 : TransformConstructionManager.surfaces(level)) {
             if (!isRelevant(base, surface)) continue;
-            Area interior = interiorRegion(surface, far);
-            if (interior.isEmpty()) continue;
+            Area exterior = exteriorRegion(surface, far);
+            if (exterior.isEmpty()) continue;
 
+            // A wall only excludes the space on its placement side (+normal).
+            // Intersecting the whole room with an "interior strip" made every
+            // unrelated part of the selection disappear at the strip's ends.
             Area clipped = new Area(result);
-            clipped.intersect(interior);
+            clipped.subtract(exterior);
             if (clipped.isEmpty()) continue;
 
             double before = areaMagnitude(result);
@@ -66,16 +69,16 @@ public final class FacilitySurfaceBoundaryConformer {
         return refined == null ? base : refined;
     }
 
-    private static Area interiorRegion(ConstructionSurface surface,
+    private static Area exteriorRegion(ConstructionSurface surface,
             double distance) {
         int samples = samples(surface);
         Area result = new Area();
         Vec3 first = null;
         Vec3 firstNext = null;
-        Vec3 firstInward = null;
+        Vec3 firstOutward = null;
         Vec3 lastPrevious = null;
         Vec3 last = null;
-        Vec3 lastInward = null;
+        Vec3 lastOutward = null;
         for (int index = 0; index < samples; index++) {
             double u0 = index / (double) samples;
             double u1 = (index + 1.0D) / samples;
@@ -83,51 +86,51 @@ public final class FacilitySurfaceBoundaryConformer {
             Vec3 a = surface.gridPoint(u0, 0.0D);
             Vec3 b = surface.gridPoint(u1, 0.0D);
             Vec3 normal = surface.gridNormal(um, 0.0D);
-            Vec3 inward = new Vec3(-normal.x, 0.0D, -normal.z);
-            if (inward.lengthSqr() < 1.0E-10D) continue;
-            inward = inward.normalize();
+            Vec3 outward = new Vec3(normal.x, 0.0D, normal.z);
+            if (outward.lengthSqr() < 1.0E-10D) continue;
+            outward = outward.normalize();
             if (first == null) {
                 first = a;
                 firstNext = b;
-                firstInward = inward;
+                firstOutward = outward;
             }
             lastPrevious = a;
             last = b;
-            lastInward = inward;
+            lastOutward = outward;
 
-            addStrip(result, a, b, inward, distance);
+            addStrip(result, a, b, outward, distance);
         }
 
         // A wall is a boundary, not a finite carpet strip. Extend its first and
         // last tangents so a selection that begins slightly before/after the
         // authored Surface is clipped by the curve rather than by an artificial
         // perpendicular cap at the endpoint.
-        if (first != null && firstNext != null && firstInward != null) {
+        if (first != null && firstNext != null && firstOutward != null) {
             Vec3 tangent = horizontal(firstNext.subtract(first));
             if (tangent.lengthSqr() > 1.0E-10D) {
                 Vec3 extended = first.subtract(tangent.normalize()
                         .scale(distance));
-                addStrip(result, extended, first, firstInward, distance);
+                addStrip(result, extended, first, firstOutward, distance);
             }
         }
-        if (lastPrevious != null && last != null && lastInward != null) {
+        if (lastPrevious != null && last != null && lastOutward != null) {
             Vec3 tangent = horizontal(last.subtract(lastPrevious));
             if (tangent.lengthSqr() > 1.0E-10D) {
                 Vec3 extended = last.add(tangent.normalize().scale(distance));
-                addStrip(result, last, extended, lastInward, distance);
+                addStrip(result, last, extended, lastOutward, distance);
             }
         }
         return result;
     }
 
     private static void addStrip(Area result, Vec3 a, Vec3 b,
-            Vec3 inwardUnit, double distance) {
-        Vec3 inward = inwardUnit.scale(distance);
+            Vec3 outwardUnit, double distance) {
+        Vec3 outward = outwardUnit.scale(distance);
         Path2D.Double quad = new Path2D.Double(Path2D.WIND_NON_ZERO);
         quad.moveTo(a.x, a.z);
         quad.lineTo(b.x, b.z);
-        quad.lineTo(b.x + inward.x, b.z + inward.z);
-        quad.lineTo(a.x + inward.x, a.z + inward.z);
+        quad.lineTo(b.x + outward.x, b.z + outward.z);
+        quad.lineTo(a.x + outward.x, a.z + outward.z);
         quad.closePath();
         result.add(new Area(quad));
     }

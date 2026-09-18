@@ -72,7 +72,8 @@ public final class TransformAlarmRuntime {
                 Vec3 center = original.cellCenter(entry.getKey());
                 boolean active = shouldBeActive(level, center, doors,
                         TransformPowerQuery.powered(level, original,
-                                entry.getKey()));
+                                entry.getKey())
+                                || adjacentOpenDoor(original, entry.getKey()));
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
                 if (active != wasActive) {
                     BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
@@ -115,7 +116,8 @@ public final class TransformAlarmRuntime {
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
                 Vec3 center = surfaceCenter(original, slot);
                 boolean active = shouldBeActive(level, center, doors,
-                        TransformPowerQuery.powered(level, original, slot));
+                        TransformPowerQuery.powered(level, original, slot)
+                                || adjacentOpenDoor(original, slot));
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
                 if (active != wasActive) {
                     BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
@@ -137,6 +139,39 @@ public final class TransformAlarmRuntime {
             }
         }
         return changed;
+    }
+
+    private static boolean adjacentOpenDoor(TransformGroup group,
+            TransformGroup.GridPos cell) {
+        for (net.minecraft.core.Direction direction
+                : net.minecraft.core.Direction.values()) {
+            BlockState state = group.cells().get(cell.offset(
+                    direction.getStepX(), direction.getStepY(),
+                    direction.getStepZ()));
+            if (state != null
+                    && FacilityModule.isElectricDoorOpenOrOpening(state)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean adjacentOpenDoor(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot) {
+        int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        for (int[] offset : offsets) {
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.attachments().get(
+                            new ConstructionSurface.SurfaceSlot(
+                                    slot.column() + offset[0],
+                                    slot.row() + offset[1]));
+            if (attachment != null
+                    && FacilityModule.isElectricDoorOpenOrOpening(
+                            attachment.state())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isAlarm(BlockState state) {

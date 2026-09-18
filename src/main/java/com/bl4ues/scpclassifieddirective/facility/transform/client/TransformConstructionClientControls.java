@@ -170,6 +170,15 @@ public final class TransformConstructionClientControls {
                 TransformConstructionClientState.setAxis(Axis.Z);
                 status("Z axis");
             }
+            case GLFW.GLFW_KEY_C -> {
+                finishDrag();
+                if (selection.type() == SelectionType.SURFACE) {
+                    TransformConstructionClientState.toggleSurfaceCurveAxis();
+                    status(TransformConstructionClientState.surfaceCurveAxis()
+                            == TransformConstructionClientState.SurfaceCurveAxis.WIDTH
+                            ? "Curve axis: width" : "Curve axis: height");
+                }
+            }
             case GLFW.GLFW_KEY_F -> {
                 finishDrag();
                 if (selection.type() == SelectionType.SURFACE) {
@@ -257,7 +266,7 @@ public final class TransformConstructionClientControls {
         if (Math.abs(delta - drag.lastDelta()) < 1.0E-5D) return;
         rememberDragIfNeeded();
         drag = drag.withLastDelta(delta);
-        Vec3 movement = axis.scale(delta);
+        Vec3 movement = drag.dragAxis().scale(delta);
         if (selection.type() == SelectionType.GROUP) {
             previewGroupDrag(drag, movement, player.isShiftKeyDown());
         } else {
@@ -559,6 +568,7 @@ public final class TransformConstructionClientControls {
         Vec3 ts = surface.topStart();
         Vec3 te = surface.topEnd();
         Vec3 curve = surface.curveOffset();
+        Vec3 heightCurve = surface.heightCurveOffset();
         switch (handle) {
             case BOTTOM_START -> bs = bs.add(delta);
             case BOTTOM_END -> be = be.add(delta);
@@ -580,9 +590,17 @@ public final class TransformConstructionClientControls {
                 be = be.add(delta);
                 te = te.add(delta);
             }
-            // A quadratic control contributes half of its offset at u=.5, so
-            // doubling movement keeps the visible center tracking the cursor.
-            case CENTER -> curve = curve.add(delta.scale(2.0D));
+            case CENTER -> {
+                if (TransformConstructionClientState.surfaceCurveAxis()
+                        == TransformConstructionClientState.SurfaceCurveAxis.WIDTH) {
+                    // The horizontal quadratic contributes half of its control
+                    // offset at u=.5.
+                    curve = curve.add(delta.scale(2.0D));
+                } else {
+                    // The vertical bulge reaches its full offset at v=.5.
+                    heightCurve = heightCurve.add(delta);
+                }
+            }
         }
 
         if (snap) {
@@ -610,18 +628,27 @@ public final class TransformConstructionClientControls {
                 case CENTER -> {
                     Vec3 geometricCenter = bs.add(be).add(ts).add(te)
                             .scale(0.25D);
-                    Vec3 visibleCenter = geometricCenter.add(curve.scale(0.5D));
+                    Vec3 visibleCenter = geometricCenter
+                            .add(curve.scale(0.5D)).add(heightCurve);
                     Vec3 snappedCenter = snap16(visibleCenter);
-                    curve = snappedCenter.subtract(geometricCenter).scale(2.0D);
+                    if (TransformConstructionClientState.surfaceCurveAxis()
+                            == TransformConstructionClientState.SurfaceCurveAxis.WIDTH) {
+                        curve = snappedCenter.subtract(geometricCenter)
+                                .subtract(heightCurve).scale(2.0D);
+                    } else {
+                        heightCurve = snappedCenter.subtract(geometricCenter)
+                                .subtract(curve.scale(0.5D));
+                    }
                 }
             }
         }
 
-        ConstructionSurface next = surface.withGeometry(bs, be, ts, te, curve);
+        ConstructionSurface next = surface.withGeometry(bs, be, ts, te, curve,
+                heightCurve);
         TransformConstructionClientState.upsertSurface(next);
         if (send) {
             TransformConstructionNetwork.updateSurface(surface.id(), bs, be, ts,
-                    te, curve);
+                    te, curve, heightCurve);
         }
     }
 
@@ -650,7 +677,7 @@ public final class TransformConstructionClientControls {
                     TransformConstructionNetwork.updateSurface(current.id(),
                             current.bottomStart(), current.bottomEnd(),
                             current.topStart(), current.topEnd(),
-                            current.curveOffset());
+                            current.curveOffset(), current.heightCurveOffset());
                 }
             }
         }

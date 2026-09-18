@@ -49,6 +49,8 @@ public final class TransformSurfaceDoorRuntime {
             new WeakHashMap<>();
     private static final Map<MinecraftServer, Integer> LAST_RECOVERY =
             new WeakHashMap<>();
+    private static final Map<MinecraftServer, DoorIndex> DOOR_INDEX =
+            new WeakHashMap<>();
 
     private TransformSurfaceDoorRuntime() {
     }
@@ -133,37 +135,60 @@ public final class TransformSurfaceDoorRuntime {
                 ignored -> new HashMap<>());
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 server);
-        for (ConstructionSurface surface : data.surfaces()) {
+        for (DoorRef ref : doorRefs(server, data)) {
+            ConstructionSurface surface = data.surface(ref.surfaceId());
+            if (surface == null) continue;
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.attachments().get(ref.slot());
+            if (attachment == null) continue;
+            DoorAddress address = address(attachment.state());
+            if (address == null) continue;
             ServerLevel level = levelById(server, surface.dimension());
             if (level == null) continue;
+
+            CellKey key = new CellKey(surface.id(), ref.slot());
+            if ((address.stage() == DoorStage.OPENING
+                    || address.stage() == DoorStage.CLOSING)
+                    && !pending.containsKey(key)) {
+                pending.put(key, new PendingDoor(surface.dimension(),
+                        address.family().id(),
+                        address.stage() == DoorStage.OPENING,
+                        tick + Math.max(1, address.family().frameDelay())));
+                continue;
+            }
+            if (address.family().directUse() || pending.containsKey(key)) {
+                continue;
+            }
+            boolean powered = TransformPowerQuery.powered(level,
+                    surface, ref.slot());
+            if (address.stage() == DoorStage.CLOSED && powered) {
+                start(level, surface, ref.slot(), address.family(), true);
+            } else if (address.stage() == DoorStage.OPEN && !powered) {
+                start(level, surface, ref.slot(), address.family(), false);
+            }
+        }
+    }
+
+    private static List<DoorRef> doorRefs(MinecraftServer server,
+            TransformConstructionSavedData data) {
+        long revision = data.revision();
+        DoorIndex cached = DOOR_INDEX.get(server);
+        if (cached != null && cached.revision() == revision) {
+            return cached.refs();
+        }
+        java.util.ArrayList<DoorRef> refs = new java.util.ArrayList<>();
+        for (ConstructionSurface surface : data.surfaces()) {
             for (Map.Entry<ConstructionSurface.SurfaceSlot,
                     ConstructionSurface.SurfaceAttachment> entry
                     : surface.attachments().entrySet()) {
-                DoorAddress address = address(entry.getValue().state());
-                if (address == null) continue;
-                CellKey key = new CellKey(surface.id(), entry.getKey());
-                if ((address.stage() == DoorStage.OPENING
-                        || address.stage() == DoorStage.CLOSING)
-                        && !pending.containsKey(key)) {
-                    pending.put(key, new PendingDoor(surface.dimension(),
-                            address.family().id(),
-                            address.stage() == DoorStage.OPENING,
-                            tick + Math.max(1, address.family().frameDelay())));
-                    continue;
-                }
-                if (address.family().directUse() || pending.containsKey(key)) {
-                    continue;
-                }
-                Vec3 center = center(surface, entry.getKey());
-                boolean powered = TransformPowerQuery.powered(level,
-                        surface, entry.getKey());
-                if (address.stage() == DoorStage.CLOSED && powered) {
-                    start(level, surface, entry.getKey(), address.family(), true);
-                } else if (address.stage() == DoorStage.OPEN && !powered) {
-                    start(level, surface, entry.getKey(), address.family(), false);
+                if (address(entry.getValue().state()) != null) {
+                    refs.add(new DoorRef(surface.id(), entry.getKey()));
                 }
             }
         }
+        List<DoorRef> immutable = List.copyOf(refs);
+        DOOR_INDEX.put(server, new DoorIndex(revision, immutable));
+        return immutable;
     }
 
     private static boolean advance(ServerLevel level, CellKey key,
@@ -322,6 +347,13 @@ public final class TransformSurfaceDoorRuntime {
             if (level.dimension().location().equals(dimension)) return level;
         }
         return null;
+    }
+
+    private record DoorRef(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+    }
+
+    private record DoorIndex(long revision, List<DoorRef> refs) {
     }
 
     private record CellKey(UUID surfaceId,

@@ -53,6 +53,17 @@ public abstract class TransformConstructionStartupMixin {
         }
     }
 
+    @Inject(method = "offGridCollisionShape", at = @At("HEAD"),
+            cancellable = true, remap = false)
+    private static void scpClassifiedDirective$deferOffGridCollisionIndex(
+            BlockGetter getter, BlockPos pos,
+            CallbackInfoReturnable<VoxelShape> callback) {
+        if (getter instanceof ServerLevel level
+                && !TransformConstructionStartupState.isReady(level.getServer())) {
+            callback.setReturnValue(Shapes.empty());
+        }
+    }
+
     @Inject(method = "proxyLight", at = @At("HEAD"), cancellable = true,
             remap = false)
     private static void scpClassifiedDirective$deferLightIndex(

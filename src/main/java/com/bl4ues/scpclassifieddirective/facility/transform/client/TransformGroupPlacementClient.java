@@ -138,6 +138,48 @@ public final class TransformGroupPlacementClient {
         return bestId;
     }
 
+    static BlockState findAimedPayloadState(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (player == null || minecraft.level == null) return null;
+        Vec3 eye = player.getEyePosition();
+        Vec3 worldRay = player.getViewVector(1.0F).normalize();
+        double limit = MAX_DISTANCE;
+
+        HitResult vanilla = minecraft.hitResult;
+        if (vanilla instanceof BlockHitResult blockHit
+                && vanilla.getType() == HitResult.Type.BLOCK
+                && !minecraft.level.getBlockState(blockHit.getBlockPos()).is(
+                        com.bl4ues.scpclassifieddirective.facility.transform
+                                .TransformConstructionModule.getProxy())) {
+            limit = Math.min(limit,
+                    eye.distanceTo(blockHit.getLocation()) + 0.08D);
+        }
+
+        BlockState bestState = null;
+        double bestDistance = limit + 1.0D;
+        for (TransformGroup group : TransformConstructionClientState.groups(
+                minecraft.level.dimension().location())) {
+            Vec3 localEye = TransformMath.worldToLocal(group.origin(), eye,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            Vec3 localRay = TransformMath.inverseRotate(worldRay,
+                    group.rotationX(), group.rotationY(), group.rotationZ())
+                    .normalize();
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                BlockState state = entry.getValue();
+                if (state == null || state.isAir()) continue;
+                Hit hit = intersectState(localEye, localRay, entry.getKey(),
+                        state, false);
+                if (hit == null || hit.distance() < 0.0D
+                        || hit.distance() > limit
+                        || hit.distance() >= bestDistance) continue;
+                bestDistance = hit.distance();
+                bestState = state;
+            }
+        }
+        return bestState;
+    }
+
     private static PayloadTarget findPayloadTarget(LocalPlayer player) {
         Minecraft minecraft = Minecraft.getInstance();
         Vec3 eye = player.getEyePosition();

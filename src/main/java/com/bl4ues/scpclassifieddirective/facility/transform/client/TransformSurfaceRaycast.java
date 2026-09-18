@@ -48,16 +48,16 @@ public final class TransformSurfaceRaycast {
         Vec3 eye = player.getEyePosition();
         Vec3 ray = player.getViewVector(1.0F).normalize();
         double limit = MAX_DISTANCE;
+        net.minecraft.core.BlockPos vanillaBlocker = null;
+        double vanillaDistance = Double.POSITIVE_INFINITY;
 
         HitResult vanilla = minecraft.hitResult;
         if (vanilla instanceof BlockHitResult blockHit
                 && vanilla.getType() == HitResult.Type.BLOCK
                 && !minecraft.level.getBlockState(blockHit.getBlockPos())
                         .is(TransformConstructionModule.getProxy())) {
-            // Allow a curved Surface payload sharing this exact vanilla cell to
-            // remain pickable, but never raycast through unrelated terrain.
-            limit = Math.min(limit,
-                    eye.distanceTo(blockHit.getLocation()) + 0.08D);
+            vanillaBlocker = blockHit.getBlockPos();
+            vanillaDistance = eye.distanceTo(blockHit.getLocation());
         }
 
         Target best = null;
@@ -77,7 +77,16 @@ public final class TransformSurfaceRaycast {
 
             Target candidate = targetSurface(surface, eye, ray,
                     Math.min(limit, bestDistance));
-            if (candidate != null && candidate.distance() < bestDistance) {
+            if (candidate == null) continue;
+            if (vanillaBlocker != null
+                    && candidate.distance() > vanillaDistance + 1.0E-4D
+                    && (!TransformConstructionClientState
+                            .surfaceTouchesWorldCell(surface.id(),
+                                    vanillaBlocker)
+                    || candidate.distance() > vanillaDistance + 1.80D)) {
+                continue;
+            }
+            if (candidate.distance() < bestDistance) {
                 bestDistance = candidate.distance();
                 best = candidate;
             }

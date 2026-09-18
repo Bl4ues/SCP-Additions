@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform.client;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
@@ -164,28 +165,31 @@ public final class TransformSurfaceRaycast {
         Target best = null;
         double bestDistance = limit + 1.0D;
 
-        ConstructionSurface.SurfaceAttachment positive =
-                surface.overlay(slot, 1);
-        if (positive != null && !positive.state().isAir()) {
-            best = nearer(best, targetLogicalCell(surface, slot, positive,
+        VisualAttachment positive =
+                visualAttachment(surface, slot, 1, true);
+        if (positive != null && !positive.attachment().state().isAir()) {
+            best = nearer(best, targetLogicalCell(surface, slot,
+                    positive.anchor(), positive.attachment(),
                     1, true, Layer.POSITIVE_OVERLAY, eye, ray,
                     Math.min(limit, bestDistance)));
             if (best != null) bestDistance = best.distance();
         }
 
-        ConstructionSurface.SurfaceAttachment negative =
-                surface.overlay(slot, -1);
-        if (negative != null && !negative.state().isAir()) {
-            best = nearer(best, targetLogicalCell(surface, slot, negative,
+        VisualAttachment negative =
+                visualAttachment(surface, slot, -1, true);
+        if (negative != null && !negative.attachment().state().isAir()) {
+            best = nearer(best, targetLogicalCell(surface, slot,
+                    negative.anchor(), negative.attachment(),
                     -1, true, Layer.NEGATIVE_OVERLAY, eye, ray,
                     Math.min(limit, bestDistance)));
             if (best != null) bestDistance = best.distance();
         }
 
-        ConstructionSurface.SurfaceAttachment main =
-                surface.attachments().get(slot);
-        if (main != null && !main.state().isAir()) {
-            best = nearer(best, targetLogicalCell(surface, slot, main,
+        VisualAttachment main =
+                visualAttachment(surface, slot, 1, false);
+        if (main != null && !main.attachment().state().isAir()) {
+            best = nearer(best, targetLogicalCell(surface, slot,
+                    main.anchor(), main.attachment(),
                     1, false, Layer.MAIN, eye, ray,
                     Math.min(limit, bestDistance)));
             if (best != null) bestDistance = best.distance();
@@ -197,8 +201,50 @@ public final class TransformSurfaceRaycast {
         return targetGuideCell(surface, slot, eye, ray, limit);
     }
 
+    private static VisualAttachment visualAttachment(
+            ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot visualSlot,
+            int normalSign, boolean overlay) {
+        int side = normalSign < 0 ? -1 : 1;
+        ConstructionSurface.SurfaceAttachment direct = overlay
+                ? surface.overlay(visualSlot, side)
+                : surface.attachments().get(visualSlot);
+        if (direct != null
+                && TransformWallFixturePlacement.visualShift(
+                        direct.state()) == null) {
+            return new VisualAttachment(visualSlot, direct);
+        }
+
+        int frameSign = (surface.flipped() ? -1 : 1) * side;
+        for (int columnOffset = -1; columnOffset <= 1; columnOffset++) {
+            if (columnOffset == 0) continue;
+            int column = visualSlot.column() + columnOffset;
+            if (column < 0 || column >= surface.columns()) continue;
+            ConstructionSurface.SurfaceSlot anchor =
+                    new ConstructionSurface.SurfaceSlot(
+                            column, visualSlot.row());
+            ConstructionSurface.SurfaceAttachment candidate = overlay
+                    ? surface.overlay(anchor, side)
+                    : surface.attachments().get(anchor);
+            if (candidate == null) continue;
+            Direction visualShift =
+                    TransformWallFixturePlacement.visualShift(
+                            candidate.state());
+            if (visualShift == null) continue;
+            int visualColumn = anchor.column()
+                    + visualShift.getStepX() * frameSign;
+            int visualRow = anchor.row() + visualShift.getStepY();
+            if (visualColumn == visualSlot.column()
+                    && visualRow == visualSlot.row()) {
+                return new VisualAttachment(anchor, candidate);
+            }
+        }
+        return null;
+    }
+
     private static Target targetLogicalCell(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceSlot visualSlot,
+            ConstructionSurface.SurfaceSlot addressSlot,
             ConstructionSurface.SurfaceAttachment attachment, int normalSign,
             boolean overlay, Layer layer, Vec3 eye, Vec3 ray, double limit) {
         Target best = null;
@@ -405,6 +451,11 @@ public final class TransformSurfaceRaycast {
 
     private static double lerp(double a, double b, double t) {
         return a + (b - a) * t;
+    }
+
+    private record VisualAttachment(
+            ConstructionSurface.SurfaceSlot anchor,
+            ConstructionSurface.SurfaceAttachment attachment) {
     }
 
     private record Patch(double u0, double u1, double v0, double v1,

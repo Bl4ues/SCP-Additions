@@ -136,7 +136,17 @@ public final class TransformConstructionClientRenderer {
                     renderGroupGrid(pose, lines, selectedGroup, camera);
                 }
             }
-            if ((surfaceTool || showSelectedSurface)
+            if (surfaceTool) {
+                for (ConstructionSurface surface : surfaces) {
+                    if (selection != null
+                            && selection.type() == SelectionType.SURFACE
+                            && surface.id().equals(selection.id())) {
+                        renderSurfaceGrid(pose, lines, surface, camera);
+                    } else {
+                        renderSurfaceOutline(pose, lines, surface, camera);
+                    }
+                }
+            } else if (showSelectedSurface
                     && selection != null
                     && selection.type() == SelectionType.SURFACE) {
                 ConstructionSurface selectedSurface =
@@ -554,6 +564,38 @@ public final class TransformConstructionClientRenderer {
             case Z -> new float[]{hot ? 0.42F : 0.18F,
                     hot ? 0.58F : 0.32F, boost};
         };
+    }
+
+    private static void renderSurfaceOutline(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface, Vec3 camera) {
+        Vec3 center = surface.gridPoint(0.5D, 0.5D);
+        double radius = Math.max(surface.width(), surface.height()) * 0.75D + 2.0D;
+        if (center.distanceToSqr(camera)
+                > (192.0D + radius) * (192.0D + radius)) return;
+
+        int widthSamples = Math.max(8, Math.min(48, surface.columns() * 2));
+        int heightSamples = Math.max(4, Math.min(24, surface.rows() * 2));
+        renderSurfaceEdge(pose, lines, surface, true, 0.0D, widthSamples);
+        renderSurfaceEdge(pose, lines, surface, true, 1.0D, widthSamples);
+        renderSurfaceEdge(pose, lines, surface, false, 0.0D, heightSamples);
+        renderSurfaceEdge(pose, lines, surface, false, 1.0D, heightSamples);
+    }
+
+    private static void renderSurfaceEdge(PoseStack pose, VertexConsumer lines,
+            ConstructionSurface surface, boolean horizontal, double fixed,
+            int samples) {
+        Vec3 previous = horizontal
+                ? surface.gridPoint(0.0D, fixed)
+                : surface.gridPoint(fixed, 0.0D);
+        for (int sample = 1; sample <= samples; sample++) {
+            double t = sample / (double) samples;
+            Vec3 current = horizontal
+                    ? surface.gridPoint(t, fixed)
+                    : surface.gridPoint(fixed, t);
+            line(pose, lines, previous, current,
+                    0.12F, 1.0F, 0.28F, 0.72F);
+            previous = current;
+        }
     }
 
     private static void renderSurfaceMappingGuide(PoseStack pose,

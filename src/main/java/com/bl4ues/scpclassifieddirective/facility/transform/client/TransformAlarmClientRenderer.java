@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.client.AlarmClient;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
@@ -108,8 +109,13 @@ public final class TransformAlarmClientRenderer {
                     group.rotationY(), group.rotationZ()));
             pose.translate(cell.x() - 0.5D, cell.y() - 0.5D,
                     cell.z() - 0.5D);
-            minecraft.getBlockEntityRenderDispatcher().render(alarm,
-                    event.getPartialTick(), pose, buffers);
+            var renderer = minecraft.getBlockEntityRenderDispatcher()
+                    .getRenderer(alarm);
+            if (renderer instanceof AlarmClient.BlockRenderer alarmRenderer) {
+                alarmRenderer.renderTransformed(alarm, event.getPartialTick(),
+                        pose, buffers, net.minecraft.client.renderer.LightTexture.FULL_BRIGHT,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+            }
             pose.popPose();
         }
     }
@@ -144,8 +150,13 @@ public final class TransformAlarmClientRenderer {
             pose.translate(center.x, center.y, center.z);
             pose.mulPose(TransformMath.frameQuaternion(tangent, vertical, normal));
             pose.translate(-0.5D, -0.5D, -0.5D);
-            minecraft.getBlockEntityRenderDispatcher().render(alarm,
-                    event.getPartialTick(), pose, buffers);
+            var renderer = minecraft.getBlockEntityRenderDispatcher()
+                    .getRenderer(alarm);
+            if (renderer instanceof AlarmClient.BlockRenderer alarmRenderer) {
+                alarmRenderer.renderTransformed(alarm, event.getPartialTick(),
+                        pose, buffers, net.minecraft.client.renderer.LightTexture.FULL_BRIGHT,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+            }
             pose.popPose();
         }
     }

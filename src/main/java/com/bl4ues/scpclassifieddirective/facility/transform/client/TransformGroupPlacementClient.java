@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SelectionType;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -229,19 +230,19 @@ public final class TransformGroupPlacementClient {
         // A 32-block unit ray crosses at most ~56 cell planes diagonally.
         // 128 leaves plenty of numerical headroom without an unbounded walk.
         for (int step = 0; step < 128 && travelled <= limit + EPSILON; step++) {
-            if (group.cells().containsKey(cell)) {
-                BlockState state = group.cells().get(cell);
-                if (accepted.test(state)) {
-                    Hit hit = payloadShape
-                            ? intersectState(localEye, localRay, cell, state,
-                                    false)
-                            : intersect(localEye, localRay, cell);
-                    if (hit != null && hit.distance() >= -EPSILON
-                            && hit.distance() <= limit + EPSILON) {
-                        Vec3 worldHit = worldEye.add(
-                                worldRay.scale(hit.distance()));
-                        return new GridTarget(group, cell, state, hit, worldHit);
-                    }
+            VisualPayload visual = payloadAtVisualCell(group, cell,
+                    accepted);
+            if (visual != null) {
+                Hit hit = payloadShape
+                        ? intersectState(localEye, localRay, cell,
+                                visual.state(), false)
+                        : intersect(localEye, localRay, cell);
+                if (hit != null && hit.distance() >= -EPSILON
+                        && hit.distance() <= limit + EPSILON) {
+                    Vec3 worldHit = worldEye.add(
+                            worldRay.scale(hit.distance()));
+                    return new GridTarget(group, visual.anchor(),
+                            visual.state(), hit, worldHit);
                 }
             }
 
@@ -264,6 +265,29 @@ public final class TransformGroupPlacementClient {
         return null;
     }
 
+    private static VisualPayload payloadAtVisualCell(
+            TransformGroup group, TransformGroup.GridPos visualCell,
+            java.util.function.Predicate<BlockState> accepted) {
+        BlockState direct = group.cells().get(visualCell);
+        if (direct != null && accepted.test(direct)
+                && TransformWallFixturePlacement.visualShift(direct) == null) {
+            return new VisualPayload(visualCell, direct);
+        }
+
+        for (Direction direction : Direction.Plane.HORIZONTAL) {
+            TransformGroup.GridPos anchor = visualCell.offset(
+                    -direction.getStepX(), 0, -direction.getStepZ());
+            BlockState state = group.cells().get(anchor);
+            if (state == null || !accepted.test(state)) continue;
+            Direction visualShift =
+                    TransformWallFixturePlacement.visualShift(state);
+            if (visualShift == direction) {
+                return new VisualPayload(anchor, state);
+            }
+        }
+        return null;
+    }
+
     private static double nextBoundary(double origin, double direction,
             int cell) {
         if (Math.abs(direction) < EPSILON) {
@@ -278,6 +302,7 @@ public final class TransformGroupPlacementClient {
     private static boolean interactive(BlockState state) {
         return state != null && (state.getBlock() instanceof ButtonBlock
                 || state.getBlock() instanceof LeverBlock
+                || TransformWallFixturePlacement.isDoorButton(state)
                 || FacilityModule.isFacilityDoor(state));
     }
 
@@ -382,6 +407,10 @@ public final class TransformGroupPlacementClient {
     }
 
     private record Hit(double distance, Direction face) {
+    }
+
+    private record VisualPayload(TransformGroup.GridPos anchor,
+            BlockState state) {
     }
 
     private record GridTarget(TransformGroup group,

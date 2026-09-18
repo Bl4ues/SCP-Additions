@@ -73,6 +73,13 @@ public final class TransformConstructionClientState {
                         return cell == null ? Shapes.empty()
                                 : cell.groupCollision();
                     }
+
+                    @Override
+                    public VoxelShape transformedCollision(BlockPos pos) {
+                        TransformConstructionManager.ProxyCell cell =
+                                proxyCell(pos);
+                        return cell == null ? Shapes.empty() : cell.collision();
+                    }
                 });
     }
 

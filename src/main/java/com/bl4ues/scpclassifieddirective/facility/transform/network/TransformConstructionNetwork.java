@@ -5,6 +5,8 @@ import com.bl4ues.scpclassifieddirective.facility.transform.BlockStateCodec;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionSavedData;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformControlRuntime;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformDoorRuntime;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringManager;
 import net.minecraft.core.BlockPos;
@@ -86,6 +88,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(11, PlaceGroupBlock.class,
                 PlaceGroupBlock::encode, PlaceGroupBlock::decode,
                 PlaceGroupBlock::handle);
+        CHANNEL.registerMessage(12, UseGroupCell.class,
+                UseGroupCell::encode, UseGroupCell::decode,
+                UseGroupCell::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -134,6 +139,12 @@ public final class TransformConstructionNetwork {
                 || outwardLocal == null || hit == null) return;
         CHANNEL.sendToServer(new PlaceGroupBlock(groupId, sourceCell,
                 targetCell, outwardLocal, hit));
+    }
+
+    public static void useGroupCell(UUID groupId,
+            TransformGroup.GridPos cell) {
+        if (groupId == null || cell == null) return;
+        CHANNEL.sendToServer(new UseGroupCell(groupId, cell));
     }
 
     public static void placeSurfaceBlock(UUID surfaceId,
@@ -466,6 +477,38 @@ public final class TransformConstructionNetwork {
                             context.getSender(), message.groupId,
                             message.sourceCell, message.targetCell,
                             message.outwardLocal, message.hit));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record UseGroupCell(UUID groupId,
+            TransformGroup.GridPos cell) {
+        private static void encode(UseGroupCell message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.groupId);
+            buffer.writeVarInt(message.cell.x());
+            buffer.writeVarInt(message.cell.y());
+            buffer.writeVarInt(message.cell.z());
+        }
+
+        private static UseGroupCell decode(FriendlyByteBuf buffer) {
+            return new UseGroupCell(buffer.readUUID(),
+                    new TransformGroup.GridPos(buffer.readVarInt(),
+                            buffer.readVarInt(), buffer.readVarInt()));
+        }
+
+        private static void handle(UseGroupCell message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
+                if (sender == null) return;
+                if (!TransformControlRuntime.useGroupCell(sender,
+                        message.groupId, message.cell)) {
+                    TransformDoorRuntime.useGroupCell(sender,
+                            message.groupId, message.cell);
+                }
+            });
             context.setPacketHandled(true);
         }
     }

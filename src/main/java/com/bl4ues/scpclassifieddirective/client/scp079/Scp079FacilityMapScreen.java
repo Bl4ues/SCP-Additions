@@ -291,7 +291,9 @@ public final class Scp079FacilityMapScreen extends Screen {
         if (leaveConfirmation || floorMenuOpen) return null;
         List<FacilityRoomSnapshot> candidates = new ArrayList<>();
         for (FacilityRoomSnapshot room : floor.rooms) {
-            if (roomContainsScreen(room, mouseX, mouseY, transform)) {
+            RoomGeometry geometry = geometryByRoom.get(room);
+            if (geometry != null && roomContainsScreen(geometry,
+                    mouseX, mouseY, transform)) {
                 candidates.add(room);
             }
         }

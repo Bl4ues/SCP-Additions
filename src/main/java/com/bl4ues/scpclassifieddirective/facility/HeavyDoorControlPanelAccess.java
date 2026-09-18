@@ -253,6 +253,27 @@ public final class HeavyDoorControlPanelAccess {
         return Set.copyOf(inspect(level, doorPos).readers());
     }
 
+    public static BlockPos doorForControl(ServerLevel level,
+            BlockPos controlPos) {
+        if (level == null || controlPos == null) return null;
+        for (int yOffset = 0; yOffset <= 2; yOffset++) {
+            for (Direction direction : HORIZONTAL) {
+                BlockPos candidate = controlPos.relative(direction)
+                        .below(yOffset);
+                if (!level.hasChunkAt(candidate)) continue;
+                BlockState state = level.getBlockState(candidate);
+                if (!FacilityModule.isFacilityDoor(state)) continue;
+                ControlSnapshot controls = inspect(level, candidate);
+                if (controls.buttons().contains(controlPos)
+                        || controls.readers().contains(controlPos)
+                        || controls.legacyNodes().contains(controlPos)) {
+                    return candidate.immutable();
+                }
+            }
+        }
+        return null;
+    }
+
     public static BlockPos doorForKeycardReader(ServerLevel level,
             BlockPos readerPos) {
         if (level == null || readerPos == null) return null;

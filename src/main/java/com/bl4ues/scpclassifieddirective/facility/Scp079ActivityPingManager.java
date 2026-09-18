@@ -129,6 +129,13 @@ public final class Scp079ActivityPingManager {
             BlockPos pos, BlockState state) {
         if (state == null || state.isAir()) return false;
 
+        // A button/reader is merely the interface of a door action. The map
+        // should report the physical door once, not produce a second/third
+        // activity droplet at every connected control that changes state.
+        if (HeavyDoorControlPanelAccess.doorForControl(level, pos) != null) {
+            return false;
+        }
+
         // Decontamination is one composite machine. Its entrance/exit doors are
         // deliberately held open by redstone while idle, so their neighbour
         // updates are not meaningful activity. The machine emits one explicit

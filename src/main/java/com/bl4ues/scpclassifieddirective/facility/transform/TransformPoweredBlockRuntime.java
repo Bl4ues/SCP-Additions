@@ -13,6 +13,8 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,7 +49,7 @@ public final class TransformPoweredBlockRuntime {
         for (TransformGroup original : data.groups()) {
             if (!original.dimension().equals(level.dimension().location())) continue;
             TransformGroup next = original;
-            boolean localChanged = false;
+            List<TransformGroup.GridPos> changedCells = new ArrayList<>();
             for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                     : original.cells().entrySet()) {
                 BlockState state = entry.getValue();
@@ -59,12 +61,14 @@ public final class TransformPoweredBlockRuntime {
                 next = next.withCell(entry.getKey(), updated);
                 TransformConstructionNetwork.broadcastGroupCell(level,
                         original.id(), entry.getKey(), updated);
-                localChanged = true;
+                changedCells.add(entry.getKey());
             }
-            if (localChanged) {
+            if (!changedCells.isEmpty()) {
                 data.putGroupState(next);
-                TransformConstructionManager.refreshGroupRuntime(
-                        level.getServer(), original.id());
+                for (TransformGroup.GridPos cell : changedCells) {
+                    TransformConstructionManager.refreshGroupCellRuntime(
+                            level.getServer(), original.id(), cell);
+                }
                 changed = true;
             }
         }
@@ -77,7 +81,8 @@ public final class TransformPoweredBlockRuntime {
         for (ConstructionSurface original : data.surfaces()) {
             if (!original.dimension().equals(level.dimension().location())) continue;
             ConstructionSurface next = original;
-            boolean localChanged = false;
+            List<ConstructionSurface.SurfaceSlot> changedSlots =
+                    new ArrayList<>();
             for (Map.Entry<ConstructionSurface.SurfaceSlot,
                     ConstructionSurface.SurfaceAttachment> entry
                     : original.attachments().entrySet()) {
@@ -92,12 +97,14 @@ public final class TransformPoweredBlockRuntime {
                 next = next.withAttachment(slot, updated, deform);
                 TransformConstructionNetwork.broadcastSurfaceSlot(level,
                         original.id(), slot, updated, deform);
-                localChanged = true;
+                changedSlots.add(slot);
             }
-            if (localChanged) {
+            if (!changedSlots.isEmpty()) {
                 data.putSurfaceState(next);
-                TransformConstructionManager.refreshSurfaceRuntime(
-                        level.getServer(), original.id());
+                for (ConstructionSurface.SurfaceSlot slot : changedSlots) {
+                    TransformConstructionManager.refreshSurfaceSlotRuntime(
+                            level.getServer(), original.id(), slot);
+                }
                 changed = true;
             }
         }

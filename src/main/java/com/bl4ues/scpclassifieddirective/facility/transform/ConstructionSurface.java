@@ -22,6 +22,15 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Vec3 curveOffset, Vec3 heightCurveOffset,
         Map<SurfaceSlot, SurfaceAttachment> attachments, boolean flipped) {
     private static final int ARC_SAMPLES = 32;
+    private static final int METRIC_CACHE_LIMIT = 192;
+    private static final Map<GeometryKey, GeometryMetrics> METRICS =
+            new LinkedHashMap<>(64, 0.75F, true) {
+                @Override
+                protected boolean removeEldestEntry(
+                        Map.Entry<GeometryKey, GeometryMetrics> eldest) {
+                    return size() > METRIC_CACHE_LIMIT;
+                }
+            };
 
     public ConstructionSurface {
         id = id == null ? UUID.randomUUID() : id;
@@ -116,29 +125,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
      * around one end of a strongly curved wall.
      */
     public double gridParameter(double fraction) {
-        double targetFraction = Math.max(0.0D, Math.min(1.0D, fraction));
-        if (targetFraction <= 0.0D || targetFraction >= 1.0D) {
-            return targetFraction;
-        }
-        double[] lengths = new double[ARC_SAMPLES + 1];
-        Vec3 previous = point(0.0D, 0.5D);
-        double total = 0.0D;
-        for (int index = 1; index <= ARC_SAMPLES; index++) {
-            Vec3 current = point(index / (double) ARC_SAMPLES, 0.5D);
-            total += current.distanceTo(previous);
-            lengths[index] = total;
-            previous = current;
-        }
-        if (total < 1.0E-8D) return targetFraction;
-        double target = total * targetFraction;
-        for (int index = 1; index <= ARC_SAMPLES; index++) {
-            if (lengths[index] < target) continue;
-            double segment = lengths[index] - lengths[index - 1];
-            double local = segment < 1.0E-8D ? 0.0D
-                    : (target - lengths[index - 1]) / segment;
-            return ((index - 1) + local) / ARC_SAMPLES;
-        }
-        return 1.0D;
+        return metrics().horizontal().parameter(fraction);
     }
 
     private double gridVerticalParameter(double uParameter, double fraction) {
@@ -147,26 +134,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 || heightCurveOffset.lengthSqr() < 1.0E-10D) {
             return targetFraction;
         }
-        final int samples = 24;
-        double[] lengths = new double[samples + 1];
-        Vec3 previous = point(uParameter, 0.0D);
-        double total = 0.0D;
-        for (int index = 1; index <= samples; index++) {
-            Vec3 current = point(uParameter, index / (double) samples);
-            total += current.distanceTo(previous);
-            lengths[index] = total;
-            previous = current;
-        }
-        if (total < 1.0E-8D) return targetFraction;
-        double target = total * targetFraction;
-        for (int index = 1; index <= samples; index++) {
-            if (lengths[index] < target) continue;
-            double segment = lengths[index] - lengths[index - 1];
-            double local = segment < 1.0E-8D ? 0.0D
-                    : (target - lengths[index - 1]) / segment;
-            return ((index - 1) + local) / samples;
-        }
-        return 1.0D;
+        return metrics().vertical(this, uParameter).parameter(targetFraction);
     }
 
     public Vec3 gridPoint(double u, double v) {
@@ -205,32 +173,11 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public double width() {
-        double length = 0.0D;
-        Vec3 previous = point(0.0D, 0.5D);
-        for (int index = 1; index <= ARC_SAMPLES; index++) {
-            Vec3 current = point(index / (double) ARC_SAMPLES, 0.5D);
-            length += current.distanceTo(previous);
-            previous = current;
-        }
-        return length;
+        return metrics().width();
     }
 
     public double height() {
-        double total = 0.0D;
-        final int uSamples = 8;
-        final int vSamples = 24;
-        for (int ui = 0; ui <= uSamples; ui++) {
-            double u = gridParameter(ui / (double) uSamples);
-            Vec3 previous = point(u, 0.0D);
-            double length = 0.0D;
-            for (int vi = 1; vi <= vSamples; vi++) {
-                Vec3 current = point(u, vi / (double) vSamples);
-                length += current.distanceTo(previous);
-                previous = current;
-            }
-            total += length;
-        }
-        return total / (uSamples + 1.0D);
+        return metrics().height();
     }
 
     public int columns() {
@@ -239,6 +186,120 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
 
     public int rows() {
         return Math.max(1, Math.min(256, (int) Math.round(height())));
+    }
+
+    private GeometryMetrics metrics() {
+        GeometryKey key = new GeometryKey(bottomStart, bottomEnd,
+                topStart, topEnd, curveOffset, heightCurveOffset);
+        synchronized (METRICS) {
+            return METRICS.computeIfAbsent(key,
+                    ignored -> GeometryMetrics.build(this));
+        }
+    }
+
+    private record GeometryKey(Vec3 bottomStart, Vec3 bottomEnd,
+            Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
+            Vec3 heightCurveOffset) {
+    }
+
+    private static final class GeometryMetrics {
+        private static final int VERTICAL_SAMPLES = 24;
+        private static final int HEIGHT_U_SAMPLES = 8;
+        private final ArcTable horizontal;
+        private final double width;
+        private final double height;
+        private final Map<Long, ArcTable> verticalTables = new LinkedHashMap<>();
+
+        private GeometryMetrics(ArcTable horizontal, double width,
+                double height) {
+            this.horizontal = horizontal;
+            this.width = width;
+            this.height = height;
+        }
+
+        private static GeometryMetrics build(ConstructionSurface surface) {
+            ArcTable horizontal = ArcTable.sample(ARC_SAMPLES,
+                    t -> surface.point(t, 0.5D));
+            double heightTotal = 0.0D;
+            for (int ui = 0; ui <= HEIGHT_U_SAMPLES; ui++) {
+                double u = horizontal.parameter(
+                        ui / (double) HEIGHT_U_SAMPLES);
+                ArcTable vertical = ArcTable.sample(VERTICAL_SAMPLES,
+                        v -> surface.point(u, v));
+                heightTotal += vertical.total();
+            }
+            return new GeometryMetrics(horizontal, horizontal.total(),
+                    heightTotal / (HEIGHT_U_SAMPLES + 1.0D));
+        }
+
+        private ArcTable horizontal() {
+            return horizontal;
+        }
+
+        private double width() {
+            return width;
+        }
+
+        private double height() {
+            return height;
+        }
+
+        private synchronized ArcTable vertical(ConstructionSurface surface,
+                double u) {
+            long key = Math.round(u * 1_000_000.0D);
+            return verticalTables.computeIfAbsent(key,
+                    ignored -> ArcTable.sample(VERTICAL_SAMPLES,
+                            v -> surface.point(u, v)));
+        }
+    }
+
+    private static final class ArcTable {
+        private final double[] cumulative;
+        private final double total;
+
+        private ArcTable(double[] cumulative, double total) {
+            this.cumulative = cumulative;
+            this.total = total;
+        }
+
+        private static ArcTable sample(int samples,
+                java.util.function.DoubleFunction<Vec3> point) {
+            double[] cumulative = new double[samples + 1];
+            Vec3 previous = point.apply(0.0D);
+            double total = 0.0D;
+            for (int index = 1; index <= samples; index++) {
+                Vec3 current = point.apply(index / (double) samples);
+                total += current.distanceTo(previous);
+                cumulative[index] = total;
+                previous = current;
+            }
+            return new ArcTable(cumulative, total);
+        }
+
+        private double total() {
+            return total;
+        }
+
+        private double parameter(double fraction) {
+            double targetFraction = Math.max(0.0D, Math.min(1.0D, fraction));
+            if (targetFraction <= 0.0D || targetFraction >= 1.0D
+                    || total < 1.0E-8D) {
+                return targetFraction;
+            }
+            double target = total * targetFraction;
+            int low = 1;
+            int high = cumulative.length - 1;
+            while (low < high) {
+                int mid = (low + high) >>> 1;
+                if (cumulative[mid] < target) low = mid + 1;
+                else high = mid;
+            }
+            int index = low;
+            double segment = cumulative[index] - cumulative[index - 1];
+            double local = segment < 1.0E-8D ? 0.0D
+                    : (target - cumulative[index - 1]) / segment;
+            return ((index - 1) + local) / (cumulative.length - 1.0D);
+        }
     }
 
     public ConstructionSurface withGeometry(Vec3 nextBottomStart,

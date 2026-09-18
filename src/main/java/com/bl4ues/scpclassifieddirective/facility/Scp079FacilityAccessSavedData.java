@@ -26,6 +26,7 @@ final class Scp079FacilityAccessSavedData extends SavedData {
     private final Set<TrackedPosition> auxiliaryUnits = new LinkedHashSet<>();
     private final Set<TrackedPosition> poweredAuxiliaryUnits =
             new LinkedHashSet<>();
+    private final Set<TrackedScpObject> scpObjects = new LinkedHashSet<>();
 
     private Scp079FacilityAccessSavedData() {
     }
@@ -59,6 +60,7 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         readPositions(tag, "AuxiliaryUnits", data.auxiliaryUnits);
         readPositions(tag, "PoweredAuxiliaryUnits",
                 data.poweredAuxiliaryUnits);
+        readScpObjects(tag, data.scpObjects);
         return data;
     }
 
@@ -134,6 +136,10 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         return poweredAuxiliaryUnits;
     }
 
+    Set<TrackedScpObject> scpObjects() {
+        return scpObjects;
+    }
+
     void markChanged() {
         setDirty();
     }
@@ -152,6 +158,7 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         writePositions(tag, "AuxiliaryUnits", auxiliaryUnits);
         writePositions(tag, "PoweredAuxiliaryUnits",
                 poweredAuxiliaryUnits);
+        writeScpObjects(tag, scpObjects);
         return tag;
     }
 
@@ -180,6 +187,33 @@ final class Scp079FacilityAccessSavedData extends SavedData {
         }
     }
 
+    private static void writeScpObjects(CompoundTag root,
+            Set<TrackedScpObject> objects) {
+        ListTag list = new ListTag();
+        for (TrackedScpObject object : objects) {
+            CompoundTag entry = new CompoundTag();
+            entry.putString("Dimension", object.dimension());
+            entry.putLong("Pos", object.packedPos());
+            entry.putInt("Number", object.number());
+            list.add(entry);
+        }
+        root.put("ScpMapObjects", list);
+    }
+
+    private static void readScpObjects(CompoundTag root,
+            Set<TrackedScpObject> target) {
+        ListTag list = root.getList("ScpMapObjects", Tag.TAG_COMPOUND);
+        for (int index = 0; index < list.size(); index++) {
+            CompoundTag entry = list.getCompound(index);
+            String dimension = entry.getString("Dimension");
+            int number = entry.getInt("Number");
+            if (!dimension.isBlank() && number > 0) {
+                target.add(new TrackedScpObject(dimension,
+                        entry.getLong("Pos"), number));
+            }
+        }
+    }
+
     private static double clamp(double value) {
         if (!Double.isFinite(value)) return 0.0D;
         return Math.max(0.0D, Math.min(100.0D, value));
@@ -198,4 +232,14 @@ final class Scp079FacilityAccessSavedData extends SavedData {
             return net.minecraft.core.BlockPos.getZ(packedPos) >> 4;
         }
     }
+    record TrackedScpObject(String dimension, long packedPos, int number) {
+        int chunkX() {
+            return net.minecraft.core.BlockPos.getX(packedPos) >> 4;
+        }
+
+        int chunkZ() {
+            return net.minecraft.core.BlockPos.getZ(packedPos) >> 4;
+        }
+    }
+
 }

@@ -20,6 +20,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * Global, deliberately simple facility bus used by diagnostics and SCP-079.
@@ -263,6 +265,44 @@ public final class Scp079FacilityAccessManager {
         if (data.doors().remove(tracked(level, pos))) data.markChanged();
     }
 
+    public static void registerScpMapObject(ServerLevel level, BlockPos pos,
+            int number) {
+        if (level == null || pos == null || number <= 0 || number == 79) return;
+        Scp079FacilityAccessSavedData data = data(level.getServer());
+        String dimension = level.dimension().location().toString();
+        data.scpObjects().removeIf(object -> object.dimension().equals(dimension)
+                && object.packedPos() == pos.asLong());
+        if (data.scpObjects().add(new Scp079FacilityAccessSavedData
+                .TrackedScpObject(dimension, pos.asLong(), number))) {
+            data.markChanged();
+        }
+    }
+
+    public static void unregisterScpMapObject(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null) return;
+        Scp079FacilityAccessSavedData data = data(level.getServer());
+        String dimension = level.dimension().location().toString();
+        if (data.scpObjects().removeIf(object ->
+                object.dimension().equals(dimension)
+                        && object.packedPos() == pos.asLong())) {
+            data.markChanged();
+        }
+    }
+
+    public static List<MapScpObject> mapScpObjects(MinecraftServer server,
+            ResourceLocation dimension) {
+        if (server == null || dimension == null) return List.of();
+        String dimensionId = dimension.toString();
+        return data(server).scpObjects().stream()
+                .filter(object -> object.dimension().equals(dimensionId))
+                .map(object -> new MapScpObject(
+                        BlockPos.of(object.packedPos()), object.number()))
+                .toList();
+    }
+
+    public record MapScpObject(BlockPos pos, int number) {
+    }
+
     /**
      * Read-only spatial view over the already maintained facility door index.
      * Consumers such as Alarm can react to nearby doors without repeatedly
@@ -458,6 +498,25 @@ public final class Scp079FacilityAccessManager {
     }
 
     @SubscribeEvent
+    public static void onScpObjectPlaced(BlockEvent.EntityPlaceEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        int number = Scp079MapObjectClassifier.blockNumber(
+                event.getPlacedBlock(), level.getBlockEntity(event.getPos()));
+        if (number > 0) registerScpMapObject(level, event.getPos(), number);
+    }
+
+    @SubscribeEvent
+    public static void onScpObjectBroken(BlockEvent.BreakEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        int number = Scp079MapObjectClassifier.blockNumber(
+                event.getState(), level.getBlockEntity(event.getPos()));
+        if (number > 0
+                || event.getState().is(Scp714ContainmentStandModule.BLOCK.get())) {
+            unregisterScpMapObject(level, event.getPos());
+        }
+    }
+
+    @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (!(event.getLevel() instanceof ServerLevel level)
                 || !(event.getChunk() instanceof LevelChunk chunk)) {
@@ -512,13 +571,16 @@ public final class Scp079FacilityAccessManager {
         removeChunkEntries(data.auxiliaryUnits(), dimension, chunkX, chunkZ);
         removeChunkEntries(data.poweredAuxiliaryUnits(), dimension,
                 chunkX, chunkZ);
+        removeScpObjectChunkEntries(data.scpObjects(), dimension,
+                chunkX, chunkZ);
 
         LevelChunkSection[] sections = chunk.getSections();
         for (int sectionIndex = 0; sectionIndex < sections.length;
                 sectionIndex++) {
             LevelChunkSection section = sections[sectionIndex];
             if (section == null || section.hasOnlyAir()
-                    || !section.maybeHas(Scp079FacilityAccessManager::isTracked)) {
+                    || !section.maybeHas(state -> isTracked(state)
+                    || Scp079MapObjectClassifier.mayContainObject(state))) {
                 continue;
             }
             int baseY = level.getMinBuildHeight() + sectionIndex * 16;
@@ -527,7 +589,9 @@ public final class Scp079FacilityAccessManager {
                     for (int localX = 0; localX < 16; localX++) {
                         BlockState state = section.getBlockState(
                                 localX, localY, localZ);
-                        if (!isTracked(state)) continue;
+                        if (!isTracked(state)
+                                && !Scp079MapObjectClassifier
+                                        .mayContainObject(state)) continue;
                         BlockPos pos = new BlockPos(
                                 chunk.getPos().getMinBlockX() + localX,
                                 baseY + localY,
@@ -546,6 +610,15 @@ public final class Scp079FacilityAccessManager {
                                     Scp079AuxiliaryPowerBlock.POWERED)) {
                                 data.poweredAuxiliaryUnits().add(tracked);
                             }
+                        }
+                        BlockEntity blockEntity = chunk.getBlockEntity(pos);
+                        int scpNumber = Scp079MapObjectClassifier.blockNumber(
+                                state, blockEntity);
+                        if (scpNumber > 0) {
+                            data.scpObjects().add(
+                                    new Scp079FacilityAccessSavedData
+                                            .TrackedScpObject(dimension,
+                                                    pos.asLong(), scpNumber));
                         }
                     }
                 }
@@ -578,6 +651,13 @@ public final class Scp079FacilityAccessManager {
         positions.removeIf(position -> position.dimension().equals(dimension)
                 && position.chunkX() == chunkX
                 && position.chunkZ() == chunkZ);
+    }
+
+    private static void removeScpObjectChunkEntries(
+            Set<Scp079FacilityAccessSavedData.TrackedScpObject> objects,
+            String dimension, int chunkX, int chunkZ) {
+        objects.removeIf(object -> object.dimension().equals(dimension)
+                && object.chunkX() == chunkX && object.chunkZ() == chunkZ);
     }
 
     private static void pruneLoadedPositions(MinecraftServer server,

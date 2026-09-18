@@ -284,6 +284,15 @@ public final class Scp714ContainmentStandModule {
                 BlockState state = getBlockState();
                 level.sendBlockUpdated(worldPosition, state, state,
                         Block.UPDATE_ALL);
+                if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                    if (hasRing) {
+                        Scp079FacilityAccessManager.registerScpMapObject(
+                                server, worldPosition, 714);
+                    } else {
+                        Scp079FacilityAccessManager.unregisterScpMapObject(
+                                server, worldPosition);
+                    }
+                }
             }
         }
 

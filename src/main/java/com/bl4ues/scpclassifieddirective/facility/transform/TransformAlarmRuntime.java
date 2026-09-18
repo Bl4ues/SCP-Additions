@@ -67,7 +67,7 @@ public final class TransformAlarmRuntime {
 
             Vec3 center = group.cellCenter(alarm.cell());
             boolean active = shouldBeActive(level, center,
-                    TransformPowerQuery.powered(level, group, alarm.cell())
+                    groupAlarmPowered(level, group, alarm.cell(), state)
                             || adjacentOpenDoor(group, alarm.cell(), state));
             boolean wasActive = state.getValue(AlarmModule.ACTIVE);
             if (active != wasActive) {
@@ -307,6 +307,23 @@ public final class TransformAlarmRuntime {
         }
     }
 
+    private static boolean groupAlarmPowered(ServerLevel level,
+            TransformGroup group, TransformGroup.GridPos cell,
+            BlockState alarmState) {
+        if (TransformPowerQuery.powered(level, group, cell)) return true;
+        if (alarmState == null || !alarmState.hasProperty(AlarmModule.FACING)) {
+            return false;
+        }
+        Direction outward = alarmState.getValue(AlarmModule.FACING);
+        TransformGroup.GridPos support = cell.offset(
+                -outward.getStepX(), -outward.getStepY(),
+                -outward.getStepZ());
+        // Wall-mounted vanilla devices can receive power through their support
+        // block. Preserve that semantic in the group's local grid instead of
+        // only asking the air cell occupied by the Alarm model.
+        return TransformPowerQuery.powered(level, group, support);
+    }
+
     private static boolean adjacentOpenDoor(TransformGroup group,
             TransformGroup.GridPos cell, BlockState alarmState) {
         if (group == null || cell == null || alarmState == null) return false;
@@ -327,6 +344,22 @@ public final class TransformAlarmRuntime {
                     direction.getStepX(), direction.getStepY(),
                     direction.getStepZ());
             if (electricOpenDoor(group.cells().get(neighbor))) return true;
+        }
+
+        // Heavy doors are one logical controller cell but a three-block-tall
+        // physical doorway. An Alarm mounted beside/above the upper relay still
+        // touches that same door even though its controller is two cells below.
+        // Search only that vertical footprint, never a room-wide radius.
+        for (int down = 1; down <= 2; down++) {
+            TransformGroup.GridPos base = support.offset(0, -down, 0);
+            if (electricOpenDoor(group.cells().get(base))) return true;
+            for (Direction direction : new Direction[]{
+                    Direction.NORTH, Direction.SOUTH,
+                    Direction.EAST, Direction.WEST}) {
+                TransformGroup.GridPos neighbor = base.offset(
+                        direction.getStepX(), 0, direction.getStepZ());
+                if (electricOpenDoor(group.cells().get(neighbor))) return true;
+            }
         }
         return false;
     }

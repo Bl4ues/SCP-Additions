@@ -311,7 +311,7 @@ public final class TransformConstructionManager {
                 player, blockItem, group, target, outwardLocal, hit);
         TransformGroup next = group.withCell(target, payload);
         data.putGroup(next);
-        refreshGroup(level.getServer(), groupId);
+        refreshGroupCell(level.getServer(), groupId, target);
         TransformConstructionNetwork.broadcastGroupCell(level, groupId,
                 target, payload);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
@@ -365,7 +365,7 @@ public final class TransformConstructionManager {
         boolean deform = !payload.hasBlockEntity();
         ConstructionSurface next = surface.withAttachment(slot, payload, deform);
         data.putSurface(next);
-        refreshSurface(level.getServer(), surfaceId);
+        refreshSurfaceSlot(level.getServer(), surfaceId, slot);
         TransformConstructionNetwork.broadcastSurfaceSlot(level, surfaceId,
                 slot, payload, deform);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
@@ -394,7 +394,7 @@ public final class TransformConstructionManager {
             return true;
         }
         data.putGroup(next);
-        refreshGroup(level.getServer(), id);
+        refreshGroupCell(level.getServer(), id, cell);
         TransformConstructionNetwork.broadcastGroupCellRemoved(level, id, cell);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
@@ -419,7 +419,7 @@ public final class TransformConstructionManager {
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
 
         data.putSurface(surface.withoutAttachment(slot));
-        refreshSurface(level.getServer(), id);
+        refreshSurfaceSlot(level.getServer(), id, slot);
         TransformConstructionNetwork.broadcastSurfaceSlotRemoved(
                 level, id, slot);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
@@ -477,7 +477,7 @@ public final class TransformConstructionManager {
                     && !group.cells().containsKey(target)) return false;
             TransformGroup next = group.withCell(target, payload);
             data.putGroup(next);
-            refreshGroup(level.getServer(), group.id());
+            refreshGroupCell(level.getServer(), group.id(), target);
             TransformConstructionNetwork.broadcastGroupCell(level,
                     group.id(), target, payload);
             TransformConstructionNetwork.acknowledgeRevision(
@@ -506,7 +506,8 @@ public final class TransformConstructionManager {
             ConstructionSurface next = surface.withAttachment(surfaceHit.slot(),
                     payload, deform);
             data.putSurface(next);
-            refreshSurface(level.getServer(), surface.id());
+            refreshSurfaceSlot(level.getServer(), surface.id(),
+                    surfaceHit.slot());
             TransformConstructionNetwork.broadcastSurfaceSlot(level,
                     surface.id(), surfaceHit.slot(), payload, deform);
             TransformConstructionNetwork.acknowledgeRevision(
@@ -558,7 +559,8 @@ public final class TransformConstructionManager {
                     // distributed by the normal snapshot path.
                 } else {
                     data.putGroup(next);
-                    refreshGroup(level.getServer(), group.id());
+                    refreshGroupCell(level.getServer(), group.id(),
+                            groupHit.cell());
                     TransformConstructionNetwork.broadcastGroupCellRemoved(
                             level, group.id(), groupHit.cell());
                     TransformConstructionNetwork.acknowledgeRevision(
@@ -575,7 +577,8 @@ public final class TransformConstructionManager {
                     surfaceHit.slot())) {
                 data.putSurface(surface.withoutAttachment(
                         surfaceHit.slot()));
-                refreshSurface(level.getServer(), surface.id());
+                refreshSurfaceSlot(level.getServer(), surface.id(),
+                        surfaceHit.slot());
                 TransformConstructionNetwork.broadcastSurfaceSlotRemoved(
                         level, surface.id(), surfaceHit.slot());
                 TransformConstructionNetwork.acknowledgeRevision(

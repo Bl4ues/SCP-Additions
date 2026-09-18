@@ -85,12 +85,17 @@ public final class TransformConstructionClientRenderer {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || event.getTarget() == null) return;
         BlockPos pos = event.getTarget().getBlockPos();
-        if (minecraft.level.getBlockState(pos).is(
-                TransformConstructionModule.getProxy())) {
-            // The proxy is only an integer-grid bridge. Its clipped AABB is not
-            // the authored selection geometry and becomes actively misleading
-            // after rotation. The construction renderer already draws the exact
-            // local cell/surface guides in world space.
+        boolean proxy = minecraft.level.getBlockState(pos).is(
+                TransformConstructionModule.getProxy());
+        boolean logicalGroup = minecraft.player != null
+                && (TransformGroupPlacementClient.findTarget(minecraft.player)
+                        != null
+                || TransformGroupPlacementClient.findPayloadTarget(
+                        minecraft.player) != null);
+        if (proxy || logicalGroup) {
+            // Proxy/world AABBs are only broad-phase bridges. The authored
+            // local cell is the selection authority and is rendered below in
+            // the transformed frame.
             event.setCanceled(true);
         }
     }
@@ -143,8 +148,13 @@ public final class TransformConstructionClientRenderer {
         TransformGroupPlacementClient.Target placementTarget =
                 placingBlock ? TransformGroupPlacementClient.findTarget(
                         minecraft.player) : null;
+        TransformGroupPlacementClient.PayloadTarget interactionTarget =
+                placingBlock ? null
+                        : TransformGroupPlacementClient.findPayloadTarget(
+                                minecraft.player);
         if (offGridTool || surfaceTool || mappingTool || showSelectedGroup
                 || showSelectedSurface || placementTarget != null
+                || interactionTarget != null
                 || placingBlock && !surfaces.isEmpty()) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
             if (offGridTool) {
@@ -175,6 +185,15 @@ public final class TransformConstructionClientRenderer {
                 renderLogicalGroupCell(pose, lines, placementTarget.group(),
                         placementTarget.adjacentCell(),
                         0.24F, 1.0F, 0.38F, 0.98F);
+            }
+            if (interactionTarget != null
+                    && !(selection != null
+                    && selection.type() == SelectionType.GROUP
+                    && interactionTarget.group().id().equals(selection.id())
+                    && offGridTool)) {
+                renderLogicalGroupCell(pose, lines, interactionTarget.group(),
+                        interactionTarget.cell(),
+                        0.78F, 0.93F, 1.0F, 0.96F);
             }
             if (surfaceTool) {
                 for (ConstructionSurface surface : surfaces) {

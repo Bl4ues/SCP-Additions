@@ -606,8 +606,8 @@ public final class TransformConstructionManager {
             ProxyCell occupied = base.cell(dimension, pos);
             if (occupied != null && !cell.collision().isEmpty()
                     && !occupied.collision().isEmpty()
-                    && Shapes.joinIsNotEmpty(cell.collision(),
-                            occupied.collision(), BooleanOp.AND)) {
+                    && materiallyObstructed(cell.collision(),
+                            occupied.collision())) {
                 return pos;
             }
             if (cell.collision().isEmpty()) continue;
@@ -617,12 +617,55 @@ public final class TransformConstructionManager {
                     || existing.canBeReplaced()) continue;
             VoxelShape worldShape = existing.getCollisionShape(level, pos,
                     CollisionContext.empty());
-            if (!worldShape.isEmpty() && Shapes.joinIsNotEmpty(
-                    cell.collision(), worldShape, BooleanOp.AND)) {
+            if (!worldShape.isEmpty() && materiallyObstructed(
+                    cell.collision(), worldShape)) {
                 return pos;
             }
         }
         return null;
+    }
+
+    /**
+     * Rotated/deformed proxy collision is an AABB approximation. Rejecting a
+     * placement for one tiny overlap creates the familiar "half a block of air
+     * is forbidden" problem on arcs. Keep the free physical portion and only
+     * reject when most of the candidate volume is actually buried.
+     */
+    private static boolean materiallyObstructed(VoxelShape candidate,
+            VoxelShape occupied) {
+        double volume = shapeVolume(candidate);
+        if (volume < 1.0E-6D) return false;
+        double overlap = overlapVolume(candidate, occupied);
+        if (overlap <= 1.0E-5D) return false;
+        double ratio = overlap / volume;
+        double remaining = Math.max(0.0D, volume - overlap);
+        return ratio > 0.62D || remaining < 0.10D;
+    }
+
+    private static double shapeVolume(VoxelShape shape) {
+        double volume = 0.0D;
+        for (AABB box : shape.toAabbs()) {
+            volume += Math.max(0.0D, box.getXsize())
+                    * Math.max(0.0D, box.getYsize())
+                    * Math.max(0.0D, box.getZsize());
+        }
+        return volume;
+    }
+
+    private static double overlapVolume(VoxelShape first, VoxelShape second) {
+        double volume = 0.0D;
+        for (AABB a : first.toAabbs()) {
+            for (AABB b : second.toAabbs()) {
+                double x = Math.max(0.0D,
+                        Math.min(a.maxX, b.maxX) - Math.max(a.minX, b.minX));
+                double y = Math.max(0.0D,
+                        Math.min(a.maxY, b.maxY) - Math.max(a.minY, b.minY));
+                double z = Math.max(0.0D,
+                        Math.min(a.maxZ, b.maxZ) - Math.max(a.minZ, b.minZ));
+                volume += x * y * z;
+            }
+        }
+        return volume;
     }
 
     private static ProxyCell proxyCell(BlockGetter getter, BlockPos pos) {
@@ -664,13 +707,27 @@ public final class TransformConstructionManager {
             GridPos cell = entry.getKey();
             BlockState state = entry.getValue();
             boolean placeholder = state == null || state.isAir();
-            AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
-                    cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
-                    cell.z() + 0.5D);
-            addWorldBox(index, group.dimension(), transformedBounds(group,
-                            selection), group.id(), null, true, false,
-                    placeholder ? 0 : state.getLightEmission());
-            if (placeholder) continue;
+            if (placeholder) {
+                AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
+                        cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
+                        cell.z() + 0.5D);
+                addWorldBox(index, group.dimension(), transformedBounds(group,
+                                selection), group.id(), null, true, false, 0);
+                continue;
+            }
+
+            VoxelShape visualShape = state.getShape(EmptyBlockGetter.INSTANCE,
+                    BlockPos.ZERO, CollisionContext.empty());
+            List<AABB> visualBoxes = visualShape.isEmpty()
+                    ? List.of(new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D))
+                    : visualShape.toAabbs();
+            for (AABB box : visualBoxes) {
+                AABB local = box.move(cell.x() - 0.5D,
+                        cell.y() - 0.5D, cell.z() - 0.5D);
+                addWorldBox(index, group.dimension(),
+                        transformedBounds(group, local), group.id(), null,
+                        true, false, state.getLightEmission());
+            }
 
             VoxelShape collision = state.getCollisionShape(
                     EmptyBlockGetter.INSTANCE, BlockPos.ZERO,

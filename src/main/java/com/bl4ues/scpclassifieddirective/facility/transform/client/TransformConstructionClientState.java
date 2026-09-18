@@ -416,13 +416,26 @@ public final class TransformConstructionClientState {
             TransformGroup.GridPos cell = entry.getKey();
             BlockState state = entry.getValue();
             boolean placeholder = state == null || state.isAir();
-            AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
-                    cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
-                    cell.z() + 0.5D);
-            addWorldBox(index, transformedBounds(group, selection), group.id(),
-                    null, true, false,
-                    placeholder ? 0 : state.getLightEmission());
-            if (placeholder) continue;
+            if (placeholder) {
+                AABB selection = new AABB(cell.x() - 0.5D, cell.y() - 0.5D,
+                        cell.z() - 0.5D, cell.x() + 0.5D, cell.y() + 0.5D,
+                        cell.z() + 0.5D);
+                addWorldBox(index, transformedBounds(group, selection),
+                        group.id(), null, true, false, 0);
+                continue;
+            }
+
+            VoxelShape visualShape = state.getShape(EmptyBlockGetter.INSTANCE,
+                    BlockPos.ZERO, CollisionContext.empty());
+            List<AABB> visualBoxes = visualShape.isEmpty()
+                    ? List.of(new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D))
+                    : visualShape.toAabbs();
+            for (AABB box : visualBoxes) {
+                AABB local = box.move(cell.x() - 0.5D,
+                        cell.y() - 0.5D, cell.z() - 0.5D);
+                addWorldBox(index, transformedBounds(group, local), group.id(),
+                        null, true, false, state.getLightEmission());
+            }
 
             VoxelShape collision = state.getCollisionShape(
                     EmptyBlockGetter.INSTANCE, BlockPos.ZERO,

@@ -10,10 +10,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -96,7 +101,8 @@ public final class TransformGroupPlacementClient {
                         && selected.type() == SelectionType.GROUP
                         && group.id().equals(selected.id());
                 if (entry.getValue().isAir() && !guideCell) continue;
-                Hit hit = intersect(localEye, localRay, entry.getKey());
+                Hit hit = intersectState(localEye, localRay,
+                        entry.getKey(), entry.getValue(), guideCell);
                 if (hit == null || hit.distance() < 0.0D
                         || hit.distance() > limit
                         || hit.distance() >= bestDistance) continue;
@@ -108,14 +114,45 @@ public final class TransformGroupPlacementClient {
         return best;
     }
 
+    private static Hit intersectState(Vec3 origin, Vec3 ray,
+            TransformGroup.GridPos cell, BlockState state, boolean guideCell) {
+        if (guideCell || state == null || state.isAir()) {
+            return intersect(origin, ray, new AABB(cell.x() - 0.5D,
+                    cell.y() - 0.5D, cell.z() - 0.5D,
+                    cell.x() + 0.5D, cell.y() + 0.5D,
+                    cell.z() + 0.5D));
+        }
+        VoxelShape shape = state.getShape(EmptyBlockGetter.INSTANCE,
+                BlockPos.ZERO, CollisionContext.empty());
+        List<AABB> boxes = shape.isEmpty()
+                ? List.of(new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D))
+                : shape.toAabbs();
+        Hit best = null;
+        for (AABB box : boxes) {
+            AABB local = box.move(cell.x() - 0.5D,
+                    cell.y() - 0.5D, cell.z() - 0.5D);
+            Hit hit = intersect(origin, ray, local);
+            if (hit != null && (best == null
+                    || hit.distance() < best.distance())) best = hit;
+        }
+        return best;
+    }
+
     private static Hit intersect(Vec3 origin, Vec3 ray,
             TransformGroup.GridPos cell) {
-        double minX = cell.x() - 0.5D;
-        double minY = cell.y() - 0.5D;
-        double minZ = cell.z() - 0.5D;
-        double maxX = cell.x() + 0.5D;
-        double maxY = cell.y() + 0.5D;
-        double maxZ = cell.z() + 0.5D;
+        return intersect(origin, ray, new AABB(cell.x() - 0.5D,
+                cell.y() - 0.5D, cell.z() - 0.5D,
+                cell.x() + 0.5D, cell.y() + 0.5D,
+                cell.z() + 0.5D));
+    }
+
+    private static Hit intersect(Vec3 origin, Vec3 ray, AABB box) {
+        double minX = box.minX;
+        double minY = box.minY;
+        double minZ = box.minZ;
+        double maxX = box.maxX;
+        double maxY = box.maxY;
+        double maxZ = box.maxZ;
 
         double tMin = Double.NEGATIVE_INFINITY;
         double tMax = Double.POSITIVE_INFINITY;
@@ -144,7 +181,7 @@ public final class TransformGroupPlacementClient {
         if (!Double.isFinite(distance) || distance < 0.0D) return null;
         if (enter == null || tMin < 0.0D) {
             Vec3 point = origin.add(ray.scale(distance))
-                    .subtract(cell.x(), cell.y(), cell.z());
+                    .subtract(box.getCenter());
             enter = dominant(point);
         }
         return new Hit(distance, enter);

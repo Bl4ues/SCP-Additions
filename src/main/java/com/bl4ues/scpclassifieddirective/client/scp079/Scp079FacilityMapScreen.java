@@ -575,10 +575,10 @@ public final class Scp079FacilityMapScreen extends Screen {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
-        int badge = locked ? 0xFF7C8D92 : 0xFFE8F8FF;
-        graphics.fill(x - 5, y - 6, x + 6, y + 6, badge);
+        int badge = locked ? 0xFF66747A : 0xFFF1FAFD;
+        graphics.fill(x - 4, y - 4, x + 5, y + 5, badge);
         Scp079UiTheme.drawCenteredInControl(graphics, font, value,
-                x, y - 6, 12, 0.82F, 0xFF071116);
+                x, y - 4, 9, 0.70F, 0xFF071116);
     }
 
     private void renderOpenKeycardLevel(GuiGraphics graphics,
@@ -587,7 +587,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
         Scp079UiTheme.drawCenteredInControl(graphics, font, value,
-                x, y - 6, 12, 0.82F, color);
+                x, y - 5, 10, 0.78F, 0xFFF1FAFD);
     }
 
     private void renderDoorHoverHelp(GuiGraphics graphics,
@@ -785,83 +785,37 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static boolean belongsToFloor(double x, double y, double z,
             Vec3 facing, FloorGroup floor,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
-        // Door centres sit roughly half a block inside a wall cell. A generous
-        // A broad radius can let a nearby curved wall adopt a real door from
-        // another boundary and create a phantom marker. Door centres should sit
-        // about half a block from the mapped room edge, so keep only a small
-        // tolerance above that and still require span/tangent alignment.
-        final double boundaryToleranceSqr = 0.62D * 0.62D;
-        final double doorColumnHeight = 5.25D;
         Vec3 horizontal = new Vec3(facing.x, 0.0D, facing.z);
         if (horizontal.lengthSqr() < 1.0E-9D) {
             horizontal = new Vec3(0.0D, 0.0D, 1.0D);
         } else {
             horizontal = horizontal.normalize();
         }
-        Vec3 doorSpan = new Vec3(-horizontal.z, 0.0D, horizontal.x);
 
+        // A door is a physical object between spaces. Associate it with this
+        // floor only when one of two short probes along its real normal enters
+        // mapped floor area. This avoids the old "near any contour" heuristic,
+        // which could adopt an unrelated door into the middle of a curved room.
+        Vec3 plus = new Vec3(x, 0.0D, z).add(horizontal.scale(0.72D));
+        Vec3 minus = new Vec3(x, 0.0D, z).subtract(horizontal.scale(0.72D));
         for (FacilityRoomSnapshot room : floor.rooms()) {
-            FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
-            if (geometry == null || geometry.empty()
-                    || !boundaryMatchesDoor(x, z, doorSpan, geometry,
-                            boundaryToleranceSqr)) {
-                continue;
-            }
+            boolean heightMatches = false;
             for (FacilityFloorPatch patch : room.patches()) {
-                if (y >= patch.y() - 0.75D
-                        && y <= patch.y() + doorColumnHeight) {
-                    return true;
+                if (y >= patch.y() - 0.75D && y <= patch.y() + 5.25D) {
+                    heightMatches = true;
+                    break;
                 }
+            }
+            if (!heightMatches) continue;
+            FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
+            if (geometry == null || geometry.empty()) continue;
+            if (geometry.contains(plus.x, plus.z)
+                    || geometry.contains(minus.x, minus.z)
+                    || geometry.contains(x, z)) {
+                return true;
             }
         }
         return false;
-    }
-
-    private static boolean boundaryMatchesDoor(double x, double z,
-            Vec3 doorSpan, FacilityRoomOutlineGeometry geometry,
-            double maxDistanceSqr) {
-        double bestDistance = Double.POSITIVE_INFINITY;
-        double bestAlignment = 0.0D;
-        for (List<FacilityFloorPatch.Vertex> contour : geometry.contours()) {
-            for (int index = 0; index < contour.size(); index++) {
-                FacilityFloorPatch.Vertex a = contour.get(index);
-                FacilityFloorPatch.Vertex b = contour.get(
-                        (index + 1) % contour.size());
-                double dx = b.x() - a.x();
-                double dz = b.z() - a.z();
-                double lenSqr = dx * dx + dz * dz;
-                if (lenSqr < 1.0E-9D) continue;
-                double distance = pointSegmentDistanceSqr(x, z,
-                        a.x(), a.z(), b.x(), b.z());
-                if (distance > maxDistanceSqr) continue;
-                double invLen = 1.0D / Math.sqrt(lenSqr);
-                double alignment = Math.abs(
-                        doorSpan.x * dx * invLen
-                                + doorSpan.z * dz * invLen);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    bestAlignment = alignment;
-                } else if (Math.abs(distance - bestDistance) < 0.02D) {
-                    bestAlignment = Math.max(bestAlignment, alignment);
-                }
-            }
-        }
-        return bestDistance <= maxDistanceSqr && bestAlignment >= 0.58D;
-    }
-
-    private static double distanceToBoundarySqr(double x, double z,
-            FacilityRoomOutlineGeometry geometry) {
-        double best = Double.POSITIVE_INFINITY;
-        for (List<FacilityFloorPatch.Vertex> contour : geometry.contours()) {
-            for (int index = 0; index < contour.size(); index++) {
-                FacilityFloorPatch.Vertex a = contour.get(index);
-                FacilityFloorPatch.Vertex b = contour.get(
-                        (index + 1) % contour.size());
-                best = Math.min(best, pointSegmentDistanceSqr(x, z,
-                        a.x(), a.z(), b.x(), b.z()));
-            }
-        }
-        return best;
     }
 
     private static MapDoorMarker marker(double x, double z,
@@ -955,9 +909,9 @@ public final class Scp079FacilityMapScreen extends Screen {
             // when the marker is a single straight segment. Curved surface
             // doors use the exact same normalized arc-length convention.
             drawDoorRange(graphics, transform, a, b, start, end,
-                    0.0D, 0.30D, color);
+                    0.0D, 0.18D, color);
             drawDoorRange(graphics, transform, a, b, start, end,
-                    0.70D, 1.0D, color);
+                    0.82D, 1.0D, color);
         }
     }
 

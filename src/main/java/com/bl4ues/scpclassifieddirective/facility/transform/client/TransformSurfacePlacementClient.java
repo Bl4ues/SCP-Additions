@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SelectionType;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -116,6 +117,7 @@ public final class TransformSurfacePlacementClient {
     private static boolean interactive(BlockState state) {
         return state != null && (state.getBlock() instanceof ButtonBlock
                 || state.getBlock() instanceof LeverBlock
+                || TransformWallFixturePlacement.isDoorButton(state)
                 || FacilityModule.isFacilityDoor(state));
     }
 

@@ -132,7 +132,7 @@ public final class Scp079PlayableNetwork {
                 var door = doors.get(index);
                 entries.add(new DoorMapEntry(door.pos(), door.facing(),
                         door.blast(), door.open(), door.requiredLevel(),
-                        door.lockable()));
+                        door.lockable(), door.controllable()));
             }
         }
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
@@ -405,7 +405,7 @@ public final class Scp079PlayableNetwork {
 
     public record DoorMapEntry(BlockPos pos,
             net.minecraft.core.Direction facing, boolean blast, boolean open,
-            int requiredLevel, boolean lockable) {
+            int requiredLevel, boolean lockable, boolean controllable) {
         private static void write(FriendlyByteBuf buffer, DoorMapEntry entry) {
             buffer.writeBlockPos(entry.pos);
             buffer.writeEnum(entry.facing);
@@ -414,6 +414,7 @@ public final class Scp079PlayableNetwork {
             buffer.writeVarInt(Math.max(0, Math.min(6,
                     entry.requiredLevel)));
             buffer.writeBoolean(entry.lockable);
+            buffer.writeBoolean(entry.controllable);
         }
 
         private static DoorMapEntry read(FriendlyByteBuf buffer) {
@@ -421,7 +422,7 @@ public final class Scp079PlayableNetwork {
                     buffer.readEnum(net.minecraft.core.Direction.class),
                     buffer.readBoolean(), buffer.readBoolean(),
                     Math.max(0, Math.min(6, buffer.readVarInt())),
-                    buffer.readBoolean());
+                    buffer.readBoolean(), buffer.readBoolean());
         }
     }
 

@@ -349,7 +349,8 @@ public final class Scp079FacilityAccessManager {
                 result.add(new MapDoor(pos.immutable(),
                         state.getValue(BlastDoorModule.FACING), true,
                         BlastDoorModule.isOpenOrOpening(level, pos),
-                        0, false));
+                        0, false,
+                        BlastDoorModule.hasRedstoneConnection(level, pos)));
             } else if (FacilityModule.isFacilityDoor(state)
                     && state.hasProperty(
                             net.minecraft.world.level.block
@@ -357,14 +358,17 @@ public final class Scp079FacilityAccessManager {
                 int requiredLevel =
                         HeavyDoorControlPanelAccess.keycardRequiredLevel(
                                 level, pos);
-                boolean lockable = requiredLevel <= 0
+                boolean controllable =
+                        HeavyDoorControlPanelAccess.hasControllableInterface(
+                                level, pos);
+                boolean lockable = controllable && requiredLevel <= 0
                         && HeavyDoorControlPanelAccess.hasDeniableInterface(
                                 level, pos);
                 result.add(new MapDoor(pos.immutable(), state.getValue(
                         net.minecraft.world.level.block
                                 .HorizontalDirectionalBlock.FACING), false,
                         FacilityModule.isDoorPassable(state),
-                        requiredLevel, lockable));
+                        requiredLevel, lockable, controllable));
             }
         }
         return List.copyOf(result);
@@ -372,7 +376,7 @@ public final class Scp079FacilityAccessManager {
 
     public record MapDoor(BlockPos pos, net.minecraft.core.Direction facing,
             boolean blast, boolean open, int requiredLevel,
-            boolean lockable) {
+            boolean lockable, boolean controllable) {
     }
 
     public static void registerTeslaGate(ServerLevel level, BlockPos pos) {

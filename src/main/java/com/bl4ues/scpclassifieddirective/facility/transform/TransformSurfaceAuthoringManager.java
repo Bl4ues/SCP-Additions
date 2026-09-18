@@ -71,7 +71,8 @@ public final class TransformSurfaceAuthoringManager {
 
         TransformConstructionSavedData.get(level.getServer()).putSurface(surface);
         pending.remove(player.getUUID());
-        TransformConstructionManager.refresh(level.getServer());
+        TransformConstructionManager.refreshSurface(level.getServer(),
+                surface.id());
         player.displayClientMessage(Component.literal(
                 "Construction surface created."), true);
     }

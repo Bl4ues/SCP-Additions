@@ -316,9 +316,31 @@ public final class AlarmClient {
                 float partialTick, PoseStack poseStack,
                 MultiBufferSource bufferSource, int packedLight,
                 int packedOverlay) {
-            Vec3 mountOffset = alarm.getLevel() == null ? Vec3.ZERO
-                    : AlarmModule.visualOffset(alarm.getLevel(),
-                            alarm.getBlockPos(), alarm.getBlockState());
+            renderInternal(alarm, partialTick, poseStack, bufferSource,
+                    packedLight, packedOverlay, true);
+        }
+
+        /**
+         * Renders an Alarm whose pose is already supplied by transformed
+         * construction. The physical body, mount offset, rotor and emissive
+         * passes are identical to a vanilla-grid Alarm. World-projected light is
+         * deliberately omitted because this temporary render host does not own
+         * a meaningful vanilla BlockPos for ray casting.
+         */
+        public void renderTransformed(AlarmModule.AlarmBlockEntity alarm,
+                float partialTick, PoseStack poseStack,
+                MultiBufferSource bufferSource, int packedLight,
+                int packedOverlay) {
+            renderInternal(alarm, partialTick, poseStack, bufferSource,
+                    packedLight, packedOverlay, false);
+        }
+
+        private void renderInternal(AlarmModule.AlarmBlockEntity alarm,
+                float partialTick, PoseStack poseStack,
+                MultiBufferSource bufferSource, int packedLight,
+                int packedOverlay, boolean projectIntoWorld) {
+            Vec3 mountOffset = AlarmMountStructure.visualOffset(
+                    alarm.getBlockState());
             boolean active = alarm.getBlockState()
                     .getValue(AlarmModule.ACTIVE);
             float angle = rotorAngle(alarm, partialTick);
@@ -357,8 +379,10 @@ public final class AlarmClient {
                  */
                 renderGlassTransmission(alarm, poseStack, bufferSource,
                         mountOffset);
-                renderProjection(alarm, poseStack, bufferSource,
-                        angle, mountOffset);
+                if (projectIntoWorld) {
+                    renderProjection(alarm, poseStack, bufferSource,
+                            angle, mountOffset);
+                }
             }
         }
 

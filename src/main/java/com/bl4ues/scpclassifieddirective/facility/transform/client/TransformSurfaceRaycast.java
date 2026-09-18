@@ -185,18 +185,32 @@ public final class TransformSurfaceRaycast {
                         && first < bestDistance) {
                     bestDistance = first;
                     best = new Target(surface, slot,
-                            eye.add(ray.scale(first)), first);
+                            eye.add(ray.scale(first)), first,
+                            normalSign(surface, ray,
+                                    (u0 + u1) * 0.5D,
+                                    (v0 + v1) * 0.5D));
                 }
                 double second = triangle(eye, ray, p00, p11, p01);
                 if (second >= 0.0D && second <= limit
                         && second < bestDistance) {
                     bestDistance = second;
                     best = new Target(surface, slot,
-                            eye.add(ray.scale(second)), second);
+                            eye.add(ray.scale(second)), second,
+                            normalSign(surface, ray,
+                                    (u0 + u1) * 0.5D,
+                                    (v0 + v1) * 0.5D));
                 }
             }
         }
         return best;
+    }
+
+    private static int normalSign(ConstructionSurface surface,
+            Vec3 ray, double u, double v) {
+        Vec3 normal = surface.gridNormal(u, v);
+        // A ray approaching from +normal travels against the normal and authors
+        // on the existing outside. Approaching from the back uses -normal.
+        return ray.dot(normal) <= 0.0D ? 1 : -1;
     }
 
     private static AABB patchBounds(ConstructionSurface surface, Patch patch) {
@@ -288,6 +302,10 @@ public final class TransformSurfaceRaycast {
     }
 
     public record Target(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, Vec3 hit, double distance) {
+            ConstructionSurface.SurfaceSlot slot, Vec3 hit, double distance,
+            int normalSign) {
+        public Target {
+            normalSign = normalSign < 0 ? -1 : 1;
+        }
     }
 }

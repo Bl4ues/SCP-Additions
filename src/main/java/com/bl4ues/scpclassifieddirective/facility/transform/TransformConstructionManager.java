@@ -79,7 +79,7 @@ public final class TransformConstructionManager {
         TransformGroup group = TransformGroup.empty(level.dimension().location(),
                 origin);
         TransformConstructionSavedData.get(level.getServer()).putGroup(group);
-        refresh(level.getServer());
+        refreshGroup(level.getServer(), group.id());
         player.displayClientMessage(Component.literal(
                 "Off-grid grid created. Place a block on the green cell, or select it with the tool to transform it."),
                 true);
@@ -123,7 +123,7 @@ public final class TransformConstructionManager {
             return;
         }
         TransformConstructionSavedData.get(level.getServer()).putSurface(surface);
-        refresh(level.getServer());
+        refreshSurface(level.getServer(), surface.id());
         player.displayClientMessage(Component.literal(
                 "Construction surface created at 3 blocks high. Select its handles with the Surface Construction Tool to reshape, tilt or bend it."),
                 true);
@@ -217,7 +217,7 @@ public final class TransformConstructionManager {
         TransformGroup next = group.withTransform(origin, normalize(rotationX),
                 normalize(rotationY), normalize(rotationZ));
         data.putGroup(next);
-        refresh(level.getServer());
+        refreshGroup(level.getServer(), id);
         return true;
     }
 
@@ -247,7 +247,7 @@ public final class TransformConstructionManager {
                 topStart, topEnd, curveOffset, heightCurveOffset);
         if ((long) next.columns() * next.rows() > MAX_SURFACE_SLOTS) return false;
         data.putSurface(next);
-        refresh(level.getServer());
+        refreshSurface(level.getServer(), id);
         return true;
     }
 
@@ -311,7 +311,7 @@ public final class TransformConstructionManager {
                 player, blockItem, group, target, outwardLocal, hit);
         TransformGroup next = group.withCell(target, payload);
         data.putGroup(next);
-        refresh(level.getServer());
+        refreshGroup(level.getServer(), groupId);
         return true;
     }
 
@@ -362,7 +362,7 @@ public final class TransformConstructionManager {
         boolean deform = !payload.hasBlockEntity();
         ConstructionSurface next = surface.withAttachment(slot, payload, deform);
         data.putSurface(next);
-        refresh(level.getServer());
+        refreshSurface(level.getServer(), surfaceId);
         return true;
     }
 
@@ -372,7 +372,7 @@ public final class TransformConstructionManager {
         }
         boolean changed = TransformConstructionSavedData.get(player.getServer())
                 .removeGroup(id);
-        if (changed) refresh(player.getServer());
+        if (changed) refreshGroup(player.getServer(), id);
         return changed;
     }
 
@@ -382,7 +382,7 @@ public final class TransformConstructionManager {
         }
         boolean changed = TransformConstructionSavedData.get(player.getServer())
                 .removeSurface(id);
-        if (changed) refresh(player.getServer());
+        if (changed) refreshSurface(player.getServer(), id);
         return changed;
     }
 

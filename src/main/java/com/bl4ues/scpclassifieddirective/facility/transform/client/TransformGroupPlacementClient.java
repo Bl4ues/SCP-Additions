@@ -156,8 +156,12 @@ public final class TransformGroupPlacementClient {
                         && selected.type() == SelectionType.GROUP
                         && group.id().equals(selected.id());
                 if (entry.getValue().isAir() && !guideCell) continue;
-                Hit hit = intersectState(localEye, localRay,
-                        entry.getKey(), entry.getValue(), guideCell);
+                // Placement authors against the clean local 1x1x1 grid
+                // cell, not the payload's visual/collision AABB. Wall-mounted
+                // blocks, doors and thin controls therefore resolve the same
+                // local face a vanilla block would expose before the group's
+                // transform is applied.
+                Hit hit = intersect(localEye, localRay, entry.getKey());
                 if (hit == null || hit.distance() < 0.0D
                         || hit.distance() > limit
                         || hit.distance() >= bestDistance) continue;

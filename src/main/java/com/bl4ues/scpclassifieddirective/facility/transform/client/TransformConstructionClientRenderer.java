@@ -415,31 +415,42 @@ public final class TransformConstructionClientRenderer {
     private static CachedGroupBatch buildGroupBatch(Minecraft minecraft,
             TransformGroup group, GroupBatchKey key) {
         Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
-        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                : group.cells().entrySet()) {
-            TransformGroup.GridPos cell = entry.getKey();
-            if (!key.equals(GroupBatchKey.of(cell))) continue;
-            BlockState state = entry.getValue();
-            if (state == null || state.isAir()
-                    || state.getRenderShape() != RenderShape.MODEL) continue;
+        int baseX = key.x() * GROUP_BATCH_SIZE;
+        int baseY = key.y() * GROUP_BATCH_SIZE;
+        int baseZ = key.z() * GROUP_BATCH_SIZE;
+        for (int x = baseX; x < baseX + GROUP_BATCH_SIZE; x++) {
+            for (int y = baseY; y < baseY + GROUP_BATCH_SIZE; y++) {
+                for (int z = baseZ; z < baseZ + GROUP_BATCH_SIZE; z++) {
+                    TransformGroup.GridPos cell =
+                            new TransformGroup.GridPos(x, y, z);
+                    BlockState state = group.cells().get(cell);
+                    if (state == null || state.isAir()
+                            || state.getRenderShape() != RenderShape.MODEL) {
+                        continue;
+                    }
 
-            BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
-            RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
-            List<PreparedVertex> output = layers.computeIfAbsent(renderType,
-                    ignored -> new ArrayList<>());
-            Vec3 center = group.cellCenter(cell);
-            BlockPos lightPos = BlockPos.containing(center);
-            int packedLight = minecraft.level.hasChunkAt(lightPos)
-                    ? LevelRenderer.getLightColor(minecraft.level, state, lightPos)
-                    : 0x00F000F0;
-            RandomSource random = RandomSource.create(
-                    42L ^ cell.hashCode() * 31L);
-            for (Direction side : SIDES) {
-                random.setSeed(42L ^ cell.hashCode() * 31L);
-                for (BakedQuad quad : model.getQuads(state, side, random,
-                        ModelData.EMPTY, null)) {
-                    appendGroupQuad(minecraft, output, group, cell, state,
-                            quad, lightPos, packedLight);
+                    BakedModel model = minecraft.getBlockRenderer()
+                            .getBlockModel(state);
+                    RenderType renderType =
+                            ItemBlockRenderTypes.getChunkRenderType(state);
+                    List<PreparedVertex> output = layers.computeIfAbsent(
+                            renderType, ignored -> new ArrayList<>());
+                    Vec3 center = group.cellCenter(cell);
+                    BlockPos lightPos = BlockPos.containing(center);
+                    int packedLight = minecraft.level.hasChunkAt(lightPos)
+                            ? LevelRenderer.getLightColor(
+                                    minecraft.level, state, lightPos)
+                            : 0x00F000F0;
+                    long seed = 42L ^ cell.hashCode() * 31L;
+                    RandomSource random = RandomSource.create(seed);
+                    for (Direction side : SIDES) {
+                        random.setSeed(seed);
+                        for (BakedQuad quad : model.getQuads(state, side,
+                                random, ModelData.EMPTY, null)) {
+                            appendGroupQuad(minecraft, output, group, cell,
+                                    state, quad, lightPos, packedLight);
+                        }
+                    }
                 }
             }
         }

@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -77,6 +78,21 @@ public final class TransformConstructionClientRenderer {
 
     static void invalidateGroup(UUID id) {
         if (id != null) GROUP_MESHES.remove(id);
+    }
+
+    @SubscribeEvent
+    public static void hideProxyVanillaOutline(RenderHighlightEvent.Block event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || event.getTarget() == null) return;
+        BlockPos pos = event.getTarget().getBlockPos();
+        if (minecraft.level.getBlockState(pos).is(
+                TransformConstructionModule.getProxy())) {
+            // The proxy is only an integer-grid bridge. Its clipped AABB is not
+            // the authored selection geometry and becomes actively misleading
+            // after rotation. The construction renderer already draws the exact
+            // local cell/surface guides in world space.
+            event.setCanceled(true);
+        }
     }
 
     @SubscribeEvent

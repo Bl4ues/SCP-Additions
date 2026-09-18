@@ -139,9 +139,7 @@ public final class Scp079ActivityPingManager {
         if (id == null || !ScpClassifiedDirectiveMod.MODID.equals(
                 id.getNamespace())) return false;
         String path = id.getPath();
-        return path.contains("button")
-                || path.contains("reader")
-                || path.contains("terminal")
+        return path.contains("terminal")
                 || path.contains("elevator")
                 || path.contains("tesla")
                 || path.contains("speaker")

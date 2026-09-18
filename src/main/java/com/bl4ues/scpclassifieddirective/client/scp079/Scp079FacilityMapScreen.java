@@ -470,11 +470,16 @@ public final class Scp079FacilityMapScreen extends Screen {
             int color = hovered ? 0xFFF2D67C
                     : unavailable ? 0xFF4C5D64
                     : locked ? 0xFF61747B : 0xFFB8D8E1;
-            renderDoorPath(graphics, marker, transform, color,
-                    open && !locked);
-            if (marker.requiredLevel() > 0) {
-                renderKeycardLevel(graphics, marker, transform,
-                        geometryByRoom, color);
+            boolean keycard = marker.requiredLevel() > 0;
+            if (keycard && !open) {
+                renderClosedKeycardBadge(graphics, marker, transform,
+                        locked);
+            } else {
+                renderDoorPath(graphics, marker, transform, color,
+                        open && !locked);
+                if (keycard) {
+                    renderOpenKeycardLevel(graphics, marker, transform, color);
+                }
             }
         }
         if (hoveredDoor != null) {
@@ -572,22 +577,24 @@ public final class Scp079FacilityMapScreen extends Screen {
         return ox * ox + oy * oy;
     }
 
-    private void renderKeycardLevel(GuiGraphics graphics, MapDoorMarker marker,
-            MapTransform transform,
-            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom,
-            int color) {
-        // Keep the level readable in screen space regardless of the physical
-        // door angle. A tiny CRT-dark badge masks the line behind the numeral,
-        // matching both horizontal and vertical door markers.
+    private void renderClosedKeycardBadge(GuiGraphics graphics,
+            MapDoorMarker marker, MapTransform transform, boolean locked) {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
-        int textW = Math.max(5, Scp079UiTheme.scaledWidth(font, value, 0.82F));
-        int halfW = textW / 2 + 3;
-        graphics.fill(x - halfW, y - 6, x + halfW + 1, y + 6,
-                0xE006121A);
-        Scp079UiTheme.drawCentered(graphics, font, value,
-                x, y - 4, 0.82F, color);
+        int badge = locked ? 0xFF7C8D92 : 0xFFE8F8FF;
+        graphics.fill(x - 5, y - 6, x + 6, y + 6, badge);
+        Scp079UiTheme.drawCenteredInControl(graphics, font, value,
+                x, y - 6, 12, 0.82F, 0xFF071116);
+    }
+
+    private void renderOpenKeycardLevel(GuiGraphics graphics,
+            MapDoorMarker marker, MapTransform transform, int color) {
+        int x = transform.sx(marker.x());
+        int y = transform.sy(marker.z());
+        String value = Integer.toString(marker.requiredLevel());
+        Scp079UiTheme.drawCenteredInControl(graphics, font, value,
+                x, y - 6, 12, 0.82F, color);
     }
 
     private void renderDoorHoverHelp(GuiGraphics graphics,

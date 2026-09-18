@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.WeakHashMap;
 
 /**
@@ -80,6 +81,38 @@ public final class TransformPowerQuery {
      * explicitly. Door animation states do not invalidate the index because
      * they are consumers, not power sources.
      */
+    public static synchronized void refreshGroup(MinecraftServer server,
+            TransformGroup group) {
+        if (server == null || group == null) return;
+        PowerIndex index = INDEXES.get(server);
+        if (index != null) index.replaceGroup(group);
+    }
+
+    public static synchronized void refreshSurface(MinecraftServer server,
+            ConstructionSurface surface) {
+        if (server == null || surface == null) return;
+        PowerIndex index = INDEXES.get(server);
+        if (index != null) index.replaceSurface(surface);
+    }
+
+    public static synchronized void removeGroup(MinecraftServer server,
+            ResourceLocation dimension, UUID id) {
+        if (server == null || dimension == null || id == null) return;
+        PowerIndex index = INDEXES.get(server);
+        if (index != null) {
+            index.replace(new SourceOwner(dimension, id, false), List.of());
+        }
+    }
+
+    public static synchronized void removeSurface(MinecraftServer server,
+            ResourceLocation dimension, UUID id) {
+        if (server == null || dimension == null || id == null) return;
+        PowerIndex index = INDEXES.get(server);
+        if (index != null) {
+            index.replace(new SourceOwner(dimension, id, true), List.of());
+        }
+    }
+
     public static synchronized void invalidate(MinecraftServer server) {
         if (server != null) INDEXES.remove(server);
     }
@@ -93,23 +126,10 @@ public final class TransformPowerQuery {
         TransformConstructionSavedData data =
                 TransformConstructionSavedData.get(server);
         for (TransformGroup group : data.groups()) {
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                if (!source(entry.getValue())) continue;
-                result.add(group.dimension(), group.cellCenter(entry.getKey()));
-            }
+            result.replaceGroup(group);
         }
         for (ConstructionSurface surface : data.surfaces()) {
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                if (!source(entry.getValue().state())) continue;
-                ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                double u = (slot.column() + 0.5D) / surface.columns();
-                double v = (slot.row() + 0.5D) / surface.rows();
-                result.add(surface.dimension(), surface.gridPoint(u, v)
-                        .add(surface.gridNormal(u, v).scale(0.5D)));
-            }
+            result.replaceSurface(surface);
         }
         return result;
     }
@@ -121,15 +141,76 @@ public final class TransformPowerQuery {
                 && state.getValue(BlockStateProperties.POWERED);
     }
 
+    private record SourceOwner(ResourceLocation dimension, UUID id,
+            boolean surface) {
+    }
+
+    private record SourcePoint(ResourceLocation dimension, Vec3 world) {
+    }
+
     private static final class PowerIndex {
         private final Map<ResourceLocation, Map<Long, List<Vec3>>> byCell =
                 new HashMap<>();
+        private final Map<SourceOwner, List<SourcePoint>> byOwner =
+                new HashMap<>();
 
-        private void add(ResourceLocation dimension, Vec3 world) {
-            BlockPos cell = BlockPos.containing(world);
-            byCell.computeIfAbsent(dimension, ignored -> new HashMap<>())
+        private void replaceGroup(TransformGroup group) {
+            List<SourcePoint> points = new ArrayList<>();
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                if (source(entry.getValue())) {
+                    points.add(new SourcePoint(group.dimension(),
+                            group.cellCenter(entry.getKey())));
+                }
+            }
+            replace(new SourceOwner(group.dimension(), group.id(), false),
+                    points);
+        }
+
+        private void replaceSurface(ConstructionSurface surface) {
+            List<SourcePoint> points = new ArrayList<>();
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                if (!source(entry.getValue().state())) continue;
+                ConstructionSurface.SurfaceSlot slot = entry.getKey();
+                double u = (slot.column() + 0.5D) / surface.columns();
+                double v = (slot.row() + 0.5D) / surface.rows();
+                points.add(new SourcePoint(surface.dimension(),
+                        surface.gridPoint(u, v)
+                                .add(surface.gridNormal(u, v).scale(0.5D))));
+            }
+            replace(new SourceOwner(surface.dimension(), surface.id(), true),
+                    points);
+        }
+
+        private void replace(SourceOwner owner, List<SourcePoint> next) {
+            List<SourcePoint> previous = byOwner.remove(owner);
+            if (previous != null) {
+                for (SourcePoint point : previous) remove(point);
+            }
+            if (next == null || next.isEmpty()) return;
+            List<SourcePoint> immutable = List.copyOf(next);
+            byOwner.put(owner, immutable);
+            for (SourcePoint point : immutable) add(point);
+        }
+
+        private void add(SourcePoint point) {
+            BlockPos cell = BlockPos.containing(point.world());
+            byCell.computeIfAbsent(point.dimension(), ignored -> new HashMap<>())
                     .computeIfAbsent(cell.asLong(), ignored -> new ArrayList<>())
-                    .add(world);
+                    .add(point.world());
+        }
+
+        private void remove(SourcePoint point) {
+            Map<Long, List<Vec3>> cells = byCell.get(point.dimension());
+            if (cells == null) return;
+            BlockPos cell = BlockPos.containing(point.world());
+            List<Vec3> values = cells.get(cell.asLong());
+            if (values == null) return;
+            values.remove(point.world());
+            if (values.isEmpty()) cells.remove(cell.asLong());
+            if (cells.isEmpty()) byCell.remove(point.dimension());
         }
 
         private boolean hasSourceNear(ResourceLocation dimension, Vec3 center,
@@ -138,8 +219,6 @@ public final class TransformPowerQuery {
             if (cells == null || cells.isEmpty()) return false;
             double maxDistanceSqr = range * range;
             BlockPos base = BlockPos.containing(center);
-            // range is currently 1.35, but two cells of search margin keeps the
-            // index correct for sources close to opposite cell boundaries.
             for (int dx = -2; dx <= 2; dx++) {
                 for (int dy = -2; dy <= 2; dy++) {
                     for (int dz = -2; dz <= 2; dz++) {
@@ -157,5 +236,4 @@ public final class TransformPowerQuery {
             }
             return false;
         }
-    }
-}
+    }}

@@ -87,6 +87,35 @@ public final class TransformDoorRuntime {
         event.setCancellationResult(InteractionResult.SUCCESS);
     }
 
+    /**
+     * Uses a transformed direct-use door addressed in local grid coordinates.
+     * The server revalidates dimension, payload and reach before changing state.
+     */
+    public static boolean useGroupCell(ServerPlayer player, UUID groupId,
+            GridPos cell) {
+        if (player == null || groupId == null || cell == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        TransformGroup group = data.group(groupId);
+        if (group == null || !group.dimension().equals(
+                level.dimension().location())) return false;
+        Vec3 center = group.cellCenter(cell);
+        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
+
+        DoorAddress address = address(group.cells().get(cell));
+        if (address == null || !address.family().directUse()) return false;
+        if (address.stage() == DoorStage.CLOSED) {
+            start(level, group, cell, address.family(), true);
+            return true;
+        }
+        if (address.stage() == DoorStage.OPEN) {
+            start(level, group, cell, address.family(), false);
+            return true;
+        }
+        return true;
+    }
+
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;

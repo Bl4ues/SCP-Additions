@@ -50,16 +50,40 @@ public final class TransformControlRuntime {
         // proxy block at all. Resolve the authored control from the actual hit
         // point instead of making proxy existence a prerequisite for use.
         ControlHit hit = nearest(level, event.getHitVec().getLocation());
-        if (hit == null) return;
+        if (hit == null || !activate(level, hit)) return;
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+    }
+
+    /**
+     * Uses a control addressed in the group's own local grid. This is the
+     * authoritative path for client local-space raycasts and does not depend on
+     * whichever vanilla BlockPos happened to be behind the transformed model.
+     */
+    public static boolean useGroupCell(ServerPlayer player, UUID groupId,
+            TransformGroup.GridPos cell) {
+        if (player == null || groupId == null || cell == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        TransformGroup group = data.group(groupId);
+        if (group == null || !group.dimension().equals(
+                level.dimension().location())) return false;
+        BlockState state = group.cells().get(cell);
+        if (!control(state)) return false;
+        Vec3 center = group.cellCenter(cell);
+        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
+        return activate(level, ControlHit.group(group, cell, state, center));
+    }
+
+    private static boolean activate(ServerLevel level, ControlHit hit) {
         BlockState state = hit.state();
-        if (!state.hasProperty(BlockStateProperties.POWERED)) return;
+        if (state == null || !state.hasProperty(BlockStateProperties.POWERED)) {
+            return false;
+        }
 
         if (state.getBlock() instanceof ButtonBlock) {
-            if (state.getValue(BlockStateProperties.POWERED)) {
-                event.setCanceled(true);
-                event.setCancellationResult(InteractionResult.SUCCESS);
-                return;
-            }
+            if (state.getValue(BlockStateProperties.POWERED)) return true;
             set(level, hit, state.setValue(BlockStateProperties.POWERED, true));
             Vec3 center = hit.center();
             level.playSound(null, center.x, center.y, center.z,
@@ -67,18 +91,19 @@ public final class TransformControlRuntime {
                     0.3F, 0.6F);
             RELEASES.computeIfAbsent(level.getServer(), ignored -> new HashMap<>())
                     .put(hit.key(), level.getServer().getTickCount() + BUTTON_TICKS);
-        } else if (state.getBlock() instanceof LeverBlock) {
+            return true;
+        }
+
+        if (state.getBlock() instanceof LeverBlock) {
             boolean powered = !state.getValue(BlockStateProperties.POWERED);
             set(level, hit, state.setValue(BlockStateProperties.POWERED, powered));
             Vec3 center = hit.center();
             level.playSound(null, center.x, center.y, center.z,
                     SoundEvents.LEVER_CLICK, SoundSource.BLOCKS,
                     0.3F, powered ? 0.6F : 0.5F);
-        } else {
-            return;
+            return true;
         }
-        event.setCanceled(true);
-        event.setCancellationResult(InteractionResult.SUCCESS);
+        return false;
     }
 
     @SubscribeEvent

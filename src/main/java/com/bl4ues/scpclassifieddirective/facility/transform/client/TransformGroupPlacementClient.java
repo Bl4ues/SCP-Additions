@@ -27,6 +27,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Precise local-space placement for rigid transformed groups. This bypasses
@@ -78,6 +79,49 @@ public final class TransformGroupPlacementClient {
                 (int) Math.floor(local.x + 0.5D),
                 (int) Math.floor(local.y + 0.5D),
                 (int) Math.floor(local.z + 0.5D));
+    }
+
+    /**
+     * Editor picking uses the authored local 1x1 cells rather than proxy or
+     * payload bounding boxes. This keeps an Off-Grid group selectable even when
+     * its world cell is occupied by a normal block and therefore has no proxy.
+     */
+    static UUID findAimedGroup(LocalPlayer player) {
+        if (player == null) return null;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return null;
+        Vec3 eye = player.getEyePosition();
+        Vec3 worldRay = player.getViewVector(1.0F).normalize();
+        double limit = MAX_DISTANCE;
+
+        HitResult vanilla = minecraft.hitResult;
+        if (vanilla instanceof BlockHitResult blockHit
+                && vanilla.getType() == HitResult.Type.BLOCK) {
+            // Allow the transformed local cell sharing the clicked vanilla block
+            // to remain selectable, but never pick through a whole wall.
+            limit = Math.min(limit,
+                    eye.distanceTo(blockHit.getLocation()) + 0.90D);
+        }
+
+        UUID bestId = null;
+        double bestDistance = limit + 1.0D;
+        for (TransformGroup group : TransformConstructionClientState.groups(
+                minecraft.level.dimension().location())) {
+            Vec3 localEye = TransformMath.worldToLocal(group.origin(), eye,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            Vec3 localRay = TransformMath.inverseRotate(worldRay,
+                    group.rotationX(), group.rotationY(), group.rotationZ())
+                    .normalize();
+            for (TransformGroup.GridPos cell : group.cells().keySet()) {
+                Hit hit = intersect(localEye, localRay, cell);
+                if (hit == null || hit.distance() < 0.0D
+                        || hit.distance() > limit
+                        || hit.distance() >= bestDistance) continue;
+                bestDistance = hit.distance();
+                bestId = group.id();
+            }
+        }
+        return bestId;
     }
 
     private static Target findTarget(LocalPlayer player) {

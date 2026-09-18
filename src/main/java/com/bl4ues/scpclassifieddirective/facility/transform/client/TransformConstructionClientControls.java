@@ -34,6 +34,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.UUID;
+
 /** Blockbench-style keyboard and direct-axis editing for world-space gizmos. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -102,6 +104,13 @@ public final class TransformConstructionClientControls {
             }
         }
         if (holdingOffGridTool(player)) {
+            UUID aimedGroup = TransformGroupPlacementClient.findAimedGroup(player);
+            if (aimedGroup != null) {
+                finishDrag();
+                TransformConstructionClientState.selectGroup(aimedGroup);
+                status("Off-grid group selected");
+                return;
+            }
             HitResult aimed = minecraft.hitResult;
             if (aimed instanceof BlockHitResult blockHit
                     && aimed.getType() == HitResult.Type.BLOCK

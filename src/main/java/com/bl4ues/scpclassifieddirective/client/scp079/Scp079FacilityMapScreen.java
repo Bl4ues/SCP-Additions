@@ -428,9 +428,9 @@ public final class Scp079FacilityMapScreen extends Screen {
                 FacilityFloorPatch.Vertex a = contour.get(index);
                 FacilityFloorPatch.Vertex b = contour.get(
                         (index + 1) % contour.size());
-                drawMapLine(graphics, transform.sx(a.x()),
-                        transform.sy(a.z()), transform.sx(b.x()),
-                        transform.sy(b.z()), lineColor);
+                drawMapLine(graphics, transform.fx(a.x()),
+                        transform.fy(a.z()), transform.fx(b.x()),
+                        transform.fy(b.z()), lineColor);
             }
         }
     }
@@ -673,14 +673,16 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private static void drawDoorLine(GuiGraphics graphics,
-            int x0, int y0, int x1, int y1, int color) {
+            double x0, double y0, double x1, double y1, int color) {
         drawMapLine(graphics, x0, y0, x1, y1, color);
-        int dx = Math.abs(x1 - x0);
-        int dy = Math.abs(y1 - y0);
+        double dx = Math.abs(x1 - x0);
+        double dy = Math.abs(y1 - y0);
         if (dx >= dy) {
-            drawMapLine(graphics, x0, y0 + 1, x1, y1 + 1, color);
+            drawMapLine(graphics, x0, y0 + 1.0D,
+                    x1, y1 + 1.0D, color);
         } else {
-            drawMapLine(graphics, x0 + 1, y0, x1 + 1, y1, color);
+            drawMapLine(graphics, x0 + 1.0D, y0,
+                    x1 + 1.0D, y1, color);
         }
     }
 
@@ -1009,8 +1011,8 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private static void drawDoorSegment(GuiGraphics graphics,
             MapTransform transform, Vec3 a, Vec3 b, int color) {
-        drawDoorLine(graphics, transform.sx(a.x), transform.sy(a.z),
-                transform.sx(b.x), transform.sy(b.z), color);
+        drawDoorLine(graphics, transform.fx(a.x), transform.fy(a.z),
+                transform.fx(b.x), transform.fy(b.z), color);
     }
 
     private static Vec3 lerp(Vec3 a, Vec3 b, double t) {
@@ -1472,45 +1474,50 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
     }
 
-    private static void drawMapLine(GuiGraphics graphics, int x0, int y0,
-            int x1, int y1, int color) {
-        int dx = x1 - x0;
-        int dy = y1 - y0;
-        if (dx == 0 || dy == 0) {
-            int minX = Math.min(x0, x1);
-            int maxX = Math.max(x0, x1);
-            int minY = Math.min(y0, y1);
-            int maxY = Math.max(y0, y1);
-            graphics.fill(minX, minY, maxX + 1, maxY + 1, color);
+    private static void drawMapLine(GuiGraphics graphics, double x0,
+            double y0, double x1, double y1, int color) {
+        // Keep authored geometry in subpixel screen coordinates until the last
+        // possible moment. Rounding every curve sample before rasterization was
+        // reintroducing the staircase that antialiasing was supposed to remove.
+        double dx = x1 - x0;
+        double dy = y1 - y0;
+        if (Math.abs(dx) < 1.0E-8D && Math.abs(dy) < 1.0E-8D) {
+            plotMapPixel(graphics, (int) Math.floor(x0),
+                    (int) Math.floor(y0), color, 1.0D);
             return;
         }
 
-        // Lightweight Xiaolin-Wu-style coverage. The room geometry remains
-        // authored in world units; only its final pixel coverage is smoothed,
-        // preserving the CRT language without the staircase on 37/45° walls
-        // and curved Surface contours.
-        int steps = Math.max(Math.abs(dx), Math.abs(dy));
-        double stepX = dx / (double) steps;
-        double stepY = dy / (double) steps;
-        double x = x0;
-        double y = y0;
-        boolean shallow = Math.abs(dx) >= Math.abs(dy);
-        for (int step = 0; step <= steps; step++) {
-            if (shallow) {
-                int px = (int) Math.round(x);
-                int py = (int) Math.floor(y);
-                double fraction = y - Math.floor(y);
-                plotMapPixel(graphics, px, py, color, 1.0D - fraction);
-                plotMapPixel(graphics, px, py + 1, color, fraction);
+        boolean steep = Math.abs(dy) > Math.abs(dx);
+        if (steep) {
+            double swap = x0; x0 = y0; y0 = swap;
+            swap = x1; x1 = y1; y1 = swap;
+        }
+        if (x0 > x1) {
+            double swap = x0; x0 = x1; x1 = swap;
+            swap = y0; y0 = y1; y1 = swap;
+        }
+
+        dx = x1 - x0;
+        dy = y1 - y0;
+        double gradient = Math.abs(dx) < 1.0E-9D ? 0.0D : dy / dx;
+        int start = (int) Math.floor(x0);
+        int end = (int) Math.ceil(x1);
+        for (int major = start; major <= end; major++) {
+            double sample = Mth.clamp(major + 0.5D, x0, x1);
+            double minor = y0 + (sample - x0) * gradient;
+            int base = (int) Math.floor(minor);
+            double fraction = minor - base;
+            if (steep) {
+                plotMapPixel(graphics, base, major, color,
+                        1.0D - fraction);
+                plotMapPixel(graphics, base + 1, major, color,
+                        fraction);
             } else {
-                int px = (int) Math.floor(x);
-                int py = (int) Math.round(y);
-                double fraction = x - Math.floor(x);
-                plotMapPixel(graphics, px, py, color, 1.0D - fraction);
-                plotMapPixel(graphics, px + 1, py, color, fraction);
+                plotMapPixel(graphics, major, base, color,
+                        1.0D - fraction);
+                plotMapPixel(graphics, major, base + 1, color,
+                        fraction);
             }
-            x += stepX;
-            y += stepY;
         }
     }
 
@@ -1566,8 +1573,10 @@ public final class Scp079FacilityMapScreen extends Screen {
             List<FacilityRoomSnapshot> rooms) { }
 
     private record MapTransform(double originX, double originY, double scale) {
-        int sx(double x) { return (int) Math.round(originX + x * scale); }
-        int sy(double z) { return (int) Math.round(originY + z * scale); }
+        double fx(double x) { return originX + x * scale; }
+        double fy(double z) { return originY + z * scale; }
+        int sx(double x) { return (int) Math.round(fx(x)); }
+        int sy(double z) { return (int) Math.round(fy(z)); }
     }
 
     private record Bounds(int minX, int minZ, int maxX, int maxZ) {

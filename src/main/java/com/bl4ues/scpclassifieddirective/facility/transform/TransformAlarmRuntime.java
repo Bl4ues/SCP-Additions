@@ -18,6 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +49,7 @@ public final class TransformAlarmRuntime {
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 server);
         for (ServerLevel level : server.getAllLevels()) {
-            List<DoorPoint> transformedDoors = transformedDoors(data,
+            DoorIndex transformedDoors = transformedDoors(data,
                     level.dimension().location());
             updateGroups(level, data, transformedDoors, tick);
             updateSurfaces(level, data, transformedDoors, tick);
@@ -56,7 +57,7 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean updateGroups(ServerLevel level,
-            TransformConstructionSavedData data, List<DoorPoint> doors,
+            TransformConstructionSavedData data, DoorIndex doors,
             int tick) {
         boolean changed = false;
         for (TransformGroup original : data.groups()) {
@@ -97,7 +98,7 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean updateSurfaces(ServerLevel level,
-            TransformConstructionSavedData data, List<DoorPoint> doors,
+            TransformConstructionSavedData data, DoorIndex doors,
             int tick) {
         boolean changed = false;
         for (ConstructionSurface original : data.surfaces()) {
@@ -184,11 +185,7 @@ public final class TransformAlarmRuntime {
         if (logicalPower || hasVanillaDoor(level, center)) {
             return true;
         }
-        for (DoorPoint door : transformedDoors) {
-            if (door.position().distanceToSqr(center)
-                    <= TRANSFORMED_DOOR_RANGE_SQR) return true;
-        }
-        return false;
+        return transformedDoors.hasNear(center);
     }
 
     private static boolean hasVanillaDoor(ServerLevel level, Vec3 center) {
@@ -215,16 +212,16 @@ public final class TransformAlarmRuntime {
         return false;
     }
 
-    private static List<DoorPoint> transformedDoors(
+    private static DoorIndex transformedDoors(
             TransformConstructionSavedData data,
             net.minecraft.resources.ResourceLocation dimension) {
-        List<DoorPoint> result = new ArrayList<>();
+        DoorIndex result = new DoorIndex();
         for (TransformGroup group : data.groups()) {
             if (!group.dimension().equals(dimension)) continue;
             for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                     : group.cells().entrySet()) {
                 if (FacilityModule.isElectricDoorOpenOrOpening(entry.getValue())) {
-                    result.add(new DoorPoint(group.cellCenter(entry.getKey())));
+                    result.add(group.cellCenter(entry.getKey()));
                 }
             }
         }
@@ -235,8 +232,7 @@ public final class TransformAlarmRuntime {
                     : surface.attachments().entrySet()) {
                 if (FacilityModule.isElectricDoorOpenOrOpening(
                         entry.getValue().state())) {
-                    result.add(new DoorPoint(surfaceCenter(surface,
-                            entry.getKey())));
+                    result.add(surfaceCenter(surface, entry.getKey()));
                 }
             }
         }
@@ -254,6 +250,42 @@ public final class TransformAlarmRuntime {
                 AlarmModule.LOOP.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
-    private record DoorPoint(Vec3 position) {
+    /**
+     * Per-tick broad phase for transformed open doors. Alarm checks happen
+     * every two ticks, so an O(alarms * doors) linear scan becomes visible in
+     * authored facilities surprisingly quickly. Bucket by vanilla cell only as
+     * a broad phase; the final distance test remains in exact world space.
+     */
+    private static final class DoorIndex {
+        private static final int CELL_RADIUS = 2;
+        private final Map<Long, List<Vec3>> byCell = new HashMap<>();
+
+        private void add(Vec3 position) {
+            if (position == null) return;
+            long key = BlockPos.containing(position).asLong();
+            byCell.computeIfAbsent(key, ignored -> new ArrayList<>())
+                    .add(position);
+        }
+
+        private boolean hasNear(Vec3 center) {
+            if (center == null || byCell.isEmpty()) return false;
+            BlockPos base = BlockPos.containing(center);
+            for (int dx = -CELL_RADIUS; dx <= CELL_RADIUS; dx++) {
+                for (int dy = -CELL_RADIUS; dy <= CELL_RADIUS; dy++) {
+                    for (int dz = -CELL_RADIUS; dz <= CELL_RADIUS; dz++) {
+                        List<Vec3> points = byCell.get(
+                                base.offset(dx, dy, dz).asLong());
+                        if (points == null) continue;
+                        for (Vec3 point : points) {
+                            if (point.distanceToSqr(center)
+                                    <= TRANSFORMED_DOOR_RANGE_SQR) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
     }
 }

@@ -435,14 +435,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
 
         for (List<FacilityFloorPatch.Vertex> contour : geometry.contours()) {
-            for (int index = 0; index < contour.size(); index++) {
-                FacilityFloorPatch.Vertex a = contour.get(index);
-                FacilityFloorPatch.Vertex b = contour.get(
-                        (index + 1) % contour.size());
-                drawMapLine(graphics, transform.fx(a.x()),
-                        transform.fy(a.z()), transform.fx(b.x()),
-                        transform.fy(b.z()), lineColor);
-            }
+            drawMapContour(graphics, contour, transform, lineColor);
         }
     }
 
@@ -1400,6 +1393,91 @@ public final class Scp079FacilityMapScreen extends Screen {
             drawMapLine(graphics, t.sx(a.x()), t.sy(a.z()),
                     t.sx(b.x()), t.sy(b.z()), color);
         }
+    }
+
+    private static void drawMapContour(GuiGraphics graphics,
+            List<FacilityFloorPatch.Vertex> contour, MapTransform transform,
+            int color) {
+        if (contour == null || contour.size() < 2) return;
+        Map<Long, Double> coverage = new HashMap<>();
+        for (int index = 0; index < contour.size(); index++) {
+            FacilityFloorPatch.Vertex a = contour.get(index);
+            FacilityFloorPatch.Vertex b = contour.get(
+                    (index + 1) % contour.size());
+            accumulateMapLine(coverage,
+                    transform.fx(a.x()), transform.fy(a.z()),
+                    transform.fx(b.x()), transform.fy(b.z()),
+                    graphics.guiWidth(), graphics.guiHeight());
+        }
+        for (Map.Entry<Long, Double> pixel : coverage.entrySet()) {
+            int x = (int) (pixel.getKey() >> 32);
+            int y = (int) (long) pixel.getKey();
+            plotMapPixel(graphics, x, y, color, pixel.getValue());
+        }
+    }
+
+    /**
+     * Wu-style coverage accumulated with MAX rather than alpha-over. Adjacent
+     * curve segments share endpoint pixels, and drawing them independently made
+     * those joints brighter than the rest of the contour.
+     */
+    private static void accumulateMapLine(Map<Long, Double> coverage,
+            double x0, double y0, double x1, double y1,
+            int width, int height) {
+        double dx = x1 - x0;
+        double dy = y1 - y0;
+        if (Math.abs(dx) < 1.0E-8D && Math.abs(dy) < 1.0E-8D) {
+            accumulateCoverage(coverage, (int) Math.floor(x0),
+                    (int) Math.floor(y0), 1.0D, width, height);
+            return;
+        }
+
+        boolean steep = Math.abs(dy) > Math.abs(dx);
+        if (steep) {
+            double swap = x0; x0 = y0; y0 = swap;
+            swap = x1; x1 = y1; y1 = swap;
+        }
+        if (x0 > x1) {
+            double swap = x0; x0 = x1; x1 = swap;
+            swap = y0; y0 = y1; y1 = swap;
+        }
+
+        dx = x1 - x0;
+        dy = y1 - y0;
+        double gradient = Math.abs(dx) < 1.0E-9D ? 0.0D : dy / dx;
+        int start = (int) Math.floor(x0);
+        int end = (int) Math.ceil(x1);
+        // Do not spend time rasterizing kilometres of a panned-off room.
+        int majorMin = steep ? -1 : -1;
+        int majorMax = steep ? height : width;
+        start = Math.max(start, majorMin);
+        end = Math.min(end, majorMax);
+        for (int major = start; major <= end; major++) {
+            double sample = Mth.clamp(major + 0.5D, x0, x1);
+            double minor = y0 + (sample - x0) * gradient;
+            int base = (int) Math.floor(minor);
+            double fraction = minor - base;
+            if (steep) {
+                accumulateCoverage(coverage, base, major,
+                        1.0D - fraction, width, height);
+                accumulateCoverage(coverage, base + 1, major,
+                        fraction, width, height);
+            } else {
+                accumulateCoverage(coverage, major, base,
+                        1.0D - fraction, width, height);
+                accumulateCoverage(coverage, major, base + 1,
+                        fraction, width, height);
+            }
+        }
+    }
+
+    private static void accumulateCoverage(Map<Long, Double> coverage,
+            int x, int y, double value, int width, int height) {
+        if (value <= 0.035D || x < 0 || y < 0 || x >= width || y >= height) {
+            return;
+        }
+        long key = ((long) x << 32) ^ (y & 0xFFFFFFFFL);
+        coverage.merge(key, Mth.clamp(value, 0.0D, 1.0D), Math::max);
     }
 
     private static void drawMapLine(GuiGraphics graphics, double x0,

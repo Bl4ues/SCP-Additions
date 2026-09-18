@@ -70,6 +70,12 @@ public final class FacilitySurfaceBoundaryConformer {
             double distance) {
         int samples = samples(surface);
         Area result = new Area();
+        Vec3 first = null;
+        Vec3 firstNext = null;
+        Vec3 firstInward = null;
+        Vec3 lastPrevious = null;
+        Vec3 last = null;
+        Vec3 lastInward = null;
         for (int index = 0; index < samples; index++) {
             double u0 = index / (double) samples;
             double u1 = (index + 1.0D) / samples;
@@ -79,17 +85,55 @@ public final class FacilitySurfaceBoundaryConformer {
             Vec3 normal = surface.gridNormal(um, 0.0D);
             Vec3 inward = new Vec3(-normal.x, 0.0D, -normal.z);
             if (inward.lengthSqr() < 1.0E-10D) continue;
-            inward = inward.normalize().scale(distance);
+            inward = inward.normalize();
+            if (first == null) {
+                first = a;
+                firstNext = b;
+                firstInward = inward;
+            }
+            lastPrevious = a;
+            last = b;
+            lastInward = inward;
 
-            Path2D.Double quad = new Path2D.Double(Path2D.WIND_NON_ZERO);
-            quad.moveTo(a.x, a.z);
-            quad.lineTo(b.x, b.z);
-            quad.lineTo(b.x + inward.x, b.z + inward.z);
-            quad.lineTo(a.x + inward.x, a.z + inward.z);
-            quad.closePath();
-            result.add(new Area(quad));
+            addStrip(result, a, b, inward, distance);
+        }
+
+        // A wall is a boundary, not a finite carpet strip. Extend its first and
+        // last tangents so a selection that begins slightly before/after the
+        // authored Surface is clipped by the curve rather than by an artificial
+        // perpendicular cap at the endpoint.
+        if (first != null && firstNext != null && firstInward != null) {
+            Vec3 tangent = horizontal(firstNext.subtract(first));
+            if (tangent.lengthSqr() > 1.0E-10D) {
+                Vec3 extended = first.subtract(tangent.normalize()
+                        .scale(distance));
+                addStrip(result, extended, first, firstInward, distance);
+            }
+        }
+        if (lastPrevious != null && last != null && lastInward != null) {
+            Vec3 tangent = horizontal(last.subtract(lastPrevious));
+            if (tangent.lengthSqr() > 1.0E-10D) {
+                Vec3 extended = last.add(tangent.normalize().scale(distance));
+                addStrip(result, last, extended, lastInward, distance);
+            }
         }
         return result;
+    }
+
+    private static void addStrip(Area result, Vec3 a, Vec3 b,
+            Vec3 inwardUnit, double distance) {
+        Vec3 inward = inwardUnit.scale(distance);
+        Path2D.Double quad = new Path2D.Double(Path2D.WIND_NON_ZERO);
+        quad.moveTo(a.x, a.z);
+        quad.lineTo(b.x, b.z);
+        quad.lineTo(b.x + inward.x, b.z + inward.z);
+        quad.lineTo(a.x + inward.x, a.z + inward.z);
+        quad.closePath();
+        result.add(new Area(quad));
+    }
+
+    private static Vec3 horizontal(Vec3 value) {
+        return new Vec3(value.x, 0.0D, value.z);
     }
 
     private static boolean isRelevant(FacilityFloorPatch patch,

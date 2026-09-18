@@ -72,6 +72,37 @@ public final class TransformSurfaceDoorRuntime {
         event.setCancellationResult(InteractionResult.SUCCESS);
     }
 
+    /**
+     * Direct-use Surface doors are addressed by the authored parametric slot,
+     * not by the vanilla proxy cell behind the curved wall.
+     */
+    public static boolean useSurfaceSlot(ServerPlayer player, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (player == null || surfaceId == null || slot == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())) return false;
+        ConstructionSurface.SurfaceAttachment attachment =
+                surface.attachments().get(slot);
+        if (attachment == null) return false;
+        DoorAddress address = address(attachment.state());
+        if (address == null || !address.family().directUse()) return false;
+        Vec3 center = center(surface, slot);
+        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
+        if (address.stage() == DoorStage.CLOSED) {
+            start(level, surface, slot, address.family(), true);
+            return true;
+        }
+        if (address.stage() == DoorStage.OPEN) {
+            start(level, surface, slot, address.family(), false);
+            return true;
+        }
+        return true;
+    }
+
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;

@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
@@ -498,11 +499,11 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private boolean doorLocked(MapDoorMarker marker, boolean open) {
         if (open) return false;
-        if (marker.pos() != null
-                && Scp079DoorLockClientState.isLocked(marker.pos())) {
-            return true;
-        }
-        return marker.requiredLevel() > 0;
+        // Keycard access is a credential requirement, not the temporary
+        // SCP-079 "locked" state. It keeps the normal door color and carries
+        // its level badge; only an actual remote lock is dimmed.
+        return marker.pos() != null
+                && Scp079DoorLockClientState.isLocked(marker.pos());
     }
 
     private static boolean sameDoor(MapDoorMarker a, MapDoorMarker b) {
@@ -562,27 +563,18 @@ public final class Scp079FacilityMapScreen extends Screen {
             MapTransform transform,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom,
             int color) {
-        Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
-        Vec3 normal = new Vec3(-marker.span().z, 0.0D,
-                marker.span().x).normalize();
-        Vec3 plus = center.add(normal.scale(0.58D));
-        Vec3 minus = center.subtract(normal.scale(0.58D));
-        boolean plusInside = insideAnyRoom(plus.x, plus.z, geometryByRoom);
-        boolean minusInside = insideAnyRoom(minus.x, minus.z, geometryByRoom);
-        Vec3 label = plusInside && !minusInside ? minus
-                : minusInside && !plusInside ? plus : plus;
-        Scp079UiTheme.drawCentered(graphics, font,
-                Integer.toString(marker.requiredLevel()),
-                transform.sx(label.x), transform.sy(label.z) - 4,
-                0.82F, color);
-    }
-
-    private static boolean insideAnyRoom(double x, double z,
-            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometries) {
-        for (FacilityRoomOutlineGeometry geometry : geometries.values()) {
-            if (geometry.contains(x, z)) return true;
-        }
-        return false;
+        // Keep the level readable in screen space regardless of the physical
+        // door angle. A tiny CRT-dark badge masks the line behind the numeral,
+        // matching both horizontal and vertical door markers.
+        int x = transform.sx(marker.x());
+        int y = transform.sy(marker.z());
+        String value = Integer.toString(marker.requiredLevel());
+        int textW = Math.max(5, Scp079UiTheme.scaledWidth(font, value, 0.82F));
+        int halfW = textW / 2 + 3;
+        graphics.fill(x - halfW, y - 6, x + halfW + 1, y + 6,
+                0xE006121A);
+        Scp079UiTheme.drawCentered(graphics, font, value,
+                x, y - 4, 0.82F, color);
     }
 
     private void renderDoorHoverHelp(GuiGraphics graphics,
@@ -658,14 +650,14 @@ public final class Scp079FacilityMapScreen extends Screen {
                 : Scp079DoorMapClientState.entries()) {
             BlockPos pos = entry.pos();
             double x = pos.getX() + 0.5D;
+            double y = pos.getY() + 0.5D;
             double z = pos.getZ() + 0.5D;
-            if (!nearMappedRoom(x, z, geometryByRoom)) continue;
-            MapDoorMarker snapped = snapMarkerToBoundary(marker(x, z,
+            if (!belongsToFloor(x, y, z, floor, geometryByRoom)) continue;
+            addDoorMarker(result, marker(x, z,
                     entry.facing(), entry.blast() ? 5.0D : 0.94D,
                     DoorSource.NETWORK, pos, null, null, null,
                     entry.open(), entry.requiredLevel(), entry.lockable(),
-                    entry.controllable(), List.of()), geometryByRoom);
-            addDoorMarker(result, snapped);
+                    entry.controllable(), List.of()));
         }
 
         ResourceLocation dimension = minecraft.level.dimension().location();
@@ -678,18 +670,18 @@ public final class Scp079FacilityMapScreen extends Screen {
                         || !state.hasProperty(
                                 HorizontalDirectionalBlock.FACING)) continue;
                 Vec3 center = group.cellCenter(entry.getKey());
-                if (!nearMappedRoom(center.x, center.z, geometryByRoom)) continue;
+                if (!belongsToFloor(center.x, center.y, center.z, floor,
+                        geometryByRoom)) continue;
                 Direction local = state.getValue(
                         HorizontalDirectionalBlock.FACING);
                 Vec3 facing = TransformMath.rotate(
                         Vec3.atLowerCornerOf(local.getNormal()),
                         group.rotationX(), group.rotationY(), group.rotationZ());
-                MapDoorMarker snapped = snapMarkerToBoundary(marker(
+                addDoorMarker(result, marker(
                         center.x, center.z, facing, 0.94D, DoorSource.GROUP,
                         null, group.id(), entry.getKey(), null,
                         FacilityModule.isDoorPassable(state), 0, false,
-                        false, List.of()), geometryByRoom);
-                addDoorMarker(result, snapped);
+                        false, List.of()));
             }
         }
         for (ConstructionSurface surface
@@ -705,7 +697,8 @@ public final class Scp079FacilityMapScreen extends Screen {
                 double u = (slot.column() + 0.5D) / surface.columns();
                 double v = (slot.row() + 0.5D) / surface.rows();
                 Vec3 center = surface.gridPoint(u, v);
-                if (!nearMappedRoom(center.x, center.z, geometryByRoom)) continue;
+                if (!belongsToFloor(center.x, center.y, center.z, floor,
+                        geometryByRoom)) continue;
                 Direction local = state.getValue(
                         HorizontalDirectionalBlock.FACING);
                 Vec3 tangent = surface.gridFrameTangent(u, v);
@@ -723,11 +716,22 @@ public final class Scp079FacilityMapScreen extends Screen {
         return List.copyOf(result);
     }
 
-    private static boolean nearMappedRoom(double x, double z,
+    private static boolean belongsToFloor(double x, double y, double z,
+            FloorGroup floor,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
-        for (FacilityRoomOutlineGeometry geometry : geometryByRoom.values()) {
-            if (geometry.intersects(x - 1.1D, z - 1.1D,
-                    2.2D, 2.2D)) return true;
+        for (FacilityRoomSnapshot room : floor.rooms()) {
+            FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
+            if (geometry == null || geometry.empty()
+                    || !geometry.intersects(x - 1.1D, z - 1.1D,
+                    2.2D, 2.2D)) {
+                continue;
+            }
+            for (FacilityFloorPatch patch : room.patches()) {
+                if (y >= patch.y() - 1.0D
+                        && y <= patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -909,16 +913,67 @@ public final class Scp079FacilityMapScreen extends Screen {
             boolean open) {
         List<Vec3> path = doorPath(marker);
         if (path.size() < 2) return;
-        int segmentCount = path.size() - 1;
-        for (int index = 0; index < segmentCount; index++) {
-            double mid = (index + 0.5D) / segmentCount;
-            if (open && mid > 0.31D && mid < 0.69D) continue;
+
+        double total = 0.0D;
+        double[] lengths = new double[path.size() - 1];
+        for (int index = 0; index + 1 < path.size(); index++) {
+            lengths[index] = horizontalDistance(path.get(index),
+                    path.get(index + 1));
+            total += lengths[index];
+        }
+        if (total < 1.0E-7D) return;
+
+        double travelled = 0.0D;
+        for (int index = 0; index + 1 < path.size(); index++) {
             Vec3 a = path.get(index);
             Vec3 b = path.get(index + 1);
-            drawDoorLine(graphics, transform.sx(a.x),
-                    transform.sy(a.z), transform.sx(b.x),
-                    transform.sy(b.z), color);
+            double length = lengths[index];
+            if (length < 1.0E-8D) continue;
+            double start = travelled / total;
+            double end = (travelled + length) / total;
+            travelled += length;
+
+            if (!open) {
+                drawDoorSegment(graphics, transform, a, b, color);
+                continue;
+            }
+
+            // Open doors are two short leaves with a clear central gap, even
+            // when the marker is a single straight segment. Curved surface
+            // doors use the exact same normalized arc-length convention.
+            drawDoorRange(graphics, transform, a, b, start, end,
+                    0.0D, 0.30D, color);
+            drawDoorRange(graphics, transform, a, b, start, end,
+                    0.70D, 1.0D, color);
         }
+    }
+
+    private static void drawDoorRange(GuiGraphics graphics,
+            MapTransform transform, Vec3 a, Vec3 b, double segmentStart,
+            double segmentEnd, double rangeStart, double rangeEnd, int color) {
+        double from = Math.max(segmentStart, rangeStart);
+        double to = Math.min(segmentEnd, rangeEnd);
+        if (to <= from + 1.0E-8D) return;
+        double span = segmentEnd - segmentStart;
+        double t0 = (from - segmentStart) / span;
+        double t1 = (to - segmentStart) / span;
+        drawDoorSegment(graphics, transform, lerp(a, b, t0),
+                lerp(a, b, t1), color);
+    }
+
+    private static void drawDoorSegment(GuiGraphics graphics,
+            MapTransform transform, Vec3 a, Vec3 b, int color) {
+        drawDoorLine(graphics, transform.sx(a.x), transform.sy(a.z),
+                transform.sx(b.x), transform.sy(b.z), color);
+    }
+
+    private static Vec3 lerp(Vec3 a, Vec3 b, double t) {
+        return new Vec3(Mth.lerp(t, a.x, b.x), 0.0D,
+                Mth.lerp(t, a.z, b.z));
+    }
+
+    private static double horizontalDistance(Vec3 a, Vec3 b) {
+        return Math.hypot(b.x - a.x, b.z - a.z);
     }
 
     private void renderTrackers(GuiGraphics graphics, FloorGroup floor,

@@ -62,12 +62,22 @@ public final class TransformGroupPlacementClient {
 
         Target target = findTarget(player);
         if (target == null) return;
-        TransformGroup.GridPos next = target.source().offset(
-                target.face().getStepX(), target.face().getStepY(),
-                target.face().getStepZ());
+        Vec3 localHit = TransformMath.worldToLocal(target.group().origin(),
+                target.worldHit(), target.group().rotationX(),
+                target.group().rotationY(), target.group().rotationZ());
+        Vec3 outside = localHit.add(
+                Vec3.atLowerCornerOf(target.face().getNormal()).scale(0.501D));
+        TransformGroup.GridPos next = nearestCell(outside);
         TransformConstructionNetwork.placeGroupBlock(target.group().id(),
                 target.source(), next, target.face(), target.worldHit());
         event.setCanceled(true);
+    }
+
+    private static TransformGroup.GridPos nearestCell(Vec3 local) {
+        return new TransformGroup.GridPos(
+                (int) Math.floor(local.x + 0.5D),
+                (int) Math.floor(local.y + 0.5D),
+                (int) Math.floor(local.z + 0.5D));
     }
 
     private static Target findTarget(LocalPlayer player) {

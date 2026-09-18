@@ -267,7 +267,12 @@ public final class TransformConstructionManager {
 
         BlockState source = group.cells().getOrDefault(sourceCell,
                 Blocks.AIR.defaultBlockState());
-        GridPos target = source.isAir() ? sourceCell : targetCell;
+        Vec3 localHit = TransformMath.worldToLocal(group.origin(), hit,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        Vec3 outside = localHit.add(
+                Vec3.atLowerCornerOf(outwardLocal.getNormal()).scale(0.501D));
+        GridPos hitTarget = nearestGridCell(outside);
+        GridPos target = source.isAir() ? sourceCell : hitTarget;
         if (group.cells().size() >= MAX_GROUP_CELLS
                 && !group.cells().containsKey(target)) return false;
         if (!group.cells().getOrDefault(target,
@@ -296,6 +301,12 @@ public final class TransformConstructionManager {
         data.putGroup(next);
         refresh(level.getServer());
         return true;
+    }
+
+    private static GridPos nearestGridCell(Vec3 local) {
+        return new GridPos((int) Math.floor(local.x + 0.5D),
+                (int) Math.floor(local.y + 0.5D),
+                (int) Math.floor(local.z + 0.5D));
     }
 
     public static boolean placeSurfaceBlock(ServerPlayer player, UUID surfaceId,

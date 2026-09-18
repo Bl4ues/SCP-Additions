@@ -47,6 +47,12 @@ public final class TransformGroupPlacementClient {
                 || !(player.getMainHandItem().getItem() instanceof BlockItem)) {
             return;
         }
+        Selection selected = TransformConstructionClientState.selection();
+        if (selected != null && selected.type() == SelectionType.SURFACE) {
+            // Surface placement owns the use click while a surface is selected.
+            // Do not let an unrelated off-grid group behind it steal the block.
+            return;
+        }
 
         Target target = findTarget(player);
         if (target == null) return;

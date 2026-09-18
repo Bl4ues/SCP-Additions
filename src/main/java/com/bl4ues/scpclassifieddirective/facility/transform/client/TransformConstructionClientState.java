@@ -43,6 +43,7 @@ public final class TransformConstructionClientState {
     private static Selection selection;
     private static EditMode mode = EditMode.MOVE;
     private static Axis axis = Axis.X;
+    private static SurfaceCurveAxis surfaceCurveAxis = SurfaceCurveAxis.WIDTH;
     private static UUID hoveredSurfaceId;
     private static SurfaceHandle hoveredSurfaceHandle;
     private static final Deque<UndoEntry> UNDO = new ArrayDeque<>();
@@ -260,6 +261,15 @@ public final class TransformConstructionClientState {
         if (next != null) axis = next;
     }
 
+    public static SurfaceCurveAxis surfaceCurveAxis() {
+        return surfaceCurveAxis;
+    }
+
+    public static void toggleSurfaceCurveAxis() {
+        surfaceCurveAxis = surfaceCurveAxis == SurfaceCurveAxis.WIDTH
+                ? SurfaceCurveAxis.HEIGHT : SurfaceCurveAxis.WIDTH;
+    }
+
     public static Vec3 axisVector() {
         return switch (axis) {
             case X -> new Vec3(1.0D, 0.0D, 0.0D);
@@ -335,7 +345,8 @@ public final class TransformConstructionClientState {
             upsertSurface(surface);
             TransformConstructionNetwork.updateSurface(surface.id(),
                     surface.bottomStart(), surface.bottomEnd(),
-                    surface.topStart(), surface.topEnd(), surface.curveOffset());
+                    surface.topStart(), surface.topEnd(), surface.curveOffset(),
+                    surface.heightCurveOffset());
             if (current == null || current.flipped() != surface.flipped()) {
                 TransformConstructionNetwork.setSurfaceFlipped(surface.id(),
                         surface.flipped());
@@ -583,6 +594,7 @@ public final class TransformConstructionClientState {
     public enum SelectionType { GROUP, SURFACE }
     public enum EditMode { MOVE, ROTATE }
     public enum Axis { X, Y, Z }
+    public enum SurfaceCurveAxis { WIDTH, HEIGHT }
     public enum SurfaceHandle {
         BOTTOM_START, BOTTOM_END, TOP_START, TOP_END,
         BOTTOM_EDGE, TOP_EDGE, START_EDGE, END_EDGE, CENTER

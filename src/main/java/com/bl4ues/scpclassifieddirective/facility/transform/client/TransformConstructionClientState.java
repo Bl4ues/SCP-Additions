@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionClientBridge;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;

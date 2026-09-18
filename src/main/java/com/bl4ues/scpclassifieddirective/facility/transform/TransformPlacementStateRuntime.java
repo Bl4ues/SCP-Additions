@@ -47,6 +47,7 @@ public final class TransformPlacementStateRuntime {
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public static void afterProxyPlacement(
             PlayerInteractEvent.RightClickBlock event) {
+        if (event.isCanceled()) return;
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || event.getHand() != InteractionHand.MAIN_HAND
                 || !(event.getLevel() instanceof ServerLevel level)

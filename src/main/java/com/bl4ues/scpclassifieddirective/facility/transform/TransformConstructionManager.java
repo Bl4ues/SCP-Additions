@@ -580,17 +580,23 @@ public final class TransformConstructionManager {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)
+        if (!(event.getEntity() instanceof ServerPlayer)
                 || event.getHand() != InteractionHand.MAIN_HAND
                 || !(event.getLevel() instanceof ServerLevel level)
                 || !level.getBlockState(event.getPos()).is(
-                        TransformConstructionModule.getProxy())) return;
-        ItemStack stack = event.getItemStack();
-        if (!(stack.getItem() instanceof BlockItem)) return;
-        if (placeBlock(player, event.getPos(), event.getHitVec(), stack)) {
-            event.setCanceled(true);
-            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+                        TransformConstructionModule.getProxy())
+                || !(event.getItemStack().getItem() instanceof BlockItem)) {
+            return;
         }
+
+        // Placement authority lives in the transformed logical-grid packets
+        // (PlaceGroupBlock / PlaceSurfaceBlock). The old proxy-hit fallback
+        // used the axis-aligned vanilla BlockPos and could race the logical
+        // packet, placing a second block in a different cell and refreshing
+        // physics twice. Keep proxies physical, never semantic.
+        event.setCanceled(true);
+        event.setCancellationResult(
+                net.minecraft.world.InteractionResult.SUCCESS);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

@@ -235,7 +235,7 @@ public final class TransformConstructionClientRenderer {
                     && interactionTarget.group().id().equals(selection.id())
                     && offGridTool)) {
                 renderLogicalGroupCell(pose, lines, interactionTarget.group(),
-                        interactionTarget.cell(),
+                        interactionTarget.visualCell(),
                         0.78F, 0.93F, 1.0F, 0.96F);
             }
             if (surfaceTarget != null) {

@@ -34,7 +34,7 @@ import java.util.function.Supplier;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class FacilityFineGeometryNetwork {
     private static final String PROTOCOL = "1";
-    private static final int MAX_VERTICES = 64;
+    private static final int MAX_VERTICES = 256;
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
                     "facility_fine_geometry"),

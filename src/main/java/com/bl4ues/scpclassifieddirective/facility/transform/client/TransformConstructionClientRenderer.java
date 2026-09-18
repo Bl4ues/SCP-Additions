@@ -5,6 +5,8 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Axis;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.EditMode;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SelectionType;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SurfaceHandle;
@@ -368,6 +370,84 @@ public final class TransformConstructionClientRenderer {
                         r, g, b, 0.95F);
             }
         }
+        if (active) renderGroupGizmo(pose, lines, group);
+    }
+
+    private static void renderGroupGizmo(PoseStack pose, VertexConsumer lines,
+            TransformGroup group) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Axis hot = minecraft.player == null ? null
+                : TransformConstructionClientControls.hoveredGroupGizmoAxis(
+                        minecraft.player);
+        if (TransformConstructionClientState.mode() == EditMode.ROTATE) {
+            for (Axis axis : Axis.values()) {
+                renderRotationRing(pose, lines, group.origin(), axis,
+                        axis == hot);
+            }
+        } else {
+            for (Axis axis : Axis.values()) {
+                renderMoveAxis(pose, lines, group.origin(), axis,
+                        axis == hot);
+            }
+        }
+    }
+
+    private static void renderMoveAxis(PoseStack pose, VertexConsumer lines,
+            Vec3 origin, Axis axis, boolean hot) {
+        Vec3 direction = switch (axis) {
+            case X -> new Vec3(1.0D, 0.0D, 0.0D);
+            case Y -> new Vec3(0.0D, 1.0D, 0.0D);
+            case Z -> new Vec3(0.0D, 0.0D, 1.0D);
+        };
+        float[] color = axisColor(axis, hot);
+        Vec3 tip = origin.add(direction.scale(1.18D));
+        line(pose, lines, origin, tip, color[0], color[1], color[2], 1.0F);
+        Vec3 helper = Math.abs(direction.y) < 0.8D
+                ? new Vec3(0.0D, 1.0D, 0.0D)
+                : new Vec3(1.0D, 0.0D, 0.0D);
+        Vec3 side = direction.cross(helper).normalize().scale(0.10D);
+        Vec3 back = tip.subtract(direction.scale(0.20D));
+        line(pose, lines, tip, back.add(side),
+                color[0], color[1], color[2], 1.0F);
+        line(pose, lines, tip, back.subtract(side),
+                color[0], color[1], color[2], 1.0F);
+    }
+
+    private static void renderRotationRing(PoseStack pose, VertexConsumer lines,
+            Vec3 center, Axis axis, boolean hot) {
+        Vec3 normal = switch (axis) {
+            case X -> new Vec3(1.0D, 0.0D, 0.0D);
+            case Y -> new Vec3(0.0D, 1.0D, 0.0D);
+            case Z -> new Vec3(0.0D, 0.0D, 1.0D);
+        };
+        Vec3 basisA = Math.abs(normal.y) < 0.85D
+                ? normal.cross(new Vec3(0.0D, 1.0D, 0.0D)).normalize()
+                : new Vec3(1.0D, 0.0D, 0.0D);
+        Vec3 basisB = normal.cross(basisA).normalize();
+        float[] color = axisColor(axis, hot);
+        final int segments = 48;
+        final double radius = 0.92D;
+        Vec3 previous = center.add(basisA.scale(radius));
+        for (int index = 1; index <= segments; index++) {
+            double angle = Math.PI * 2.0D * index / segments;
+            Vec3 current = center.add(basisA.scale(Math.cos(angle) * radius))
+                    .add(basisB.scale(Math.sin(angle) * radius));
+            line(pose, lines, previous, current,
+                    color[0], color[1], color[2], 1.0F);
+            previous = current;
+        }
+    }
+
+    private static float[] axisColor(Axis axis, boolean hot) {
+        float boost = hot ? 1.0F : 0.78F;
+        return switch (axis) {
+            case X -> new float[]{1.0F, hot ? 0.42F : 0.16F,
+                    hot ? 0.38F : 0.14F};
+            case Y -> new float[]{hot ? 0.42F : 0.14F, 1.0F,
+                    hot ? 0.42F : 0.18F};
+            case Z -> new float[]{hot ? 0.42F : 0.18F,
+                    hot ? 0.58F : 0.32F, boost};
+        };
     }
 
     private static void renderSurfaceMappingGuide(PoseStack pose,

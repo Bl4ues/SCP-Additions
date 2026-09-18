@@ -131,9 +131,8 @@ public final class BuilderToolGuideHud {
                     ? "  •" : "")));
             lines.add(new Line("R", "rotate mode" + (mode == EditMode.ROTATE
                     ? "  •" : "")));
-            lines.add(Line.axes("choose axis"));
             lines.add(new Line("LMB", mode == EditMode.ROTATE
-                    ? "drag rotation ring" : "drag selected axis"));
+                    ? "drag colored rotation ring" : "drag colored axis arrow"));
             lines.add(new Line("Shift", mode == EditMode.ROTATE
                     ? "snap 5°" : "snap to 1/16"));
             lines.add(new Line("Ctrl+Z", "undo"));

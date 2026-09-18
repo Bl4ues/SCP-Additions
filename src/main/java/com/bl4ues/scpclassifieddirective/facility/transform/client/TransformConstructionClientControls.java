@@ -91,6 +91,17 @@ public final class TransformConstructionClientControls {
         if (attackLatch) return;
         attackLatch = true;
 
+        Selection currentSelection = TransformConstructionClientState.selection();
+        if (currentSelection != null
+                && currentSelection.type() == SelectionType.GROUP) {
+            Axis directAxis = findGroupGizmoAxis(player, currentSelection);
+            if (directAxis != null) {
+                finishDrag();
+                TransformConstructionClientState.setAxis(directAxis);
+                return;
+            }
+        }
+
         boolean selectedSurface = false;
         if (holdingSurfaceTool(player)
                 && TransformSurfaceAuthoringState.step() == 0) {
@@ -304,6 +315,10 @@ public final class TransformConstructionClientControls {
             return;
         }
         Vec3 axis = TransformConstructionClientState.axisVector();
+        if (drag != null && drag.matches(selection, EditMode.ROTATE,
+                TransformConstructionClientState.axis())) {
+            axis = drag.dragAxis();
+        }
         double angle = rotationParameter(player.getEyePosition(),
                 player.getViewVector(1.0F), group.origin(), axis);
         if (!Double.isFinite(angle)) return;
@@ -513,6 +528,99 @@ public final class TransformConstructionClientControls {
             status(bestHandle == SurfaceHandle.CENTER
                     ? "Curve handle selected" : "Surface handle selected");
         }
+    }
+
+    static Axis hoveredGroupGizmoAxis(LocalPlayer player) {
+        Selection selection = TransformConstructionClientState.selection();
+        return selection == null || selection.type() != SelectionType.GROUP
+                ? null : findGroupGizmoAxis(player, selection);
+    }
+
+    private static Axis findGroupGizmoAxis(LocalPlayer player,
+            Selection selection) {
+        if (player == null || selection == null
+                || selection.type() != SelectionType.GROUP) return null;
+        TransformGroup group = TransformConstructionClientState.group(
+                selection.id());
+        if (group == null) return null;
+        Vec3 eye = player.getEyePosition();
+        Vec3 ray = player.getViewVector(1.0F).normalize();
+        double distance = Math.sqrt(eye.distanceToSqr(group.origin()));
+        double tolerance = 0.10D + Math.min(0.16D, distance * 0.008D);
+        Axis best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (Axis candidate : Axis.values()) {
+            Vec3 axis = axisVector(candidate);
+            double score = TransformConstructionClientState.mode()
+                    == EditMode.ROTATE
+                    ? ringHitScore(eye, ray, group.origin(), axis, 0.92D)
+                    : segmentHitScore(eye, ray, group.origin(),
+                            group.origin().add(axis.scale(1.18D)));
+            if (score <= tolerance * tolerance && score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private static Vec3 axisVector(Axis axis) {
+        return switch (axis) {
+            case X -> new Vec3(1.0D, 0.0D, 0.0D);
+            case Y -> new Vec3(0.0D, 1.0D, 0.0D);
+            case Z -> new Vec3(0.0D, 0.0D, 1.0D);
+        };
+    }
+
+    private static double ringHitScore(Vec3 eye, Vec3 ray, Vec3 center,
+            Vec3 normal, double radius) {
+        Vec3 basisA = Math.abs(normal.y) < 0.85D
+                ? normal.cross(new Vec3(0.0D, 1.0D, 0.0D)).normalize()
+                : new Vec3(1.0D, 0.0D, 0.0D);
+        Vec3 basisB = normal.cross(basisA).normalize();
+        double best = Double.MAX_VALUE;
+        Vec3 previous = center.add(basisA.scale(radius));
+        final int segments = 48;
+        for (int index = 1; index <= segments; index++) {
+            double angle = Math.PI * 2.0D * index / segments;
+            Vec3 current = center.add(basisA.scale(Math.cos(angle) * radius))
+                    .add(basisB.scale(Math.sin(angle) * radius));
+            best = Math.min(best, segmentHitScore(eye, ray, previous, current));
+            previous = current;
+        }
+        return best;
+    }
+
+    private static double segmentHitScore(Vec3 eye, Vec3 ray,
+            Vec3 a, Vec3 b) {
+        Vec3 segment = b.subtract(a);
+        double len2 = segment.lengthSqr();
+        if (len2 < 1.0E-10D) return Double.MAX_VALUE;
+        Vec3 w0 = eye.subtract(a);
+        double aa = ray.dot(ray);
+        double bb = ray.dot(segment);
+        double cc = len2;
+        double dd = ray.dot(w0);
+        double ee = segment.dot(w0);
+        double denominator = aa * cc - bb * bb;
+        double rayT;
+        double segT;
+        if (Math.abs(denominator) < 1.0E-9D) {
+            segT = Mth.clamp(ee / cc, 0.0D, 1.0D);
+            rayT = Math.max(0.0D,
+                    a.add(segment.scale(segT)).subtract(eye).dot(ray));
+        } else {
+            rayT = (bb * ee - cc * dd) / denominator;
+            segT = (aa * ee - bb * dd) / denominator;
+            if (rayT < 0.0D) rayT = 0.0D;
+            segT = Mth.clamp(segT, 0.0D, 1.0D);
+            // Re-evaluate the ray after clamping the finite segment.
+            rayT = Math.max(0.0D,
+                    a.add(segment.scale(segT)).subtract(eye).dot(ray));
+        }
+        Vec3 onRay = eye.add(ray.scale(rayT));
+        Vec3 onSegment = a.add(segment.scale(segT));
+        return onRay.distanceToSqr(onSegment);
     }
 
     private static void editGroup(Selection selection, double sign) {

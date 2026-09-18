@@ -12,13 +12,18 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -128,8 +133,7 @@ public final class TransformPlacementStateRuntime {
                         item.getBlock())) {
             BlockState local = item.getBlock().defaultBlockState();
             if (local.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-                local = local.setValue(BlockStateProperties.HORIZONTAL_FACING,
-                        outwardLocal);
+                local = bestWallFacing(local, outwardLocal);
             }
             if (local.hasProperty(BlockStateProperties.FACING)) {
                 local = local.setValue(BlockStateProperties.FACING,
@@ -311,10 +315,51 @@ public final class TransformPlacementStateRuntime {
         state = state.setValue(BlockStateProperties.ATTACH_FACE, face);
         if (outward.getAxis().isHorizontal()
                 && state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            state = state.setValue(BlockStateProperties.HORIZONTAL_FACING,
-                    outward);
+            state = bestWallFacing(state, outward);
         }
         return state;
+    }
+
+    /**
+     * Different wall-mounted blocks disagree about whether their horizontal
+     * facing points toward or away from support. Resolve that convention from
+     * the block's own LOCAL selection shape instead of hardcoding a family.
+     *
+     * The source block is behind the target cell on outward.getOpposite().
+     * Whichever candidate shape actually touches that support plane is the
+     * vanilla-consistent orientation for this payload.
+     */
+    private static BlockState bestWallFacing(BlockState state,
+            Direction outward) {
+        BlockState forward = state.setValue(
+                BlockStateProperties.HORIZONTAL_FACING, outward);
+        BlockState reverse = state.setValue(
+                BlockStateProperties.HORIZONTAL_FACING, outward.getOpposite());
+        Direction supportFace = outward.getOpposite();
+        double forwardDistance = supportPlaneDistance(forward, supportFace);
+        double reverseDistance = supportPlaneDistance(reverse, supportFace);
+        return reverseDistance + 1.0E-5D < forwardDistance
+                ? reverse : forward;
+    }
+
+    private static double supportPlaneDistance(BlockState state,
+            Direction supportFace) {
+        VoxelShape shape = state.getShape(EmptyBlockGetter.INSTANCE,
+                BlockPos.ZERO, CollisionContext.empty());
+        if (shape == null || shape.isEmpty()) return Double.POSITIVE_INFINITY;
+        double best = Double.POSITIVE_INFINITY;
+        for (AABB box : shape.toAabbs()) {
+            double distance = switch (supportFace) {
+                case WEST -> box.minX;
+                case EAST -> 1.0D - box.maxX;
+                case DOWN -> box.minY;
+                case UP -> 1.0D - box.maxY;
+                case NORTH -> box.minZ;
+                case SOUTH -> 1.0D - box.maxZ;
+            };
+            best = Math.min(best, Math.max(0.0D, distance));
+        }
+        return best;
     }
 
     private static BlockState localize(BlockState state, Vec3 localX,

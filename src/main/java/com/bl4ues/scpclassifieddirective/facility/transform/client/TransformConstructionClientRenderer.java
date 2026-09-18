@@ -170,10 +170,14 @@ public final class TransformConstructionClientRenderer {
             Vec3 camera) {
         if (group.origin().distanceToSqr(camera) > MAX_RENDER_DISTANCE_SQR) return;
         CachedGroup cached = GROUP_MESHES.get(group.id());
-        if (cached == null || !cached.group().equals(group)) {
+        if (cached == null || !cached.cells().equals(group.cells())) {
             cached = buildGroupMesh(minecraft, group);
             GROUP_MESHES.put(group.id(), cached);
         }
+        pose.pushPose();
+        pose.translate(group.origin().x, group.origin().y, group.origin().z);
+        pose.mulPose(TransformMath.quaternion(group.rotationX(),
+                group.rotationY(), group.rotationZ()));
         for (Map.Entry<RenderType, List<PreparedVertex>> layer
                 : cached.layers().entrySet()) {
             VertexConsumer consumer = buffers.getBuffer(layer.getKey());
@@ -193,6 +197,7 @@ public final class TransformConstructionClientRenderer {
                         .endVertex();
             }
         }
+        pose.popPose();
     }
 
     private static CachedGroup buildGroupMesh(Minecraft minecraft,
@@ -227,7 +232,8 @@ public final class TransformConstructionClientRenderer {
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
         layers.forEach((type, vertices) -> immutable.put(type,
                 List.copyOf(vertices)));
-        return new CachedGroup(group, Map.copyOf(immutable));
+        return new CachedGroup(Map.copyOf(group.cells()),
+                Map.copyOf(immutable));
     }
 
     private static void appendGroupQuad(Minecraft minecraft,
@@ -244,10 +250,7 @@ public final class TransformConstructionClientRenderer {
         int blue = tint < 0 ? 255 : tint & 0xFF;
         Vec3 localNormal = new Vec3(quad.getDirection().getStepX(),
                 quad.getDirection().getStepY(),
-                quad.getDirection().getStepZ());
-        Vec3 worldNormal = TransformMath.rotate(localNormal,
-                group.rotationX(), group.rotationY(), group.rotationZ())
-                .normalize();
+                quad.getDirection().getStepZ()).normalize();
 
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
@@ -260,9 +263,7 @@ public final class TransformConstructionClientRenderer {
                     ? Float.intBitsToFloat(vertices[offset + 5]) : 0.0F;
             Vec3 local = new Vec3(cell.x() - 0.5D + x,
                     cell.y() - 0.5D + y, cell.z() - 0.5D + z);
-            Vec3 world = TransformMath.localToWorld(group.origin(), local,
-                    group.rotationX(), group.rotationY(), group.rotationZ());
-            output.add(new PreparedVertex(state, world, worldNormal, u, v,
+            output.add(new PreparedVertex(state, local, localNormal, u, v,
                     red, green, blue, packedLight));
         }
     }
@@ -709,7 +710,8 @@ public final class TransformConstructionClientRenderer {
             Map<RenderType, List<PreparedVertex>> layers) {
     }
 
-    private record CachedGroup(TransformGroup group,
+    private record CachedGroup(
+            Map<TransformGroup.GridPos, BlockState> cells,
             Map<RenderType, List<PreparedVertex>> layers) {
     }
 }

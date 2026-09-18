@@ -32,10 +32,22 @@ public final class OffGridConstructionToolItem extends Item {
         if (!TransformConstructionManager.canEdit(player)) {
             return InteractionResult.FAIL;
         }
+        if (context.getLevel().getBlockState(context.getClickedPos()).is(
+                com.bl4ues.scpclassifieddirective.facility.transform
+                        .TransformConstructionModule.getProxy())) {
+            // Clicking an existing transformed object with the authoring tool is
+            // an edit gesture, never an instruction to stack another empty grid
+            // on top of it.
+            return InteractionResult.CONSUME;
+        }
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResult.CONSUME;
+        }
         // New grids start exactly centered in the adjacent vanilla cell. The
         // user gets a predictable 1x1x1 reference before applying any offset.
         TransformConstructionManager.createGroup(player, context.getClickedPos(),
                 context.getClickedFace());
+        player.getCooldowns().addCooldown(this, 4);
         return InteractionResult.CONSUME;
     }
 

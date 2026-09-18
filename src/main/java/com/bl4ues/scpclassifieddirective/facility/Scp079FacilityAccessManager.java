@@ -289,6 +289,43 @@ public final class Scp079FacilityAccessManager {
         return List.copyOf(result);
     }
 
+    public static List<MapDoor> mapDoors(MinecraftServer server,
+            ResourceLocation dimension) {
+        if (server == null || dimension == null) return List.of();
+        ServerLevel level = resolveLevel(server, dimension.toString());
+        if (level == null) return List.of();
+        String dimensionId = dimension.toString();
+        List<MapDoor> result = new ArrayList<>();
+        for (Scp079FacilityAccessSavedData.TrackedPosition tracked
+                : List.copyOf(data(server).doors())) {
+            if (!dimensionId.equals(tracked.dimension())) continue;
+            BlockPos pos = BlockPos.of(tracked.packedPos());
+            // Do not force-load chunks merely because the operator opened a
+            // map. The persistent index preserves the address; the descriptor
+            // becomes available as soon as its chunk is loaded normally.
+            if (!level.hasChunkAt(pos)) continue;
+            BlockState state = level.getBlockState(pos);
+            if (BlastDoorModule.isController(state)) {
+                result.add(new MapDoor(pos.immutable(),
+                        state.getValue(BlastDoorModule.FACING), true,
+                        BlastDoorModule.isOpenOrOpening(level, pos)));
+            } else if (FacilityModule.isFacilityDoor(state)
+                    && state.hasProperty(
+                            net.minecraft.world.level.block
+                                    .HorizontalDirectionalBlock.FACING)) {
+                result.add(new MapDoor(pos.immutable(), state.getValue(
+                        net.minecraft.world.level.block
+                                .HorizontalDirectionalBlock.FACING), false,
+                        FacilityModule.isDoorPassable(state)));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    public record MapDoor(BlockPos pos, net.minecraft.core.Direction facing,
+            boolean blast, boolean open) {
+    }
+
     public static void registerTeslaGate(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null) return;
         Scp079FacilityAccessSavedData data = data(level.getServer());

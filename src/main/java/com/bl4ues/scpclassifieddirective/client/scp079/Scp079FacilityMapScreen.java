@@ -426,7 +426,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         if (cachedDoorFloor != floorIndex || now >= doorTopologyRefreshAt) {
             cachedDoorMarkers = collectDoorMarkers(floor, geometryByRoom);
             cachedDoorFloor = floorIndex;
-            doorTopologyRefreshAt = now + 5_000L;
+            doorTopologyRefreshAt = now + 1_000L;
         }
         for (MapDoorMarker marker : cachedDoorMarkers) {
             Vec3 span = marker.span();
@@ -457,14 +457,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return marker.fallbackOpen();
         return switch (marker.source()) {
-            case VANILLA -> {
-                BlockState state = marker.pos() == null
-                        ? null : minecraft.level.getBlockState(marker.pos());
-                yield state != null && FacilityModule.isDoorPassable(state);
-            }
-            case BLAST -> marker.pos() != null
-                    && BlastDoorModule.isOpenOrOpening(
-                            minecraft.level, marker.pos());
+            case NETWORK -> marker.fallbackOpen();
             case GROUP -> {
                 TransformGroup group =
                         TransformConstructionClientState.group(marker.ownerId());
@@ -504,42 +497,16 @@ public final class Scp079FacilityMapScreen extends Screen {
         if (bounds == null) return List.of();
 
         List<MapDoorMarker> result = new ArrayList<>();
-        Set<Long> seen = new HashSet<>();
-        int minY = floor.rooms.stream().flatMap(room -> room.patches().stream())
-                .mapToInt(FacilityFloorPatch::y).min().orElse(floor.y) - 1;
-        int maxY = floor.rooms.stream().flatMap(room -> room.patches().stream())
-                .mapToInt(FacilityFloorPatch::y).max().orElse(floor.y) + 5;
-
-        for (int x = bounds.minX - 3; x <= bounds.maxX + 3; x++) {
-            for (int z = bounds.minZ - 3; z <= bounds.maxZ + 3; z++) {
-                if (!nearMappedRoom(x + 0.5D, z + 0.5D, geometryByRoom)) {
-                    continue;
-                }
-                for (int y = minY; y <= maxY; y++) {
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (!minecraft.level.hasChunkAt(pos)) continue;
-                    BlockState state = minecraft.level.getBlockState(pos);
-                    if (FacilityModule.isFacilityDoor(state)
-                            && state.hasProperty(
-                                    HorizontalDirectionalBlock.FACING)) {
-                        if (!seen.add(pos.asLong())) continue;
-                        Direction facing = state.getValue(
-                                HorizontalDirectionalBlock.FACING);
-                        result.add(marker(pos.getX() + 0.5D,
-                                pos.getZ() + 0.5D, facing, 0.94D,
-                                DoorSource.VANILLA, pos, null, null, null,
-                                FacilityModule.isDoorPassable(state)));
-                    } else if (BlastDoorModule.isController(state)) {
-                        if (!seen.add(pos.asLong())) continue;
-                        Direction facing = state.getValue(BlastDoorModule.FACING);
-                        result.add(marker(pos.getX() + 0.5D,
-                                pos.getZ() + 0.5D, facing, 5.0D,
-                                DoorSource.BLAST, pos, null, null, null,
-                                BlastDoorModule.isOpenOrOpening(
-                                        minecraft.level, pos)));
-                    }
-                }
-            }
+        for (Scp079PlayableNetwork.DoorMapEntry entry
+                : Scp079DoorMapClientState.entries()) {
+            BlockPos pos = entry.pos();
+            double x = pos.getX() + 0.5D;
+            double z = pos.getZ() + 0.5D;
+            if (!nearMappedRoom(x, z, geometryByRoom)) continue;
+            result.add(marker(x, z, entry.facing(),
+                    entry.blast() ? 5.0D : 0.94D,
+                    DoorSource.NETWORK, pos, null, null, null,
+                    entry.open()));
         }
 
         ResourceLocation dimension = minecraft.level.dimension().location();
@@ -1099,7 +1066,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private enum DoorSource {
-        VANILLA, BLAST, GROUP, SURFACE
+        NETWORK, GROUP, SURFACE
     }
 
     private record MapDoorMarker(double x, double z, Vec3 span,

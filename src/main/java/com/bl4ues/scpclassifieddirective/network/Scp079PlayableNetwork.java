@@ -56,6 +56,12 @@ public final class Scp079PlayableNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(DoorLockState.class,
                 DoorLockState::encode, DoorLockState::decode,
                 DoorLockState::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(DoorMapRequest.class,
+                DoorMapRequest::encode, DoorMapRequest::decode,
+                DoorMapRequest::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(DoorMapState.class,
+                DoorMapState::encode, DoorMapState::decode,
+                DoorMapState::handle);
     }
 
     public static void sendState(ServerPlayer player,
@@ -101,6 +107,31 @@ public final class Scp079PlayableNetwork {
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new DoorLockState(doorPos.immutable(), untilGameTime));
+    }
+
+    public static void requestDoorMap(ResourceLocation dimension) {
+        if (dimension != null) {
+            ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                    new DoorMapRequest(dimension));
+        }
+    }
+
+    public static void sendDoorMap(ServerPlayer player,
+            List<com.bl4ues.scpclassifieddirective.facility
+                    .Scp079FacilityAccessManager.MapDoor> doors) {
+        if (player == null) return;
+        List<DoorMapEntry> entries = new ArrayList<>();
+        if (doors != null) {
+            int count = Math.min(4096, doors.size());
+            for (int index = 0; index < count; index++) {
+                var door = doors.get(index);
+                entries.add(new DoorMapEntry(door.pos(), door.facing(),
+                        door.blast(), door.open()));
+            }
+        }
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                PacketDistributor.PLAYER.with(() -> player),
+                new DoorMapState(List.copyOf(entries)));
     }
 
     public static void requestRelease() {
@@ -323,6 +354,82 @@ public final class Scp079PlayableNetwork {
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> com.bl4ues.scpclassifieddirective.client.scp079.Scp079DoorLockClientState
                             .mark(message.doorPos, message.untilGameTime)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record DoorMapEntry(BlockPos pos,
+            net.minecraft.core.Direction facing, boolean blast, boolean open) {
+        private static void write(FriendlyByteBuf buffer, DoorMapEntry entry) {
+            buffer.writeBlockPos(entry.pos);
+            buffer.writeEnum(entry.facing);
+            buffer.writeBoolean(entry.blast);
+            buffer.writeBoolean(entry.open);
+        }
+
+        private static DoorMapEntry read(FriendlyByteBuf buffer) {
+            return new DoorMapEntry(buffer.readBlockPos(),
+                    buffer.readEnum(net.minecraft.core.Direction.class),
+                    buffer.readBoolean(), buffer.readBoolean());
+        }
+    }
+
+    public record DoorMapRequest(ResourceLocation dimension) {
+        private static void encode(DoorMapRequest message,
+                FriendlyByteBuf buffer) {
+            buffer.writeResourceLocation(message.dimension);
+        }
+
+        private static DoorMapRequest decode(FriendlyByteBuf buffer) {
+            return new DoorMapRequest(buffer.readResourceLocation());
+        }
+
+        private static void handle(DoorMapRequest message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer player = context.getSender();
+                if (player == null
+                        || !Scp079PlayableManager.isController(player)) return;
+                sendDoorMap(player,
+                        com.bl4ues.scpclassifieddirective.facility
+                                .Scp079FacilityAccessManager.mapDoors(
+                                        player.getServer(),
+                                        message.dimension));
+            });
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record DoorMapState(List<DoorMapEntry> entries) {
+        public DoorMapState {
+            entries = entries == null ? List.of() : List.copyOf(entries);
+        }
+
+        private static void encode(DoorMapState message,
+                FriendlyByteBuf buffer) {
+            int count = Math.min(4096, message.entries.size());
+            buffer.writeVarInt(count);
+            for (int index = 0; index < count; index++) {
+                DoorMapEntry.write(buffer, message.entries.get(index));
+            }
+        }
+
+        private static DoorMapState decode(FriendlyByteBuf buffer) {
+            int count = Math.max(0, Math.min(4096, buffer.readVarInt()));
+            List<DoorMapEntry> entries = new ArrayList<>(count);
+            for (int index = 0; index < count; index++) {
+                entries.add(DoorMapEntry.read(buffer));
+            }
+            return new DoorMapState(entries);
+        }
+
+        private static void handle(DoorMapState message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.client.scp079
+                            .Scp079DoorMapClientState.update(message.entries)));
             context.setPacketHandled(true);
         }
     }

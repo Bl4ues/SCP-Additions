@@ -10,6 +10,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
+import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityRoomOutlineGeometry;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import com.bl4ues.scpclassifieddirective.network.ScpRoleSelectorNetwork;
 import com.mojang.math.Axis;
@@ -25,9 +26,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
-import java.awt.geom.Area;
-import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -70,7 +68,8 @@ public final class Scp079FacilityMapScreen extends Screen {
     private double panStartX;
     private double panStartY;
     private FacilityRoomSnapshot pressedRoom;
-    private final Map<UUID, RoomGeometry> roomGeometryCache = new HashMap<>();
+    private final Map<UUID, FacilityRoomOutlineGeometry> roomGeometryCache =
+            new HashMap<>();
     private List<MapDoorMarker> cachedDoorMarkers = List.of();
     private int cachedDoorFloor = Integer.MIN_VALUE;
     private long doorTopologyRefreshAt;
@@ -190,11 +189,11 @@ public final class Scp079FacilityMapScreen extends Screen {
         // Merge every patch belonging to a room before render/hit testing.
         // Successive mapping selections therefore form one continuous shape
         // instead of stacking translucent polygons and internal outlines.
-        Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom =
+        Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom =
                 new LinkedHashMap<>();
         for (FacilityRoomSnapshot room : floor.rooms) {
             geometryByRoom.put(room, roomGeometryCache.computeIfAbsent(
-                    room.id(), ignored -> RoomGeometry.of(room)));
+                    room.id(), ignored -> FacilityRoomOutlineGeometry.of(room)));
         }
 
         FacilityRoomSnapshot previousHover = hoveredRoom;
@@ -229,7 +228,7 @@ public final class Scp079FacilityMapScreen extends Screen {
                 .max().orElse(floor.y);
 
         for (FacilityRoomSnapshot room : drawOrder) {
-            RoomGeometry geometry = geometryByRoom.get(room);
+            FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
             boolean hovered = hoveredRoom != null
                     && hoveredRoom.id().equals(room.id());
             boolean current = currentRoom != null
@@ -264,7 +263,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             }
 
             if (geometry != null && !geometry.empty()) {
-                renderRoomGeometry(graphics, geometry, transform, fill, line);
+                renderFacilityRoomOutlineGeometry(graphics, geometry, transform, fill, line);
             }
 
             if (!room.name().isBlank() && geometry != null
@@ -288,13 +287,13 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private FacilityRoomSnapshot resolveHoveredRoom(FloorGroup floor,
-            Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom,
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom,
             FacilityRoomSnapshot previous, int mouseX, int mouseY,
             MapTransform transform) {
         if (leaveConfirmation || floorMenuOpen) return null;
         List<FacilityRoomSnapshot> candidates = new ArrayList<>();
         for (FacilityRoomSnapshot room : floor.rooms) {
-            RoomGeometry geometry = geometryByRoom.get(room);
+            FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
             if (geometry != null && roomContainsScreen(geometry,
                     mouseX, mouseY, transform)) {
                 candidates.add(room);
@@ -366,8 +365,8 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
     }
 
-    private static void renderRoomGeometry(GuiGraphics graphics,
-            RoomGeometry geometry, MapTransform transform,
+    private static void renderFacilityRoomOutlineGeometry(GuiGraphics graphics,
+            FacilityRoomOutlineGeometry geometry, MapTransform transform,
             int fill, int lineColor) {
         Rectangle2D bounds = geometry.bounds();
         int minY = Math.max(MAP_TOP, transform.sy(bounds.getMinY()));
@@ -418,7 +417,7 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private void renderDoorMarkers(GuiGraphics graphics, FloorGroup floor,
             MapTransform transform,
-            Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom) {
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
         long now = System.currentTimeMillis();
         // Door topology is cached separately from its live state. Ordinary
         // network doors refresh through Scp079DoorMapClientState without
@@ -494,7 +493,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private List<MapDoorMarker> collectDoorMarkers(FloorGroup floor,
-            Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom) {
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return List.of();
         Bounds bounds = Bounds.of(floor.rooms);
@@ -563,9 +562,9 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private static boolean nearMappedRoom(double x, double z,
-            Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom) {
-        for (RoomGeometry geometry : geometryByRoom.values()) {
-            if (geometry.area().intersects(x - 1.1D, z - 1.1D,
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
+        for (FacilityRoomOutlineGeometry geometry : geometryByRoom.values()) {
+            if (geometry.intersects(x - 1.1D, z - 1.1D,
                     2.2D, 2.2D)) return true;
         }
         return false;
@@ -971,7 +970,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         return cells;
     }
 
-    private static boolean roomContainsScreen(RoomGeometry geometry,
+    private static boolean roomContainsScreen(FacilityRoomOutlineGeometry geometry,
             double mouseX, double mouseY, MapTransform t) {
         double worldX = (mouseX - t.originX) / t.scale;
         double worldZ = (mouseY - t.originY) / t.scale;
@@ -1078,67 +1077,6 @@ public final class Scp079FacilityMapScreen extends Screen {
             TransformGroup.GridPos groupCell,
             ConstructionSurface.SurfaceSlot surfaceSlot,
             boolean fallbackOpen) {
-    }
-
-    private record RoomGeometry(Area area,
-            List<List<FacilityFloorPatch.Vertex>> contours,
-            Rectangle2D bounds) {
-        static RoomGeometry of(FacilityRoomSnapshot room) {
-            Area merged = new Area();
-            for (FacilityFloorPatch patch : room.patches()) {
-                List<FacilityFloorPatch.Vertex> vertices = patch.outline();
-                if (vertices.size() < 3) continue;
-                Path2D.Double path = new Path2D.Double(Path2D.WIND_NON_ZERO);
-                path.moveTo(vertices.get(0).x(), vertices.get(0).z());
-                for (int index = 1; index < vertices.size(); index++) {
-                    path.lineTo(vertices.get(index).x(), vertices.get(index).z());
-                }
-                path.closePath();
-                merged.add(new Area(path));
-            }
-            return new RoomGeometry(merged, contours(merged),
-                    merged.getBounds2D());
-        }
-
-        boolean empty() {
-            return area.isEmpty();
-        }
-
-        boolean contains(double x, double z) {
-            return area.contains(x, z);
-        }
-
-        private static List<List<FacilityFloorPatch.Vertex>> contours(
-                Area area) {
-            List<List<FacilityFloorPatch.Vertex>> result = new ArrayList<>();
-            PathIterator iterator = area.getPathIterator(null, 0.008D);
-            double[] coords = new double[6];
-            List<FacilityFloorPatch.Vertex> current = null;
-            while (!iterator.isDone()) {
-                int type = iterator.currentSegment(coords);
-                if (type == PathIterator.SEG_MOVETO) {
-                    if (current != null && current.size() >= 3) {
-                        result.add(List.copyOf(current));
-                    }
-                    current = new ArrayList<>();
-                    current.add(new FacilityFloorPatch.Vertex(
-                            coords[0], coords[1]));
-                } else if (type == PathIterator.SEG_LINETO
-                        && current != null) {
-                    current.add(new FacilityFloorPatch.Vertex(
-                            coords[0], coords[1]));
-                } else if (type == PathIterator.SEG_CLOSE
-                        && current != null) {
-                    if (current.size() >= 3) result.add(List.copyOf(current));
-                    current = null;
-                }
-                iterator.next();
-            }
-            if (current != null && current.size() >= 3) {
-                result.add(List.copyOf(current));
-            }
-            return List.copyOf(result);
-        }
     }
 
     private record FloorGroup(String longLabel, int y,

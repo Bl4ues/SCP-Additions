@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityCameraMappingSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityRoomOutlineGeometry.Layer;
 import com.bl4ues.scpclassifieddirective.init.FacilityMappingItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -24,11 +25,20 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 /** Renders authored floor patches and the flat selection being added. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityMappingSelectionRenderer {
     private static final double MAX_RENDER_DISTANCE_SQR = 128.0D * 128.0D;
+    private static final Map<UUID, CachedRoomGeometry> ROOM_GEOMETRY =
+            new HashMap<>();
 
     private FacilityMappingSelectionRenderer() {
     }
@@ -50,23 +60,21 @@ public final class FacilityMappingSelectionRenderer {
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
 
-        for (FacilityRoomSnapshot room : FacilityMappingClientState.rooms(
-                minecraft.level.dimension().location())) {
-            for (FacilityFloorPatch patch : room.patches()) {
-                Vec3 center = patchCenter(patch);
-                double dx = center.x - minecraft.player.getX();
-                double dz = center.z - minecraft.player.getZ();
-                if (dx * dx + dz * dz > MAX_RENDER_DISTANCE_SQR) continue;
-                if (patch.isPolygon()) {
-                    renderPatchOutline(poseStack, lines, patch,
-                            0.18F, 0.82F, 1.0F, 0.90F);
-                } else {
-                    LevelRenderer.renderLineBox(poseStack, lines,
-                            bounds(patch).inflate(0.005D),
-                            0.18F, 0.82F, 1.0F, 0.78F);
-                }
+        var rooms = FacilityMappingClientState.rooms(
+                minecraft.level.dimension().location());
+        Set<UUID> liveRooms = new HashSet<>();
+        for (FacilityRoomSnapshot room : rooms) {
+            liveRooms.add(room.id());
+            CachedRoomGeometry cached = ROOM_GEOMETRY.get(room.id());
+            if (cached == null || !cached.room().equals(room)) {
+                cached = new CachedRoomGeometry(room,
+                        FacilityRoomOutlineGeometry.of(room));
+                ROOM_GEOMETRY.put(room.id(), cached);
             }
+            renderRoomOutline(minecraft, poseStack, lines,
+                    cached.geometry());
         }
+        ROOM_GEOMETRY.keySet().removeIf(id -> !liveRooms.contains(id));
 
         renderCameraAssociations(minecraft, poseStack, lines);
 
@@ -94,16 +102,33 @@ public final class FacilityMappingSelectionRenderer {
         buffers.endBatch(RenderType.lines());
     }
 
-    private static void renderPatchOutline(PoseStack poseStack,
-            VertexConsumer lines, FacilityFloorPatch patch, float red,
-            float green, float blue, float alpha) {
-        var outline = patch.outline();
-        double y = patch.y() + 1.015D;
-        for (int index = 0; index < outline.size(); index++) {
-            FacilityFloorPatch.Vertex a = outline.get(index);
-            FacilityFloorPatch.Vertex b = outline.get((index + 1) % outline.size());
-            renderLine(poseStack, lines, new Vec3(a.x(), y, a.z()),
-                    new Vec3(b.x(), y, b.z()), red, green, blue, alpha);
+    private static void renderRoomOutline(Minecraft minecraft,
+            PoseStack poseStack, VertexConsumer lines,
+            FacilityRoomOutlineGeometry geometry) {
+        for (Layer layer : geometry.layers()) {
+            if (layer.empty()) continue;
+            Rectangle2D bounds = layer.bounds();
+            double centerX = bounds.getCenterX();
+            double centerZ = bounds.getCenterY();
+            double dx = centerX - minecraft.player.getX();
+            double dz = centerZ - minecraft.player.getZ();
+            double radius = Math.hypot(bounds.getWidth(),
+                    bounds.getHeight()) * 0.5D;
+            double maximum = 128.0D + radius;
+            if (dx * dx + dz * dz > maximum * maximum) continue;
+
+            double y = layer.y() + 1.015D;
+            for (var contour : layer.contours()) {
+                for (int index = 0; index < contour.size(); index++) {
+                    FacilityFloorPatch.Vertex a = contour.get(index);
+                    FacilityFloorPatch.Vertex b = contour.get(
+                            (index + 1) % contour.size());
+                    renderLine(poseStack, lines,
+                            new Vec3(a.x(), y, a.z()),
+                            new Vec3(b.x(), y, b.z()),
+                            0.18F, 0.82F, 1.0F, 0.90F);
+                }
+            }
         }
     }
 
@@ -213,4 +238,8 @@ public final class FacilityMappingSelectionRenderer {
                 || minecraft.player.getOffhandItem().is(
                 FacilityMappingItems.getTool());
     }
+    private record CachedRoomGeometry(FacilityRoomSnapshot room,
+            FacilityRoomOutlineGeometry geometry) {
+    }
+
 }

@@ -95,6 +95,18 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(13, UseSurfaceSlot.class,
                 UseSurfaceSlot::encode, UseSurfaceSlot::decode,
                 UseSurfaceSlot::handle);
+        CHANNEL.registerMessage(14, BreakGroupCell.class,
+                BreakGroupCell::encode, BreakGroupCell::decode,
+                BreakGroupCell::handle);
+        CHANNEL.registerMessage(15, BreakSurfaceSlot.class,
+                BreakSurfaceSlot::encode, BreakSurfaceSlot::decode,
+                BreakSurfaceSlot::handle);
+        CHANNEL.registerMessage(16, GroupCellRemoved.class,
+                GroupCellRemoved::encode, GroupCellRemoved::decode,
+                GroupCellRemoved::handle);
+        CHANNEL.registerMessage(17, SurfaceSlotRemoved.class,
+                SurfaceSlotRemoved::encode, SurfaceSlotRemoved::decode,
+                SurfaceSlotRemoved::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -161,6 +173,45 @@ public final class TransformConstructionNetwork {
             ConstructionSurface.SurfaceSlot slot, Vec3 hit) {
         if (surfaceId == null || slot == null || hit == null) return;
         CHANNEL.sendToServer(new PlaceSurfaceBlock(surfaceId, slot, hit));
+    }
+
+    public static void breakGroupCell(UUID groupId,
+            TransformGroup.GridPos cell) {
+        if (groupId != null && cell != null) {
+            CHANNEL.sendToServer(new BreakGroupCell(groupId, cell));
+        }
+    }
+
+    public static void breakSurfaceSlot(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (surfaceId != null && slot != null) {
+            CHANNEL.sendToServer(new BreakSurfaceSlot(surfaceId, slot));
+        }
+    }
+
+    public static void broadcastGroupCellRemoved(ServerLevel level, UUID groupId,
+            TransformGroup.GridPos cell) {
+        if (level == null || groupId == null || cell == null) return;
+        CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
+                new GroupCellRemoved(groupId, cell));
+    }
+
+    public static void broadcastSurfaceSlotRemoved(ServerLevel level,
+            UUID surfaceId, ConstructionSurface.SurfaceSlot slot) {
+        if (level == null || surfaceId == null || slot == null) return;
+        CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
+                new SurfaceSlotRemoved(surfaceId, slot));
+    }
+
+    /**
+     * Structural cell edits are synchronized by tiny packets. Mark their
+     * revision as already distributed so the server tick does not immediately
+     * follow them with a full facility snapshot.
+     */
+    public static void acknowledgeRevision(MinecraftServer server) {
+        if (server == null) return;
+        LAST_REVISION.put(server,
+                TransformConstructionSavedData.get(server).revision());
     }
 
     public static void sendBlockedPlacement(ServerPlayer player, BlockPos pos) {
@@ -577,6 +628,110 @@ public final class TransformConstructionNetwork {
                     TransformConstructionManager.placeSurfaceBlock(
                             context.getSender(), message.surfaceId,
                             message.slot, message.hit));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record BreakGroupCell(UUID groupId,
+            TransformGroup.GridPos cell) {
+        private static void encode(BreakGroupCell message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.groupId);
+            buffer.writeVarInt(message.cell.x());
+            buffer.writeVarInt(message.cell.y());
+            buffer.writeVarInt(message.cell.z());
+        }
+
+        private static BreakGroupCell decode(FriendlyByteBuf buffer) {
+            return new BreakGroupCell(buffer.readUUID(),
+                    new TransformGroup.GridPos(buffer.readVarInt(),
+                            buffer.readVarInt(), buffer.readVarInt()));
+        }
+
+        private static void handle(BreakGroupCell message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> TransformConstructionManager
+                    .removeGroupCell(context.getSender(), message.groupId,
+                            message.cell));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record BreakSurfaceSlot(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        private static void encode(BreakSurfaceSlot message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+        }
+
+        private static BreakSurfaceSlot decode(FriendlyByteBuf buffer) {
+            return new BreakSurfaceSlot(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()));
+        }
+
+        private static void handle(BreakSurfaceSlot message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> TransformConstructionManager
+                    .removeSurfaceSlot(context.getSender(), message.surfaceId,
+                            message.slot));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record GroupCellRemoved(UUID groupId,
+            TransformGroup.GridPos cell) {
+        private static void encode(GroupCellRemoved message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.groupId);
+            buffer.writeVarInt(message.cell.x());
+            buffer.writeVarInt(message.cell.y());
+            buffer.writeVarInt(message.cell.z());
+        }
+
+        private static GroupCellRemoved decode(FriendlyByteBuf buffer) {
+            return new GroupCellRemoved(buffer.readUUID(),
+                    new TransformGroup.GridPos(buffer.readVarInt(),
+                            buffer.readVarInt(), buffer.readVarInt()));
+        }
+
+        private static void handle(GroupCellRemoved message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility.transform.client
+                            .TransformConstructionClientState.removeGroupCellState(
+                                    message.groupId, message.cell)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SurfaceSlotRemoved(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        private static void encode(SurfaceSlotRemoved message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+        }
+
+        private static SurfaceSlotRemoved decode(FriendlyByteBuf buffer) {
+            return new SurfaceSlotRemoved(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()));
+        }
+
+        private static void handle(SurfaceSlotRemoved message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility.transform.client
+                            .TransformConstructionClientState.removeSurfaceSlotState(
+                                    message.surfaceId, message.slot)));
             context.setPacketHandled(true);
         }
     }

@@ -312,6 +312,9 @@ public final class TransformConstructionManager {
         TransformGroup next = group.withCell(target, payload);
         data.putGroup(next);
         refreshGroup(level.getServer(), groupId);
+        TransformConstructionNetwork.broadcastGroupCell(level, groupId,
+                target, payload);
+        TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
 
@@ -363,6 +366,63 @@ public final class TransformConstructionManager {
         ConstructionSurface next = surface.withAttachment(slot, payload, deform);
         data.putSurface(next);
         refreshSurface(level.getServer(), surfaceId);
+        TransformConstructionNetwork.broadcastSurfaceSlot(level, surfaceId,
+                slot, payload, deform);
+        TransformConstructionNetwork.acknowledgeRevision(level.getServer());
+        return true;
+    }
+
+    public static boolean removeGroupCell(ServerPlayer player, UUID id,
+            GridPos cell) {
+        if (!canEdit(player) || id == null || cell == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(level.getServer());
+        TransformGroup group = data.group(id);
+        if (group == null || !group.dimension().equals(
+                level.dimension().location())) return false;
+        BlockState state = group.cells().get(cell);
+        if (state == null || state.isAir()
+                || player.getEyePosition().distanceToSqr(
+                        group.cellCenter(cell)) > 36.0D) return false;
+
+        TransformGroup next = group.withoutCell(cell);
+        if (next.cells().isEmpty()) {
+            data.removeGroup(id);
+            refreshGroup(level.getServer(), id);
+            // Deleting the owner itself still needs a structural snapshot.
+            return true;
+        }
+        data.putGroup(next);
+        refreshGroup(level.getServer(), id);
+        TransformConstructionNetwork.broadcastGroupCellRemoved(level, id, cell);
+        TransformConstructionNetwork.acknowledgeRevision(level.getServer());
+        return true;
+    }
+
+    public static boolean removeSurfaceSlot(ServerPlayer player, UUID id,
+            SurfaceSlot slot) {
+        if (!canEdit(player) || id == null || slot == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(level.getServer());
+        ConstructionSurface surface = data.surface(id);
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())) return false;
+        ConstructionSurface.SurfaceAttachment attachment =
+                surface.attachments().get(slot);
+        if (attachment == null || attachment.state().isAir()) return false;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 center = surface.gridPoint(u, v)
+                .add(surface.gridNormal(u, v).scale(0.5D));
+        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
+
+        data.putSurface(surface.withoutAttachment(slot));
+        refreshSurface(level.getServer(), id);
+        TransformConstructionNetwork.broadcastSurfaceSlotRemoved(
+                level, id, slot);
+        TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
 

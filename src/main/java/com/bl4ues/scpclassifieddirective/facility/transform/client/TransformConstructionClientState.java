@@ -276,6 +276,34 @@ public final class TransformConstructionClientState {
         }
     }
 
+    public static void removeGroupCellState(UUID groupId,
+            TransformGroup.GridPos cell) {
+        if (groupId == null || cell == null) return;
+        ArrayList<TransformGroup> next = new ArrayList<>(groups);
+        for (int index = 0; index < next.size(); index++) {
+            TransformGroup current = next.get(index);
+            if (!groupId.equals(current.id())) continue;
+            next.set(index, current.withoutCell(cell));
+            groups = List.copyOf(next);
+            rebuildGroupProxyCells(groupId);
+            return;
+        }
+    }
+
+    public static void removeSurfaceSlotState(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (surfaceId == null || slot == null) return;
+        ArrayList<ConstructionSurface> next = new ArrayList<>(surfaces);
+        for (int index = 0; index < next.size(); index++) {
+            ConstructionSurface current = next.get(index);
+            if (!surfaceId.equals(current.id())) continue;
+            next.set(index, current.withoutAttachment(slot));
+            surfaces = List.copyOf(next);
+            rebuildSurfaceProxyCells(surfaceId);
+            return;
+        }
+    }
+
     private static boolean physicsChanged(BlockState previous,
             BlockState next) {
         if (previous == null || next == null) return previous != next;

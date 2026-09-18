@@ -149,6 +149,13 @@ public final class TransformConstructionManager {
         return cell == null ? Shapes.empty() : cell.collision();
     }
 
+    /** Group-only collision, including cells occupied by ordinary vanilla blocks. */
+    public static VoxelShape offGridCollisionShape(BlockGetter level,
+            BlockPos pos) {
+        ProxyCell cell = proxyCell(level, pos);
+        return cell == null ? Shapes.empty() : cell.groupCollision();
+    }
+
     public static int proxyLight(BlockGetter level, BlockPos pos) {
         ProxyCell cell = proxyCell(level, pos);
         return cell == null ? 0 : cell.light();
@@ -925,12 +932,15 @@ public final class TransformConstructionManager {
     }
 
     public record ProxyCell(VoxelShape selection, VoxelShape collision,
+            VoxelShape groupCollision, VoxelShape surfaceCollision,
             int light, Set<UUID> groupIds, Set<UUID> surfaceIds) {
     }
 
     private static final class MutableProxyCell {
         private VoxelShape selection = Shapes.empty();
         private VoxelShape collision = Shapes.empty();
+        private VoxelShape groupCollision = Shapes.empty();
+        private VoxelShape surfaceCollision = Shapes.empty();
         private int light;
         private ProxyCell frozen;
         private final Set<UUID> groupIds = new LinkedHashSet<>();
@@ -940,7 +950,15 @@ public final class TransformConstructionManager {
                 boolean selection, boolean collision, int light) {
             VoxelShape shape = Shapes.create(local);
             if (selection) this.selection = Shapes.or(this.selection, shape);
-            if (collision) this.collision = Shapes.or(this.collision, shape);
+            if (collision) {
+                this.collision = Shapes.or(this.collision, shape);
+                if (groupId != null) {
+                    this.groupCollision = Shapes.or(this.groupCollision, shape);
+                }
+                if (surfaceId != null) {
+                    this.surfaceCollision = Shapes.or(this.surfaceCollision, shape);
+                }
+            }
             this.light = Math.max(this.light, Math.max(0, Math.min(15, light)));
             if (groupId != null) groupIds.add(groupId);
             if (surfaceId != null) surfaceIds.add(surfaceId);
@@ -950,6 +968,7 @@ public final class TransformConstructionManager {
         private ProxyCell freeze() {
             if (frozen == null) {
                 frozen = new ProxyCell(selection.optimize(), collision.optimize(),
+                        groupCollision.optimize(), surfaceCollision.optimize(),
                         light, Set.copyOf(groupIds), Set.copyOf(surfaceIds));
             }
             return frozen;

@@ -64,6 +64,14 @@ public final class TransformConstructionClientState {
                     public VoxelShape collision(BlockPos pos) {
                         return proxyCollisionShape(pos);
                     }
+
+                    @Override
+                    public VoxelShape offGridCollision(BlockPos pos) {
+                        TransformConstructionManager.ProxyCell cell =
+                                proxyCell(pos);
+                        return cell == null ? Shapes.empty()
+                                : cell.groupCollision();
+                    }
                 });
     }
 
@@ -435,17 +443,11 @@ public final class TransformConstructionClientState {
                 continue;
             }
 
-            VoxelShape visualShape = state.getShape(EmptyBlockGetter.INSTANCE,
-                    BlockPos.ZERO, CollisionContext.empty());
-            List<AABB> visualBoxes = visualShape.isEmpty()
-                    ? List.of(new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D))
-                    : visualShape.toAabbs();
-            for (AABB box : visualBoxes) {
-                AABB local = box.move(cell.x() - 0.5D,
-                        cell.y() - 0.5D, cell.z() - 0.5D);
-                addWorldBox(index, transformedBounds(group, local), group.id(),
-                        null, true, false, state.getLightEmission());
-            }
+            AABB selection = new AABB(cell.x() - 0.5D,
+                    cell.y() - 0.5D, cell.z() - 0.5D,
+                    cell.x() + 0.5D, cell.y() + 0.5D, cell.z() + 0.5D);
+            addWorldBox(index, transformedBounds(group, selection), group.id(),
+                    null, true, false, state.getLightEmission());
 
             VoxelShape collision = state.getCollisionShape(
                     EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
@@ -622,6 +624,8 @@ public final class TransformConstructionClientState {
     private static final class MutableProxyCell {
         private VoxelShape selection = Shapes.empty();
         private VoxelShape collision = Shapes.empty();
+        private VoxelShape groupCollision = Shapes.empty();
+        private VoxelShape surfaceCollision = Shapes.empty();
         private int light;
         private TransformConstructionManager.ProxyCell frozen;
         private final Set<UUID> groupIds = new LinkedHashSet<>();
@@ -631,7 +635,15 @@ public final class TransformConstructionClientState {
                 boolean hasSelection, boolean hasCollision, int light) {
             VoxelShape shape = Shapes.create(local);
             if (hasSelection) selection = Shapes.or(selection, shape);
-            if (hasCollision) collision = Shapes.or(collision, shape);
+            if (hasCollision) {
+                collision = Shapes.or(collision, shape);
+                if (groupId != null) {
+                    groupCollision = Shapes.or(groupCollision, shape);
+                }
+                if (surfaceId != null) {
+                    surfaceCollision = Shapes.or(surfaceCollision, shape);
+                }
+            }
             this.light = Math.max(this.light, Math.max(0, Math.min(15, light)));
             if (groupId != null) groupIds.add(groupId);
             if (surfaceId != null) surfaceIds.add(surfaceId);
@@ -641,8 +653,9 @@ public final class TransformConstructionClientState {
         private TransformConstructionManager.ProxyCell freeze() {
             if (frozen == null) {
                 frozen = new TransformConstructionManager.ProxyCell(
-                        selection.optimize(), collision.optimize(), light,
-                        Set.copyOf(groupIds), Set.copyOf(surfaceIds));
+                        selection.optimize(), collision.optimize(),
+                        groupCollision.optimize(), surfaceCollision.optimize(),
+                        light, Set.copyOf(groupIds), Set.copyOf(surfaceIds));
             }
             return frozen;
         }

@@ -31,9 +31,17 @@ public final class TransformConstructionClientBridge {
                 : current.collision(pos);
     }
 
+    public static VoxelShape offGridCollision(BlockPos pos) {
+        Provider current = provider;
+        return current == null || pos == null ? Shapes.empty()
+                : current.offGridCollision(pos);
+    }
+
     public interface Provider {
         VoxelShape selection(BlockPos pos);
 
         VoxelShape collision(BlockPos pos);
+
+        VoxelShape offGridCollision(BlockPos pos);
     }
 }

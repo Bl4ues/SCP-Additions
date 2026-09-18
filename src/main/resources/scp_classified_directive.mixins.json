@@ -11,6 +11,7 @@
     "DecontaminationCheckpointSaveMixin",
     "ServerPlayerSaveTrackingMixin",
     "TransformConstructionStartupMixin",
+    "TransformOffGridCollisionMixin",
     "MineZeroScpBlockJournalMixin",
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",

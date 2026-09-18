@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.phys.AABB;
@@ -31,6 +33,10 @@ public final class TransformSurfaceGeometry {
             int normalSign) {
         if (surface == null || slot == null || attachment == null
                 || attachment.state().isAir()) return List.of();
+        if (FacilityModule.isFacilityDoor(attachment.state())
+                && FacilityModule.isDoorPassable(attachment.state())) {
+            return List.of();
+        }
         int side = normalSign < 0 ? -1 : 1;
         VoxelShape shape = attachment.state().getCollisionShape(
                 EmptyBlockGetter.INSTANCE, BlockPos.ZERO,

@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
@@ -12,6 +13,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -49,28 +52,39 @@ public final class TransformGroupPlacementClient {
         if (!event.isUseItem()) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        if (player == null || minecraft.level == null || minecraft.screen != null
-                || !player.isCreative()
-                || !(player.getMainHandItem().getItem() instanceof BlockItem)) {
+        if (player == null || minecraft.level == null || minecraft.screen != null) {
             return;
         }
         Selection selected = TransformConstructionClientState.selection();
         if (selected != null && selected.type() == SelectionType.SURFACE) {
-            // Surface placement owns the use click while a surface is selected.
-            // Do not let an unrelated off-grid group behind it steal the block.
+            // Surface placement/editing owns the use click while a surface is
+            // selected. Do not let an unrelated rigid group behind it steal it.
             return;
         }
 
-        Target target = findTarget(player);
-        if (target == null) return;
-        Vec3 localHit = TransformMath.worldToLocal(target.group().origin(),
-                target.worldHit(), target.group().rotationX(),
-                target.group().rotationY(), target.group().rotationZ());
-        Vec3 outside = localHit.add(
-                Vec3.atLowerCornerOf(target.face().getNormal()).scale(0.501D));
-        TransformGroup.GridPos next = nearestCell(outside);
-        TransformConstructionNetwork.placeGroupBlock(target.group().id(),
-                target.source(), next, target.face(), target.worldHit());
+        if (player.getMainHandItem().getItem() instanceof BlockItem) {
+            if (!player.isCreative()) return;
+            Target target = findTarget(player);
+            if (target == null) return;
+            Vec3 localHit = TransformMath.worldToLocal(target.group().origin(),
+                    target.worldHit(), target.group().rotationX(),
+                    target.group().rotationY(), target.group().rotationZ());
+            Vec3 outside = localHit.add(
+                    Vec3.atLowerCornerOf(target.face().getNormal()).scale(0.501D));
+            TransformGroup.GridPos next = nearestCell(outside);
+            TransformConstructionNetwork.placeGroupBlock(target.group().id(),
+                    target.source(), next, target.face(), target.worldHit());
+            event.setCanceled(true);
+            return;
+        }
+
+        // Runtime interaction is also local-space. This is deliberately
+        // independent from minecraft.hitResult: a rotated button may share a
+        // vanilla BlockPos with its mounting wall and may have no proxy there.
+        PayloadTarget payload = findPayloadTarget(player);
+        if (payload == null || !interactive(payload.state())) return;
+        TransformConstructionNetwork.useGroupCell(payload.group().id(),
+                payload.cell());
         event.setCanceled(true);
     }
 
@@ -122,6 +136,59 @@ public final class TransformGroupPlacementClient {
             }
         }
         return bestId;
+    }
+
+    private static PayloadTarget findPayloadTarget(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Vec3 eye = player.getEyePosition();
+        Vec3 worldRay = player.getViewVector(1.0F).normalize();
+
+        double limit = MAX_DISTANCE;
+        HitResult vanilla = minecraft.hitResult;
+        if (vanilla instanceof BlockHitResult blockHit
+                && vanilla.getType() == HitResult.Type.BLOCK
+                && !minecraft.level.getBlockState(blockHit.getBlockPos())
+                        .is(com.bl4ues.scpclassifieddirective.facility.transform
+                                .TransformConstructionModule.getProxy())) {
+            // The transformed payload may sit just in front of / inside the
+            // clicked vanilla wall. Permit that shared-cell epsilon, but never
+            // raycast through unrelated solid geometry.
+            limit = Math.min(limit, eye.distanceTo(blockHit.getLocation()) + 0.08D);
+        }
+
+        PayloadTarget best = null;
+        double bestDistance = limit + 1.0D;
+        for (TransformGroup group : TransformConstructionClientState.groups(
+                minecraft.level.dimension().location())) {
+            Vec3 localEye = TransformMath.worldToLocal(group.origin(), eye,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            Vec3 localRay = TransformMath.inverseRotate(worldRay,
+                    group.rotationX(), group.rotationY(), group.rotationZ())
+                    .normalize();
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                BlockState state = entry.getValue();
+                if (state == null || state.isAir() || !interactive(state)) {
+                    continue;
+                }
+                Hit hit = intersectState(localEye, localRay, entry.getKey(),
+                        state, false);
+                if (hit == null || hit.distance() < 0.0D
+                        || hit.distance() > limit
+                        || hit.distance() >= bestDistance) continue;
+                bestDistance = hit.distance();
+                best = new PayloadTarget(group, entry.getKey(), state,
+                        hit.face(), eye.add(worldRay.scale(hit.distance())),
+                        hit.distance());
+            }
+        }
+        return best;
+    }
+
+    private static boolean interactive(BlockState state) {
+        return state != null && (state.getBlock() instanceof ButtonBlock
+                || state.getBlock() instanceof LeverBlock
+                || FacilityModule.isFacilityDoor(state));
     }
 
     private static Target findTarget(LocalPlayer player) {
@@ -278,5 +345,10 @@ public final class TransformGroupPlacementClient {
 
     private record Target(TransformGroup group, TransformGroup.GridPos source,
             Direction face, Vec3 worldHit) {
+    }
+
+    private record PayloadTarget(TransformGroup group,
+            TransformGroup.GridPos cell, BlockState state, Direction face,
+            Vec3 worldHit, double distance) {
     }
 }

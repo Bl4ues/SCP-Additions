@@ -420,9 +420,9 @@ public final class Scp079FacilityMapScreen extends Screen {
             MapTransform transform,
             Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom) {
         long now = System.currentTimeMillis();
-        // Door topology is expensive to discover because vanilla doors are
-        // physical blocks. Cache their addresses for five seconds; open/closed
-        // state below is resolved live from those addresses every frame.
+        // Door topology is cached separately from its live state. Ordinary
+        // network doors refresh through Scp079DoorMapClientState without
+        // rebuilding room or marker geometry.
         if (cachedDoorFloor != floorIndex || now >= doorTopologyRefreshAt) {
             cachedDoorMarkers = collectDoorMarkers(floor, geometryByRoom);
             cachedDoorFloor = floorIndex;
@@ -457,7 +457,11 @@ public final class Scp079FacilityMapScreen extends Screen {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return marker.fallbackOpen();
         return switch (marker.source()) {
-            case NETWORK -> marker.fallbackOpen();
+            case NETWORK -> {
+                Scp079PlayableNetwork.DoorMapEntry live =
+                        Scp079DoorMapClientState.at(marker.pos());
+                yield live == null ? marker.fallbackOpen() : live.open();
+            }
             case GROUP -> {
                 TransformGroup group =
                         TransformConstructionClientState.group(marker.ownerId());

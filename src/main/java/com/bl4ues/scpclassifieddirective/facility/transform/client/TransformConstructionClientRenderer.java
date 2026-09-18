@@ -463,7 +463,14 @@ public final class TransformConstructionClientRenderer {
             }
             SURFACE_MESHES.put(surface.id(), cached);
         }
-        for (CachedSurfaceSlot slot : cached.slots().values()) {
+        renderSurfaceCache(pose, buffers, cached.slots().values());
+        renderSurfaceCache(pose, buffers, cached.overlays().values());
+    }
+
+    private static void renderSurfaceCache(PoseStack pose,
+            MultiBufferSource.BufferSource buffers,
+            Iterable<CachedSurfaceSlot> cachedSlots) {
+        for (CachedSurfaceSlot slot : cachedSlots) {
             for (Map.Entry<RenderType, List<PreparedVertex>> layer
                     : slot.layers().entrySet()) {
                 VertexConsumer consumer = buffers.getBuffer(layer.getKey());
@@ -533,11 +540,45 @@ public final class TransformConstructionClientRenderer {
                 continue;
             }
             CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
-                    slot, attachment);
+                    slot, attachment, 1);
             if (rebuilt == null) slots.remove(slot);
             else slots.put(slot, rebuilt);
         }
-        return new CachedSurface(surface, Map.copyOf(slots));
+        Map<ConstructionSurface.SurfaceOverlaySlot,
+                CachedSurfaceSlot> overlays =
+                new LinkedHashMap<>(cached.overlays());
+        Set<ConstructionSurface.SurfaceOverlaySlot> dirtyOverlays =
+                new java.util.LinkedHashSet<>();
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : cached.surface().overlays().entrySet()) {
+            if (!java.util.Objects.equals(entry.getValue(),
+                    surface.overlays().get(entry.getKey()))) {
+                dirtyOverlays.add(entry.getKey());
+            }
+        }
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.overlays().entrySet()) {
+            if (!java.util.Objects.equals(entry.getValue(),
+                    cached.surface().overlays().get(entry.getKey()))) {
+                dirtyOverlays.add(entry.getKey());
+            }
+        }
+        for (ConstructionSurface.SurfaceOverlaySlot key : dirtyOverlays) {
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.overlays().get(key);
+            if (attachment == null || attachment.state().isAir()) {
+                overlays.remove(key);
+                continue;
+            }
+            CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
+                    key.slot(), attachment, key.normalSign());
+            if (rebuilt == null) overlays.remove(key);
+            else overlays.put(key, rebuilt);
+        }
+        return new CachedSurface(surface, Map.copyOf(slots),
+                Map.copyOf(overlays));
     }
 
     private static CachedSurface buildSurfaceMesh(Minecraft minecraft,
@@ -548,15 +589,27 @@ public final class TransformConstructionClientRenderer {
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
             CachedSurfaceSlot slot = buildSurfaceSlot(minecraft, surface,
-                    entry.getKey(), entry.getValue());
+                    entry.getKey(), entry.getValue(), 1);
             if (slot != null) slots.put(entry.getKey(), slot);
         }
-        return new CachedSurface(surface, Map.copyOf(slots));
+        Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot> overlays =
+                new LinkedHashMap<>();
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.overlays().entrySet()) {
+            CachedSurfaceSlot overlay = buildSurfaceSlot(minecraft, surface,
+                    entry.getKey().slot(), entry.getValue(),
+                    entry.getKey().normalSign());
+            if (overlay != null) overlays.put(entry.getKey(), overlay);
+        }
+        return new CachedSurface(surface, Map.copyOf(slots),
+                Map.copyOf(overlays));
     }
 
     private static CachedSurfaceSlot buildSurfaceSlot(Minecraft minecraft,
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
-            ConstructionSurface.SurfaceAttachment attachment) {
+            ConstructionSurface.SurfaceAttachment attachment,
+            int normalSign) {
         BlockState state = attachment.state();
         if (state == null || state.isAir()
                 || state.getRenderShape() != RenderShape.MODEL) return null;
@@ -564,7 +617,8 @@ public final class TransformConstructionClientRenderer {
         RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
         List<PreparedVertex> output = layers.computeIfAbsent(renderType,
                 ignored -> new ArrayList<>());
-        appendSurfaceBlock(minecraft, output, surface, slot, attachment);
+        appendSurfaceBlock(minecraft, output, surface, slot, attachment,
+                normalSign);
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
         layers.forEach((type, vertices) ->
                 immutable.put(type, List.copyOf(vertices)));
@@ -574,7 +628,8 @@ public final class TransformConstructionClientRenderer {
     private static void appendSurfaceBlock(Minecraft minecraft,
             List<PreparedVertex> output, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
-            ConstructionSurface.SurfaceAttachment attachment) {
+            ConstructionSurface.SurfaceAttachment attachment,
+            int normalSign) {
         BlockState state = attachment.state();
         BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
         RandomSource random = RandomSource.create(42L);
@@ -587,8 +642,8 @@ public final class TransformConstructionClientRenderer {
             random.setSeed(42L);
             for (BakedQuad quad : model.getQuads(state, side, random,
                     ModelData.EMPTY, null)) {
-                prepareQuad(minecraft, output, surface, slot, attachment, quad,
-                        lightPos, packedLight);
+                prepareQuad(minecraft, output, surface, slot, attachment,
+                        normalSign, quad, lightPos, packedLight);
             }
         }
     }
@@ -596,8 +651,8 @@ public final class TransformConstructionClientRenderer {
     private static void prepareQuad(Minecraft minecraft,
             List<PreparedVertex> output, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
-            ConstructionSurface.SurfaceAttachment attachment, BakedQuad quad,
-            BlockPos lightPos, int fallbackLight) {
+            ConstructionSurface.SurfaceAttachment attachment, int normalSign,
+            BakedQuad quad, BlockPos lightPos, int fallbackLight) {
         int[] vertices = quad.getVertices();
         int stride = vertices.length / 4;
         int tint = quad.isTinted() ? minecraft.getBlockColors().getColor(
@@ -609,29 +664,95 @@ public final class TransformConstructionClientRenderer {
         Vec3 quadNormal = new Vec3(quad.getDirection().getStepX(),
                 quad.getDirection().getStepY(), quad.getDirection().getStepZ());
 
+        Vec3[] points = new Vec3[4];
+        float[] us = new float[4];
+        float[] vs = new float[4];
+        double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
             float x = Float.intBitsToFloat(vertices[offset]);
             float y = Float.intBitsToFloat(vertices[offset + 1]);
             float z = Float.intBitsToFloat(vertices[offset + 2]);
-            float u = stride > 4 ? Float.intBitsToFloat(vertices[offset + 4]) : 0.0F;
-            float v = stride > 5 ? Float.intBitsToFloat(vertices[offset + 5]) : 0.0F;
-            VertexFrame frame = attachment.deform()
-                    ? deformedFrame(surface, slot, x, y, z, quadNormal)
-                    : rigidFrame(surface, slot, x, y, z, quadNormal);
-            output.add(new PreparedVertex(attachment.state(), frame.position(),
-                    frame.normal(), u, v, red, green, blue, fallbackLight));
+            points[vertex] = new Vec3(x, y, z);
+            us[vertex] = stride > 4
+                    ? Float.intBitsToFloat(vertices[offset + 4]) : 0.0F;
+            vs[vertex] = stride > 5
+                    ? Float.intBitsToFloat(vertices[offset + 5]) : 0.0F;
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
         }
+
+        int xSteps = attachment.deform() && maxX - minX > 0.20D ? 4 : 1;
+        int ySteps = attachment.deform()
+                && surface.heightCurveOffset().lengthSqr() > 1.0E-8D
+                && maxY - minY > 0.20D ? 2 : 1;
+        for (int ix = 0; ix < xSteps; ix++) {
+            double s0 = ix / (double) xSteps;
+            double s1 = (ix + 1.0D) / xSteps;
+            for (int iy = 0; iy < ySteps; iy++) {
+                double t0 = iy / (double) ySteps;
+                double t1 = (iy + 1.0D) / ySteps;
+                emitSurfaceVertex(output, surface, slot, attachment, normalSign,
+                        bilerp(points, s0, t0), quadNormal,
+                        bilerp(us, s0, t0), bilerp(vs, s0, t0),
+                        red, green, blue, fallbackLight);
+                emitSurfaceVertex(output, surface, slot, attachment, normalSign,
+                        bilerp(points, s1, t0), quadNormal,
+                        bilerp(us, s1, t0), bilerp(vs, s1, t0),
+                        red, green, blue, fallbackLight);
+                emitSurfaceVertex(output, surface, slot, attachment, normalSign,
+                        bilerp(points, s1, t1), quadNormal,
+                        bilerp(us, s1, t1), bilerp(vs, s1, t1),
+                        red, green, blue, fallbackLight);
+                emitSurfaceVertex(output, surface, slot, attachment, normalSign,
+                        bilerp(points, s0, t1), quadNormal,
+                        bilerp(us, s0, t1), bilerp(vs, s0, t1),
+                        red, green, blue, fallbackLight);
+            }
+        }
+    }
+
+    private static void emitSurfaceVertex(List<PreparedVertex> output,
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceAttachment attachment, int normalSign,
+            Vec3 point, Vec3 localNormal, float u, float v,
+            int red, int green, int blue, int light) {
+        VertexFrame frame = attachment.deform()
+                ? deformedFrame(surface, slot, point.x, point.y, point.z,
+                        localNormal, normalSign)
+                : rigidFrame(surface, slot, point.x, point.y, point.z,
+                        localNormal, normalSign);
+        output.add(new PreparedVertex(attachment.state(), frame.position(),
+                frame.normal(), u, v, red, green, blue, light));
+    }
+
+    private static Vec3 bilerp(Vec3[] p, double s, double t) {
+        return p[0].scale((1.0D - s) * (1.0D - t))
+                .add(p[1].scale(s * (1.0D - t)))
+                .add(p[2].scale(s * t))
+                .add(p[3].scale((1.0D - s) * t));
+    }
+
+    private static float bilerp(float[] p, double s, double t) {
+        return (float) (p[0] * (1.0D - s) * (1.0D - t)
+                + p[1] * s * (1.0D - t)
+                + p[2] * s * t
+                + p[3] * (1.0D - s) * t);
     }
 
     private static VertexFrame deformedFrame(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, double x, double y, double z,
-            Vec3 localNormal) {
-        double localX = surface.flipped() ? 1.0D - x : x;
+            Vec3 localNormal, int normalSign) {
+        int side = normalSign < 0 ? -1 : 1;
+        double baseX = surface.flipped() ? 1.0D - x : x;
+        double localX = side < 0 ? 1.0D - baseX : baseX;
         double u = (slot.column() + localX) / surface.columns();
         double v = (slot.row() + y) / surface.rows();
-        Vec3 tangent = surface.gridFrameTangent(u, v);
-        Vec3 normal = surface.gridNormal(u, v);
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 normal = surface.gridNormal(u, v).scale(side);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u, v));
         Vec3 position = surface.gridPoint(u, v).add(normal.scale(z));
@@ -644,11 +765,12 @@ public final class TransformConstructionClientRenderer {
 
     private static VertexFrame rigidFrame(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, double x, double y, double z,
-            Vec3 localNormal) {
+            Vec3 localNormal, int normalSign) {
+        int side = normalSign < 0 ? -1 : 1;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 tangent = surface.gridFrameTangent(u, v);
-        Vec3 normal = surface.gridNormal(u, v);
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 normal = surface.gridNormal(u, v).scale(side);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u, v));
         Vec3 position = surface.gridPoint(u, v)
@@ -1134,7 +1256,9 @@ public final class TransformConstructionClientRenderer {
     }
 
     private record CachedSurface(ConstructionSurface surface,
-            Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots) {
+            Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots,
+            Map<ConstructionSurface.SurfaceOverlaySlot,
+                    CachedSurfaceSlot> overlays) {
     }
 
     private record CachedSurfaceSlot(

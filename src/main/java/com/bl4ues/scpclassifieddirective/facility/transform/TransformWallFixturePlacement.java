@@ -136,10 +136,18 @@ public final class TransformWallFixturePlacement {
                 || !current.hasProperty(HorizontalDirectionalBlock.FACING)) {
             return current;
         }
-        boolean left = LeftDoorButtons.isAny(current.getBlock())
-                || MirroredDoorButtons.isAny(current.getBlock());
+        boolean mirrored = MirroredDoorButtons.isAny(current.getBlock());
+        boolean left = LeftDoorButtons.isAny(current.getBlock());
         Block block;
-        if (left) {
+        if (mirrored) {
+            block = switch (target) {
+                case LOCKED -> MirroredDoorButtons.BUTTON_LOCKED.get();
+                case CLOSED -> MirroredDoorButtons.BUTTON_CLOSED.get();
+                case OPENING -> MirroredDoorButtons.BUTTON_OPENING.get();
+                case OPEN -> MirroredDoorButtons.BUTTON_OPEN.get();
+                case CLOSING -> MirroredDoorButtons.BUTTON_CLOSING.get();
+            };
+        } else if (left) {
             block = switch (target) {
                 case LOCKED -> LeftDoorButtons.BUTTON_LOCKED.get();
                 case CLOSED -> LeftDoorButtons.BUTTON_CLOSED.get();

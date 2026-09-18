@@ -79,6 +79,27 @@ public final class TransformConstructionClientControls {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onUseEditorTool(
+            InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isUseItem()) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null || minecraft.screen != null
+                || !player.isCreative() || !holdingOffGridTool(player)) return;
+
+        UUID aimedGroup = TransformGroupPlacementClient.findAimedGroup(player);
+        if (aimedGroup == null) return;
+
+        finishDrag();
+        TransformConstructionClientState.selectGroup(aimedGroup);
+        status("Off-grid group selected");
+        // Do not allow the vanilla block behind a clipped transformed cell to
+        // receive the same RMB and create another grid accidentally.
+        event.setCanceled(true);
+        event.setSwingHand(false);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onInteractionKeyMapping(
             InputEvent.InteractionKeyMappingTriggered event) {
         if (!event.isAttack()) return;

@@ -68,6 +68,16 @@ public final class FacilityFloorStationIndex {
         return List.copyOf(options);
     }
 
+    public static List<BlockPos> positions(ServerLevel level) {
+        if (level == null) return List.of();
+        ResourceLocation dimension = level.dimension().location();
+        return FacilityMappingSavedData.get(level.getServer()).stations().stream()
+                .filter(station -> station.dimension().equals(dimension))
+                .map(station -> BlockPos.of(station.packedPos()))
+                .sorted(Comparator.comparingLong(BlockPos::asLong))
+                .toList();
+    }
+
     public static BlockPos nearest(ServerLevel level, int y) {
         return configured(level).stream()
                 .min(Comparator.comparingInt(option ->

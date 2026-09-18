@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.entity;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorStationIndex;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModEntities;
@@ -444,7 +445,8 @@ public final class RoombaSpawnEvents {
     private static boolean isEligibleRoom(ServerLevel level,
             FacilityRoomSnapshot room) {
         if (room == null || room.patches().isEmpty()
-                || intersectsSafeZone(level, room)) {
+                || intersectsSafeZone(level, room)
+                || containsElevatorFloorStation(level, room)) {
             return false;
         }
 
@@ -453,6 +455,14 @@ public final class RoombaSpawnEvents {
 
         String name = room.name() == null ? "" : room.name().strip();
         return name.isBlank() || isUnityTransitRoom(name);
+    }
+
+    private static boolean containsElevatorFloorStation(
+            ServerLevel level, FacilityRoomSnapshot room) {
+        for (BlockPos station : FacilityFloorStationIndex.positions(level)) {
+            if (room.containsColumn(station)) return true;
+        }
+        return false;
     }
 
     /**

@@ -1445,49 +1445,35 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static void accumulateMapLine(Map<Long, Double> coverage,
             double x0, double y0, double x1, double y1,
             int width, int height) {
-        double dx = x1 - x0;
-        double dy = y1 - y0;
-        if (Math.abs(dx) < 1.0E-8D && Math.abs(dy) < 1.0E-8D) {
-            accumulateCoverage(coverage, (int) Math.floor(x0),
-                    (int) Math.floor(y0), 1.0D, width, height);
-            return;
-        }
+        // 2x2 subpixel coverage gives diagonals/curves a stable apparent
+        // thickness. Wu's one-dimensional coverage still changed brightness
+        // noticeably with segment angle at this deliberately low-res CRT map.
+        final double radius = 0.72D;
+        final double radiusSqr = radius * radius;
+        int minX = Math.max(0, (int) Math.floor(Math.min(x0, x1) - 1.0D));
+        int maxX = Math.min(width - 1,
+                (int) Math.ceil(Math.max(x0, x1) + 1.0D));
+        int minY = Math.max(0, (int) Math.floor(Math.min(y0, y1) - 1.0D));
+        int maxY = Math.min(height - 1,
+                (int) Math.ceil(Math.max(y0, y1) + 1.0D));
+        if (minX > maxX || minY > maxY) return;
 
-        boolean steep = Math.abs(dy) > Math.abs(dx);
-        if (steep) {
-            double swap = x0; x0 = y0; y0 = swap;
-            swap = x1; x1 = y1; y1 = swap;
-        }
-        if (x0 > x1) {
-            double swap = x0; x0 = x1; x1 = swap;
-            swap = y0; y0 = y1; y1 = swap;
-        }
-
-        dx = x1 - x0;
-        dy = y1 - y0;
-        double gradient = Math.abs(dx) < 1.0E-9D ? 0.0D : dy / dx;
-        int start = (int) Math.floor(x0);
-        int end = (int) Math.ceil(x1);
-        // Do not spend time rasterizing kilometres of a panned-off room.
-        int majorMin = steep ? -1 : -1;
-        int majorMax = steep ? height : width;
-        start = Math.max(start, majorMin);
-        end = Math.min(end, majorMax);
-        for (int major = start; major <= end; major++) {
-            double sample = Mth.clamp(major + 0.5D, x0, x1);
-            double minor = y0 + (sample - x0) * gradient;
-            int base = (int) Math.floor(minor);
-            double fraction = minor - base;
-            if (steep) {
-                accumulateCoverage(coverage, base, major,
-                        1.0D - fraction, width, height);
-                accumulateCoverage(coverage, base + 1, major,
-                        fraction, width, height);
-            } else {
-                accumulateCoverage(coverage, major, base,
-                        1.0D - fraction, width, height);
-                accumulateCoverage(coverage, major, base + 1,
-                        fraction, width, height);
+        double[] samples = {0.25D, 0.75D};
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                int covered = 0;
+                for (double sy : samples) {
+                    for (double sx : samples) {
+                        if (pointSegmentDistanceSqr(x + sx, y + sy,
+                                x0, y0, x1, y1) <= radiusSqr) {
+                            covered++;
+                        }
+                    }
+                }
+                if (covered > 0) {
+                    accumulateCoverage(coverage, x, y,
+                            covered / 4.0D, width, height);
+                }
             }
         }
     }

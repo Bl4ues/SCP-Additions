@@ -68,8 +68,8 @@ public final class TransformConstructionClientRenderer {
             new HashMap<>();
     private static final Map<UUID, CachedGroup> GROUP_MESHES =
             new HashMap<>();
-    private static final Map<UUID, Set<GroupBatchKey>> DIRTY_GROUP_BATCHES =
-            new HashMap<>();
+    private static final Map<UUID, Set<TransformGroup.GridPos>>
+            DIRTY_GROUP_CELLS = new HashMap<>();
     private static final Map<UUID, Set<ConstructionSurface.SurfaceSlot>>
             DIRTY_SURFACE_SLOTS = new HashMap<>();
 
@@ -79,15 +79,14 @@ public final class TransformConstructionClientRenderer {
     public static void clearSurfaceCache() {
         SURFACE_MESHES.clear();
         GROUP_MESHES.clear();
-        DIRTY_GROUP_BATCHES.clear();
+        DIRTY_GROUP_CELLS.clear();
         DIRTY_SURFACE_SLOTS.clear();
     }
 
     static void markGroupCellDirty(UUID id, TransformGroup.GridPos cell) {
         if (id == null || cell == null) return;
-        DIRTY_GROUP_BATCHES.computeIfAbsent(id,
-                ignored -> new java.util.LinkedHashSet<>())
-                .add(GroupBatchKey.of(cell));
+        DIRTY_GROUP_CELLS.computeIfAbsent(id,
+                ignored -> new java.util.LinkedHashSet<>()).add(cell);
     }
 
     static void markSurfaceSlotDirty(UUID id,
@@ -325,24 +324,27 @@ public final class TransformConstructionClientRenderer {
             double maxDistance = 192.0D + GROUP_BATCH_RADIUS;
             if (worldBatchCenter.distanceToSqr(camera)
                     > maxDistance * maxDistance) continue;
-            for (Map.Entry<RenderType, List<PreparedVertex>> layer
-                    : batch.layers().entrySet()) {
-                VertexConsumer consumer = buffers.getBuffer(layer.getKey());
-                for (PreparedVertex vertex : layer.getValue()) {
-                    consumer.vertex(pose.last().pose(),
-                                    (float) vertex.position().x,
-                                    (float) vertex.position().y,
-                                    (float) vertex.position().z)
-                            .color(vertex.red(), vertex.green(),
-                                    vertex.blue(), 255)
-                            .uv(vertex.u(), vertex.v())
-                            .overlayCoords(OverlayTexture.NO_OVERLAY)
-                            .uv2(vertex.fallbackLight())
-                            .normal(pose.last().normal(),
-                                    (float) vertex.normal().x,
-                                    (float) vertex.normal().y,
-                                    (float) vertex.normal().z)
-                            .endVertex();
+            for (Map<RenderType, List<PreparedVertex>> cell
+                    : batch.cells().values()) {
+                for (Map.Entry<RenderType, List<PreparedVertex>> layer
+                        : cell.entrySet()) {
+                    VertexConsumer consumer = buffers.getBuffer(layer.getKey());
+                    for (PreparedVertex vertex : layer.getValue()) {
+                        consumer.vertex(pose.last().pose(),
+                                        (float) vertex.position().x,
+                                        (float) vertex.position().y,
+                                        (float) vertex.position().z)
+                                .color(vertex.red(), vertex.green(),
+                                        vertex.blue(), 255)
+                                .uv(vertex.u(), vertex.v())
+                                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                                .uv2(vertex.fallbackLight())
+                                .normal(pose.last().normal(),
+                                        (float) vertex.normal().x,
+                                        (float) vertex.normal().y,
+                                        (float) vertex.normal().z)
+                                .endVertex();
+                    }
                 }
             }
         }
@@ -351,28 +353,52 @@ public final class TransformConstructionClientRenderer {
 
     private static CachedGroup updateGroupMesh(Minecraft minecraft,
             TransformGroup group, CachedGroup cached) {
-        Set<GroupBatchKey> hinted = DIRTY_GROUP_BATCHES.remove(
-                group.id());
-        Set<GroupBatchKey> dirty = hinted == null
-                ? new java.util.LinkedHashSet<>()
-                : new java.util.LinkedHashSet<>(hinted);
-        if (hinted == null) {
-            // Full snapshots/geometry edits do not carry a tiny-cell hint.
-            // Only those uncommon paths pay the O(n) diff. Runtime block edits
-            // arrive through markGroupCellDirty and jump straight to one batch.
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : cached.cells().entrySet()) {
-                BlockState next = group.cells().get(entry.getKey());
-                if (!java.util.Objects.equals(entry.getValue(), next)) {
-                    dirty.add(GroupBatchKey.of(entry.getKey()));
+        Set<TransformGroup.GridPos> hinted =
+                DIRTY_GROUP_CELLS.remove(group.id());
+        if (hinted != null && !hinted.isEmpty()) {
+            Map<GroupBatchKey, CachedGroupBatch> batches =
+                    new LinkedHashMap<>();
+            for (CachedGroupBatch batch : cached.batches()) {
+                batches.put(batch.key(), batch);
+            }
+            for (TransformGroup.GridPos cell : hinted) {
+                GroupBatchKey key = GroupBatchKey.of(cell);
+                CachedGroupBatch batch = batches.get(key);
+                Map<TransformGroup.GridPos,
+                        Map<RenderType, List<PreparedVertex>>> cells =
+                        batch == null ? new LinkedHashMap<>()
+                                : new LinkedHashMap<>(batch.cells());
+                Map<RenderType, List<PreparedVertex>> rebuilt =
+                        buildGroupCell(minecraft, group, cell);
+                if (rebuilt.isEmpty()) cells.remove(cell);
+                else cells.put(cell, rebuilt);
+                if (cells.isEmpty()) {
+                    batches.remove(key);
+                } else {
+                    batches.put(key, new CachedGroupBatch(key, key.center(),
+                            Map.copyOf(cells)));
                 }
             }
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                BlockState previous = cached.cells().get(entry.getKey());
-                if (!java.util.Objects.equals(previous, entry.getValue())) {
-                    dirty.add(GroupBatchKey.of(entry.getKey()));
-                }
+            return new CachedGroup(group, Map.copyOf(group.cells()),
+                    List.copyOf(batches.values()));
+        }
+
+        // Structural snapshots or geometry edits are uncommon. They may alter
+        // many cells at once, so rebuild only the batches containing actual
+        // state differences rather than trying to infer one runtime cell hint.
+        Set<GroupBatchKey> dirty = new java.util.LinkedHashSet<>();
+        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                : cached.cells().entrySet()) {
+            BlockState next = group.cells().get(entry.getKey());
+            if (!java.util.Objects.equals(entry.getValue(), next)) {
+                dirty.add(GroupBatchKey.of(entry.getKey()));
+            }
+        }
+        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                : group.cells().entrySet()) {
+            BlockState previous = cached.cells().get(entry.getKey());
+            if (!java.util.Objects.equals(previous, entry.getValue())) {
+                dirty.add(GroupBatchKey.of(entry.getKey()));
             }
         }
         if (dirty.isEmpty()) {
@@ -414,7 +440,8 @@ public final class TransformConstructionClientRenderer {
 
     private static CachedGroupBatch buildGroupBatch(Minecraft minecraft,
             TransformGroup group, GroupBatchKey key) {
-        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
+        Map<TransformGroup.GridPos, Map<RenderType, List<PreparedVertex>>> cells =
+                new LinkedHashMap<>();
         int baseX = key.x() * GROUP_BATCH_SIZE;
         int baseY = key.y() * GROUP_BATCH_SIZE;
         int baseZ = key.z() * GROUP_BATCH_SIZE;
@@ -423,42 +450,49 @@ public final class TransformConstructionClientRenderer {
                 for (int z = baseZ; z < baseZ + GROUP_BATCH_SIZE; z++) {
                     TransformGroup.GridPos cell =
                             new TransformGroup.GridPos(x, y, z);
-                    BlockState state = group.cells().get(cell);
-                    if (state == null || state.isAir()
-                            || state.getRenderShape() != RenderShape.MODEL) {
-                        continue;
-                    }
-
-                    BakedModel model = minecraft.getBlockRenderer()
-                            .getBlockModel(state);
-                    RenderType renderType =
-                            ItemBlockRenderTypes.getChunkRenderType(state);
-                    List<PreparedVertex> output = layers.computeIfAbsent(
-                            renderType, ignored -> new ArrayList<>());
-                    Vec3 center = group.cellCenter(cell);
-                    BlockPos lightPos = BlockPos.containing(center);
-                    int packedLight = minecraft.level.hasChunkAt(lightPos)
-                            ? LevelRenderer.getLightColor(
-                                    minecraft.level, state, lightPos)
-                            : 0x00F000F0;
-                    long seed = 42L ^ cell.hashCode() * 31L;
-                    RandomSource random = RandomSource.create(seed);
-                    for (Direction side : SIDES) {
-                        random.setSeed(seed);
-                        for (BakedQuad quad : model.getQuads(state, side,
-                                random, ModelData.EMPTY, null)) {
-                            appendGroupQuad(minecraft, output, group, cell,
-                                    state, quad, lightPos, packedLight);
-                        }
-                    }
+                    Map<RenderType, List<PreparedVertex>> rendered =
+                            buildGroupCell(minecraft, group, cell);
+                    if (!rendered.isEmpty()) cells.put(cell, rendered);
                 }
             }
         }
-        if (layers.isEmpty()) return null;
+        return cells.isEmpty() ? null
+                : new CachedGroupBatch(key, key.center(), Map.copyOf(cells));
+    }
+
+    private static Map<RenderType, List<PreparedVertex>> buildGroupCell(
+            Minecraft minecraft, TransformGroup group,
+            TransformGroup.GridPos cell) {
+        BlockState state = group.cells().get(cell);
+        if (state == null || state.isAir()
+                || state.getRenderShape() != RenderShape.MODEL) {
+            return Map.of();
+        }
+
+        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
+        BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
+        RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
+        List<PreparedVertex> output = layers.computeIfAbsent(renderType,
+                ignored -> new ArrayList<>());
+        Vec3 center = group.cellCenter(cell);
+        BlockPos lightPos = BlockPos.containing(center);
+        int packedLight = minecraft.level.hasChunkAt(lightPos)
+                ? LevelRenderer.getLightColor(minecraft.level, state, lightPos)
+                : 0x00F000F0;
+        long seed = 42L ^ cell.hashCode() * 31L;
+        RandomSource random = RandomSource.create(seed);
+        for (Direction side : SIDES) {
+            random.setSeed(seed);
+            for (BakedQuad quad : model.getQuads(state, side,
+                    random, ModelData.EMPTY, null)) {
+                appendGroupQuad(minecraft, output, group, cell,
+                        state, quad, lightPos, packedLight);
+            }
+        }
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
         layers.forEach((type, vertices) ->
                 immutable.put(type, List.copyOf(vertices)));
-        return new CachedGroupBatch(key, key.center(), Map.copyOf(immutable));
+        return Map.copyOf(immutable);
     }
 
     private static void appendGroupQuad(Minecraft minecraft,
@@ -1351,7 +1385,8 @@ public final class TransformConstructionClientRenderer {
 
     private record CachedGroupBatch(GroupBatchKey key,
             Vec3 localCenter,
-            Map<RenderType, List<PreparedVertex>> layers) {
+            Map<TransformGroup.GridPos,
+                    Map<RenderType, List<PreparedVertex>>> cells) {
     }
 
     private record GroupBatchKey(int x, int y, int z) {

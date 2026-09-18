@@ -146,9 +146,9 @@ public final class TransformGroupPlacementClient {
                 state != null && !state.isAir()
                         && (!interactiveOnly || interactive(state)));
         if (target == null) return null;
-        return new PayloadTarget(target.group(), target.cell(), target.state(),
-                target.hit().face(), target.worldHit(),
-                target.hit().distance());
+        return new PayloadTarget(target.group(), target.cell(),
+                target.visualCell(), target.state(), target.hit().face(),
+                target.worldHit(), target.hit().distance());
     }
 
     static Target findTarget(LocalPlayer player) {
@@ -241,7 +241,7 @@ public final class TransformGroupPlacementClient {
                         && hit.distance() <= limit + EPSILON) {
                     Vec3 worldHit = worldEye.add(
                             worldRay.scale(hit.distance()));
-                    return new GridTarget(group, visual.anchor(),
+                    return new GridTarget(group, visual.anchor(), cell,
                             visual.state(), hit, worldHit);
                 }
             }
@@ -414,8 +414,8 @@ public final class TransformGroupPlacementClient {
     }
 
     private record GridTarget(TransformGroup group,
-            TransformGroup.GridPos cell, BlockState state, Hit hit,
-            Vec3 worldHit) {
+            TransformGroup.GridPos cell, TransformGroup.GridPos visualCell,
+            BlockState state, Hit hit, Vec3 worldHit) {
     }
 
     static record Target(TransformGroup group, TransformGroup.GridPos source,
@@ -430,7 +430,8 @@ public final class TransformGroupPlacementClient {
     }
 
     static record PayloadTarget(TransformGroup group,
-            TransformGroup.GridPos cell, BlockState state, Direction face,
-            Vec3 worldHit, double distance) {
+            TransformGroup.GridPos cell, TransformGroup.GridPos visualCell,
+            BlockState state, Direction face, Vec3 worldHit,
+            double distance) {
     }
 }

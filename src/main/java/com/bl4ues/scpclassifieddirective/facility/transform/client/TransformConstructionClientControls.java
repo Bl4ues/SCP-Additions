@@ -101,6 +101,17 @@ public final class TransformConstructionClientControls {
                 return;
             }
         }
+        if (holdingOffGridTool(player)) {
+            HitResult aimed = minecraft.hitResult;
+            if (aimed instanceof BlockHitResult blockHit
+                    && aimed.getType() == HitResult.Type.BLOCK
+                    && minecraft.level.getBlockState(blockHit.getBlockPos()).is(
+                            TransformConstructionModule.getProxy())) {
+                selectNearestGroup(blockHit.getLocation());
+                return;
+            }
+        }
+
         if (currentSelection != null
                 && currentSelection.type() == SelectionType.SURFACE) {
             Axis directAxis = findSurfaceGizmoAxis(player, currentSelection);
@@ -928,6 +939,13 @@ public final class TransformConstructionClientControls {
                 selection.type() == SelectionType.SURFACE);
         TransformConstructionClientState.remove(selection.id(),
                 selection.type() == SelectionType.SURFACE);
+    }
+
+    private static boolean holdingOffGridTool(LocalPlayer player) {
+        return player.getMainHandItem().is(
+                TransformConstructionModule.getOffGridTool())
+                || player.getOffhandItem().is(
+                        TransformConstructionModule.getOffGridTool());
     }
 
     private static boolean holdingSurfaceTool(LocalPlayer player) {

@@ -88,7 +88,13 @@ public final class TransformPlacementStateRuntime {
             TransformConstructionNetwork.broadcastSurfaceSlot(level,
                     surface.id(), match.surfaceSlot, local, old.deform());
         }
-        TransformConstructionManager.refresh(level.getServer());
+        if (match.group != null) {
+            TransformConstructionManager.refreshGroupRuntime(
+                    level.getServer(), match.group.id());
+        } else if (match.surface != null) {
+            TransformConstructionManager.refreshSurfaceRuntime(
+                    level.getServer(), match.surface.id());
+        }
     }
 
     public static BlockState groupPlacementState(ServerPlayer player,
@@ -174,8 +180,7 @@ public final class TransformPlacementStateRuntime {
             // Wall fixtures care about the face that was clicked, not the
             // player's world yaw. In transformed construction that face exists
             // in the group's local frame.
-            local = local.setValue(BlockStateProperties.HORIZONTAL_FACING,
-                    outwardLocal);
+            local = bestWallFacing(local, outwardLocal);
         }
         return local;
     }
@@ -214,10 +219,59 @@ public final class TransformPlacementStateRuntime {
             return item == null ? net.minecraft.world.level.block.Blocks.AIR
                     .defaultBlockState() : item.getBlock().defaultBlockState();
         }
-        Vec3 safeHit = hit == null
-                ? surface.gridPoint(
-                        (slot.column() + 0.5D) / surface.columns(),
-                        (slot.row() + 0.5D) / surface.rows()) : hit;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 safeHit = hit == null ? surface.gridPoint(u, v) : hit;
+
+        // Surface payloads use a canonical local cell: wall plane at local Z=0,
+        // construction extending toward +Z (SOUTH). Wall-mounted blocks must be
+        // authored in that local grid, not by asking vanilla about an unrelated
+        // cardinal world wall.
+        if (item.getBlock() == AlarmModule.BLOCK.get()) {
+            Vec3 tangent = surface.gridFrameTangent(u, v).normalize();
+            Vec3 normal = surface.gridNormal(u, v).normalize();
+            Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
+                    surface.gridVertical(u, v));
+            Vec3 center = surface.gridPoint(u, v);
+            Vec3 delta = safeHit.subtract(center);
+            double horizontal = 0.5D + delta.dot(tangent);
+            double verticalHit = 0.5D + delta.dot(vertical);
+            return AlarmModule.BLOCK.get().defaultBlockState()
+                    .setValue(AlarmModule.FACING, Direction.SOUTH)
+                    .setValue(AlarmModule.ACTIVE, false)
+                    .setValue(AlarmModule.MOUNT_X,
+                            AlarmMountStructure.encodeSlot(
+                                    AlarmMountStructure.quantize(horizontal)))
+                    .setValue(AlarmModule.MOUNT_Y,
+                            AlarmMountStructure.encodeSlot(
+                                    AlarmMountStructure.quantize(verticalHit)));
+        }
+
+        if (item.getBlock() instanceof ButtonBlock
+                || item.getBlock() instanceof LeverBlock) {
+            BlockState local = attachToLocalFace(
+                    item.getBlock().defaultBlockState(), Direction.SOUTH);
+            if (local.hasProperty(BlockStateProperties.POWERED)) {
+                local = local.setValue(BlockStateProperties.POWERED, false);
+            }
+            return local;
+        }
+
+        if (WallMountedSupportEvents.isWallMountedFacingBlock(item.getBlock())) {
+            BlockState local = item.getBlock().defaultBlockState();
+            if (local.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+                local = bestWallFacing(local, Direction.SOUTH);
+            }
+            if (local.hasProperty(BlockStateProperties.FACING)) {
+                local = local.setValue(BlockStateProperties.FACING,
+                        Direction.SOUTH);
+            }
+            if (local.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+                local = attachToLocalFace(local, Direction.SOUTH);
+            }
+            return local;
+        }
+
         BlockHitResult virtualHit = new BlockHitResult(safeHit,
                 Direction.NORTH, net.minecraft.core.BlockPos.containing(safeHit),
                 false);

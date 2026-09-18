@@ -190,6 +190,14 @@ public final class TransformAlarmRuntime {
         return false;
     }
 
+    private static Vec3 surfaceCenter(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot) {
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        return surface.gridPoint(u, v)
+                .add(surface.gridNormal(u, v).scale(0.5D));
+    }
+
     private static boolean isAlarm(BlockState state) {
         return state != null && AlarmModule.isController(state)
                 && state.hasProperty(AlarmModule.ACTIVE);

@@ -113,7 +113,7 @@ public final class TransformGroupPlacementClient {
     }
 
     static BlockState findAimedPayloadState(LocalPlayer player) {
-        GridTarget target = trace(player, true,
+        GridTarget target = trace(player, false,
                 state -> state != null && !state.isAir());
         return target == null ? null : target.state();
     }
@@ -128,7 +128,11 @@ public final class TransformGroupPlacementClient {
 
     private static PayloadTarget findPayloadTarget(LocalPlayer player,
             boolean interactiveOnly) {
-        GridTarget target = trace(player, true, state ->
+        // Interaction follows the authored local 1x1 cell, exactly like the
+        // construction grid. Tiny vanilla selection shapes (buttons, readers,
+        // levers) are a visual/collision detail and must not make a rotated
+        // payload effectively impossible to click.
+        GridTarget target = trace(player, false, state ->
                 state != null && !state.isAir()
                         && (!interactiveOnly || interactive(state)));
         if (target == null) return null;

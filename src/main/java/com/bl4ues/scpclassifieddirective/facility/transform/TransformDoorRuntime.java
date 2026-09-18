@@ -170,7 +170,7 @@ public final class TransformDoorRuntime {
                 continue;
             }
             boolean powered = TransformPowerQuery.powered(level,
-                    group.cellCenter(ref.cell()));
+                    group, ref.cell());
             if (address.stage() == DoorStage.CLOSED && powered) {
                 start(level, group, ref.cell(), address.family(), true);
             } else if (address.stage() == DoorStage.OPEN && !powered) {

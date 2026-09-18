@@ -155,7 +155,8 @@ public final class TransformSurfaceDoorRuntime {
                     continue;
                 }
                 Vec3 center = center(surface, entry.getKey());
-                boolean powered = TransformPowerQuery.powered(level, center);
+                boolean powered = TransformPowerQuery.powered(level,
+                        surface, entry.getKey());
                 if (address.stage() == DoorStage.CLOSED && powered) {
                     start(level, surface, entry.getKey(), address.family(), true);
                 } else if (address.stage() == DoorStage.OPEN && !powered) {

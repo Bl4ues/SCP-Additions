@@ -70,7 +70,9 @@ public final class TransformAlarmRuntime {
                 BlockState state = entry.getValue();
                 if (!isAlarm(state)) continue;
                 Vec3 center = original.cellCenter(entry.getKey());
-                boolean active = shouldBeActive(level, center, doors);
+                boolean active = shouldBeActive(level, center, doors,
+                        TransformPowerQuery.powered(level, original,
+                                entry.getKey()));
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
                 if (active != wasActive) {
                     BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
@@ -112,7 +114,8 @@ public final class TransformAlarmRuntime {
                 if (!isAlarm(state)) continue;
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
                 Vec3 center = surfaceCenter(original, slot);
-                boolean active = shouldBeActive(level, center, doors);
+                boolean active = shouldBeActive(level, center, doors,
+                        TransformPowerQuery.powered(level, original, slot));
                 boolean wasActive = state.getValue(AlarmModule.ACTIVE);
                 if (active != wasActive) {
                     BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
@@ -142,9 +145,8 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean shouldBeActive(ServerLevel level, Vec3 center,
-            List<DoorPoint> transformedDoors) {
-        if (TransformPowerQuery.powered(level, center)
-                || hasVanillaDoor(level, center)) {
+            List<DoorPoint> transformedDoors, boolean logicalPower) {
+        if (logicalPower || hasVanillaDoor(level, center)) {
             return true;
         }
         for (DoorPoint door : transformedDoors) {

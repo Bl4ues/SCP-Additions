@@ -76,6 +76,24 @@ public final class TransformControlRuntime {
         return activate(level, ControlHit.group(group, cell, state, center));
     }
 
+    public static boolean useSurfaceSlot(ServerPlayer player, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (player == null || surfaceId == null || slot == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())) return false;
+        ConstructionSurface.SurfaceAttachment attachment =
+                surface.attachments().get(slot);
+        if (attachment == null || !control(attachment.state())) return false;
+        Vec3 center = surfaceCenter(surface, slot);
+        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
+        return activate(level, ControlHit.surface(surface, slot,
+                attachment.state(), center));
+    }
+
     private static boolean activate(ServerLevel level, ControlHit hit) {
         BlockState state = hit.state();
         if (state == null || !state.hasProperty(BlockStateProperties.POWERED)) {

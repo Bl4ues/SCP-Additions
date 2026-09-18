@@ -434,9 +434,8 @@ public final class Scp079FacilityMapScreen extends Screen {
             }
         }
 
-        for (List<FacilityFloorPatch.Vertex> contour : geometry.contours()) {
-            drawMapContour(graphics, contour, transform, lineColor);
-        }
+        drawMapContours(graphics, geometry.contours(),
+                transform, lineColor);
     }
 
     private void renderDoorMarkers(GuiGraphics graphics, FloorGroup floor,
@@ -1393,19 +1392,25 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
     }
 
-    private static void drawMapContour(GuiGraphics graphics,
-            List<FacilityFloorPatch.Vertex> contour, MapTransform transform,
-            int color) {
-        if (contour == null || contour.size() < 2) return;
+    private static void drawMapContours(GuiGraphics graphics,
+            List<List<FacilityFloorPatch.Vertex>> contours,
+            MapTransform transform, int color) {
+        if (contours == null || contours.isEmpty()) return;
+        // Accumulate the whole room in one coverage buffer. Independent
+        // contours previously painted their shared/join pixels separately,
+        // producing bright/dark seams along off-grid and curved unions.
         Map<Long, Double> coverage = new HashMap<>();
-        for (int index = 0; index < contour.size(); index++) {
-            FacilityFloorPatch.Vertex a = contour.get(index);
-            FacilityFloorPatch.Vertex b = contour.get(
-                    (index + 1) % contour.size());
-            accumulateMapLine(coverage,
-                    transform.fx(a.x()), transform.fy(a.z()),
-                    transform.fx(b.x()), transform.fy(b.z()),
-                    graphics.guiWidth(), graphics.guiHeight());
+        for (List<FacilityFloorPatch.Vertex> contour : contours) {
+            if (contour == null || contour.size() < 2) continue;
+            for (int index = 0; index < contour.size(); index++) {
+                FacilityFloorPatch.Vertex a = contour.get(index);
+                FacilityFloorPatch.Vertex b = contour.get(
+                        (index + 1) % contour.size());
+                accumulateMapLine(coverage,
+                        transform.fx(a.x()), transform.fy(a.z()),
+                        transform.fx(b.x()), transform.fy(b.z()),
+                        graphics.guiWidth(), graphics.guiHeight());
+            }
         }
         for (Map.Entry<Long, Double> pixel : coverage.entrySet()) {
             int x = (int) (pixel.getKey() >> 32);

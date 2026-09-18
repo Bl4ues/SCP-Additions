@@ -948,9 +948,11 @@ public final class TransformConstructionClientRenderer {
         for (int yi = 0; yi < 2; yi++) {
             for (int zi = 0; zi < 2; zi++) {
                 for (int xi = 0; xi < 2; xi++) {
-                    Vec3 local = new Vec3(cell.x() + xi - 0.5D,
-                            cell.y() + yi - 0.5D,
-                            cell.z() + zi - 0.5D);
+                    double edge = 0.506D;
+                    Vec3 local = new Vec3(
+                            cell.x() + (xi == 0 ? -edge : edge),
+                            cell.y() + (yi == 0 ? -edge : edge),
+                            cell.z() + (zi == 0 ? -edge : edge));
                     corners[index++] = TransformMath.localToWorld(
                             group.origin(), local, group.rotationX(),
                             group.rotationY(), group.rotationZ());
@@ -983,9 +985,11 @@ public final class TransformConstructionClientRenderer {
             for (int yi = 0; yi < 2; yi++) {
                 for (int zi = 0; zi < 2; zi++) {
                     for (int xi = 0; xi < 2; xi++) {
-                        Vec3 local = new Vec3(cell.x() + (xi - 0.5D),
-                                cell.y() + (yi - 0.5D),
-                                cell.z() + (zi - 0.5D));
+                        double edge = 0.506D;
+                        Vec3 local = new Vec3(
+                                cell.x() + (xi == 0 ? -edge : edge),
+                                cell.y() + (yi == 0 ? -edge : edge),
+                                cell.z() + (zi == 0 ? -edge : edge));
                         corners[index++] = TransformMath.localToWorld(
                                 group.origin(), local, group.rotationX(),
                                 group.rotationY(), group.rotationZ());
@@ -1156,24 +1160,33 @@ public final class TransformConstructionClientRenderer {
         float blue = active ? 0.12F : 0.28F;
         int columns = surface.columns();
         int rows = surface.rows();
+        boolean positivePayload = !surface.attachments().isEmpty()
+                || surface.overlays().keySet().stream()
+                        .anyMatch(key -> key.normalSign() > 0);
+        boolean negativePayload = surface.overlays().keySet().stream()
+                .anyMatch(key -> key.normalSign() < 0);
         for (int column = 0; column <= columns; column++) {
             double u = column / (double) columns;
-            Vec3 previous = surface.gridPoint(u, 0.0D);
+            Vec3 previous = visibleSurfaceGridPoint(surface, u, 0.0D,
+                    camera, positivePayload, negativePayload);
             int samples = Math.max(4, rows * 2);
             for (int sample = 1; sample <= samples; sample++) {
                 double v = sample / (double) samples;
-                Vec3 current = surface.gridPoint(u, v);
+                Vec3 current = visibleSurfaceGridPoint(surface, u, v,
+                        camera, positivePayload, negativePayload);
                 line(pose, lines, previous, current, red, green, blue, 0.84F);
                 previous = current;
             }
         }
         for (int row = 0; row <= rows; row++) {
             double v = row / (double) rows;
-            Vec3 previous = surface.gridPoint(0.0D, v);
+            Vec3 previous = visibleSurfaceGridPoint(surface, 0.0D, v,
+                    camera, positivePayload, negativePayload);
             int samples = Math.max(8, columns * 3);
             for (int sample = 1; sample <= samples; sample++) {
                 double u = sample / (double) samples;
-                Vec3 current = surface.gridPoint(u, v);
+                Vec3 current = visibleSurfaceGridPoint(surface, u, v,
+                        camera, positivePayload, negativePayload);
                 line(pose, lines, previous, current, red, green, blue, 0.84F);
                 previous = current;
             }
@@ -1184,6 +1197,19 @@ public final class TransformConstructionClientRenderer {
             renderSurfaceGizmo(pose, lines, surface, selected.handle());
             renderSurfaceSides(pose, lines, surface);
         }
+    }
+
+    private static Vec3 visibleSurfaceGridPoint(
+            ConstructionSurface surface, double u, double v, Vec3 camera,
+            boolean positivePayload, boolean negativePayload) {
+        Vec3 point = surface.gridPoint(u, v);
+        Vec3 normal = TransformMath.safeNormalize(surface.gridNormal(u, v),
+                new Vec3(0.0D, 0.0D, 1.0D));
+        double cameraSide = camera.subtract(point).dot(normal);
+        if (cameraSide >= 0.0D) {
+            return point.add(normal.scale(positivePayload ? 1.006D : 0.008D));
+        }
+        return point.subtract(normal.scale(negativePayload ? 1.006D : 0.008D));
     }
 
     private static void renderAlignedBoundary(PoseStack pose,

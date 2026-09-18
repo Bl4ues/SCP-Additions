@@ -74,12 +74,26 @@ public final class TransformAlarmClientRenderer {
                 .collect(Collectors.toSet());
         GROUP_HOSTS.keySet().removeIf(key -> !groupKeys.contains(key));
 
-        Set<SurfaceKey> surfaceKeys = surfaces.stream().flatMap(surface ->
-                surface.attachments().entrySet().stream()
-                        .filter(entry -> AlarmModule.isController(
-                                entry.getValue().state()))
-                        .map(entry -> new SurfaceKey(surface.id(), entry.getKey())))
-                .collect(Collectors.toSet());
+        Set<SurfaceKey> surfaceKeys = new java.util.HashSet<>();
+        for (ConstructionSurface surface : surfaces) {
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                if (AlarmModule.isController(entry.getValue().state())) {
+                    surfaceKeys.add(new SurfaceKey(surface.id(),
+                            entry.getKey(), 1));
+                }
+            }
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.overlays().entrySet()) {
+                if (AlarmModule.isController(entry.getValue().state())) {
+                    surfaceKeys.add(new SurfaceKey(surface.id(),
+                            entry.getKey().slot(),
+                            entry.getKey().normalSign() < 0 ? -1 : 1));
+                }
+            }
+        }
         SURFACE_HOSTS.keySet().removeIf(key -> !surfaceKeys.contains(key));
     }
 
@@ -127,38 +141,56 @@ public final class TransformAlarmClientRenderer {
         for (Map.Entry<ConstructionSurface.SurfaceSlot,
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
-            BlockState state = entry.getValue().state();
-            if (state == null || !AlarmModule.isController(state)) continue;
-            ConstructionSurface.SurfaceSlot slot = entry.getKey();
-            double u = (slot.column() + 0.5D) / surface.columns();
-            double v = (slot.row() + 0.5D) / surface.rows();
-            Vec3 normal = surface.gridNormal(u, v);
-            Vec3 center = surface.gridPoint(u, v).add(normal.scale(0.5D));
-            if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) continue;
-
-            SurfaceKey key = new SurfaceKey(surface.id(), slot);
-            AlarmModule.AlarmBlockEntity alarm = host(minecraft,
-                    SURFACE_HOSTS.get(key), center, state);
-            if (alarm == null) continue;
-            SURFACE_HOSTS.put(key, alarm);
-
-            Vec3 tangent = surface.gridFrameTangent(u, v);
-            Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
-                    surface.gridVertical(u, v));
-            pose.pushPose();
-            pose.translate(-camera.x, -camera.y, -camera.z);
-            pose.translate(center.x, center.y, center.z);
-            pose.mulPose(TransformMath.frameQuaternion(tangent, vertical, normal));
-            pose.translate(-0.5D, -0.5D, -0.5D);
-            var renderer = minecraft.getBlockEntityRenderDispatcher()
-                    .getRenderer(alarm);
-            if (renderer instanceof AlarmClient.BlockRenderer alarmRenderer) {
-                alarmRenderer.renderTransformed(alarm, event.getPartialTick(),
-                        pose, buffers, net.minecraft.client.renderer.LightTexture.FULL_BRIGHT,
-                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
-            }
-            pose.popPose();
+            renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
+                    surface, entry.getKey(), 1, entry.getValue().state());
         }
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.overlays().entrySet()) {
+            renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
+                    surface, entry.getKey().slot(),
+                    entry.getKey().normalSign(), entry.getValue().state());
+        }
+    }
+
+    private static void renderSurfaceAlarm(Minecraft minecraft,
+            RenderLevelStageEvent event, PoseStack pose,
+            MultiBufferSource.BufferSource buffers, Vec3 camera,
+            ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            BlockState state) {
+        if (state == null || !AlarmModule.isController(state)) return;
+        int side = normalSign < 0 ? -1 : 1;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 normal = surface.gridNormal(u, v).scale(side);
+        Vec3 center = surface.gridPoint(u, v).add(normal.scale(0.5D));
+        if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) return;
+
+        SurfaceKey key = new SurfaceKey(surface.id(), slot, side);
+        AlarmModule.AlarmBlockEntity alarm = host(minecraft,
+                SURFACE_HOSTS.get(key), center, state);
+        if (alarm == null) return;
+        SURFACE_HOSTS.put(key, alarm);
+
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
+                surface.gridVertical(u, v));
+        pose.pushPose();
+        pose.translate(-camera.x, -camera.y, -camera.z);
+        pose.translate(center.x, center.y, center.z);
+        pose.mulPose(TransformMath.frameQuaternion(tangent, vertical, normal));
+        pose.translate(-0.5D, -0.5D, -0.5D);
+        var renderer = minecraft.getBlockEntityRenderDispatcher()
+                .getRenderer(alarm);
+        if (renderer instanceof AlarmClient.BlockRenderer alarmRenderer) {
+            alarmRenderer.renderTransformed(alarm, event.getPartialTick(),
+                    pose, buffers,
+                    net.minecraft.client.renderer.LightTexture.FULL_BRIGHT,
+                    net.minecraft.client.renderer.texture.OverlayTexture
+                            .NO_OVERLAY);
+        }
+        pose.popPose();
     }
 
     private static AlarmModule.AlarmBlockEntity host(Minecraft minecraft,
@@ -181,6 +213,6 @@ public final class TransformAlarmClientRenderer {
     }
 
     private record SurfaceKey(UUID surfaceId,
-            ConstructionSurface.SurfaceSlot slot) {
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
     }
 }

@@ -210,7 +210,13 @@ public final class TransformDoorRuntime {
         TransformConstructionSavedData.get(level.getServer()).putGroupState(next);
         TransformConstructionNetwork.broadcastGroupCell(level, group.id(), cell,
                 state);
-        if (refreshCollision) TransformConstructionManager.refresh(level.getServer());
+        boolean passabilityChanged = FacilityModule.isFacilityDoor(state)
+                && FacilityModule.isFacilityDoor(group.cells().get(cell))
+                && FacilityModule.isDoorPassable(state)
+                != FacilityModule.isDoorPassable(group.cells().get(cell));
+        if (refreshCollision || passabilityChanged) {
+            TransformConstructionManager.refresh(level.getServer());
+        }
     }
 
     private static DoorHit nearestDoor(ServerLevel level, Vec3 world,

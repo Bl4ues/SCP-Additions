@@ -31,6 +31,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -69,9 +70,10 @@ public final class Scp079FacilityMapScreen extends Screen {
     private double panStartX;
     private double panStartY;
     private FacilityRoomSnapshot pressedRoom;
+    private final Map<UUID, RoomGeometry> roomGeometryCache = new HashMap<>();
     private List<MapDoorMarker> cachedDoorMarkers = List.of();
     private int cachedDoorFloor = Integer.MIN_VALUE;
-    private long doorMarkerRefreshAt;
+    private long doorTopologyRefreshAt;
 
     private Scp079FacilityMapScreen() {
         super(Scp079UiTheme.text("SCP-079 Surveillance Map"));
@@ -191,7 +193,8 @@ public final class Scp079FacilityMapScreen extends Screen {
         Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom =
                 new LinkedHashMap<>();
         for (FacilityRoomSnapshot room : floor.rooms) {
-            geometryByRoom.put(room, RoomGeometry.of(room));
+            geometryByRoom.put(room, roomGeometryCache.computeIfAbsent(
+                    room.id(), ignored -> RoomGeometry.of(room)));
         }
 
         FacilityRoomSnapshot previousHover = hoveredRoom;
@@ -417,10 +420,13 @@ public final class Scp079FacilityMapScreen extends Screen {
             MapTransform transform,
             Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom) {
         long now = System.currentTimeMillis();
-        if (cachedDoorFloor != floorIndex || now >= doorMarkerRefreshAt) {
+        // Door topology is expensive to discover because vanilla doors are
+        // physical blocks. Cache their addresses for five seconds; open/closed
+        // state below is resolved live from those addresses every frame.
+        if (cachedDoorFloor != floorIndex || now >= doorTopologyRefreshAt) {
             cachedDoorMarkers = collectDoorMarkers(floor, geometryByRoom);
             cachedDoorFloor = floorIndex;
-            doorMarkerRefreshAt = now + 200L;
+            doorTopologyRefreshAt = now + 5_000L;
         }
         for (MapDoorMarker marker : cachedDoorMarkers) {
             Vec3 span = marker.span();
@@ -429,7 +435,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             Vec3 a = center.subtract(span.scale(half));
             Vec3 b = center.add(span.scale(half));
             int color = 0xFFB8D8E1;
-            if (marker.open()) {
+            if (doorOpen(marker)) {
                 drawDoorLine(graphics, transform.sx(a.x),
                         transform.sy(a.z), transform.sx(b.x),
                         transform.sy(b.z), color);
@@ -445,6 +451,37 @@ public final class Scp079FacilityMapScreen extends Screen {
                         transform.sy(b.z), color);
             }
         }
+    }
+
+    private boolean doorOpen(MapDoorMarker marker) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return marker.fallbackOpen();
+        return switch (marker.source()) {
+            case VANILLA -> {
+                BlockState state = marker.pos() == null
+                        ? null : minecraft.level.getBlockState(marker.pos());
+                yield state != null && FacilityModule.isDoorPassable(state);
+            }
+            case BLAST -> marker.pos() != null
+                    && BlastDoorModule.isOpenOrOpening(
+                            minecraft.level, marker.pos());
+            case GROUP -> {
+                TransformGroup group =
+                        TransformConstructionClientState.group(marker.ownerId());
+                BlockState state = group == null || marker.groupCell() == null
+                        ? null : group.cells().get(marker.groupCell());
+                yield state != null && FacilityModule.isDoorPassable(state);
+            }
+            case SURFACE -> {
+                ConstructionSurface surface =
+                        TransformConstructionClientState.surface(marker.ownerId());
+                ConstructionSurface.SurfaceAttachment attachment =
+                        surface == null || marker.surfaceSlot() == null
+                        ? null : surface.attachments().get(marker.surfaceSlot());
+                yield attachment != null
+                        && FacilityModule.isDoorPassable(attachment.state());
+            }
+        };
     }
 
     private static void drawDoorLine(GuiGraphics graphics,
@@ -475,24 +512,30 @@ public final class Scp079FacilityMapScreen extends Screen {
 
         for (int x = bounds.minX - 3; x <= bounds.maxX + 3; x++) {
             for (int z = bounds.minZ - 3; z <= bounds.maxZ + 3; z++) {
+                if (!nearMappedRoom(x + 0.5D, z + 0.5D, geometryByRoom)) {
+                    continue;
+                }
                 for (int y = minY; y <= maxY; y++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (!minecraft.level.hasChunkAt(pos)) continue;
                     BlockState state = minecraft.level.getBlockState(pos);
                     if (FacilityModule.isFacilityDoor(state)
-                            && state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                            && state.hasProperty(
+                                    HorizontalDirectionalBlock.FACING)) {
                         if (!seen.add(pos.asLong())) continue;
                         Direction facing = state.getValue(
                                 HorizontalDirectionalBlock.FACING);
                         result.add(marker(pos.getX() + 0.5D,
-                                pos.getZ() + 0.5D, facing,
-                                0.94D, FacilityModule.isDoorPassable(state)));
+                                pos.getZ() + 0.5D, facing, 0.94D,
+                                DoorSource.VANILLA, pos, null, null, null,
+                                FacilityModule.isDoorPassable(state)));
                     } else if (BlastDoorModule.isController(state)) {
                         if (!seen.add(pos.asLong())) continue;
                         Direction facing = state.getValue(BlastDoorModule.FACING);
                         result.add(marker(pos.getX() + 0.5D,
-                                pos.getZ() + 0.5D, facing,
-                                5.0D, BlastDoorModule.isOpenOrOpening(
+                                pos.getZ() + 0.5D, facing, 5.0D,
+                                DoorSource.BLAST, pos, null, null, null,
+                                BlastDoorModule.isOpenOrOpening(
                                         minecraft.level, pos)));
                     }
                 }
@@ -509,13 +552,15 @@ public final class Scp079FacilityMapScreen extends Screen {
                         || !state.hasProperty(
                                 HorizontalDirectionalBlock.FACING)) continue;
                 Vec3 center = group.cellCenter(entry.getKey());
+                if (!nearMappedRoom(center.x, center.z, geometryByRoom)) continue;
                 Direction local = state.getValue(
                         HorizontalDirectionalBlock.FACING);
                 Vec3 facing = TransformMath.rotate(
                         Vec3.atLowerCornerOf(local.getNormal()),
                         group.rotationX(), group.rotationY(), group.rotationZ());
-                result.add(marker(center.x, center.z, facing,
-                        0.94D, FacilityModule.isDoorPassable(state)));
+                result.add(marker(center.x, center.z, facing, 0.94D,
+                        DoorSource.GROUP, null, group.id(), entry.getKey(), null,
+                        FacilityModule.isDoorPassable(state)));
             }
         }
         for (ConstructionSurface surface
@@ -531,27 +576,42 @@ public final class Scp079FacilityMapScreen extends Screen {
                 double u = (slot.column() + 0.5D) / surface.columns();
                 double v = (slot.row() + 0.5D) / surface.rows();
                 Vec3 center = surface.gridPoint(u, v);
+                if (!nearMappedRoom(center.x, center.z, geometryByRoom)) continue;
                 Direction local = state.getValue(
                         HorizontalDirectionalBlock.FACING);
                 Vec3 tangent = surface.gridFrameTangent(u, v);
                 Vec3 normal = surface.gridNormal(u, v);
                 Vec3 facing = tangent.scale(local.getStepX())
                         .add(normal.scale(local.getStepZ()));
-                result.add(marker(center.x, center.z, facing,
-                        0.94D, FacilityModule.isDoorPassable(state)));
+                result.add(marker(center.x, center.z, facing, 0.94D,
+                        DoorSource.SURFACE, null, surface.id(), null, slot,
+                        FacilityModule.isDoorPassable(state)));
             }
         }
         return List.copyOf(result);
     }
 
-    private static MapDoorMarker marker(double x, double z,
-            Direction facing, double width, boolean open) {
-        return marker(x, z, Vec3.atLowerCornerOf(facing.getNormal()),
-                width, open);
+    private static boolean nearMappedRoom(double x, double z,
+            Map<FacilityRoomSnapshot, RoomGeometry> geometryByRoom) {
+        for (RoomGeometry geometry : geometryByRoom.values()) {
+            if (geometry.area().intersects(x - 1.1D, z - 1.1D,
+                    2.2D, 2.2D)) return true;
+        }
+        return false;
     }
 
     private static MapDoorMarker marker(double x, double z,
-            Vec3 facing, double width, boolean open) {
+            Direction facing, double width, DoorSource source, BlockPos pos,
+            UUID ownerId, TransformGroup.GridPos groupCell,
+            ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen) {
+        return marker(x, z, Vec3.atLowerCornerOf(facing.getNormal()), width,
+                source, pos, ownerId, groupCell, surfaceSlot, fallbackOpen);
+    }
+
+    private static MapDoorMarker marker(double x, double z,
+            Vec3 facing, double width, DoorSource source, BlockPos pos,
+            UUID ownerId, TransformGroup.GridPos groupCell,
+            ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen) {
         Vec3 horizontal = new Vec3(facing.x, 0.0D, facing.z);
         if (horizontal.lengthSqr() < 1.0E-9D) {
             horizontal = new Vec3(0.0D, 0.0D, 1.0D);
@@ -559,7 +619,8 @@ public final class Scp079FacilityMapScreen extends Screen {
             horizontal = horizontal.normalize();
         }
         Vec3 span = new Vec3(-horizontal.z, 0.0D, horizontal.x);
-        return new MapDoorMarker(x, z, span, width, open);
+        return new MapDoorMarker(x, z, span, width, source, pos, ownerId,
+                groupCell, surfaceSlot, fallbackOpen);
     }
 
     private void renderTrackers(GuiGraphics graphics, FloorGroup floor,
@@ -1037,8 +1098,15 @@ public final class Scp079FacilityMapScreen extends Screen {
         graphics.fill(x + width - 1, y, x + width, y + height, color);
     }
 
+    private enum DoorSource {
+        VANILLA, BLAST, GROUP, SURFACE
+    }
+
     private record MapDoorMarker(double x, double z, Vec3 span,
-            double width, boolean open) {
+            double width, DoorSource source, BlockPos pos, UUID ownerId,
+            TransformGroup.GridPos groupCell,
+            ConstructionSurface.SurfaceSlot surfaceSlot,
+            boolean fallbackOpen) {
     }
 
     private record RoomGeometry(Area area,

@@ -47,16 +47,12 @@ public final class TransformAlarmRuntime {
 
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 server);
-        boolean changed = false;
         for (ServerLevel level : server.getAllLevels()) {
             List<DoorPoint> transformedDoors = transformedDoors(data,
                     level.dimension().location());
-            changed |= updateGroups(level, data, transformedDoors, tick);
-            changed |= updateSurfaces(level, data, transformedDoors, tick);
+            updateGroups(level, data, transformedDoors, tick);
+            updateSurfaces(level, data, transformedDoors, tick);
         }
-        // ACTIVE changes affect proxy light, so rebuild the physical proxy index
-        // once for the batch. Quiet state writes keep this out of full snapshots.
-        if (changed) TransformConstructionManager.refresh(server);
     }
 
     private static boolean updateGroups(ServerLevel level,
@@ -89,6 +85,8 @@ public final class TransformAlarmRuntime {
             }
             if (groupChanged) {
                 data.putGroupState(current);
+                TransformConstructionManager.refreshGroupRuntime(
+                        level.getServer(), original.id());
                 changed = true;
             }
         }
@@ -130,6 +128,8 @@ public final class TransformAlarmRuntime {
             }
             if (surfaceChanged) {
                 data.putSurfaceState(current);
+                TransformConstructionManager.refreshSurfaceRuntime(
+                        level.getServer(), original.id());
                 changed = true;
             }
         }

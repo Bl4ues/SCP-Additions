@@ -241,7 +241,10 @@ public final class TransformSurfaceDoorRuntime {
         TransformConstructionSavedData.get(level.getServer()).putSurfaceState(next);
         TransformConstructionNetwork.broadcastSurfaceSlot(level, surface.id(), slot,
                 state, previous.deform());
-        if (refreshCollision) TransformConstructionManager.refresh(level.getServer());
+        if (refreshCollision) {
+            TransformConstructionManager.refreshSurfaceRuntime(
+                    level.getServer(), surface.id());
+        }
     }
 
     private static DoorHit nearestDoor(ServerLevel level, Vec3 world,

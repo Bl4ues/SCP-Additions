@@ -38,14 +38,10 @@ public final class TransformPoweredBlockRuntime {
         if (server.getTickCount() % UPDATE_INTERVAL != 0) return;
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 server);
-        boolean changed = false;
         for (ServerLevel level : server.getAllLevels()) {
-            changed |= updateGroups(level, data);
-            changed |= updateSurfaces(level, data);
+            updateGroups(level, data);
+            updateSurfaces(level, data);
         }
-        // State writes do not advance the structural revision, so this refresh
-        // only updates proxy collision/light and never triggers a full snapshot.
-        if (changed) TransformConstructionManager.refresh(server);
     }
 
     private static boolean updateGroups(ServerLevel level,
@@ -70,6 +66,8 @@ public final class TransformPoweredBlockRuntime {
             }
             if (localChanged) {
                 data.putGroupState(next);
+                TransformConstructionManager.refreshGroupRuntime(
+                        level.getServer(), original.id());
                 changed = true;
             }
         }
@@ -103,6 +101,8 @@ public final class TransformPoweredBlockRuntime {
             }
             if (localChanged) {
                 data.putSurfaceState(next);
+                TransformConstructionManager.refreshSurfaceRuntime(
+                        level.getServer(), original.id());
                 changed = true;
             }
         }

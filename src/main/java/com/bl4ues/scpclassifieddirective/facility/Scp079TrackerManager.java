@@ -8,10 +8,12 @@ import com.bl4ues.scpclassifieddirective.entity.Scp173Entity;
 import com.bl4ues.scpclassifieddirective.entity.Scp939Entity;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
+import com.bl4ues.scpclassifieddirective.facility.Scp079MapObjectClassifier;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -44,6 +46,8 @@ public final class Scp079TrackerManager {
         }
 
         List<Scp079PlayableNetwork.TrackerEntry> markers = new ArrayList<>();
+        List<Scp079PlayableNetwork.ObjectMarkerEntry> objects =
+                new ArrayList<>();
         int scpSubjects = 1; // the player-controlled SCP-079 itself
         for (ServerLevel level : event.getServer().getAllLevels()) {
             for (Entity entity : level.getAllEntities()) {
@@ -59,10 +63,40 @@ public final class Scp079TrackerManager {
                             number));
                 }
             }
+
+            for (Entity entity : level.getAllEntities()) {
+                if (!(entity instanceof ItemEntity item) || !item.isAlive()) {
+                    continue;
+                }
+                int number = Scp079MapObjectClassifier.itemNumber(item.getItem());
+                if (number <= 0) continue;
+                FacilityRoom room = FacilityMappingManager.roomForPosition(
+                        level, item.blockPosition());
+                if (room != null) {
+                    objects.add(new Scp079PlayableNetwork.ObjectMarkerEntry(
+                            level.dimension().location(), room.id(),
+                            item.getX(), item.getZ(), number));
+                }
+            }
+
+            for (Scp079FacilityAccessManager.MapScpObject object
+                    : Scp079FacilityAccessManager.mapScpObjects(
+                            event.getServer(),
+                            level.dimension().location())) {
+                FacilityRoom room = FacilityMappingManager.roomForPosition(
+                        level, object.pos());
+                if (room != null) {
+                    objects.add(new Scp079PlayableNetwork.ObjectMarkerEntry(
+                            level.dimension().location(), room.id(),
+                            object.pos().getX() + 0.5D,
+                            object.pos().getZ() + 0.5D,
+                            object.number()));
+                }
+            }
         }
         int totalLifeforms = targets + scpSubjects;
         Scp079PlayableNetwork.sendTracking(controller, totalLifeforms,
-                targets, scpSubjects, markers);
+                targets, scpSubjects, markers, objects);
     }
 
     private static int scpNumber(Entity entity) {

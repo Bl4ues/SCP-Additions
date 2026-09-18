@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
+import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -48,6 +49,7 @@ public final class Scp079FacilityMapNetworkOverlay {
         // This overlay is intentionally limited to transient network markers.
 
         renderActivityPings(graphics, floor, transform);
+        renderObjectMarkers(graphics, floor, transform, minecraft);
         renderHostMarker(graphics, floor, transform, minecraft);
     }
 
@@ -85,6 +87,30 @@ public final class Scp079FacilityMapNetworkOverlay {
             int x = centerX + (int) Math.round(Math.cos(angle) * radius);
             int y = centerY + (int) Math.round(Math.sin(angle) * radius);
             graphics.fill(x, y, x + 2, y + 2, color);
+        }
+    }
+
+    private static void renderObjectMarkers(GuiGraphics graphics,
+            FloorView floor, Transform transform, Minecraft minecraft) {
+        Set<UUID> rooms = new HashSet<>();
+        for (FacilityRoomSnapshot room : floor.rooms()) rooms.add(room.id());
+        for (Scp079PlayableNetwork.ObjectMarkerEntry marker
+                : Scp079TrackingClientState.objects()) {
+            if (!marker.dimension().equals(
+                    Scp079PlayableClient.hostDimension())
+                    || !rooms.contains(marker.roomId())) continue;
+            int centerX = transform.sx(marker.x());
+            int centerY = transform.sy(marker.z());
+            int size = Math.max(2, Math.min(7,
+                    (int) Math.floor(transform.scale() * 0.42D)));
+            int half = Math.max(1, size / 2);
+            graphics.fill(centerX - half, centerY - half,
+                    centerX - half + size, centerY - half + size,
+                    0xFFFFFFFF);
+            Scp079UiTheme.drawCentered(graphics, minecraft.font,
+                    String.format(java.util.Locale.ROOT, "%03d",
+                            marker.scpNumber()),
+                    centerX, centerY + half + 5, 0.88F, 0xFFDDECF1);
         }
     }
 

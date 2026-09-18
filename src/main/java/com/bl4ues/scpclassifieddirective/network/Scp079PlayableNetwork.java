@@ -96,12 +96,14 @@ public final class Scp079PlayableNetwork {
     }
 
     public static void sendTracking(ServerPlayer player, int totalLifeforms,
-            int targets, int scpSubjects, List<TrackerEntry> entries) {
+            int targets, int scpSubjects, List<TrackerEntry> entries,
+            List<ObjectMarkerEntry> objects) {
         if (player == null) return;
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new TrackingState(totalLifeforms, targets, scpSubjects,
-                        entries == null ? List.of() : List.copyOf(entries)));
+                        entries == null ? List.of() : List.copyOf(entries),
+                        objects == null ? List.of() : List.copyOf(objects)));
     }
 
     public static void sendDoorLockState(ServerPlayer player, BlockPos doorPos,
@@ -311,8 +313,27 @@ public final class Scp079PlayableNetwork {
         }
     }
 
+    public record ObjectMarkerEntry(ResourceLocation dimension,
+            UUID roomId, double x, double z, int scpNumber) {
+        private static void write(FriendlyByteBuf buffer,
+                ObjectMarkerEntry entry) {
+            buffer.writeResourceLocation(entry.dimension);
+            buffer.writeUUID(entry.roomId);
+            buffer.writeDouble(entry.x);
+            buffer.writeDouble(entry.z);
+            buffer.writeVarInt(entry.scpNumber);
+        }
+
+        private static ObjectMarkerEntry read(FriendlyByteBuf buffer) {
+            return new ObjectMarkerEntry(buffer.readResourceLocation(),
+                    buffer.readUUID(), buffer.readDouble(),
+                    buffer.readDouble(), buffer.readVarInt());
+        }
+    }
+
     public record TrackingState(int totalLifeforms, int targets,
-            int scpSubjects, List<TrackerEntry> entries) {
+            int scpSubjects, List<TrackerEntry> entries,
+            List<ObjectMarkerEntry> objects) {
         private static void encode(TrackingState message,
                 FriendlyByteBuf buffer) {
             buffer.writeVarInt(Math.max(0, message.totalLifeforms));
@@ -322,6 +343,11 @@ public final class Scp079PlayableNetwork {
             buffer.writeVarInt(count);
             for (int index = 0; index < count; index++) {
                 TrackerEntry.write(buffer, message.entries.get(index));
+            }
+            int objectCount = Math.min(4096, message.objects.size());
+            buffer.writeVarInt(objectCount);
+            for (int index = 0; index < objectCount; index++) {
+                ObjectMarkerEntry.write(buffer, message.objects.get(index));
             }
         }
 
@@ -334,7 +360,14 @@ public final class Scp079PlayableNetwork {
             for (int index = 0; index < count; index++) {
                 entries.add(TrackerEntry.read(buffer));
             }
-            return new TrackingState(total, targets, subjects, entries);
+            int objectCount = Math.max(0,
+                    Math.min(4096, buffer.readVarInt()));
+            List<ObjectMarkerEntry> objects = new ArrayList<>(objectCount);
+            for (int index = 0; index < objectCount; index++) {
+                objects.add(ObjectMarkerEntry.read(buffer));
+            }
+            return new TrackingState(total, targets, subjects, entries,
+                    objects);
         }
 
         private static void handle(TrackingState message,
@@ -343,7 +376,8 @@ public final class Scp079PlayableNetwork {
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> com.bl4ues.scpclassifieddirective.client.scp079.Scp079TrackingClientState
                             .update(message.totalLifeforms, message.targets,
-                                    message.scpSubjects, message.entries)));
+                                    message.scpSubjects, message.entries,
+                                    message.objects)));
             context.setPacketHandled(true);
         }
     }

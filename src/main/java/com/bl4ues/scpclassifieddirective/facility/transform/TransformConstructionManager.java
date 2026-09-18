@@ -77,11 +77,6 @@ public final class TransformConstructionManager {
         Vec3 origin = Vec3.atCenterOf(clicked.relative(face));
         TransformGroup group = TransformGroup.empty(level.dimension().location(),
                 origin);
-        if (!canOccupy(level, group, null)) {
-            player.displayClientMessage(Component.literal(
-                    "Off-grid cell intersects existing solid geometry."), true);
-            return null;
-        }
         TransformConstructionSavedData.get(level.getServer()).putGroup(group);
         refresh(level.getServer());
         player.displayClientMessage(Component.literal(
@@ -124,11 +119,6 @@ public final class TransformConstructionManager {
         if ((long) surface.columns() * surface.rows() > MAX_SURFACE_SLOTS) {
             player.displayClientMessage(Component.literal(
                     "Surface is too large."), true);
-            return;
-        }
-        if (!canOccupy(level, null, surface)) {
-            player.displayClientMessage(Component.literal(
-                    "Surface intersects existing solid geometry."), true);
             return;
         }
         TransformConstructionSavedData.get(level.getServer()).putSurface(surface);
@@ -192,7 +182,6 @@ public final class TransformConstructionManager {
         }
         TransformGroup next = group.withTransform(origin, normalize(rotationX),
                 normalize(rotationY), normalize(rotationZ));
-        if (!canOccupy(level, next, null, id, null)) return false;
         data.putGroup(next);
         refresh(level.getServer());
         return true;
@@ -222,8 +211,7 @@ public final class TransformConstructionManager {
                 level.dimension().location())) return false;
         ConstructionSurface next = surface.withGeometry(bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset);
-        if ((long) next.columns() * next.rows() > MAX_SURFACE_SLOTS
-                || !canOccupy(level, null, next, null, id)) return false;
+        if ((long) next.columns() * next.rows() > MAX_SURFACE_SLOTS) return false;
         data.putSurface(next);
         refresh(level.getServer());
         return true;
@@ -239,7 +227,6 @@ public final class TransformConstructionManager {
         if (surface == null || !surface.dimension().equals(
                 level.dimension().location())) return false;
         ConstructionSurface next = surface.withFlipped(flipped);
-        if (!canOccupy(level, null, next, null, id)) return false;
         data.putSurface(next);
         refresh(level.getServer());
         return true;
@@ -287,17 +274,6 @@ public final class TransformConstructionManager {
         BlockState payload = TransformPlacementStateRuntime.groupPlacementState(
                 player, blockItem, group, target, outwardLocal, hit);
         TransformGroup next = group.withCell(target, payload);
-        BlockPos obstruction = firstObstruction(level, next, null,
-                group.id(), null);
-        if (obstruction != null) {
-            TransformConstructionNetwork.sendBlockedPlacement(player,
-                    obstruction);
-            player.displayClientMessage(Component.literal(
-                    "That off-grid block would intersect existing geometry."),
-                    true);
-            return true;
-        }
-
         data.putGroup(next);
         refresh(level.getServer());
         return true;
@@ -349,17 +325,6 @@ public final class TransformConstructionManager {
                 player, blockItem, surface, slot, hit);
         boolean deform = !payload.hasBlockEntity();
         ConstructionSurface next = surface.withAttachment(slot, payload, deform);
-        BlockPos obstruction = firstObstruction(level, null, next, null,
-                surface.id());
-        if (obstruction != null) {
-            TransformConstructionNetwork.sendBlockedPlacement(player,
-                    obstruction);
-            player.displayClientMessage(Component.literal(
-                    "That surface block would intersect existing geometry."),
-                    true);
-            return true;
-        }
-
         data.putSurface(next);
         refresh(level.getServer());
         return true;
@@ -415,16 +380,6 @@ public final class TransformConstructionManager {
             if (group.cells().size() >= MAX_GROUP_CELLS
                     && !group.cells().containsKey(target)) return false;
             TransformGroup next = group.withCell(target, payload);
-            BlockPos obstruction = firstObstruction(level, next, null,
-                    group.id(), null);
-            if (obstruction != null) {
-                TransformConstructionNetwork.sendBlockedPlacement(player,
-                        obstruction);
-                player.displayClientMessage(Component.literal(
-                        "That off-grid block would intersect existing geometry."),
-                        true);
-                return true;
-            }
             data.putGroup(next);
             refresh(level.getServer());
             return true;
@@ -450,16 +405,6 @@ public final class TransformConstructionManager {
             boolean deform = !payload.hasBlockEntity();
             ConstructionSurface next = surface.withAttachment(surfaceHit.slot(),
                     payload, deform);
-            BlockPos obstruction = firstObstruction(level, null, next, null,
-                    surface.id());
-            if (obstruction != null) {
-                TransformConstructionNetwork.sendBlockedPlacement(player,
-                        obstruction);
-                player.displayClientMessage(Component.literal(
-                        "That surface block would intersect existing geometry."),
-                        true);
-                return true;
-            }
             data.putSurface(next);
             refresh(level.getServer());
             return true;

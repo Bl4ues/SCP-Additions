@@ -296,6 +296,24 @@ public final class TransformConstructionManager {
         // transformed world-space hit a second time.
         if (!expected.equals(targetCell)) return false;
         GridPos target = expected;
+        BlockState payload;
+        Vec3 localHit = TransformMath.worldToLocal(group.origin(), hit,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        Vec3 supportOffset = localHit.subtract(sourceCell.x(), sourceCell.y(),
+                sourceCell.z());
+        TransformWallFixturePlacement.Placement special =
+                TransformWallFixturePlacement.resolve(blockItem, outwardLocal,
+                        supportOffset.x, supportOffset.z);
+        if (special != null) {
+            Direction shift = special.logicalShift();
+            target = target.offset(shift.getStepX(), shift.getStepY(),
+                    shift.getStepZ());
+            payload = special.state();
+        } else {
+            payload = TransformPlacementStateRuntime.groupPlacementState(
+                    player, blockItem, group, target, outwardLocal, hit);
+        }
+
         if (group.cells().size() >= MAX_GROUP_CELLS
                 && !group.cells().containsKey(target)) return false;
         if (!group.cells().getOrDefault(target,
@@ -306,9 +324,6 @@ public final class TransformConstructionManager {
                     "That off-grid cell is already occupied."), true);
             return true;
         }
-
-        BlockState payload = TransformPlacementStateRuntime.groupPlacementState(
-                player, blockItem, group, target, outwardLocal, hit);
         TransformGroup next = group.withCell(target, payload);
         data.putGroup(next);
         refreshGroupCell(level.getServer(), groupId, target);
@@ -390,23 +405,49 @@ public final class TransformConstructionManager {
         Vec3 center = surface.gridPoint(u, v);
         if (player.getEyePosition().distanceToSqr(hit) > 36.0D * 36.0D
                 || center.distanceToSqr(hit) > 2.25D) return false;
-        if (surface.overlay(slot, side) != null) {
+        SurfaceSlot targetSlot = slot;
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side).normalize();
+        Vec3 normal = surface.gridNormal(u, v).scale(side).normalize();
+        Vec3 delta = hit.subtract(center);
+        double localX = delta.dot(tangent);
+        double localZ = delta.dot(normal);
+        TransformWallFixturePlacement.Placement special =
+                TransformWallFixturePlacement.resolve(blockItem,
+                        Direction.SOUTH, localX, localZ);
+        BlockState payload;
+        if (special != null) {
+            int frameSign = (surface.flipped() ? -1 : 1) * side;
+            int column = slot.column()
+                    + special.logicalShift().getStepX() * frameSign;
+            int row = slot.row()
+                    + special.logicalShift().getStepY();
+            if (column < 0 || column >= surface.columns()
+                    || row < 0 || row >= surface.rows()) {
+                return false;
+            }
+            targetSlot = new SurfaceSlot(column, row);
+            payload = special.state();
+        } else {
+            payload = TransformPlacementStateRuntime.surfacePlacementState(
+                    player, blockItem, surface, slot, hit, side);
+        }
+
+        if (surface.overlay(targetSlot, side) != null) {
+            double tu = (targetSlot.column() + 0.5D) / surface.columns();
+            double tv = (targetSlot.row() + 0.5D) / surface.rows();
             TransformConstructionNetwork.sendBlockedPlacement(player,
-                    BlockPos.containing(center));
+                    BlockPos.containing(surface.gridPoint(tu, tv)));
             player.displayClientMessage(Component.literal(
                     "That side of the surface cell is already occupied."), true);
             return true;
         }
-        BlockState payload =
-                TransformPlacementStateRuntime.surfacePlacementState(
-                        player, blockItem, surface, slot, hit, side);
         boolean deform = !payload.hasBlockEntity();
-        ConstructionSurface next = surface.withOverlay(slot, side,
+        ConstructionSurface next = surface.withOverlay(targetSlot, side,
                 payload, deform);
         data.putSurface(next);
-        refreshSurfaceSlot(level.getServer(), surfaceId, slot);
+        refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceOverlay(level, surfaceId,
-                slot, side, payload, deform);
+                targetSlot, side, payload, deform);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }

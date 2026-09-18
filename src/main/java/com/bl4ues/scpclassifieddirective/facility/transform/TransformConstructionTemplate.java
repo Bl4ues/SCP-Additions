@@ -239,7 +239,10 @@ public final class TransformConstructionTemplate {
     public record SurfaceTemplate(Vec3 bottomStart, Vec3 bottomEnd,
             Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
             Vec3 heightCurveOffset,
-            Map<SurfaceSlot, SurfaceAttachment> attachments, boolean flipped) {
+            Map<SurfaceSlot, SurfaceAttachment> attachments,
+            Map<ConstructionSurface.SurfaceOverlaySlot,
+                    SurfaceAttachment> overlays,
+            boolean flipped) {
         public SurfaceTemplate {
             bottomStart = bottomStart == null ? Vec3.ZERO : bottomStart;
             bottomEnd = bottomEnd == null ? Vec3.ZERO : bottomEnd;
@@ -250,6 +253,7 @@ public final class TransformConstructionTemplate {
                     ? Vec3.ZERO : heightCurveOffset;
             attachments = attachments == null ? Map.of()
                     : Map.copyOf(attachments);
+            overlays = overlays == null ? Map.of() : Map.copyOf(overlays);
         }
 
         private static SurfaceTemplate capture(ConstructionSurface surface,
@@ -259,7 +263,7 @@ public final class TransformConstructionTemplate {
                     relative(surface.topStart(), origin),
                     relative(surface.topEnd(), origin), surface.curveOffset(),
                     surface.heightCurveOffset(), surface.attachments(),
-                    surface.flipped());
+                    surface.overlays(), surface.flipped());
         }
 
         private ConstructionSurface instantiate(ResourceLocation dimension,
@@ -269,7 +273,8 @@ public final class TransformConstructionTemplate {
                     absolute(bottomEnd, target, yaw),
                     absolute(topStart, target, yaw),
                     absolute(topEnd, target, yaw), rotateY(curveOffset, yaw),
-                    rotateY(heightCurveOffset, yaw), attachments, flipped);
+                    rotateY(heightCurveOffset, yaw), attachments, overlays,
+                    flipped);
         }
 
         private CompoundTag save() {
@@ -293,6 +298,19 @@ public final class TransformConstructionTemplate {
                 list.add(attachment);
             }
             tag.put("Attachments", list);
+            ListTag overlayList = new ListTag();
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    SurfaceAttachment> entry : overlays.entrySet()) {
+                CompoundTag attachment = new CompoundTag();
+                attachment.putInt("Column", entry.getKey().slot().column());
+                attachment.putInt("Row", entry.getKey().slot().row());
+                attachment.putInt("NormalSign", entry.getKey().normalSign());
+                attachment.putBoolean("Deform", entry.getValue().deform());
+                attachment.put("State", BlockStateCodec.save(
+                        entry.getValue().state()));
+                overlayList.add(attachment);
+            }
+            tag.put("Overlays", overlayList);
             return tag;
         }
 
@@ -309,12 +327,26 @@ public final class TransformConstructionTemplate {
                         BlockStateCodec.load(attachment.getCompound("State")),
                         attachment.getBoolean("Deform")));
             }
+            Map<ConstructionSurface.SurfaceOverlaySlot,
+                    SurfaceAttachment> overlays = new LinkedHashMap<>();
+            ListTag overlayList = tag.getList("Overlays", Tag.TAG_COMPOUND);
+            for (int i = 0; i < overlayList.size(); i++) {
+                CompoundTag attachment = overlayList.getCompound(i);
+                ConstructionSurface.SurfaceOverlaySlot key =
+                        new ConstructionSurface.SurfaceOverlaySlot(
+                                attachment.getInt("Column"),
+                                attachment.getInt("Row"),
+                                attachment.getInt("NormalSign"));
+                overlays.put(key, new SurfaceAttachment(
+                        BlockStateCodec.load(attachment.getCompound("State")),
+                        attachment.getBoolean("Deform")));
+            }
             return new SurfaceTemplate(getVec(tag, "BottomStart"),
                     getVec(tag, "BottomEnd"), getVec(tag, "TopStart"),
                     getVec(tag, "TopEnd"), getVec(tag, "CurveOffset"),
                     tag.contains("HeightCurveOffset", Tag.TAG_COMPOUND)
                             ? getVec(tag, "HeightCurveOffset") : Vec3.ZERO,
-                    attachments, tag.getBoolean("Flipped"));
+                    attachments, overlays, tag.getBoolean("Flipped"));
         }
     }
 }

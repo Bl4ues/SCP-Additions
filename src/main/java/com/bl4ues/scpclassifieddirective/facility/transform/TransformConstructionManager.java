@@ -149,10 +149,20 @@ public final class TransformConstructionManager {
         return cell == null ? Shapes.empty() : cell.collision();
     }
 
-    /** Group-only collision, including cells occupied by ordinary vanilla blocks. */
-    public static VoxelShape offGridCollisionShape(BlockGetter level,
+    /**
+     * Group-only collision, including cells occupied by ordinary vanilla blocks.
+     * This is a collision hot path: never build the spatial index from here.
+     * Normal refresh/startup owns index construction; absent cache means no
+     * transformed contribution for this query.
+     */
+    public static VoxelShape offGridCollisionShape(BlockGetter getter,
             BlockPos pos) {
-        ProxyCell cell = proxyCell(level, pos);
+        if (!(getter instanceof ServerLevel level) || pos == null) {
+            return Shapes.empty();
+        }
+        SpatialIndex cached = INDEXES.get(level.getServer());
+        if (cached == null) return Shapes.empty();
+        ProxyCell cell = cached.cell(level.dimension().location(), pos);
         return cell == null ? Shapes.empty() : cell.groupCollision();
     }
 

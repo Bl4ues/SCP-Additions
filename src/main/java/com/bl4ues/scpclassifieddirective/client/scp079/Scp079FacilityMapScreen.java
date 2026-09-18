@@ -711,7 +711,10 @@ public final class Scp079FacilityMapScreen extends Screen {
             double x = pos.getX() + 0.5D;
             double y = pos.getY() + 0.5D;
             double z = pos.getZ() + 0.5D;
-            if (!belongsToFloor(x, y, z, floor, geometryByRoom)) continue;
+            Vec3 networkFacing = Vec3.atLowerCornerOf(
+                    entry.facing().getNormal());
+            if (!belongsToFloor(x, y, z, networkFacing, floor,
+                    geometryByRoom)) continue;
             addDoorMarker(result, marker(x, z,
                     entry.facing(), entry.blast() ? 5.0D : 0.94D,
                     DoorSource.NETWORK, pos, null, null, null,
@@ -729,13 +732,13 @@ public final class Scp079FacilityMapScreen extends Screen {
                         || !state.hasProperty(
                                 HorizontalDirectionalBlock.FACING)) continue;
                 Vec3 center = group.cellCenter(entry.getKey());
-                if (!belongsToFloor(center.x, center.y, center.z, floor,
-                        geometryByRoom)) continue;
                 Direction local = state.getValue(
                         HorizontalDirectionalBlock.FACING);
                 Vec3 facing = TransformMath.rotate(
                         Vec3.atLowerCornerOf(local.getNormal()),
                         group.rotationX(), group.rotationY(), group.rotationZ());
+                if (!belongsToFloor(center.x, center.y, center.z, facing,
+                        floor, geometryByRoom)) continue;
                 addDoorMarker(result, marker(
                         center.x, center.z, facing, 0.94D, DoorSource.GROUP,
                         null, group.id(), entry.getKey(), null,
@@ -762,13 +765,13 @@ public final class Scp079FacilityMapScreen extends Screen {
                 // segment itself.
                 Vec3 center = surface.gridPoint(u, v)
                         .add(normal.scale(0.5D));
-                if (!belongsToFloor(center.x, center.y, center.z, floor,
-                        geometryByRoom)) continue;
                 Direction local = state.getValue(
                         HorizontalDirectionalBlock.FACING);
                 Vec3 tangent = surface.gridFrameTangent(u, v);
                 Vec3 facing = tangent.scale(local.getStepX())
                         .add(normal.scale(local.getStepZ()));
+                if (!belongsToFloor(center.x, center.y, center.z, facing,
+                        floor, geometryByRoom)) continue;
                 MapDoorMarker surfaceMarker = marker(center.x, center.z,
                         facing, 0.94D, DoorSource.SURFACE, null, surface.id(),
                         null, slot, FacilityModule.isDoorPassable(state),
@@ -780,19 +783,27 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private static boolean belongsToFloor(double x, double y, double z,
-            FloorGroup floor,
+            Vec3 facing, FloorGroup floor,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
-        // A map door represents an opening in a mapped room boundary, not just
-        // any door whose BlockPos happens to be somewhere inside the room.
-        // Requiring contour proximity also prevents stacked/nearby doors from
-        // becoming phantom markers in the middle of curved corridors.
-        final double boundaryToleranceSqr = 1.35D * 1.35D;
+        // Door centres sit roughly half a block inside a wall cell. A generous
+        // 1.35-block radius was associating unrelated doors with nearby curved
+        // boundaries, producing phantom markers. Match both proximity and the
+        // actual physical door span against the local boundary tangent.
+        final double boundaryToleranceSqr = 0.78D * 0.78D;
         final double doorColumnHeight = 5.25D;
+        Vec3 horizontal = new Vec3(facing.x, 0.0D, facing.z);
+        if (horizontal.lengthSqr() < 1.0E-9D) {
+            horizontal = new Vec3(0.0D, 0.0D, 1.0D);
+        } else {
+            horizontal = horizontal.normalize();
+        }
+        Vec3 doorSpan = new Vec3(-horizontal.z, 0.0D, horizontal.x);
+
         for (FacilityRoomSnapshot room : floor.rooms()) {
             FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
             if (geometry == null || geometry.empty()
-                    || distanceToBoundarySqr(x, z, geometry)
-                    > boundaryToleranceSqr) {
+                    || !boundaryMatchesDoor(x, z, doorSpan, geometry,
+                            boundaryToleranceSqr)) {
                 continue;
             }
             for (FacilityFloorPatch patch : room.patches()) {
@@ -803,6 +814,38 @@ public final class Scp079FacilityMapScreen extends Screen {
             }
         }
         return false;
+    }
+
+    private static boolean boundaryMatchesDoor(double x, double z,
+            Vec3 doorSpan, FacilityRoomOutlineGeometry geometry,
+            double maxDistanceSqr) {
+        double bestDistance = Double.POSITIVE_INFINITY;
+        double bestAlignment = 0.0D;
+        for (List<FacilityFloorPatch.Vertex> contour : geometry.contours()) {
+            for (int index = 0; index < contour.size(); index++) {
+                FacilityFloorPatch.Vertex a = contour.get(index);
+                FacilityFloorPatch.Vertex b = contour.get(
+                        (index + 1) % contour.size());
+                double dx = b.x() - a.x();
+                double dz = b.z() - a.z();
+                double lenSqr = dx * dx + dz * dz;
+                if (lenSqr < 1.0E-9D) continue;
+                double distance = pointSegmentDistanceSqr(x, z,
+                        a.x(), a.z(), b.x(), b.z());
+                if (distance > maxDistanceSqr) continue;
+                double invLen = 1.0D / Math.sqrt(lenSqr);
+                double alignment = Math.abs(
+                        doorSpan.x * dx * invLen
+                                + doorSpan.z * dz * invLen);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestAlignment = alignment;
+                } else if (Math.abs(distance - bestDistance) < 0.02D) {
+                    bestAlignment = Math.max(bestAlignment, alignment);
+                }
+            }
+        }
+        return bestDistance <= maxDistanceSqr && bestAlignment >= 0.58D;
     }
 
     private static double distanceToBoundarySqr(double x, double z,

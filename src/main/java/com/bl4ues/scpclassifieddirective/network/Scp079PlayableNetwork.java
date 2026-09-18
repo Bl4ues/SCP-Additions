@@ -62,6 +62,9 @@ public final class Scp079PlayableNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(DoorMapState.class,
                 DoorMapState::encode, DoorMapState::decode,
                 DoorMapState::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(MapDoorActionRequest.class,
+                MapDoorActionRequest::encode, MapDoorActionRequest::decode,
+                MapDoorActionRequest::handle);
     }
 
     public static void sendState(ServerPlayer player,
@@ -126,12 +129,20 @@ public final class Scp079PlayableNetwork {
             for (int index = 0; index < count; index++) {
                 var door = doors.get(index);
                 entries.add(new DoorMapEntry(door.pos(), door.facing(),
-                        door.blast(), door.open()));
+                        door.blast(), door.open(), door.requiredLevel(),
+                        door.lockable()));
             }
         }
         ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new DoorMapState(List.copyOf(entries)));
+    }
+
+    public static void requestMapDoorAction(
+            Scp079PlayableManager.ManualAction action, BlockPos doorPos) {
+        if (action == null || doorPos == null) return;
+        ScpClassifiedDirectiveMod.PACKET_HANDLER.sendToServer(
+                new MapDoorActionRequest(action, doorPos));
     }
 
     public static void requestRelease() {
@@ -359,18 +370,24 @@ public final class Scp079PlayableNetwork {
     }
 
     public record DoorMapEntry(BlockPos pos,
-            net.minecraft.core.Direction facing, boolean blast, boolean open) {
+            net.minecraft.core.Direction facing, boolean blast, boolean open,
+            int requiredLevel, boolean lockable) {
         private static void write(FriendlyByteBuf buffer, DoorMapEntry entry) {
             buffer.writeBlockPos(entry.pos);
             buffer.writeEnum(entry.facing);
             buffer.writeBoolean(entry.blast);
             buffer.writeBoolean(entry.open);
+            buffer.writeVarInt(Math.max(0, Math.min(6,
+                    entry.requiredLevel)));
+            buffer.writeBoolean(entry.lockable);
         }
 
         private static DoorMapEntry read(FriendlyByteBuf buffer) {
             return new DoorMapEntry(buffer.readBlockPos(),
                     buffer.readEnum(net.minecraft.core.Direction.class),
-                    buffer.readBoolean(), buffer.readBoolean());
+                    buffer.readBoolean(), buffer.readBoolean(),
+                    Math.max(0, Math.min(6, buffer.readVarInt())),
+                    buffer.readBoolean());
         }
     }
 
@@ -430,6 +447,37 @@ public final class Scp079PlayableNetwork {
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> com.bl4ues.scpclassifieddirective.client.scp079
                             .Scp079DoorMapClientState.update(message.entries)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record MapDoorActionRequest(
+            Scp079PlayableManager.ManualAction action, BlockPos doorPos) {
+        private static void encode(MapDoorActionRequest message,
+                FriendlyByteBuf buffer) {
+            buffer.writeEnum(message.action);
+            buffer.writeBlockPos(message.doorPos);
+        }
+
+        private static MapDoorActionRequest decode(FriendlyByteBuf buffer) {
+            return new MapDoorActionRequest(buffer.readEnum(
+                    Scp079PlayableManager.ManualAction.class),
+                    buffer.readBlockPos());
+        }
+
+        private static void handle(MapDoorActionRequest message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer player = context.getSender();
+                if (player != null
+                        && Scp079PlayableManager.isController(player)
+                        && !Scp079SignalInterruptionManager
+                                .controlsBlocked(player)) {
+                    Scp079PlayableManager.performMapDoorAction(player,
+                            message.action, message.doorPos);
+                }
+            });
             context.setPacketHandled(true);
         }
     }

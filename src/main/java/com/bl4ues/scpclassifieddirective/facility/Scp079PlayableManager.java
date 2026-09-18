@@ -47,9 +47,9 @@ import java.util.WeakHashMap;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079PlayableManager {
     private static final double MAX_DEVICE_RANGE_SQR = 24.0D * 24.0D;
-    private static final double CAMERA_SWITCH_COST = 3.0D;
-    private static final double DOOR_ACTION_COST = 5.0D;
-    private static final double DOOR_LOCK_COST = 12.0D;
+    public static final double CAMERA_SWITCH_COST = 3.0D;
+    public static final double DOOR_ACTION_COST = 5.0D;
+    public static final double DOOR_LOCK_COST = 12.0D;
     private static final int DOOR_LOCK_TICKS = 100;
     private static final int ADJACENT_ROOM_GAP = 2;
     private static final Map<MinecraftServer, Session> SESSIONS =
@@ -327,6 +327,38 @@ public final class Scp079PlayableManager {
                 aimedPos, 5.0D);
         return action == ManualAction.PRIMARY && tesla != null
                 && Scp079TeslaSuppression.tryPlayerSuppress(level, tesla);
+    }
+
+    public static boolean performMapDoorAction(ServerPlayer player,
+            ManualAction action, BlockPos doorPos) {
+        Session session = session(player);
+        if (session == null || action == null || doorPos == null) return false;
+        ServerLevel level = player.server.getLevel(session.hostDimension);
+        if (level == null || !networkAvailable(player, level)
+                || !level.hasChunkAt(doorPos)) return false;
+
+        boolean tracked = Scp079FacilityAccessManager
+                .mapDoors(player.server, level.dimension().location()).stream()
+                .anyMatch(door -> door.pos().equals(doorPos));
+        if (!tracked) return false;
+
+        BlockState state = level.getBlockState(doorPos);
+        if (BlastDoorModule.isController(state)) {
+            return action == ManualAction.PRIMARY
+                    && toggleBlastDoor(level, doorPos);
+        }
+        if (!FacilityModule.isFacilityDoor(state)
+                || !HeavyDoorControlPanelAccess.hasControllableInterface(
+                        level, doorPos)) {
+            return false;
+        }
+        if (action == ManualAction.LOCK
+                && Scp079DoorControlPolicy.hasKeycardReader(level, doorPos)) {
+            return false;
+        }
+        return action == ManualAction.LOCK
+                ? lockDoor(player, level, doorPos)
+                : toggleDoor(level, doorPos);
     }
 
     private static boolean toggleBlastDoor(ServerLevel level,

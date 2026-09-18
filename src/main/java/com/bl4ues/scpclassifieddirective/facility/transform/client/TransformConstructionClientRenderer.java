@@ -646,7 +646,7 @@ public final class TransformConstructionClientRenderer {
                 slots.remove(slot);
             } else {
                 CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
-                        slot, attachment, 1);
+                        slot, attachment, 1, false);
                 if (rebuilt == null) slots.remove(slot);
                 else slots.put(slot, rebuilt);
             }

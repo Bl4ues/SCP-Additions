@@ -245,7 +245,7 @@ public final class TransformConstructionClientRenderer {
                             surfaceTarget.surface(), camera);
                 }
                 renderLogicalSurfaceSlot(pose, lines,
-                        surfaceTarget.surface(), surfaceTarget.slot(),
+                        surfaceTarget.surface(), surfaceTarget.visualSlot(),
                         0.24F, 1.0F, 0.38F, 0.98F);
             }
             if (surfaceTool) {

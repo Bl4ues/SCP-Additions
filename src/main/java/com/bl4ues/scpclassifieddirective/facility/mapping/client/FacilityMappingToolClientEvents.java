@@ -6,6 +6,8 @@ import com.bl4ues.scpclassifieddirective.init.FacilityMappingItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
@@ -38,6 +40,12 @@ public final class FacilityMappingToolClientEvents {
         attackLatch = true;
         if (FacilityMappingGeometryEditorClient.isEditing()) {
             FacilityMappingGeometryEditorClient.selectVertexUnderCrosshair();
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.hitResult instanceof BlockHitResult hit
+                && hit.getType() == HitResult.Type.BLOCK) {
+            handleBlockClick(hit.getBlockPos());
         }
     }
 
@@ -54,24 +62,29 @@ public final class FacilityMappingToolClientEvents {
                 || !event.getItemStack().is(FacilityMappingItems.getTool())
                 || !event.getEntity().isCreative()) return;
 
-        if (FacilityMappingGeometryEditorClient.isEditing()) {
-            FacilityMappingGeometryEditorClient.selectVertexUnderCrosshair();
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
-            return;
-        }
-
-        var dimension = event.getLevel().dimension().location();
-        if (FacilityMappingClientState.cameraLinkSelection() != null) {
-            FacilityMappingNetwork.requestCameraLinkAssign(event.getPos());
-        } else if (FacilityMappingClientState.cameraAt(
-                dimension, event.getPos()) != null) {
-            FacilityMappingNetwork.requestCameraLinkStart(event.getPos());
-        } else {
-            FacilityMappingClientState.setSelectionStart(event.getPos());
-            FacilityMappingNetwork.requestSelectionStart(event.getPos());
+        if (!attackLatch) {
+            attackLatch = true;
+            if (FacilityMappingGeometryEditorClient.isEditing()) {
+                FacilityMappingGeometryEditorClient.selectVertexUnderCrosshair();
+            } else {
+                handleBlockClick(event.getPos());
+            }
         }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
     }
+    private static void handleBlockClick(net.minecraft.core.BlockPos pos) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || pos == null) return;
+        var dimension = minecraft.level.dimension().location();
+        if (FacilityMappingClientState.cameraLinkSelection() != null) {
+            FacilityMappingNetwork.requestCameraLinkAssign(pos);
+        } else if (FacilityMappingClientState.cameraAt(dimension, pos) != null) {
+            FacilityMappingNetwork.requestCameraLinkStart(pos);
+        } else {
+            FacilityMappingClientState.setSelectionStart(pos);
+            FacilityMappingNetwork.requestSelectionStart(pos);
+        }
+    }
+
 }

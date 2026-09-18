@@ -101,6 +101,15 @@ public final class TransformConstructionClientControls {
                 return;
             }
         }
+        if (currentSelection != null
+                && currentSelection.type() == SelectionType.SURFACE) {
+            Axis directAxis = findSurfaceGizmoAxis(player, currentSelection);
+            if (directAxis != null) {
+                finishDrag();
+                TransformConstructionClientState.setAxis(directAxis);
+                return;
+            }
+        }
 
         boolean selectedSurface = false;
         if (holdingSurfaceTool(player)
@@ -530,6 +539,39 @@ public final class TransformConstructionClientControls {
         }
     }
 
+    static Axis hoveredSurfaceGizmoAxis(LocalPlayer player) {
+        Selection selection = TransformConstructionClientState.selection();
+        return selection == null || selection.type() != SelectionType.SURFACE
+                ? null : findSurfaceGizmoAxis(player, selection);
+    }
+
+    private static Axis findSurfaceGizmoAxis(LocalPlayer player,
+            Selection selection) {
+        if (player == null || selection == null
+                || selection.type() != SelectionType.SURFACE) return null;
+        ConstructionSurface surface =
+                TransformConstructionClientState.surface(selection.id());
+        if (surface == null) return null;
+
+        Vec3 origin = handlePosition(surface, selection.handle());
+        Vec3 eye = player.getEyePosition();
+        Vec3 ray = player.getViewVector(1.0F).normalize();
+        double distance = Math.sqrt(eye.distanceToSqr(origin));
+        double tolerance = 0.10D + Math.min(0.16D, distance * 0.008D);
+        Axis best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (Axis candidate : Axis.values()) {
+            Vec3 axis = axisVector(candidate);
+            double score = segmentHitScore(eye, ray, origin,
+                    origin.add(axis.scale(1.18D)));
+            if (score <= tolerance * tolerance && score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
     static Axis hoveredGroupGizmoAxis(LocalPlayer player) {
         Selection selection = TransformConstructionClientState.selection();
         return selection == null || selection.type() != SelectionType.GROUP
@@ -656,21 +698,13 @@ public final class TransformConstructionClientControls {
         ConstructionSurface surface = TransformConstructionClientState.surface(
                 selection.id());
         if (surface == null) return;
-        Vec3 axis = selection.handle() == SurfaceHandle.CENTER
-                ? surface.gridNormal(0.5D, 0.5D)
-                : TransformConstructionClientState.axisVector();
+        Vec3 axis = TransformConstructionClientState.axisVector();
         applySurfaceDelta(surface, selection.handle(),
                 axis.normalize().scale(sign / 16.0D), true, true);
     }
 
     private static Vec3 dragAxis(Selection selection) {
-        if (selection.type() != SelectionType.SURFACE
-                || selection.handle() != SurfaceHandle.CENTER) {
-            return TransformConstructionClientState.axisVector();
-        }
-        ConstructionSurface surface = TransformConstructionClientState.surface(
-                selection.id());
-        return surface == null ? null : surface.gridNormal(0.5D, 0.5D);
+        return TransformConstructionClientState.axisVector();
     }
 
     private static void previewGroupDrag(DragState state, Vec3 movement,

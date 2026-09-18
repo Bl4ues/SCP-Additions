@@ -40,7 +40,13 @@ public final class TransformConstructionClientState {
     private static List<TransformGroup> groups = List.of();
     private static List<ConstructionSurface> surfaces = List.of();
     private static Map<Long, TransformConstructionManager.ProxyCell> proxyCells =
-            Map.of();
+            new LinkedHashMap<>();
+    private static final Map<UUID,
+            Map<Long, TransformConstructionManager.ProxyCell>>
+            GROUP_PROXY_CONTRIBUTIONS = new LinkedHashMap<>();
+    private static final Map<UUID,
+            Map<Long, TransformConstructionManager.ProxyCell>>
+            SURFACE_PROXY_CONTRIBUTIONS = new LinkedHashMap<>();
     private static Selection selection;
     private static EditMode mode = EditMode.MOVE;
     private static Axis axis = Axis.X;
@@ -100,7 +106,9 @@ public final class TransformConstructionClientState {
         dimension = null;
         groups = List.of();
         surfaces = List.of();
-        proxyCells = Map.of();
+        proxyCells = new LinkedHashMap<>();
+        GROUP_PROXY_CONTRIBUTIONS.clear();
+        SURFACE_PROXY_CONTRIBUTIONS.clear();
         selection = null;
         hoveredSurfaceId = null;
         hoveredSurfaceHandle = null;
@@ -215,7 +223,13 @@ public final class TransformConstructionClientState {
     }
 
     public static void commitPreviewGeometry() {
-        rebuildProxyCells();
+        if (selection == null) {
+            rebuildProxyCells();
+        } else if (selection.type() == SelectionType.GROUP) {
+            rebuildGroupProxyCells(selection.id());
+        } else {
+            rebuildSurfaceProxyCells(selection.id());
+        }
     }
 
     /**
@@ -235,7 +249,9 @@ public final class TransformConstructionClientState {
             BlockState previous = current.cells().get(cell);
             next.set(index, current.withCell(cell, state));
             groups = List.copyOf(next);
-            if (physicsChanged(previous, state)) rebuildProxyCells();
+            if (physicsChanged(previous, state)) {
+                rebuildGroupProxyCells(groupId);
+            }
             return;
         }
     }
@@ -254,7 +270,7 @@ public final class TransformConstructionClientState {
             surfaces = List.copyOf(next);
             if (previous == null || previous.deform() != deform
                     || physicsChanged(previous.state(), state)) {
-                rebuildProxyCells();
+                rebuildSurfaceProxyCells(surfaceId);
             }
             return;
         }
@@ -292,13 +308,13 @@ public final class TransformConstructionClientState {
             if (next.get(index).id().equals(replacement.id())) {
                 next.set(index, replacement);
                 groups = List.copyOf(next);
-                rebuildProxyCells();
+                rebuildGroupProxyCells(replacement.id());
                 return;
             }
         }
         next.add(replacement);
         groups = List.copyOf(next);
-        rebuildProxyCells();
+        rebuildGroupProxyCells(replacement.id());
     }
 
     public static void upsertSurface(ConstructionSurface replacement) {
@@ -309,13 +325,13 @@ public final class TransformConstructionClientState {
             if (next.get(index).id().equals(replacement.id())) {
                 next.set(index, replacement);
                 surfaces = List.copyOf(next);
-                rebuildProxyCells();
+                rebuildSurfaceProxyCells(replacement.id());
                 return;
             }
         }
         next.add(replacement);
         surfaces = List.copyOf(next);
-        rebuildProxyCells();
+        rebuildSurfaceProxyCells(replacement.id());
     }
 
     public static void remove(UUID id, boolean surface) {
@@ -324,13 +340,13 @@ public final class TransformConstructionClientState {
             ArrayList<ConstructionSurface> next = new ArrayList<>(surfaces);
             if (next.removeIf(value -> id.equals(value.id()))) {
                 surfaces = List.copyOf(next);
-                rebuildProxyCells();
+                removeSurfaceProxyCells(id);
             }
         } else {
             ArrayList<TransformGroup> next = new ArrayList<>(groups);
             if (next.removeIf(value -> id.equals(value.id()))) {
                 groups = List.copyOf(next);
-                rebuildProxyCells();
+                removeGroupProxyCells(id);
             }
         }
         if (selection != null && id.equals(selection.id())) selection = null;
@@ -484,21 +500,124 @@ public final class TransformConstructionClientState {
     }
 
     private static void rebuildProxyCells() {
-        if (dimension == null) {
-            proxyCells = Map.of();
-            return;
-        }
-        Map<Long, MutableProxyCell> mutable = new LinkedHashMap<>();
+        GROUP_PROXY_CONTRIBUTIONS.clear();
+        SURFACE_PROXY_CONTRIBUTIONS.clear();
+        proxyCells = new LinkedHashMap<>();
+        if (dimension == null) return;
+
+        Set<Long> affected = new LinkedHashSet<>();
         for (TransformGroup group : groups) {
-            if (dimension.equals(group.dimension())) addGroup(mutable, group);
+            if (!dimension.equals(group.dimension())) continue;
+            Map<Long, TransformConstructionManager.ProxyCell> contribution =
+                    buildGroupContribution(group);
+            GROUP_PROXY_CONTRIBUTIONS.put(group.id(), contribution);
+            affected.addAll(contribution.keySet());
         }
         for (ConstructionSurface surface : surfaces) {
-            if (dimension.equals(surface.dimension())) addSurface(mutable, surface);
+            if (!dimension.equals(surface.dimension())) continue;
+            Map<Long, TransformConstructionManager.ProxyCell> contribution =
+                    buildSurfaceContribution(surface);
+            SURFACE_PROXY_CONTRIBUTIONS.put(surface.id(), contribution);
+            affected.addAll(contribution.keySet());
         }
+        recomputeProxyCells(affected);
+    }
+
+    private static void rebuildGroupProxyCells(UUID id) {
+        if (id == null) return;
+        Set<Long> affected = new LinkedHashSet<>();
+        Map<Long, TransformConstructionManager.ProxyCell> old =
+                GROUP_PROXY_CONTRIBUTIONS.remove(id);
+        if (old != null) affected.addAll(old.keySet());
+        TransformGroup group = group(id);
+        if (group != null && dimension != null
+                && dimension.equals(group.dimension())) {
+            Map<Long, TransformConstructionManager.ProxyCell> next =
+                    buildGroupContribution(group);
+            GROUP_PROXY_CONTRIBUTIONS.put(id, next);
+            affected.addAll(next.keySet());
+        }
+        recomputeProxyCells(affected);
+    }
+
+    private static void rebuildSurfaceProxyCells(UUID id) {
+        if (id == null) return;
+        Set<Long> affected = new LinkedHashSet<>();
+        Map<Long, TransformConstructionManager.ProxyCell> old =
+                SURFACE_PROXY_CONTRIBUTIONS.remove(id);
+        if (old != null) affected.addAll(old.keySet());
+        ConstructionSurface surface = surface(id);
+        if (surface != null && dimension != null
+                && dimension.equals(surface.dimension())) {
+            Map<Long, TransformConstructionManager.ProxyCell> next =
+                    buildSurfaceContribution(surface);
+            SURFACE_PROXY_CONTRIBUTIONS.put(id, next);
+            affected.addAll(next.keySet());
+        }
+        recomputeProxyCells(affected);
+    }
+
+    private static void removeGroupProxyCells(UUID id) {
+        Map<Long, TransformConstructionManager.ProxyCell> old =
+                GROUP_PROXY_CONTRIBUTIONS.remove(id);
+        if (old != null) recomputeProxyCells(old.keySet());
+    }
+
+    private static void removeSurfaceProxyCells(UUID id) {
+        Map<Long, TransformConstructionManager.ProxyCell> old =
+                SURFACE_PROXY_CONTRIBUTIONS.remove(id);
+        if (old != null) recomputeProxyCells(old.keySet());
+    }
+
+    private static Map<Long, TransformConstructionManager.ProxyCell>
+            buildGroupContribution(TransformGroup group) {
+        Map<Long, MutableProxyCell> mutable = new LinkedHashMap<>();
+        addGroup(mutable, group);
+        return freezeContribution(mutable);
+    }
+
+    private static Map<Long, TransformConstructionManager.ProxyCell>
+            buildSurfaceContribution(ConstructionSurface surface) {
+        Map<Long, MutableProxyCell> mutable = new LinkedHashMap<>();
+        addSurface(mutable, surface);
+        return freezeContribution(mutable);
+    }
+
+    private static Map<Long, TransformConstructionManager.ProxyCell>
+            freezeContribution(Map<Long, MutableProxyCell> mutable) {
         Map<Long, TransformConstructionManager.ProxyCell> frozen =
                 new LinkedHashMap<>();
         mutable.forEach((key, value) -> frozen.put(key, value.freeze()));
-        proxyCells = Map.copyOf(frozen);
+        return Map.copyOf(frozen);
+    }
+
+    private static void recomputeProxyCells(Iterable<Long> affected) {
+        if (affected == null) return;
+        for (Long packed : affected) {
+            if (packed == null) continue;
+            MutableProxyCell aggregate = new MutableProxyCell();
+            boolean any = false;
+            for (Map<Long, TransformConstructionManager.ProxyCell> contribution
+                    : GROUP_PROXY_CONTRIBUTIONS.values()) {
+                TransformConstructionManager.ProxyCell cell =
+                        contribution.get(packed);
+                if (cell != null) {
+                    aggregate.merge(cell);
+                    any = true;
+                }
+            }
+            for (Map<Long, TransformConstructionManager.ProxyCell> contribution
+                    : SURFACE_PROXY_CONTRIBUTIONS.values()) {
+                TransformConstructionManager.ProxyCell cell =
+                        contribution.get(packed);
+                if (cell != null) {
+                    aggregate.merge(cell);
+                    any = true;
+                }
+            }
+            if (any) proxyCells.put(packed, aggregate.freeze());
+            else proxyCells.remove(packed);
+        }
     }
 
     private static void addGroup(Map<Long, MutableProxyCell> index,
@@ -723,6 +842,19 @@ public final class TransformConstructionClientState {
             this.light = Math.max(this.light, Math.max(0, Math.min(15, light)));
             if (groupId != null) groupIds.add(groupId);
             if (surfaceId != null) surfaceIds.add(surfaceId);
+            frozen = null;
+        }
+
+        private void merge(TransformConstructionManager.ProxyCell other) {
+            if (other == null) return;
+            selection = Shapes.or(selection, other.selection());
+            collision = Shapes.or(collision, other.collision());
+            groupCollision = Shapes.or(groupCollision, other.groupCollision());
+            surfaceCollision = Shapes.or(surfaceCollision,
+                    other.surfaceCollision());
+            light = Math.max(light, other.light());
+            groupIds.addAll(other.groupIds());
+            surfaceIds.addAll(other.surfaceIds());
             frozen = null;
         }
 

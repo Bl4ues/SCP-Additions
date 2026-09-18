@@ -523,24 +523,114 @@ public final class TransformConstructionManager {
             for (long packed : changed) {
                 BlockPos pos = BlockPos.of(packed);
                 if (!level.hasChunkAt(pos)) continue;
-                ProxyCell cell = next.cell(dimension, pos);
-                BlockState current = level.getBlockState(pos);
-                if (cell == null || !materialize(cell)) {
-                    if (current.is(TransformConstructionModule.getProxy())) {
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(),
-                                net.minecraft.world.level.block.Block.UPDATE_ALL);
-                    }
-                } else if (current.isAir()
-                        || current.is(TransformConstructionModule.getProxy())
-                        || current.canBeReplaced()) {
-                    level.setBlock(pos,
-                            TransformConstructionModule.getProxy()
-                                    .defaultBlockState()
-                                    .setValue(TransformConstructionModule.LIGHT,
-                                            cell.light()),
-                            net.minecraft.world.level.block.Block.UPDATE_ALL);
-                }
+                materializeProxyCell(level, pos,
+                        next.cell(dimension, pos));
             }
+        }
+    }
+
+    public static synchronized void refreshGroup(MinecraftServer server,
+            UUID groupId) {
+        refreshOwner(server, groupId, false, true);
+    }
+
+    public static synchronized void refreshGroupRuntime(MinecraftServer server,
+            UUID groupId) {
+        refreshOwner(server, groupId, false, false);
+    }
+
+    public static synchronized void refreshSurface(MinecraftServer server,
+            UUID surfaceId) {
+        refreshOwner(server, surfaceId, true, true);
+    }
+
+    public static synchronized void refreshSurfaceRuntime(MinecraftServer server,
+            UUID surfaceId) {
+        refreshOwner(server, surfaceId, true, false);
+    }
+
+    /**
+     * Rebuild only one logical owner. This is the normal editing/runtime path;
+     * full refresh() is reserved for startup/recovery.
+     */
+    private static void refreshOwner(MinecraftServer server, UUID id,
+            boolean surfaceOwner, boolean invalidatePower) {
+        if (server == null || id == null) return;
+        if (invalidatePower) TransformPowerQuery.invalidate(server);
+
+        SpatialIndex index = INDEXES.get(server);
+        if (index == null) {
+            refresh(server);
+            return;
+        }
+
+        Set<OwnerKey> previousKeys = index.ownerKeys(id, surfaceOwner);
+        Map<ResourceLocation, Set<Long>> affected = new LinkedHashMap<>();
+        for (OwnerKey key : previousKeys) {
+            affected.computeIfAbsent(key.dimension(), ignored ->
+                    new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+            index.removeOwner(key);
+        }
+
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        if (surfaceOwner) {
+            ConstructionSurface surface = data.surface(id);
+            if (surface != null) {
+                addSurface(index, surface);
+                OwnerKey key = OwnerKey.surface(surface.dimension(), id);
+                affected.computeIfAbsent(surface.dimension(), ignored ->
+                        new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+            }
+        } else {
+            TransformGroup group = data.group(id);
+            if (group != null) {
+                addGroup(index, group);
+                OwnerKey key = OwnerKey.group(group.dimension(), id);
+                affected.computeIfAbsent(group.dimension(), ignored ->
+                        new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+            }
+        }
+
+        for (Map.Entry<ResourceLocation, Set<Long>> entry
+                : affected.entrySet()) {
+            ServerLevel level = levelByDimension(server, entry.getKey());
+            if (level == null) continue;
+            for (long packed : entry.getValue()) {
+                BlockPos pos = BlockPos.of(packed);
+                if (!level.hasChunkAt(pos)) continue;
+                materializeProxyCell(level, pos,
+                        index.cell(entry.getKey(), pos));
+            }
+        }
+    }
+
+    private static ServerLevel levelByDimension(MinecraftServer server,
+            ResourceLocation dimension) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (level.dimension().location().equals(dimension)) return level;
+        }
+        return null;
+    }
+
+    private static void materializeProxyCell(ServerLevel level, BlockPos pos,
+            ProxyCell cell) {
+        BlockState current = level.getBlockState(pos);
+        int flags = net.minecraft.world.level.block.Block.UPDATE_CLIENTS
+                | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
+        if (cell == null || !materialize(cell)) {
+            if (current.is(TransformConstructionModule.getProxy())) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
+            }
+            return;
+        }
+        if (current.isAir()
+                || current.is(TransformConstructionModule.getProxy())
+                || current.canBeReplaced()) {
+            BlockState wanted = TransformConstructionModule.getProxy()
+                    .defaultBlockState()
+                    .setValue(TransformConstructionModule.LIGHT, cell.light());
+            if (!current.equals(wanted)) level.setBlock(pos, wanted, flags);
         }
     }
 
@@ -553,17 +643,8 @@ public final class TransformConstructionManager {
             if ((pos.getX() >> 4) != chunkX || (pos.getZ() >> 4) != chunkZ) {
                 continue;
             }
-            ProxyCell cell = index.cell(dimension, pos);
-            BlockState current = level.getBlockState(pos);
-            if (cell != null && materialize(cell) && (current.isAir()
-                    || current.is(TransformConstructionModule.getProxy())
-                    || current.canBeReplaced())) {
-                level.setBlock(pos,
-                        TransformConstructionModule.getProxy().defaultBlockState()
-                                .setValue(TransformConstructionModule.LIGHT,
-                                        cell.light()),
-                        net.minecraft.world.level.block.Block.UPDATE_ALL);
-            }
+            materializeProxyCell(level, pos,
+                    index.cell(dimension, pos));
         }
     }
 
@@ -998,6 +1079,20 @@ public final class TransformConstructionManager {
             frozen = null;
         }
 
+        private void merge(ProxyCell other) {
+            if (other == null) return;
+            this.selection = Shapes.or(this.selection, other.selection());
+            this.collision = Shapes.or(this.collision, other.collision());
+            this.groupCollision = Shapes.or(this.groupCollision,
+                    other.groupCollision());
+            this.surfaceCollision = Shapes.or(this.surfaceCollision,
+                    other.surfaceCollision());
+            this.light = Math.max(this.light, other.light());
+            this.groupIds.addAll(other.groupIds());
+            this.surfaceIds.addAll(other.surfaceIds());
+            frozen = null;
+        }
+
         private ProxyCell freeze() {
             if (frozen == null) {
                 frozen = new ProxyCell(selection.optimize(), collision.optimize(),
@@ -1008,29 +1103,109 @@ public final class TransformConstructionManager {
         }
     }
 
+    private record OwnerKey(ResourceLocation dimension, UUID id,
+            boolean surface) {
+        private static OwnerKey group(ResourceLocation dimension, UUID id) {
+            return new OwnerKey(dimension, id, false);
+        }
+
+        private static OwnerKey surface(ResourceLocation dimension, UUID id) {
+            return new OwnerKey(dimension, id, true);
+        }
+    }
+
     private static final class SpatialIndex {
-        private final Map<ResourceLocation, Map<Long, MutableProxyCell>> cells =
+        private final Map<OwnerKey, Map<Long, MutableProxyCell>> owners =
+                new LinkedHashMap<>();
+        private final Map<ResourceLocation, Map<Long, Set<OwnerKey>>> cells =
+                new LinkedHashMap<>();
+        private final Map<ResourceLocation, Map<Long, ProxyCell>> frozen =
                 new LinkedHashMap<>();
 
         private void add(ResourceLocation dimension, BlockPos pos, AABB local,
                 UUID groupId, UUID surfaceId, boolean selection,
                 boolean collision, int light) {
-            cells.computeIfAbsent(dimension, ignored -> new LinkedHashMap<>())
-                    .computeIfAbsent(pos.asLong(), ignored -> new MutableProxyCell())
+            OwnerKey owner = groupId != null
+                    ? OwnerKey.group(dimension, groupId)
+                    : OwnerKey.surface(dimension, surfaceId);
+            long packed = pos.asLong();
+            owners.computeIfAbsent(owner, ignored -> new LinkedHashMap<>())
+                    .computeIfAbsent(packed, ignored -> new MutableProxyCell())
                     .add(local, groupId, surfaceId, selection, collision, light);
+            cells.computeIfAbsent(dimension, ignored -> new LinkedHashMap<>())
+                    .computeIfAbsent(packed, ignored -> new LinkedHashSet<>())
+                    .add(owner);
+            Map<Long, ProxyCell> cache = frozen.get(dimension);
+            if (cache != null) cache.remove(packed);
         }
 
         private ProxyCell cell(ResourceLocation dimension, BlockPos pos) {
-            Map<Long, MutableProxyCell> dimensionCells = cells.get(dimension);
-            MutableProxyCell cell = dimensionCells == null ? null
-                    : dimensionCells.get(pos.asLong());
-            return cell == null ? null : cell.freeze();
+            Map<Long, Set<OwnerKey>> dimensionCells = cells.get(dimension);
+            if (dimensionCells == null) return null;
+            long packed = pos.asLong();
+            Set<OwnerKey> ownerSet = dimensionCells.get(packed);
+            if (ownerSet == null || ownerSet.isEmpty()) return null;
+
+            Map<Long, ProxyCell> cache = frozen.computeIfAbsent(dimension,
+                    ignored -> new LinkedHashMap<>());
+            ProxyCell existing = cache.get(packed);
+            if (existing != null) return existing;
+
+            MutableProxyCell aggregate = new MutableProxyCell();
+            for (OwnerKey owner : ownerSet) {
+                Map<Long, MutableProxyCell> ownerCells = owners.get(owner);
+                MutableProxyCell contribution = ownerCells == null ? null
+                        : ownerCells.get(packed);
+                if (contribution != null) aggregate.merge(contribution.freeze());
+            }
+            ProxyCell result = aggregate.freeze();
+            cache.put(packed, result);
+            return result;
         }
 
         private Set<Long> positions(ResourceLocation dimension) {
-            Map<Long, MutableProxyCell> dimensionCells = cells.get(dimension);
+            Map<Long, Set<OwnerKey>> dimensionCells = cells.get(dimension);
             return dimensionCells == null ? Set.of()
                     : Set.copyOf(dimensionCells.keySet());
         }
-    }
-}
+
+        private Set<Long> ownerPositions(OwnerKey owner) {
+            Map<Long, MutableProxyCell> ownerCells = owners.get(owner);
+            return ownerCells == null ? Set.of()
+                    : Set.copyOf(ownerCells.keySet());
+        }
+
+        private Set<OwnerKey> ownerKeys(UUID id, boolean surface) {
+            Set<OwnerKey> result = new LinkedHashSet<>();
+            for (OwnerKey key : owners.keySet()) {
+                if (key.surface() == surface && key.id().equals(id)) {
+                    result.add(key);
+                }
+            }
+            return result;
+        }
+
+        private void removeOwner(OwnerKey owner) {
+            Map<Long, MutableProxyCell> removed = owners.remove(owner);
+            if (removed == null || removed.isEmpty()) return;
+            Map<Long, Set<OwnerKey>> dimensionCells =
+                    cells.get(owner.dimension());
+            Map<Long, ProxyCell> cache = frozen.get(owner.dimension());
+            for (long packed : removed.keySet()) {
+                if (dimensionCells != null) {
+                    Set<OwnerKey> set = dimensionCells.get(packed);
+                    if (set != null) {
+                        set.remove(owner);
+                        if (set.isEmpty()) dimensionCells.remove(packed);
+                    }
+                }
+                if (cache != null) cache.remove(packed);
+            }
+            if (dimensionCells != null && dimensionCells.isEmpty()) {
+                cells.remove(owner.dimension());
+            }
+            if (cache != null && cache.isEmpty()) {
+                frozen.remove(owner.dimension());
+            }
+        }
+    }}

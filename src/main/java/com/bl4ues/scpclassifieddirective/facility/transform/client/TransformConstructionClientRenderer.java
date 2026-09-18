@@ -14,6 +14,7 @@ import com.bl4ues.scpclassifieddirective.init.FacilityMappingItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -92,7 +93,23 @@ public final class TransformConstructionClientRenderer {
                         != null
                 || TransformGroupPlacementClient.findPayloadTarget(
                         minecraft.player) != null);
-        if (proxy || logicalGroup) {
+        boolean logicalSurface = false;
+        if (minecraft.player != null) {
+            TransformSurfaceRaycast.Target target =
+                    aimedSurfaceTarget(minecraft.player);
+            if (target != null) {
+                boolean placing = minecraft.player.getMainHandItem().getItem()
+                        instanceof BlockItem;
+                boolean editing = minecraft.player.getMainHandItem().is(
+                        TransformConstructionModule.getSurfaceTool())
+                        || minecraft.player.getOffhandItem().is(
+                                TransformConstructionModule.getSurfaceTool());
+                logicalSurface = placing || editing
+                        || target.surface().attachments().containsKey(
+                                target.slot());
+            }
+        }
+        if (proxy || logicalGroup || logicalSurface) {
             // Proxy/world AABBs are only broad-phase bridges. The authored
             // local cell is the selection authority and is rendered below in
             // the transformed frame.
@@ -152,9 +169,11 @@ public final class TransformConstructionClientRenderer {
                 placingBlock ? null
                         : TransformGroupPlacementClient.findPayloadTarget(
                                 minecraft.player);
+        TransformSurfaceRaycast.Target surfaceTarget =
+                placingBlock ? aimedSurfaceTarget(minecraft.player) : null;
         if (offGridTool || surfaceTool || mappingTool || showSelectedGroup
                 || showSelectedSurface || placementTarget != null
-                || interactionTarget != null
+                || interactionTarget != null || surfaceTarget != null
                 || placingBlock && !surfaces.isEmpty()) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
             if (offGridTool) {
@@ -194,6 +213,11 @@ public final class TransformConstructionClientRenderer {
                 renderLogicalGroupCell(pose, lines, interactionTarget.group(),
                         interactionTarget.cell(),
                         0.78F, 0.93F, 1.0F, 0.96F);
+            }
+            if (surfaceTarget != null) {
+                renderLogicalSurfaceSlot(pose, lines,
+                        surfaceTarget.surface(), surfaceTarget.slot(),
+                        0.24F, 1.0F, 0.38F, 0.98F);
             }
             if (surfaceTool) {
                 for (ConstructionSurface surface : surfaces) {
@@ -632,6 +656,60 @@ public final class TransformConstructionClientRenderer {
                         .add(vertical.scale(localNormal.y))
                         .add(normal.scale(localNormal.z)), normal);
         return new VertexFrame(position, transformedNormal);
+    }
+
+    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(
+            LocalPlayer player) {
+        if (player == null) return null;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return null;
+        Selection selection = TransformConstructionClientState.selection();
+        if (selection != null && selection.type() == SelectionType.SURFACE) {
+            ConstructionSurface surface =
+                    TransformConstructionClientState.surface(selection.id());
+            if (surface != null) {
+                return TransformSurfaceRaycast.target(player, surface);
+            }
+        }
+        return TransformSurfaceRaycast.target(player,
+                TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location()));
+    }
+
+    private static void renderLogicalSurfaceSlot(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, float red, float green,
+            float blue, float alpha) {
+        int columns = surface.columns();
+        int rows = surface.rows();
+        double u0 = slot.column() / (double) columns;
+        double u1 = (slot.column() + 1.0D) / columns;
+        double v0 = slot.row() / (double) rows;
+        double v1 = (slot.row() + 1.0D) / rows;
+        int samples = 4;
+        renderSurfaceSlotEdge(pose, lines, surface, u0, v0, u1, v0,
+                samples, red, green, blue, alpha);
+        renderSurfaceSlotEdge(pose, lines, surface, u0, v1, u1, v1,
+                samples, red, green, blue, alpha);
+        renderSurfaceSlotEdge(pose, lines, surface, u0, v0, u0, v1,
+                samples, red, green, blue, alpha);
+        renderSurfaceSlotEdge(pose, lines, surface, u1, v0, u1, v1,
+                samples, red, green, blue, alpha);
+    }
+
+    private static void renderSurfaceSlotEdge(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface, double u0,
+            double v0, double u1, double v1, int samples, float red,
+            float green, float blue, float alpha) {
+        Vec3 previous = surface.gridPoint(u0, v0);
+        for (int index = 1; index <= samples; index++) {
+            double t = index / (double) samples;
+            Vec3 current = surface.gridPoint(
+                    u0 + (u1 - u0) * t,
+                    v0 + (v1 - v0) * t);
+            line(pose, lines, previous, current, red, green, blue, alpha);
+            previous = current;
+        }
     }
 
     private static void renderGroupOutline(PoseStack pose,

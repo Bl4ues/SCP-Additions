@@ -59,7 +59,7 @@ public final class TransformSurfaceGeometry {
         Vec3 tangent = surface.gridFrameTangent(u, v);
         Vec3 normal = surface.gridNormal(u, v);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
-                surface.gridVertical(u));
+                surface.gridVertical(u, v));
         Vec3 center = surface.gridPoint(u, v);
         return bounds((x, y, z) -> center
                 .add(tangent.scale(x - 0.5D))

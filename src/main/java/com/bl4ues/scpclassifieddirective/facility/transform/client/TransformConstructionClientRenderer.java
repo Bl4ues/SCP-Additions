@@ -302,7 +302,7 @@ public final class TransformConstructionClientRenderer {
         Vec3 tangent = surface.gridFrameTangent(u, v);
         Vec3 normal = surface.gridNormal(u, v);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
-                surface.gridVertical(u));
+                surface.gridVertical(u, v));
         Vec3 position = surface.gridPoint(u, v).add(normal.scale(z));
         Vec3 transformedNormal = TransformMath.safeNormalize(
                 tangent.scale(localNormal.x)
@@ -319,7 +319,7 @@ public final class TransformConstructionClientRenderer {
         Vec3 tangent = surface.gridFrameTangent(u, v);
         Vec3 normal = surface.gridNormal(u, v);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
-                surface.gridVertical(u));
+                surface.gridVertical(u, v));
         Vec3 position = surface.gridPoint(u, v)
                 .add(tangent.scale(x - 0.5D))
                 .add(vertical.scale(y - 0.5D))

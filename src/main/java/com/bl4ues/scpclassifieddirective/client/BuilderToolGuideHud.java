@@ -153,6 +153,9 @@ public final class BuilderToolGuideHud {
                     lines.add(Line.axes("choose movement axis"));
                     lines.add(new Line("Shift", "snap handle to 1/16"));
                 }
+                lines.add(new Line("C", TransformConstructionClientState.surfaceCurveAxis()
+                        == TransformConstructionClientState.SurfaceCurveAxis.WIDTH
+                        ? "curve axis: width" : "curve axis: height"));
                 lines.add(new Line("F", "flip wall side"));
                 lines.add(new Line("V", "bend / rigid aimed block"));
                 String angle = angleText(selection);
@@ -187,8 +190,16 @@ public final class BuilderToolGuideHud {
                 ? TransformConstructionClientState.hoveredSurfaceHandle()
                 : selection.handle();
         if (handle == SurfaceHandle.CENTER) {
-            Vec3 a = surface.gridTangent(0.0D, 0.5D).normalize();
-            Vec3 b = surface.gridTangent(1.0D, 0.5D).normalize();
+            Vec3 a;
+            Vec3 b;
+            if (TransformConstructionClientState.surfaceCurveAxis()
+                    == TransformConstructionClientState.SurfaceCurveAxis.WIDTH) {
+                a = surface.gridTangent(0.0D, 0.5D).normalize();
+                b = surface.gridTangent(1.0D, 0.5D).normalize();
+            } else {
+                a = surface.gridVertical(0.5D, 0.0D).normalize();
+                b = surface.gridVertical(0.5D, 1.0D).normalize();
+            }
             double dot = Mth.clamp(a.dot(b), -1.0D, 1.0D);
             return String.format(java.util.Locale.ROOT, "curve %.1f°",
                     Math.toDegrees(Math.acos(dot)));

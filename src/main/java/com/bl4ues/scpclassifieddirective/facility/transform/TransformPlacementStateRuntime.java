@@ -202,7 +202,7 @@ public final class TransformPlacementStateRuntime {
         Vec3 x = surface.gridFrameTangent(u, v);
         Vec3 z = surface.gridNormal(u, v);
         Vec3 y = TransformMath.safeNormalize(z.cross(x),
-                surface.gridVertical(u));
+                surface.gridVertical(u, v));
         state = localize(state, x, y, z);
         // Surface payloads extend from local Z=0 toward +Z. Wall controls need
         // their support behind them on the authored plane, so SOUTH is the

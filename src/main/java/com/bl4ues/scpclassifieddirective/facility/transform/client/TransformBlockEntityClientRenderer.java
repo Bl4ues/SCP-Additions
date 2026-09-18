@@ -140,7 +140,7 @@ public final class TransformBlockEntityClientRenderer {
 
             Vec3 tangent = surface.gridFrameTangent(u, v);
             Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
-                    surface.gridVertical(u));
+                    surface.gridVertical(u, v));
             pose.pushPose();
             pose.translate(-camera.x, -camera.y, -camera.z);
             pose.translate(center.x, center.y, center.z);

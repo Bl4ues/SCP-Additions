@@ -209,6 +209,24 @@ public final class TransformConstructionClientState {
         return cell == null ? Shapes.empty() : cell.collision();
     }
 
+    public static boolean groupTouchesWorldCell(UUID groupId,
+            BlockPos worldCell) {
+        if (groupId == null || worldCell == null) return false;
+        Map<Long, TransformConstructionManager.ProxyCell> contribution =
+                GROUP_PROXY_CONTRIBUTIONS.get(groupId);
+        return contribution != null
+                && contribution.containsKey(worldCell.asLong());
+    }
+
+    public static boolean surfaceTouchesWorldCell(UUID surfaceId,
+            BlockPos worldCell) {
+        if (surfaceId == null || worldCell == null) return false;
+        Map<Long, TransformConstructionManager.ProxyCell> contribution =
+                SURFACE_PROXY_CONTRIBUTIONS.get(surfaceId);
+        return contribution != null
+                && contribution.containsKey(worldCell.asLong());
+    }
+
     private static TransformConstructionManager.ProxyCell proxyCell(BlockPos pos) {
         return pos == null ? null : proxyCells.get(pos.asLong());
     }

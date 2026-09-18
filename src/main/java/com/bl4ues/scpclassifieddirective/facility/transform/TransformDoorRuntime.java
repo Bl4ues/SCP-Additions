@@ -55,6 +55,8 @@ public final class TransformDoorRuntime {
             new WeakHashMap<>();
     private static final Map<MinecraftServer, Integer> LAST_RECOVERY =
             new WeakHashMap<>();
+    private static final Map<MinecraftServer, DoorIndex> DOOR_INDEX =
+            new WeakHashMap<>();
 
     private TransformDoorRuntime() {
     }
@@ -116,33 +118,57 @@ public final class TransformDoorRuntime {
                 ignored -> new HashMap<>());
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 server);
-        for (TransformGroup group : data.groups()) {
+        for (DoorRef ref : doorRefs(server, data)) {
+            TransformGroup group = data.group(ref.groupId());
+            if (group == null) continue;
+            BlockState state = group.cells().get(ref.cell());
+            DoorAddress address = address(state);
+            if (address == null) continue;
             ServerLevel level = levelById(server, group.dimension());
             if (level == null) continue;
+
+            CellKey key = new CellKey(group.id(), ref.cell());
+            if ((address.stage() == DoorStage.OPENING
+                    || address.stage() == DoorStage.CLOSING)
+                    && !pending.containsKey(key)) {
+                pending.put(key, new PendingDoor(group.dimension(),
+                        address.family().id(),
+                        address.stage() == DoorStage.OPENING,
+                        tick + Math.max(1, address.family().frameDelay())));
+                continue;
+            }
+            if (address.family().directUse() || pending.containsKey(key)) {
+                continue;
+            }
+            boolean powered = TransformPowerQuery.powered(level,
+                    group.cellCenter(ref.cell()));
+            if (address.stage() == DoorStage.CLOSED && powered) {
+                start(level, group, ref.cell(), address.family(), true);
+            } else if (address.stage() == DoorStage.OPEN && !powered) {
+                start(level, group, ref.cell(), address.family(), false);
+            }
+        }
+    }
+
+    private static List<DoorRef> doorRefs(MinecraftServer server,
+            TransformConstructionSavedData data) {
+        long revision = data.revision();
+        DoorIndex cached = DOOR_INDEX.get(server);
+        if (cached != null && cached.revision() == revision) {
+            return cached.refs();
+        }
+
+        java.util.ArrayList<DoorRef> refs = new java.util.ArrayList<>();
+        for (TransformGroup group : data.groups()) {
             for (Map.Entry<GridPos, BlockState> entry : group.cells().entrySet()) {
-                DoorAddress address = address(entry.getValue());
-                if (address == null) continue;
-                CellKey key = new CellKey(group.id(), entry.getKey());
-                if ((address.stage() == DoorStage.OPENING
-                        || address.stage() == DoorStage.CLOSING)
-                        && !pending.containsKey(key)) {
-                    pending.put(key, new PendingDoor(group.dimension(),
-                            address.family().id(),
-                            address.stage() == DoorStage.OPENING,
-                            tick + Math.max(1, address.family().frameDelay())));
-                    continue;
-                }
-                if (address.family().directUse()
-                        || pending.containsKey(key)) continue;
-                boolean powered = TransformPowerQuery.powered(level,
-                        group.cellCenter(entry.getKey()));
-                if (address.stage() == DoorStage.CLOSED && powered) {
-                    start(level, group, entry.getKey(), address.family(), true);
-                } else if (address.stage() == DoorStage.OPEN && !powered) {
-                    start(level, group, entry.getKey(), address.family(), false);
+                if (address(entry.getValue()) != null) {
+                    refs.add(new DoorRef(group.id(), entry.getKey()));
                 }
             }
         }
+        List<DoorRef> immutable = List.copyOf(refs);
+        DOOR_INDEX.put(server, new DoorIndex(revision, immutable));
+        return immutable;
     }
 
     private static boolean advance(ServerLevel level, CellKey key,
@@ -282,6 +308,12 @@ public final class TransformDoorRuntime {
             if (level.dimension().location().equals(dimension)) return level;
         }
         return null;
+    }
+
+    private record DoorRef(UUID groupId, GridPos cell) {
+    }
+
+    private record DoorIndex(long revision, List<DoorRef> refs) {
     }
 
     private record CellKey(UUID groupId, GridPos cell) {

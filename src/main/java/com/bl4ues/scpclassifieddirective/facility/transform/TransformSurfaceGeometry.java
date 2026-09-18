@@ -12,7 +12,9 @@ import java.util.List;
 
 /** Shared world-space geometry for rigid and curve-deformed surface payloads. */
 public final class TransformSurfaceGeometry {
-    private static final int CURVE_SUBDIVISIONS = 3;
+    private static final int CURVE_U_SUBDIVISIONS = 4;
+    private static final int CURVE_V_SUBDIVISIONS = 3;
+    private static final int RIGID_SUBDIVISIONS = 2;
 
     private TransformSurfaceGeometry() {
     }
@@ -29,7 +31,7 @@ public final class TransformSurfaceGeometry {
         List<AABB> result = new ArrayList<>();
         for (AABB box : shape.toAabbs()) {
             if (attachment.deform()) addDeformed(surface, slot, box, result);
-            else result.add(rigidBounds(surface, slot, box));
+            else addRigid(surface, slot, box, result);
         }
         return List.copyOf(result);
     }
@@ -37,19 +39,64 @@ public final class TransformSurfaceGeometry {
     private static void addDeformed(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, AABB box,
             List<AABB> output) {
-        double step = (box.maxX - box.minX) / CURVE_SUBDIVISIONS;
-        if (step < 1.0E-6D) {
-            output.add(deformedBounds(surface, slot, box));
-            return;
+        int uSteps = box.getXsize() < 1.0E-5D ? 1 : CURVE_U_SUBDIVISIONS;
+        int vSteps = surface.heightCurveOffset().lengthSqr() < 1.0E-8D
+                || box.getYsize() < 1.0E-5D ? 1 : CURVE_V_SUBDIVISIONS;
+        double dx = box.getXsize() / uSteps;
+        double dy = box.getYsize() / vSteps;
+        for (int ux = 0; ux < uSteps; ux++) {
+            double minX = box.minX + dx * ux;
+            double maxX = ux == uSteps - 1 ? box.maxX
+                    : box.minX + dx * (ux + 1);
+            for (int vy = 0; vy < vSteps; vy++) {
+                double minY = box.minY + dy * vy;
+                double maxY = vy == vSteps - 1 ? box.maxY
+                        : box.minY + dy * (vy + 1);
+                output.add(deformedBounds(surface, slot,
+                        new AABB(minX, minY, box.minZ,
+                                maxX, maxY, box.maxZ)));
+            }
         }
-        for (int index = 0; index < CURVE_SUBDIVISIONS; index++) {
-            double minX = box.minX + step * index;
-            double maxX = index == CURVE_SUBDIVISIONS - 1
-                    ? box.maxX : box.minX + step * (index + 1);
-            output.add(deformedBounds(surface, slot,
-                    new AABB(minX, box.minY, box.minZ,
-                            maxX, box.maxY, box.maxZ)));
+    }
+
+    private static void addRigid(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, AABB box,
+            List<AABB> output) {
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 tangent = surface.gridFrameTangent(u, v).normalize();
+        Vec3 normal = surface.gridNormal(u, v).normalize();
+        Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
+                surface.gridVertical(u, v));
+
+        int subdivisions = cardinal(tangent) && cardinal(vertical)
+                && cardinal(normal) ? 1 : RIGID_SUBDIVISIONS;
+        double dx = box.getXsize() / subdivisions;
+        double dy = box.getYsize() / subdivisions;
+        double dz = box.getZsize() / subdivisions;
+        for (int sx = 0; sx < subdivisions; sx++) {
+            for (int sy = 0; sy < subdivisions; sy++) {
+                for (int sz = 0; sz < subdivisions; sz++) {
+                    double minX = box.minX + dx * sx;
+                    double minY = box.minY + dy * sy;
+                    double minZ = box.minZ + dz * sz;
+                    double maxX = sx == subdivisions - 1 ? box.maxX
+                            : box.minX + dx * (sx + 1);
+                    double maxY = sy == subdivisions - 1 ? box.maxY
+                            : box.minY + dy * (sy + 1);
+                    double maxZ = sz == subdivisions - 1 ? box.maxZ
+                            : box.minZ + dz * (sz + 1);
+                    output.add(rigidBounds(surface, slot,
+                            new AABB(minX, minY, minZ, maxX, maxY, maxZ)));
+                }
+            }
         }
+    }
+
+    private static boolean cardinal(Vec3 axis) {
+        double max = Math.max(Math.abs(axis.x),
+                Math.max(Math.abs(axis.y), Math.abs(axis.z)));
+        return max > 0.9999D;
     }
 
     private static AABB rigidBounds(ConstructionSurface surface,

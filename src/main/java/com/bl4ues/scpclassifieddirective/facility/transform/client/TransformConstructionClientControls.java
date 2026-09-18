@@ -72,7 +72,15 @@ public final class TransformConstructionClientControls {
         }
         if (offGrid) selectNearestGroup(hit);
         else if (TransformSurfaceAuthoringState.step() == 0) {
-            selectNearestSurface(hit);
+            AimedSurface aimed = findAimedSurface(player);
+            if (aimed != null) {
+                finishDrag();
+                TransformConstructionClientState.selectSurface(
+                        aimed.surfaceId(), SurfaceHandle.CENTER);
+                TransformConstructionClientState.setHoveredSurface(
+                        aimed.surfaceId(), SurfaceHandle.CENTER);
+                status("Surface selected");
+            }
         }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
@@ -518,54 +526,11 @@ public final class TransformConstructionClientControls {
     private static AimedSurface findAimedSurface(LocalPlayer player) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return null;
-
-        Vec3 eye = player.getEyePosition();
-        Vec3 ray = player.getViewVector(1.0F).normalize();
-        double maxDistance = HANDLE_MAX_DISTANCE;
-        HitResult vanillaHit = minecraft.hitResult;
-        if (vanillaHit instanceof BlockHitResult blockHit
-                && vanillaHit.getType() == HitResult.Type.BLOCK
-                && !minecraft.level.getBlockState(blockHit.getBlockPos()).is(
-                        TransformConstructionModule.getProxy())) {
-            maxDistance = Math.min(maxDistance,
-                    eye.distanceTo(blockHit.getLocation()) + 0.05D);
-        }
-
-        AimedSurface best = null;
-        double bestDistance = maxDistance + 1.0D;
-        for (ConstructionSurface surface
-                : TransformConstructionClientState.surfaces(
-                        minecraft.level.dimension().location())) {
-            int columns = surface.columns();
-            int rows = surface.rows();
-            for (int column = 0; column < columns; column++) {
-                double u = (column + 0.5D) / columns;
-                for (int row = 0; row < rows; row++) {
-                    double v = (row + 0.5D) / rows;
-                    Vec3 center = surface.gridPoint(u, v);
-                    Vec3 tangent = surface.gridTangent(u, v).normalize();
-                    Vec3 normal = surface.gridNormal(u, v).normalize();
-                    Vec3 vertical = normal.cross(tangent).normalize();
-
-                    double denominator = ray.dot(normal);
-                    if (Math.abs(denominator) < 1.0E-6D) continue;
-                    double distance = center.subtract(eye).dot(normal)
-                            / denominator;
-                    if (distance < 0.0D || distance > maxDistance
-                            || distance >= bestDistance) continue;
-
-                    Vec3 hit = eye.add(ray.scale(distance));
-                    Vec3 local = hit.subtract(center);
-                    if (Math.abs(local.dot(tangent)) > 0.62D
-                            || Math.abs(local.dot(vertical)) > 0.62D) {
-                        continue;
-                    }
-                    bestDistance = distance;
-                    best = new AimedSurface(surface.id(), hit);
-                }
-            }
-        }
-        return best;
+        TransformSurfaceRaycast.Target target = TransformSurfaceRaycast.target(
+                player, TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location()));
+        return target == null ? null
+                : new AimedSurface(target.surface().id(), target.hit());
     }
 
     private static void selectNearestGroup(Vec3 hit) {

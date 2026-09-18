@@ -212,8 +212,11 @@ public final class TransformConstructionClientRenderer {
             MultiBufferSource.BufferSource buffers, TransformGroup group,
             Vec3 camera) {
         CachedGroup cached = GROUP_MESHES.get(group.id());
-        if (cached == null || !cached.cells().equals(group.cells())) {
+        if (cached == null) {
             cached = buildGroupMesh(minecraft, group);
+            GROUP_MESHES.put(group.id(), cached);
+        } else if (!cached.cells().equals(group.cells())) {
+            cached = updateGroupMesh(minecraft, group, cached);
             GROUP_MESHES.put(group.id(), cached);
         }
         pose.pushPose();
@@ -251,23 +254,73 @@ public final class TransformConstructionClientRenderer {
         pose.popPose();
     }
 
+    private static CachedGroup updateGroupMesh(Minecraft minecraft,
+            TransformGroup group, CachedGroup cached) {
+        Set<GroupBatchKey> dirty = new java.util.HashSet<>();
+        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                : cached.cells().entrySet()) {
+            BlockState next = group.cells().get(entry.getKey());
+            if (!java.util.Objects.equals(entry.getValue(), next)) {
+                dirty.add(GroupBatchKey.of(entry.getKey()));
+            }
+        }
+        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                : group.cells().entrySet()) {
+            BlockState previous = cached.cells().get(entry.getKey());
+            if (!java.util.Objects.equals(previous, entry.getValue())) {
+                dirty.add(GroupBatchKey.of(entry.getKey()));
+            }
+        }
+        if (dirty.isEmpty()) {
+            return new CachedGroup(Map.copyOf(group.cells()), cached.batches());
+        }
+
+        Map<GroupBatchKey, CachedGroupBatch> batches = new LinkedHashMap<>();
+        for (CachedGroupBatch batch : cached.batches()) {
+            batches.put(batch.key(), batch);
+        }
+        for (GroupBatchKey key : dirty) {
+            CachedGroupBatch rebuilt = buildGroupBatch(minecraft, group, key);
+            if (rebuilt == null) batches.remove(key);
+            else batches.put(key, rebuilt);
+        }
+        return new CachedGroup(Map.copyOf(group.cells()),
+                List.copyOf(batches.values()));
+    }
+
     private static CachedGroup buildGroupMesh(Minecraft minecraft,
             TransformGroup group) {
-        Map<GroupBatchKey, Map<RenderType, List<PreparedVertex>>> builders =
-                new LinkedHashMap<>();
+        Set<GroupBatchKey> keys = new java.util.LinkedHashSet<>();
         for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                 : group.cells().entrySet()) {
             BlockState state = entry.getValue();
             if (state == null || state.isAir()
                     || state.getRenderShape() != RenderShape.MODEL) continue;
+            keys.add(GroupBatchKey.of(entry.getKey()));
+        }
+        List<CachedGroupBatch> batches = new ArrayList<>(keys.size());
+        for (GroupBatchKey key : keys) {
+            CachedGroupBatch batch = buildGroupBatch(minecraft, group, key);
+            if (batch != null) batches.add(batch);
+        }
+        return new CachedGroup(Map.copyOf(group.cells()),
+                List.copyOf(batches));
+    }
+
+    private static CachedGroupBatch buildGroupBatch(Minecraft minecraft,
+            TransformGroup group, GroupBatchKey key) {
+        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
+        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                : group.cells().entrySet()) {
             TransformGroup.GridPos cell = entry.getKey();
-            GroupBatchKey batchKey = GroupBatchKey.of(cell);
-            Map<RenderType, List<PreparedVertex>> batchLayers =
-                    builders.computeIfAbsent(batchKey,
-                            ignored -> new LinkedHashMap<>());
+            if (!key.equals(GroupBatchKey.of(cell))) continue;
+            BlockState state = entry.getValue();
+            if (state == null || state.isAir()
+                    || state.getRenderShape() != RenderShape.MODEL) continue;
+
             BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
             RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
-            List<PreparedVertex> output = batchLayers.computeIfAbsent(renderType,
+            List<PreparedVertex> output = layers.computeIfAbsent(renderType,
                     ignored -> new ArrayList<>());
             Vec3 center = group.cellCenter(cell);
             BlockPos lightPos = BlockPos.containing(center);
@@ -285,20 +338,11 @@ public final class TransformConstructionClientRenderer {
                 }
             }
         }
-
-        List<CachedGroupBatch> batches = new ArrayList<>(builders.size());
-        for (Map.Entry<GroupBatchKey,
-                Map<RenderType, List<PreparedVertex>>> batch
-                : builders.entrySet()) {
-            Map<RenderType, List<PreparedVertex>> immutable =
-                    new LinkedHashMap<>();
-            batch.getValue().forEach((type, vertices) ->
-                    immutable.put(type, List.copyOf(vertices)));
-            batches.add(new CachedGroupBatch(batch.getKey().center(),
-                    Map.copyOf(immutable)));
-        }
-        return new CachedGroup(Map.copyOf(group.cells()),
-                List.copyOf(batches));
+        if (layers.isEmpty()) return null;
+        Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
+        layers.forEach((type, vertices) ->
+                immutable.put(type, List.copyOf(vertices)));
+        return new CachedGroupBatch(key, key.center(), Map.copyOf(immutable));
     }
 
     private static void appendGroupQuad(Minecraft minecraft,
@@ -876,7 +920,8 @@ public final class TransformConstructionClientRenderer {
             List<CachedGroupBatch> batches) {
     }
 
-    private record CachedGroupBatch(Vec3 localCenter,
+    private record CachedGroupBatch(GroupBatchKey key,
+            Vec3 localCenter,
             Map<RenderType, List<PreparedVertex>> layers) {
     }
 

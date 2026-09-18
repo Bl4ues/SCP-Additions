@@ -140,11 +140,39 @@ public final class FacilityMappingNetwork {
         buffer.writeInt(patch.minZ());
         buffer.writeInt(patch.maxX());
         buffer.writeInt(patch.maxZ());
+        List<FacilityFloorPatch.Vertex> vertices = patch.isPolygon()
+                ? patch.vertices() : List.of();
+        int count = Math.min(256, vertices.size());
+        buffer.writeVarInt(count);
+        for (int index = 0; index < count; index++) {
+            FacilityFloorPatch.Vertex vertex = vertices.get(index);
+            buffer.writeDouble(vertex.x());
+            buffer.writeDouble(vertex.z());
+        }
     }
 
     private static FacilityFloorPatch readPatch(FriendlyByteBuf buffer) {
-        return new FacilityFloorPatch(buffer.readInt(), buffer.readInt(),
-                buffer.readInt(), buffer.readInt(), buffer.readInt());
+        int minX = buffer.readInt();
+        int y = buffer.readInt();
+        int minZ = buffer.readInt();
+        int maxX = buffer.readInt();
+        int maxZ = buffer.readInt();
+        int count = Math.max(0, Math.min(256, buffer.readVarInt()));
+        if (count >= 3) {
+            List<FacilityFloorPatch.Vertex> vertices = new ArrayList<>(count);
+            for (int index = 0; index < count; index++) {
+                vertices.add(new FacilityFloorPatch.Vertex(buffer.readDouble(),
+                        buffer.readDouble()));
+            }
+            FacilityFloorPatch polygon = FacilityFloorPatch.polygon(y, vertices);
+            if (polygon != null) return polygon;
+        } else {
+            for (int index = 0; index < count; index++) {
+                buffer.readDouble();
+                buffer.readDouble();
+            }
+        }
+        return new FacilityFloorPatch(minX, y, minZ, maxX, maxZ);
     }
 
     private static void writeRoom(FriendlyByteBuf buffer,

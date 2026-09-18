@@ -705,7 +705,13 @@ public final class Scp079FacilityMapScreen extends Screen {
         for (FacilityFloorPatch patch : room.patches()) {
             for (int x = patch.minX(); x <= patch.maxX(); x++) {
                 for (int z = patch.minZ(); z <= patch.maxZ(); z++) {
-                    cells.add(pack(x, z));
+                    // Polygon patches are no longer treated as their bounding
+                    // rectangle. The exact sub-block outline is still drawn by
+                    // the fine-geometry pass; this raster is only the fill and
+                    // hover mask behind it.
+                    if (patch.containsXZ(x + 0.5D, z + 0.5D)) {
+                        cells.add(pack(x, z));
+                    }
                 }
             }
         }

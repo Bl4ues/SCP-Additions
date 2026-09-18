@@ -45,6 +45,25 @@ public final class TransformMath {
         return new Vec3(transformed.x, transformed.y, transformed.z);
     }
 
+    public static float[] composeAxisRotation(float xDegrees,
+            float yDegrees, float zDegrees, Vec3 worldAxis,
+            float deltaDegrees, boolean localSpace) {
+        Vec3 axis = safeNormalize(worldAxis, new Vec3(0.0D, 1.0D, 0.0D));
+        Quaternionf base = quaternion(xDegrees, yDegrees, zDegrees);
+        Quaternionf delta = new Quaternionf().fromAxisAngleRad(
+                (float) axis.x, (float) axis.y, (float) axis.z,
+                (float) Math.toRadians(deltaDegrees));
+        Quaternionf result = localSpace
+                ? new Quaternionf(base).mul(delta)
+                : new Quaternionf(delta).mul(base);
+        Vector3f euler = result.getEulerAnglesXYZ(new Vector3f());
+        return new float[]{
+                (float) Math.toDegrees(euler.x),
+                (float) Math.toDegrees(euler.y),
+                (float) Math.toDegrees(euler.z)
+        };
+    }
+
     public static Vec3 inverseRotate(Vec3 vector, float xDegrees,
             float yDegrees, float zDegrees) {
         Vector3f transformed = new Vector3f((float) vector.x,

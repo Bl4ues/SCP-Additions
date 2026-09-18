@@ -221,6 +221,13 @@ public final class TransformConstructionClientControls {
                 TransformConstructionClientState.setAxis(Axis.Z);
                 status("Z axis");
             }
+            case GLFW.GLFW_KEY_L -> {
+                finishDrag();
+                TransformConstructionClientState.toggleTransformSpace();
+                status(TransformConstructionClientState.transformSpace()
+                        == TransformConstructionClientState.TransformSpace.LOCAL
+                        ? "Local transform space" : "Global transform space");
+            }
             case GLFW.GLFW_KEY_C -> {
                 finishDrag();
                 if (selection.type() == SelectionType.SURFACE) {
@@ -334,7 +341,8 @@ public final class TransformConstructionClientControls {
             finishDrag();
             return;
         }
-        Vec3 axis = TransformConstructionClientState.axisVector();
+        Vec3 axis = gizmoAxisDirection(selection,
+                TransformConstructionClientState.axis());
         if (drag != null && drag.matches(selection, EditMode.ROTATE,
                 TransformConstructionClientState.axis())) {
             axis = drag.dragAxis();
@@ -360,16 +368,18 @@ public final class TransformConstructionClientControls {
         drag = drag.withLastDelta(delta);
         TransformGroup base = drag.baseGroup();
         if (base == null) return;
-        float rx = base.rotationX();
-        float ry = base.rotationY();
-        float rz = base.rotationZ();
-        switch (drag.axis()) {
-            case X -> rx += (float) delta;
-            case Y -> ry += (float) delta;
-            case Z -> rz += (float) delta;
-        }
+        Vec3 worldAxis = drag.dragAxis().normalize();
+        boolean local = TransformConstructionClientState.transformSpace()
+                == TransformConstructionClientState.TransformSpace.LOCAL;
+        Vec3 compositionAxis = local
+                ? TransformMath.inverseRotate(worldAxis, base.rotationX(),
+                        base.rotationY(), base.rotationZ()).normalize()
+                : worldAxis;
+        float[] rotation = TransformMath.composeAxisRotation(
+                base.rotationX(), base.rotationY(), base.rotationZ(),
+                compositionAxis, (float) delta, local);
         TransformConstructionClientState.previewGroup(base.withTransform(
-                base.origin(), rx, ry, rz));
+                base.origin(), rotation[0], rotation[1], rotation[2]));
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -572,7 +582,7 @@ public final class TransformConstructionClientControls {
         Axis best = null;
         double bestScore = Double.MAX_VALUE;
         for (Axis candidate : Axis.values()) {
-            Vec3 axis = axisVector(candidate);
+            Vec3 axis = gizmoAxisDirection(selection, candidate);
             double score = segmentHitScore(eye, ray, origin,
                     origin.add(axis.scale(1.18D)));
             if (score <= tolerance * tolerance && score < bestScore) {
@@ -603,7 +613,7 @@ public final class TransformConstructionClientControls {
         Axis best = null;
         double bestScore = Double.MAX_VALUE;
         for (Axis candidate : Axis.values()) {
-            Vec3 axis = axisVector(candidate);
+            Vec3 axis = gizmoAxisDirection(selection, candidate);
             double score = TransformConstructionClientState.mode()
                     == EditMode.ROTATE
                     ? ringHitScore(eye, ray, group.origin(), axis, 0.92D)
@@ -617,11 +627,46 @@ public final class TransformConstructionClientControls {
         return best;
     }
 
-    private static Vec3 axisVector(Axis axis) {
-        return switch (axis) {
+    static Vec3 gizmoAxisDirection(Selection selection, Axis axis) {
+        Vec3 basis = switch (axis) {
             case X -> new Vec3(1.0D, 0.0D, 0.0D);
             case Y -> new Vec3(0.0D, 1.0D, 0.0D);
             case Z -> new Vec3(0.0D, 0.0D, 1.0D);
+        };
+        if (selection == null
+                || TransformConstructionClientState.transformSpace()
+                == TransformConstructionClientState.TransformSpace.GLOBAL) {
+            return basis;
+        }
+        if (selection.type() == SelectionType.GROUP) {
+            TransformGroup group = TransformConstructionClientState.group(
+                    selection.id());
+            return group == null ? basis : TransformMath.rotate(basis,
+                    group.rotationX(), group.rotationY(), group.rotationZ())
+                    .normalize();
+        }
+        ConstructionSurface surface =
+                TransformConstructionClientState.surface(selection.id());
+        if (surface == null) return basis;
+        double[] uv = handleUv(selection.handle());
+        return switch (axis) {
+            case X -> surface.gridFrameTangent(uv[0], uv[1]).normalize();
+            case Y -> surface.gridVertical(uv[0]).normalize();
+            case Z -> surface.gridNormal(uv[0], uv[1]).normalize();
+        };
+    }
+
+    private static double[] handleUv(SurfaceHandle handle) {
+        return switch (handle) {
+            case BOTTOM_START -> new double[]{0.0D, 0.0D};
+            case BOTTOM_END -> new double[]{1.0D, 0.0D};
+            case TOP_START -> new double[]{0.0D, 1.0D};
+            case TOP_END -> new double[]{1.0D, 1.0D};
+            case BOTTOM_EDGE -> new double[]{0.5D, 0.0D};
+            case TOP_EDGE -> new double[]{0.5D, 1.0D};
+            case START_EDGE -> new double[]{0.0D, 0.5D};
+            case END_EDGE -> new double[]{1.0D, 0.5D};
+            case CENTER -> new double[]{0.5D, 0.5D};
         };
     }
 
@@ -681,21 +726,25 @@ public final class TransformConstructionClientControls {
         if (group == null) return;
         if (TransformConstructionClientState.mode() == EditMode.ROTATE) {
             float step = (float) (sign * 5.0D);
-            float x = group.rotationX();
-            float y = group.rotationY();
-            float z = group.rotationZ();
-            switch (TransformConstructionClientState.axis()) {
-                case X -> x += step;
-                case Y -> y += step;
-                case Z -> z += step;
-            }
+            Vec3 worldAxis = gizmoAxisDirection(selection,
+                    TransformConstructionClientState.axis());
+            boolean local = TransformConstructionClientState.transformSpace()
+                    == TransformConstructionClientState.TransformSpace.LOCAL;
+            Vec3 compositionAxis = local
+                    ? TransformMath.inverseRotate(worldAxis, group.rotationX(),
+                            group.rotationY(), group.rotationZ()).normalize()
+                    : worldAxis;
+            float[] rotation = TransformMath.composeAxisRotation(
+                    group.rotationX(), group.rotationY(), group.rotationZ(),
+                    compositionAxis, step, local);
             TransformConstructionClientState.upsertGroup(group.withTransform(
-                    group.origin(), x, y, z));
+                    group.origin(), rotation[0], rotation[1], rotation[2]));
             TransformConstructionNetwork.updateGroup(group.id(), group.origin(),
-                    x, y, z);
+                    rotation[0], rotation[1], rotation[2]);
         } else {
             Vec3 origin = group.origin().add(
-                    TransformConstructionClientState.axisVector()
+                    gizmoAxisDirection(selection,
+                            TransformConstructionClientState.axis())
                             .scale(sign / 16.0D));
             origin = snap16(origin);
             TransformConstructionClientState.upsertGroup(group.withTransform(origin,
@@ -709,13 +758,15 @@ public final class TransformConstructionClientControls {
         ConstructionSurface surface = TransformConstructionClientState.surface(
                 selection.id());
         if (surface == null) return;
-        Vec3 axis = TransformConstructionClientState.axisVector();
+        Vec3 axis = gizmoAxisDirection(selection,
+                TransformConstructionClientState.axis());
         applySurfaceDelta(surface, selection.handle(),
                 axis.normalize().scale(sign / 16.0D), true, true);
     }
 
     private static Vec3 dragAxis(Selection selection) {
-        return TransformConstructionClientState.axisVector();
+        return gizmoAxisDirection(selection,
+                TransformConstructionClientState.axis());
     }
 
     private static void previewGroupDrag(DragState state, Vec3 movement,

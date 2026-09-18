@@ -43,6 +43,7 @@ public final class TransformConstructionClientState {
     private static Selection selection;
     private static EditMode mode = EditMode.MOVE;
     private static Axis axis = Axis.X;
+    private static TransformSpace transformSpace = TransformSpace.GLOBAL;
     private static SurfaceCurveAxis surfaceCurveAxis = SurfaceCurveAxis.WIDTH;
     private static UUID hoveredSurfaceId;
     private static SurfaceHandle hoveredSurfaceHandle;
@@ -293,6 +294,15 @@ public final class TransformConstructionClientState {
 
     public static void setAxis(Axis next) {
         if (next != null) axis = next;
+    }
+
+    public static TransformSpace transformSpace() {
+        return transformSpace;
+    }
+
+    public static void toggleTransformSpace() {
+        transformSpace = transformSpace == TransformSpace.GLOBAL
+                ? TransformSpace.LOCAL : TransformSpace.GLOBAL;
     }
 
     public static SurfaceCurveAxis surfaceCurveAxis() {
@@ -641,6 +651,7 @@ public final class TransformConstructionClientState {
     public enum SelectionType { GROUP, SURFACE }
     public enum EditMode { MOVE, ROTATE }
     public enum Axis { X, Y, Z }
+    public enum TransformSpace { GLOBAL, LOCAL }
     public enum SurfaceCurveAxis { WIDTH, HEIGHT }
     public enum SurfaceHandle {
         BOTTOM_START, BOTTOM_END, TOP_START, TOP_END,

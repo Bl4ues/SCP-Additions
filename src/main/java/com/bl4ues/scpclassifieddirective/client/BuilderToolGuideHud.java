@@ -135,6 +135,9 @@ public final class BuilderToolGuideHud {
                     ? "drag colored rotation ring" : "drag colored axis arrow"));
             lines.add(new Line("Shift", mode == EditMode.ROTATE
                     ? "snap 5°" : "snap to 1/16"));
+            lines.add(new Line("L", "space: "
+                    + TransformConstructionClientState.transformSpace()
+                    .name().toLowerCase(java.util.Locale.ROOT)));
             lines.add(new Line("Ctrl+Z", "undo"));
             lines.add(new Line("Del", "delete grid"));
         }
@@ -153,6 +156,9 @@ public final class BuilderToolGuideHud {
                         selection.handle() == SurfaceHandle.CENTER
                                 ? "snap curve handle to 1/16"
                                 : "snap handle to 1/16"));
+                lines.add(new Line("L", "space: "
+                        + TransformConstructionClientState.transformSpace()
+                        .name().toLowerCase(java.util.Locale.ROOT)));
                 lines.add(new Line("C", TransformConstructionClientState.surfaceCurveAxis()
                         == TransformConstructionClientState.SurfaceCurveAxis.WIDTH
                         ? "curve axis: width" : "curve axis: height"));

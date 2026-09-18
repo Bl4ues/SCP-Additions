@@ -555,24 +555,25 @@ public final class TransformConstructionClientRenderer {
                         minecraft.player);
         if (TransformConstructionClientState.mode() == EditMode.ROTATE) {
             for (Axis axis : Axis.values()) {
-                renderRotationRing(pose, lines, group.origin(), axis,
-                        axis == hot);
+                renderRotationRing(pose, lines, group.origin(),
+                        TransformConstructionClientControls.gizmoAxisDirection(
+                                TransformConstructionClientState.selection(),
+                                axis), axis, axis == hot);
             }
         } else {
             for (Axis axis : Axis.values()) {
-                renderMoveAxis(pose, lines, group.origin(), axis,
-                        axis == hot);
+                renderMoveAxis(pose, lines, group.origin(),
+                        TransformConstructionClientControls.gizmoAxisDirection(
+                                TransformConstructionClientState.selection(),
+                                axis), axis, axis == hot);
             }
         }
     }
 
     private static void renderMoveAxis(PoseStack pose, VertexConsumer lines,
-            Vec3 origin, Axis axis, boolean hot) {
-        Vec3 direction = switch (axis) {
-            case X -> new Vec3(1.0D, 0.0D, 0.0D);
-            case Y -> new Vec3(0.0D, 1.0D, 0.0D);
-            case Z -> new Vec3(0.0D, 0.0D, 1.0D);
-        };
+            Vec3 origin, Vec3 direction, Axis axis, boolean hot) {
+        direction = TransformMath.safeNormalize(direction,
+                new Vec3(1.0D, 0.0D, 0.0D));
         float[] color = axisColor(axis, hot);
         Vec3 tip = origin.add(direction.scale(1.18D));
         line(pose, lines, origin, tip, color[0], color[1], color[2], 1.0F);
@@ -588,12 +589,9 @@ public final class TransformConstructionClientRenderer {
     }
 
     private static void renderRotationRing(PoseStack pose, VertexConsumer lines,
-            Vec3 center, Axis axis, boolean hot) {
-        Vec3 normal = switch (axis) {
-            case X -> new Vec3(1.0D, 0.0D, 0.0D);
-            case Y -> new Vec3(0.0D, 1.0D, 0.0D);
-            case Z -> new Vec3(0.0D, 0.0D, 1.0D);
-        };
+            Vec3 center, Vec3 normal, Axis axis, boolean hot) {
+        normal = TransformMath.safeNormalize(normal,
+                new Vec3(0.0D, 1.0D, 0.0D));
         Vec3 basisA = Math.abs(normal.y) < 0.85D
                 ? normal.cross(new Vec3(0.0D, 1.0D, 0.0D)).normalize()
                 : new Vec3(1.0D, 0.0D, 0.0D);
@@ -776,7 +774,10 @@ public final class TransformConstructionClientRenderer {
                 : TransformConstructionClientControls.hoveredSurfaceGizmoAxis(
                         minecraft.player);
         for (Axis axis : Axis.values()) {
-            renderMoveAxis(pose, lines, origin, axis, axis == hot);
+            renderMoveAxis(pose, lines, origin,
+                    TransformConstructionClientControls.gizmoAxisDirection(
+                            TransformConstructionClientState.selection(), axis),
+                    axis, axis == hot);
         }
     }
 

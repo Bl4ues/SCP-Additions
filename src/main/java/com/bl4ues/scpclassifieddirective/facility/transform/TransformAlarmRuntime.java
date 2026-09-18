@@ -65,7 +65,7 @@ public final class TransformAlarmRuntime {
                 continue;
             }
             TransformGroup current = original;
-            boolean groupChanged = false;
+            List<TransformGroup.GridPos> changedCells = new ArrayList<>();
             for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                     : original.cells().entrySet()) {
                 BlockState state = entry.getValue();
@@ -81,16 +81,18 @@ public final class TransformAlarmRuntime {
                     current = current.withCell(entry.getKey(), updated);
                     TransformConstructionNetwork.broadcastGroupCell(level,
                             original.id(), entry.getKey(), updated);
-                    groupChanged = true;
+                    changedCells.add(entry.getKey());
                 }
                 if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
                     playLoop(level, center);
                 }
             }
-            if (groupChanged) {
+            if (!changedCells.isEmpty()) {
                 data.putGroupState(current);
-                TransformConstructionManager.refreshGroupRuntime(
-                        level.getServer(), original.id());
+                for (TransformGroup.GridPos cell : changedCells) {
+                    TransformConstructionManager.refreshGroupCellRuntime(
+                            level.getServer(), original.id(), cell);
+                }
                 changed = true;
             }
         }
@@ -106,7 +108,8 @@ public final class TransformAlarmRuntime {
                 continue;
             }
             ConstructionSurface current = original;
-            boolean surfaceChanged = false;
+            List<ConstructionSurface.SurfaceSlot> changedSlots =
+                    new ArrayList<>();
             for (Map.Entry<ConstructionSurface.SurfaceSlot,
                     ConstructionSurface.SurfaceAttachment> entry
                     : original.attachments().entrySet()) {
@@ -126,16 +129,18 @@ public final class TransformAlarmRuntime {
                             attachment.deform());
                     TransformConstructionNetwork.broadcastSurfaceSlot(level,
                             original.id(), slot, updated, attachment.deform());
-                    surfaceChanged = true;
+                    changedSlots.add(slot);
                 }
                 if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
                     playLoop(level, center);
                 }
             }
-            if (surfaceChanged) {
+            if (!changedSlots.isEmpty()) {
                 data.putSurfaceState(current);
-                TransformConstructionManager.refreshSurfaceRuntime(
-                        level.getServer(), original.id());
+                for (ConstructionSurface.SurfaceSlot slot : changedSlots) {
+                    TransformConstructionManager.refreshSurfaceSlotRuntime(
+                            level.getServer(), original.id(), slot);
+                }
                 changed = true;
             }
         }

@@ -16,6 +16,9 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Conservative redstone adapter for ordinary transformed blocks whose state is
@@ -26,6 +29,8 @@ import java.util.Map;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TransformPoweredBlockRuntime {
     private static final int UPDATE_INTERVAL = 2;
+    private static final Map<MinecraftServer, PoweredIndex> INDEXES =
+            new WeakHashMap<>();
 
     private TransformPoweredBlockRuntime() {
     }
@@ -35,80 +40,116 @@ public final class TransformPoweredBlockRuntime {
         if (event.phase != TickEvent.Phase.END) return;
         MinecraftServer server = event.getServer();
         if (server.getTickCount() % UPDATE_INTERVAL != 0) return;
-        TransformConstructionSavedData data = TransformConstructionSavedData.get(
-                server);
-        for (ServerLevel level : server.getAllLevels()) {
-            updateGroups(level, data);
-            updateSurfaces(level, data);
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        PoweredIndex index = INDEXES.get(server);
+        if (index == null || index.revision() != data.revision()) {
+            index = PoweredIndex.build(data);
+            INDEXES.put(server, index);
         }
-    }
 
-    private static boolean updateGroups(ServerLevel level,
-            TransformConstructionSavedData data) {
-        boolean changed = false;
-        for (TransformGroup original : data.groups()) {
-            if (!original.dimension().equals(level.dimension().location())) continue;
-            TransformGroup next = original;
-            List<TransformGroup.GridPos> changedCells = new ArrayList<>();
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : original.cells().entrySet()) {
-                BlockState state = entry.getValue();
-                if (!eligible(state)) continue;
-                boolean powered = TransformPowerQuery.powered(
-                        level, original, entry.getKey());
-                BlockState updated = poweredState(state, powered);
-                if (updated.equals(state)) continue;
-                next = next.withCell(entry.getKey(), updated);
-                TransformConstructionNetwork.broadcastGroupCell(level,
-                        original.id(), entry.getKey(), updated);
-                changedCells.add(entry.getKey());
-            }
-            if (!changedCells.isEmpty()) {
-                data.putGroupState(next);
-                for (TransformGroup.GridPos cell : changedCells) {
-                    TransformConstructionManager.refreshGroupCellRuntime(
-                            level.getServer(), original.id(), cell);
-                }
-                changed = true;
-            }
+        for (GroupRef ref : index.groups()) {
+            TransformGroup group = data.group(ref.groupId());
+            if (group == null) continue;
+            BlockState state = group.cells().get(ref.cell());
+            if (!eligible(state)) continue;
+            ServerLevel level = level(server, group.dimension());
+            if (level == null) continue;
+            boolean powered = TransformPowerQuery.powered(
+                    level, group, ref.cell());
+            BlockState updated = poweredState(state, powered);
+            if (updated.equals(state)) continue;
+            data.putGroupState(group.withCell(ref.cell(), updated));
+            TransformConstructionNetwork.broadcastGroupCell(level,
+                    group.id(), ref.cell(), updated);
+            TransformConstructionManager.refreshGroupCellRuntime(
+                    server, group.id(), ref.cell());
         }
-        return changed;
-    }
 
-    private static boolean updateSurfaces(ServerLevel level,
-            TransformConstructionSavedData data) {
-        boolean changed = false;
-        for (ConstructionSurface original : data.surfaces()) {
-            if (!original.dimension().equals(level.dimension().location())) continue;
-            ConstructionSurface next = original;
-            List<ConstructionSurface.SurfaceSlot> changedSlots =
-                    new ArrayList<>();
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : original.attachments().entrySet()) {
-                BlockState state = entry.getValue().state();
-                if (!eligible(state)) continue;
-                ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                boolean powered = TransformPowerQuery.powered(
-                        level, original, slot);
-                BlockState updated = poweredState(state, powered);
-                if (updated.equals(state)) continue;
-                boolean deform = entry.getValue().deform();
-                next = next.withAttachment(slot, updated, deform);
+        for (SurfaceRef ref : index.surfaces()) {
+            ConstructionSurface surface = data.surface(ref.surfaceId());
+            if (surface == null) continue;
+            ConstructionSurface.SurfaceAttachment attachment =
+                    ref.normalSign() == 0
+                            ? surface.attachments().get(ref.slot())
+                            : surface.overlay(ref.slot(), ref.normalSign());
+            if (attachment == null || !eligible(attachment.state())) continue;
+            ServerLevel level = level(server, surface.dimension());
+            if (level == null) continue;
+            boolean powered = TransformPowerQuery.powered(
+                    level, surface, ref.slot());
+            BlockState updated = poweredState(attachment.state(), powered);
+            if (updated.equals(attachment.state())) continue;
+
+            ConstructionSurface next;
+            if (ref.normalSign() == 0) {
+                next = surface.withAttachment(ref.slot(), updated,
+                        attachment.deform());
                 TransformConstructionNetwork.broadcastSurfaceSlot(level,
-                        original.id(), slot, updated, deform);
-                changedSlots.add(slot);
+                        surface.id(), ref.slot(), updated, attachment.deform());
+            } else {
+                next = surface.withOverlay(ref.slot(), ref.normalSign(),
+                        updated, attachment.deform());
+                TransformConstructionNetwork.broadcastSurfaceOverlay(level,
+                        surface.id(), ref.slot(), ref.normalSign(), updated,
+                        attachment.deform());
             }
-            if (!changedSlots.isEmpty()) {
-                data.putSurfaceState(next);
-                for (ConstructionSurface.SurfaceSlot slot : changedSlots) {
-                    TransformConstructionManager.refreshSurfaceSlotRuntime(
-                            level.getServer(), original.id(), slot);
-                }
-                changed = true;
-            }
+            data.putSurfaceState(next);
+            TransformConstructionManager.refreshSurfaceSlotRuntime(
+                    server, surface.id(), ref.slot());
         }
-        return changed;
+    }
+
+    private static ServerLevel level(MinecraftServer server,
+            ResourceLocation dimension) {
+        for (ServerLevel level : server.getAllLevels()) {
+            if (dimension.equals(level.dimension().location())) return level;
+        }
+        return null;
+    }
+
+    private record GroupRef(UUID groupId, TransformGroup.GridPos cell) {
+    }
+
+    private record SurfaceRef(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+    }
+
+    private record PoweredIndex(long revision, List<GroupRef> groups,
+            List<SurfaceRef> surfaces) {
+        private static PoweredIndex build(TransformConstructionSavedData data) {
+            List<GroupRef> groups = new ArrayList<>();
+            List<SurfaceRef> surfaces = new ArrayList<>();
+            for (TransformGroup group : data.groups()) {
+                for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                        : group.cells().entrySet()) {
+                    if (eligible(entry.getValue())) {
+                        groups.add(new GroupRef(group.id(), entry.getKey()));
+                    }
+                }
+            }
+            for (ConstructionSurface surface : data.surfaces()) {
+                for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                        ConstructionSurface.SurfaceAttachment> entry
+                        : surface.attachments().entrySet()) {
+                    if (eligible(entry.getValue().state())) {
+                        surfaces.add(new SurfaceRef(surface.id(),
+                                entry.getKey(), 0));
+                    }
+                }
+                for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                        ConstructionSurface.SurfaceAttachment> entry
+                        : surface.overlays().entrySet()) {
+                    if (eligible(entry.getValue().state())) {
+                        surfaces.add(new SurfaceRef(surface.id(),
+                                entry.getKey().slot(),
+                                entry.getKey().normalSign()));
+                    }
+                }
+            }
+            return new PoweredIndex(data.revision(), List.copyOf(groups),
+                    List.copyOf(surfaces));
+        }
     }
 
     private static boolean eligible(BlockState state) {

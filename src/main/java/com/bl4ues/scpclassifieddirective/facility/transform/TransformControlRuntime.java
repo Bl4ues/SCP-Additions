@@ -44,9 +44,11 @@ public final class TransformControlRuntime {
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || event.getHand() != InteractionHand.MAIN_HAND
                 || !(event.getLevel() instanceof ServerLevel level)
-                || event.getItemStack().getItem() instanceof BlockItem
-                || !level.getBlockState(event.getPos()).is(
-                        TransformConstructionModule.getProxy())) return;
+                || event.getItemStack().getItem() instanceof BlockItem) return;
+
+        // A transformed control may share a vanilla cell and therefore have no
+        // proxy block at all. Resolve the authored control from the actual hit
+        // point instead of making proxy existence a prerequisite for use.
         ControlHit hit = nearest(level, event.getHitVec().getLocation());
         if (hit == null) return;
         BlockState state = hit.state();

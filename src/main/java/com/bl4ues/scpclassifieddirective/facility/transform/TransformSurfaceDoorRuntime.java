@@ -242,9 +242,13 @@ public final class TransformSurfaceDoorRuntime {
         TransformConstructionSavedData.get(level.getServer()).putSurfaceState(next);
         TransformConstructionNetwork.broadcastSurfaceSlot(level, surface.id(), slot,
                 state, previous.deform());
-        if (refreshCollision) {
-            TransformConstructionManager.refreshSurfaceRuntime(
-                    level.getServer(), surface.id());
+        boolean passabilityChanged = FacilityModule.isFacilityDoor(state)
+                && FacilityModule.isFacilityDoor(previous.state())
+                && FacilityModule.isDoorPassable(state)
+                != FacilityModule.isDoorPassable(previous.state());
+        if (refreshCollision || passabilityChanged) {
+            TransformConstructionManager.refreshSurfaceSlotRuntime(
+                    level.getServer(), surface.id(), slot);
         }
     }
 

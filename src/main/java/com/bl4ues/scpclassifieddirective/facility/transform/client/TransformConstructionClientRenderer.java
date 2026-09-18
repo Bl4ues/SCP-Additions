@@ -115,18 +115,22 @@ public final class TransformConstructionClientRenderer {
         if (offGridTool || surfaceTool || mappingTool || showSelectedGroup
                 || showSelectedSurface) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-            if (offGridTool || showSelectedGroup) {
-                for (TransformGroup group : groups) {
-                    if (showSelectedGroup && !offGridTool
-                            && !group.id().equals(selection.id())) continue;
-                    renderGroupGrid(pose, lines, group, camera);
+            if ((offGridTool || showSelectedGroup)
+                    && selection != null
+                    && selection.type() == SelectionType.GROUP) {
+                TransformGroup selectedGroup =
+                        TransformConstructionClientState.group(selection.id());
+                if (selectedGroup != null) {
+                    renderGroupGrid(pose, lines, selectedGroup, camera);
                 }
             }
-            if (surfaceTool || showSelectedSurface) {
-                for (ConstructionSurface surface : surfaces) {
-                    if (showSelectedSurface && !surfaceTool
-                            && !surface.id().equals(selection.id())) continue;
-                    renderSurfaceGrid(pose, lines, surface, camera);
+            if ((surfaceTool || showSelectedSurface)
+                    && selection != null
+                    && selection.type() == SelectionType.SURFACE) {
+                ConstructionSurface selectedSurface =
+                        TransformConstructionClientState.surface(selection.id());
+                if (selectedSurface != null) {
+                    renderSurfaceGrid(pose, lines, selectedSurface, camera);
                 }
             } else if (mappingTool) {
                 for (ConstructionSurface surface : surfaces) {

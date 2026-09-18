@@ -167,6 +167,40 @@ public final class TransformConstructionClientState {
         return pos == null ? null : proxyCells.get(pos.asLong());
     }
 
+    public static void previewGroup(TransformGroup replacement) {
+        if (replacement == null || dimension == null
+                || !dimension.equals(replacement.dimension())) return;
+        ArrayList<TransformGroup> next = new ArrayList<>(groups);
+        for (int index = 0; index < next.size(); index++) {
+            if (next.get(index).id().equals(replacement.id())) {
+                next.set(index, replacement);
+                groups = List.copyOf(next);
+                return;
+            }
+        }
+        next.add(replacement);
+        groups = List.copyOf(next);
+    }
+
+    public static void previewSurface(ConstructionSurface replacement) {
+        if (replacement == null || dimension == null
+                || !dimension.equals(replacement.dimension())) return;
+        ArrayList<ConstructionSurface> next = new ArrayList<>(surfaces);
+        for (int index = 0; index < next.size(); index++) {
+            if (next.get(index).id().equals(replacement.id())) {
+                next.set(index, replacement);
+                surfaces = List.copyOf(next);
+                return;
+            }
+        }
+        next.add(replacement);
+        surfaces = List.copyOf(next);
+    }
+
+    public static void commitPreviewGeometry() {
+        rebuildProxyCells();
+    }
+
     public static void upsertGroup(TransformGroup replacement) {
         if (replacement == null || dimension == null
                 || !dimension.equals(replacement.dimension())) return;

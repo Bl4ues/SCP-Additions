@@ -5,7 +5,9 @@ import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModItems;
 import com.bl4ues.scpclassifieddirective.safezone.network.SafeZoneNetwork;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -15,6 +17,19 @@ import net.minecraftforge.fml.common.Mod;
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class SafeZoneToolClientEvents {
     private SafeZoneToolClientEvents() {
+    }
+
+    @SubscribeEvent
+    public static void onAttack(InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isAttack()) return;
+        var player = Minecraft.getInstance().player;
+        if (player != null && player.canUseGameMasterBlocks()
+                && (player.getMainHandItem().is(
+                        ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get())
+                || player.getOffhandItem().is(
+                        ScpClassifiedDirectiveModItems.SAFE_ZONE_TOOL.get()))) {
+            event.setCanceled(true);
+        }
     }
 
     @SubscribeEvent

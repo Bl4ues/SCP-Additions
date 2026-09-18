@@ -70,12 +70,11 @@ public final class TransformConstructionManager {
         return player != null && player.isCreative();
     }
 
-    public static TransformGroup createGroup(ServerPlayer player, Vec3 hit,
+    public static TransformGroup createGroup(ServerPlayer player, BlockPos clicked,
             Direction face) {
-        if (!canEdit(player) || hit == null || face == null
+        if (!canEdit(player) || clicked == null || face == null
                 || !(player.level() instanceof ServerLevel level)) return null;
-        Vec3 normal = Vec3.atLowerCornerOf(face.getNormal());
-        Vec3 origin = hit.add(normal.scale(0.5005D));
+        Vec3 origin = Vec3.atCenterOf(clicked.relative(face));
         TransformGroup group = TransformGroup.empty(level.dimension().location(),
                 origin);
         if (!canOccupy(level, group, null)) {
@@ -89,6 +88,16 @@ public final class TransformConstructionManager {
                 "Off-grid grid created. Place a block on the green cell, or select it with the tool to transform it."),
                 true);
         return group;
+    }
+
+    /** Compatibility entry point for older callers that only have a hit point. */
+    public static TransformGroup createGroup(ServerPlayer player, Vec3 hit,
+            Direction face) {
+        if (hit == null || face == null) return null;
+        Vec3 normal = Vec3.atLowerCornerOf(face.getNormal());
+        BlockPos clicked = BlockPos.containing(hit.subtract(
+                normal.scale(1.0E-4D)));
+        return createGroup(player, clicked, face);
     }
 
     public static void selectSurfacePoint(ServerPlayer player, Vec3 hit) {

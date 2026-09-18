@@ -15,6 +15,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformCons
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -25,6 +26,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -39,6 +41,7 @@ public final class TransformConstructionClientControls {
     private static final double HANDLE_BASE_RADIUS = 0.24D;
     private static final double HANDLE_MAX_DISTANCE = 32.0D;
     private static DragState drag;
+    private static boolean attackLatch;
 
     private TransformConstructionClientControls() {
     }
@@ -81,6 +84,13 @@ public final class TransformConstructionClientControls {
         if (player == null || minecraft.screen != null || !player.isCreative()
                 || !holdingEditorTool(player)) return;
 
+        // LMB is an editor gesture for these tools, never a normal attack.
+        // Cancel every generated attack trigger, including air hits, and only
+        // process the press edge once while the mouse is held.
+        event.setCanceled(true);
+        if (attackLatch) return;
+        attackLatch = true;
+
         boolean selectedSurface = false;
         if (holdingSurfaceTool(player)
                 && TransformSurfaceAuthoringState.step() == 0) {
@@ -106,12 +116,22 @@ public final class TransformConstructionClientControls {
             }
         }
 
-        if (selectedSurface
-                || TransformConstructionClientState.selection() != null) {
-            // Editing uses the attack binding as a drag button. Consuming it
-            // here prevents the arm from punching the air every client tick.
-            event.setCanceled(true);
-        }
+        // Cancellation is unconditional above while an editor tool is held.
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onScreenOpening(ScreenEvent.Opening event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (!(event.getNewScreen() instanceof PauseScreen)
+                || player == null || !player.isCreative()
+                || !holdingSurfaceTool(player)
+                || !TransformSurfaceAuthoringState.active()) return;
+        finishDrag();
+        TransformSurfaceAuthoringState.clear();
+        TransformConstructionNetwork.cancelSurfaceAuthoring();
+        status("Surface selection cancelled");
+        event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -214,6 +234,7 @@ public final class TransformConstructionClientControls {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null) return;
+        if (!minecraft.options.keyAttack.isDown()) attackLatch = false;
 
         updateSurfaceHover(player);
 
@@ -312,7 +333,7 @@ public final class TransformConstructionClientControls {
             case Y -> ry += (float) delta;
             case Z -> rz += (float) delta;
         }
-        TransformConstructionClientState.upsertGroup(base.withTransform(
+        TransformConstructionClientState.previewGroup(base.withTransform(
                 base.origin(), rx, ry, rz));
     }
 
@@ -550,7 +571,7 @@ public final class TransformConstructionClientControls {
         TransformGroup base = state.baseGroup();
         Vec3 origin = base.origin().add(movement);
         if (snap) origin = snap16(origin);
-        TransformConstructionClientState.upsertGroup(base.withTransform(
+        TransformConstructionClientState.previewGroup(base.withTransform(
                 origin, base.rotationX(), base.rotationY(), base.rotationZ()));
     }
 
@@ -645,7 +666,8 @@ public final class TransformConstructionClientControls {
 
         ConstructionSurface next = surface.withGeometry(bs, be, ts, te, curve,
                 heightCurve);
-        TransformConstructionClientState.upsertSurface(next);
+        if (send) TransformConstructionClientState.upsertSurface(next);
+        else TransformConstructionClientState.previewSurface(next);
         if (send) {
             TransformConstructionNetwork.updateSurface(surface.id(), bs, be, ts,
                     te, curve, heightCurve);
@@ -681,6 +703,7 @@ public final class TransformConstructionClientControls {
                 }
             }
         }
+        TransformConstructionClientState.commitPreviewGeometry();
         drag = null;
     }
 

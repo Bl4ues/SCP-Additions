@@ -32,7 +32,9 @@ public final class OffGridConstructionToolItem extends Item {
         if (!TransformConstructionManager.canEdit(player)) {
             return InteractionResult.FAIL;
         }
-        TransformConstructionManager.createGroup(player, context.getClickLocation(),
+        // New grids start exactly centered in the adjacent vanilla cell. The
+        // user gets a predictable 1x1x1 reference before applying any offset.
+        TransformConstructionManager.createGroup(player, context.getClickedPos(),
                 context.getClickedFace());
         return InteractionResult.CONSUME;
     }

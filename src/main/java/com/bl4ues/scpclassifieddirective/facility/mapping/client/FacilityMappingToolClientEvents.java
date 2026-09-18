@@ -8,6 +8,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -17,23 +18,34 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class FacilityMappingToolClientEvents {
+    private static boolean attackLatch;
+
     private FacilityMappingToolClientEvents() {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onInteractionKeyMapping(
             InputEvent.InteractionKeyMappingTriggered event) {
-        if (!event.isAttack() || !FacilityMappingGeometryEditorClient.isEditing()) {
-            return;
-        }
+        if (!event.isAttack()) return;
         var player = Minecraft.getInstance().player;
         if (player == null || !player.isCreative()
                 || !player.getMainHandItem().is(FacilityMappingItems.getTool())
                 && !player.getOffhandItem().is(FacilityMappingItems.getTool())) {
             return;
         }
-        FacilityMappingGeometryEditorClient.selectVertexUnderCrosshair();
         event.setCanceled(true);
+        if (attackLatch) return;
+        attackLatch = true;
+        if (FacilityMappingGeometryEditorClient.isEditing()) {
+            FacilityMappingGeometryEditorClient.selectVertexUnderCrosshair();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!minecraft.options.keyAttack.isDown()) attackLatch = false;
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

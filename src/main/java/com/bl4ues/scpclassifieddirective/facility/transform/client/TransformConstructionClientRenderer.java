@@ -668,6 +668,7 @@ public final class TransformConstructionClientRenderer {
         if (active) {
             renderAlignedBoundary(pose, lines, surface);
             renderHandles(pose, lines, surface, selected.handle());
+            renderSurfaceGizmo(pose, lines, surface, selected.handle());
             renderSurfaceSides(pose, lines, surface);
         }
     }
@@ -705,6 +706,20 @@ public final class TransformConstructionClientRenderer {
         Vec3 interior = center.subtract(normal.scale(0.55D));
         line(pose, lines, center, placement, 1.0F, 0.30F, 0.18F, 0.95F);
         line(pose, lines, center, interior, 0.20F, 1.0F, 0.30F, 0.95F);
+    }
+
+    private static void renderSurfaceGizmo(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface,
+            SurfaceHandle handle) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Vec3 origin = TransformConstructionClientControls.handlePosition(
+                surface, handle);
+        Axis hot = minecraft.player == null ? null
+                : TransformConstructionClientControls.hoveredSurfaceGizmoAxis(
+                        minecraft.player);
+        for (Axis axis : Axis.values()) {
+            renderMoveAxis(pose, lines, origin, axis, axis == hot);
+        }
     }
 
     private static void renderHandles(PoseStack pose, VertexConsumer lines,

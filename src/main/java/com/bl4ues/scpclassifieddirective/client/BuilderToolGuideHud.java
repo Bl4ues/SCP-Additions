@@ -147,13 +147,12 @@ public final class BuilderToolGuideHud {
         if (step == 0) {
             Selection selection = TransformConstructionClientState.selection();
             if (selection != null && selection.type() == SelectionType.SURFACE) {
-                lines.add(new Line("LMB", "select / drag handle"));
-                if (selection.handle() == SurfaceHandle.CENTER) {
-                    lines.add(new Line("Shift", "snap curve handle to 1/16"));
-                } else {
-                    lines.add(Line.axes("choose movement axis"));
-                    lines.add(new Line("Shift", "snap handle to 1/16"));
-                }
+                lines.add(new Line("LMB",
+                        "select handle / drag colored arrow"));
+                lines.add(new Line("Shift",
+                        selection.handle() == SurfaceHandle.CENTER
+                                ? "snap curve handle to 1/16"
+                                : "snap handle to 1/16"));
                 lines.add(new Line("C", TransformConstructionClientState.surfaceCurveAxis()
                         == TransformConstructionClientState.SurfaceCurveAxis.WIDTH
                         ? "curve axis: width" : "curve axis: height"));

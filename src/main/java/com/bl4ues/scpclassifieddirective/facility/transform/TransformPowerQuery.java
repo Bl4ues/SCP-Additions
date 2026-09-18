@@ -52,9 +52,7 @@ public final class TransformPowerQuery {
                     new ConstructionSurface.SurfaceSlot(
                             consumer.column() + offset[0],
                             consumer.row() + offset[1]);
-            ConstructionSurface.SurfaceAttachment attachment =
-                    surface.attachments().get(neighbor);
-            if (attachment != null && source(attachment.state())) return true;
+            if (sourceAt(surface, neighbor)) return true;
         }
         double u = (consumer.column() + 0.5D) / surface.columns();
         double v = (consumer.row() + 0.5D) / surface.rows();
@@ -148,8 +146,27 @@ public final class TransformPowerQuery {
     private static boolean source(BlockState state) {
         if (state == null || state.isAir()) return false;
         if (state.is(Blocks.REDSTONE_BLOCK)) return true;
+        TransformWallFixturePlacement.DoorButtonPhase buttonPhase =
+                TransformWallFixturePlacement.doorButtonPhase(state);
+        if (buttonPhase == TransformWallFixturePlacement.DoorButtonPhase.OPENING
+                || buttonPhase == TransformWallFixturePlacement.DoorButtonPhase.OPEN) {
+            return true;
+        }
         return state.hasProperty(BlockStateProperties.POWERED)
                 && state.getValue(BlockStateProperties.POWERED);
+    }
+
+    private static boolean sourceAt(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot) {
+        ConstructionSurface.SurfaceAttachment main =
+                surface.attachments().get(slot);
+        if (main != null && source(main.state())) return true;
+        ConstructionSurface.SurfaceAttachment positive =
+                surface.overlay(slot, 1);
+        if (positive != null && source(positive.state())) return true;
+        ConstructionSurface.SurfaceAttachment negative =
+                surface.overlay(slot, -1);
+        return negative != null && source(negative.state());
     }
 
     private record SourceOwner(ResourceLocation dimension, UUID id,
@@ -197,8 +214,13 @@ public final class TransformPowerQuery {
 
         private void replaceSurface(ConstructionSurface surface) {
             removeOwner(surface.dimension(), surface.id(), true);
-            for (ConstructionSurface.SurfaceSlot slot
-                    : surface.attachments().keySet()) {
+            java.util.LinkedHashSet<ConstructionSurface.SurfaceSlot> slots =
+                    new java.util.LinkedHashSet<>(surface.attachments().keySet());
+            for (ConstructionSurface.SurfaceOverlaySlot overlay
+                    : surface.overlays().keySet()) {
+                slots.add(overlay.slot());
+            }
+            for (ConstructionSurface.SurfaceSlot slot : slots) {
                 replaceSurfaceSlot(surface, slot);
             }
         }
@@ -206,17 +228,29 @@ public final class TransformPowerQuery {
         private void replaceSurfaceSlot(ConstructionSurface surface,
                 ConstructionSurface.SurfaceSlot slot) {
             SourceOwner owner = SourceOwner.surface(surface, slot);
-            ConstructionSurface.SurfaceAttachment attachment =
+            List<SourcePoint> points = new ArrayList<>(3);
+            ConstructionSurface.SurfaceAttachment main =
                     surface.attachments().get(slot);
-            if (attachment == null || !source(attachment.state())) {
-                replace(owner, List.of());
-                return;
+            if (main != null && source(main.state())) {
+                points.add(new SourcePoint(surface.dimension(),
+                        TransformSurfaceGeometry.cellCenter(surface, slot,
+                                1, false)));
             }
-            double u = (slot.column() + 0.5D) / surface.columns();
-            double v = (slot.row() + 0.5D) / surface.rows();
-            replace(owner, List.of(new SourcePoint(surface.dimension(),
-                    surface.gridPoint(u, v)
-                            .add(surface.gridNormal(u, v).scale(0.5D)))));
+            ConstructionSurface.SurfaceAttachment positive =
+                    surface.overlay(slot, 1);
+            if (positive != null && source(positive.state())) {
+                points.add(new SourcePoint(surface.dimension(),
+                        TransformSurfaceGeometry.cellCenter(surface, slot,
+                                1, true)));
+            }
+            ConstructionSurface.SurfaceAttachment negative =
+                    surface.overlay(slot, -1);
+            if (negative != null && source(negative.state())) {
+                points.add(new SourcePoint(surface.dimension(),
+                        TransformSurfaceGeometry.cellCenter(surface, slot,
+                                -1, true)));
+            }
+            replace(owner, points);
         }
 
         private void removeOwner(ResourceLocation dimension, UUID id,

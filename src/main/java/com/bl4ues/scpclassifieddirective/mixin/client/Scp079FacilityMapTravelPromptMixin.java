@@ -37,6 +37,9 @@ public abstract class Scp079FacilityMapTravelPromptMixin {
                 (Scp079FacilityMapScreenAccessor) (Object) this;
         if (access.scpclassifieddirective$isLeaveConfirmationOpen()
                 || access.scpclassifieddirective$isFloorMenuOpen()) return;
+        // Door actions occupy the same top-right contextual slot and have
+        // priority when a door marker overlaps a camera room.
+        if (((Scp079FacilityMapScreen) (Object) this).doorPromptActive()) return;
 
         FacilityRoomSnapshot target = access.scpclassifieddirective$hoveredRoom();
         if (target == null

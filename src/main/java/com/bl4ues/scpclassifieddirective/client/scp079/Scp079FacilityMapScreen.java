@@ -396,9 +396,19 @@ public final class Scp079FacilityMapScreen extends Screen {
                 }
             }
             intersections.sort(Double::compare);
+            int clipLeft = MAP_MARGIN_X;
+            int clipRight = graphics.guiWidth() - MAP_MARGIN_X;
             for (int index = 0; index + 1 < intersections.size(); index += 2) {
-                int x0 = transform.sx(intersections.get(index));
-                int x1 = transform.sx(intersections.get(index + 1));
+                int rawX0 = transform.sx(intersections.get(index));
+                int rawX1 = transform.sx(intersections.get(index + 1));
+                int left = Math.min(rawX0, rawX1);
+                int right = Math.max(rawX0, rawX1);
+                if (right < clipLeft || left > clipRight) continue;
+                int x0 = Mth.clamp(left, clipLeft, clipRight);
+                int x1 = Mth.clamp(right, clipLeft, clipRight);
+                if (x1 == x0 && right > left) {
+                    x1 = Math.min(clipRight, x0 + 1);
+                }
                 if (x1 > x0) graphics.fill(x0, y, x1, y + 1, fill);
             }
         }
@@ -435,18 +445,20 @@ public final class Scp079FacilityMapScreen extends Screen {
             Vec3 b = center.add(span.scale(half));
             int color = 0xFFB8D8E1;
             if (doorOpen(marker)) {
+                // Open doorway: two short jamb-side leaves with a visible gap.
+                // Closed doorway: one continuous barrier across the opening.
+                double leafInnerHalf = marker.width() * 0.24D;
+                Vec3 leftInner = center.subtract(span.scale(leafInnerHalf));
+                Vec3 rightInner = center.add(span.scale(leafInnerHalf));
                 drawDoorLine(graphics, transform.sx(a.x),
-                        transform.sy(a.z), transform.sx(b.x),
+                        transform.sy(a.z), transform.sx(leftInner.x),
+                        transform.sy(leftInner.z), color);
+                drawDoorLine(graphics, transform.sx(rightInner.x),
+                        transform.sy(rightInner.z), transform.sx(b.x),
                         transform.sy(b.z), color);
             } else {
-                double gapHalf = marker.width() * 0.14D;
-                Vec3 left = center.subtract(span.scale(gapHalf));
-                Vec3 right = center.add(span.scale(gapHalf));
                 drawDoorLine(graphics, transform.sx(a.x),
-                        transform.sy(a.z), transform.sx(left.x),
-                        transform.sy(left.z), color);
-                drawDoorLine(graphics, transform.sx(right.x),
-                        transform.sy(right.z), transform.sx(b.x),
+                        transform.sy(a.z), transform.sx(b.x),
                         transform.sy(b.z), color);
             }
         }

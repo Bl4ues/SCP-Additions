@@ -280,7 +280,7 @@ public final class TransformConstructionClientRenderer {
         if (cached == null) {
             cached = buildGroupMesh(minecraft, group);
             GROUP_MESHES.put(group.id(), cached);
-        } else if (!cached.cells().equals(group.cells())) {
+        } else if (cached.source() != group) {
             cached = updateGroupMesh(minecraft, group, cached);
             GROUP_MESHES.put(group.id(), cached);
         }
@@ -337,7 +337,8 @@ public final class TransformConstructionClientRenderer {
             }
         }
         if (dirty.isEmpty()) {
-            return new CachedGroup(Map.copyOf(group.cells()), cached.batches());
+            return new CachedGroup(group, Map.copyOf(group.cells()),
+                    cached.batches());
         }
 
         Map<GroupBatchKey, CachedGroupBatch> batches = new LinkedHashMap<>();
@@ -349,7 +350,7 @@ public final class TransformConstructionClientRenderer {
             if (rebuilt == null) batches.remove(key);
             else batches.put(key, rebuilt);
         }
-        return new CachedGroup(Map.copyOf(group.cells()),
+        return new CachedGroup(group, Map.copyOf(group.cells()),
                 List.copyOf(batches.values()));
     }
 
@@ -368,7 +369,7 @@ public final class TransformConstructionClientRenderer {
             CachedGroupBatch batch = buildGroupBatch(minecraft, group, key);
             if (batch != null) batches.add(batch);
         }
-        return new CachedGroup(Map.copyOf(group.cells()),
+        return new CachedGroup(group, Map.copyOf(group.cells()),
                 List.copyOf(batches));
     }
 
@@ -451,12 +452,15 @@ public final class TransformConstructionClientRenderer {
                 > (192.0D + radius) * (192.0D + radius)) return;
 
         CachedSurface cached = SURFACE_MESHES.get(surface.id());
-        if (cached == null || !sameSurfaceGeometry(cached.surface(), surface)) {
+        if (cached == null) {
             cached = buildSurfaceMesh(minecraft, surface);
             SURFACE_MESHES.put(surface.id(), cached);
-        } else if (!cached.surface().attachments().equals(
-                surface.attachments())) {
-            cached = updateSurfaceMesh(minecraft, surface, cached);
+        } else if (cached.surface() != surface) {
+            if (!sameSurfaceGeometry(cached.surface(), surface)) {
+                cached = buildSurfaceMesh(minecraft, surface);
+            } else {
+                cached = updateSurfaceMesh(minecraft, surface, cached);
+            }
             SURFACE_MESHES.put(surface.id(), cached);
         }
         for (CachedSurfaceSlot slot : cached.slots().values()) {
@@ -1137,7 +1141,7 @@ public final class TransformConstructionClientRenderer {
             Map<RenderType, List<PreparedVertex>> layers) {
     }
 
-    private record CachedGroup(
+    private record CachedGroup(TransformGroup source,
             Map<TransformGroup.GridPos, BlockState> cells,
             List<CachedGroupBatch> batches) {
     }

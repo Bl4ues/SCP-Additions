@@ -228,24 +228,31 @@ public final class TransformConstructionClientControls {
     }
 
     private static void tickMoveDrag(LocalPlayer player, Selection selection) {
-        Vec3 axis = dragAxis(selection);
-        Vec3 handle = selection.type() == SelectionType.GROUP
-                ? groupHandle(selection) : surfaceHandle(selection);
-        if (handle == null || axis == null || axis.lengthSqr() < 1.0E-8D) {
-            finishDrag();
-            return;
-        }
-        axis = axis.normalize();
-        double parameter = axisParameter(player.getEyePosition(),
-                player.getViewVector(1.0F), handle, axis);
-        if (!Double.isFinite(parameter)) return;
         if (drag == null || !drag.matches(selection, EditMode.MOVE,
                 TransformConstructionClientState.axis())) {
+            Vec3 axis = dragAxis(selection);
+            Vec3 handle = selection.type() == SelectionType.GROUP
+                    ? groupHandle(selection) : surfaceHandle(selection);
+            if (handle == null || axis == null || axis.lengthSqr() < 1.0E-8D) {
+                finishDrag();
+                return;
+            }
+            axis = axis.normalize();
+            double parameter = axisParameter(player.getEyePosition(),
+                    player.getViewVector(1.0F), handle, axis);
+            if (!Double.isFinite(parameter)) return;
             drag = DragState.begin(selection, EditMode.MOVE,
-                    TransformConstructionClientState.axis(), parameter);
+                    TransformConstructionClientState.axis(), parameter,
+                    handle, axis);
             return;
         }
 
+        // The drag frame is frozen on mouse-down. Recomputing the handle or
+        // surface normal from the preview we just moved creates a feedback
+        // loop, which is visible as jitter on angled/curved construction.
+        double parameter = axisParameter(player.getEyePosition(),
+                player.getViewVector(1.0F), drag.anchor(), drag.dragAxis());
+        if (!Double.isFinite(parameter)) return;
         double delta = parameter - drag.startParameter();
         if (Math.abs(delta - drag.lastDelta()) < 1.0E-5D) return;
         rememberDragIfNeeded();
@@ -273,7 +280,8 @@ public final class TransformConstructionClientControls {
         if (drag == null || !drag.matches(selection, EditMode.ROTATE,
                 TransformConstructionClientState.axis())) {
             drag = DragState.begin(selection, EditMode.ROTATE,
-                    TransformConstructionClientState.axis(), angle);
+                    TransformConstructionClientState.axis(), angle,
+                    group.origin(), axis);
             return;
         }
 
@@ -754,16 +762,18 @@ public final class TransformConstructionClientControls {
 
     private record DragState(Selection selection, EditMode mode, Axis axis,
             double startParameter, double lastDelta, boolean remembered,
-            TransformGroup baseGroup, ConstructionSurface baseSurface) {
+            TransformGroup baseGroup, ConstructionSurface baseSurface,
+            Vec3 anchor, Vec3 dragAxis) {
         private static DragState begin(Selection selection, EditMode mode,
-                Axis axis, double parameter) {
+                Axis axis, double parameter, Vec3 anchor, Vec3 dragAxis) {
             return new DragState(selection, mode, axis, parameter, 0.0D, false,
                     selection.type() == SelectionType.GROUP
                             ? TransformConstructionClientState.group(selection.id())
                             : null,
                     selection.type() == SelectionType.SURFACE
                             ? TransformConstructionClientState.surface(selection.id())
-                            : null);
+                            : null,
+                    anchor, dragAxis == null ? Vec3.ZERO : dragAxis.normalize());
         }
 
         private boolean matches(Selection other, EditMode currentMode,
@@ -776,12 +786,12 @@ public final class TransformConstructionClientControls {
 
         private DragState withLastDelta(double delta) {
             return new DragState(selection, mode, axis, startParameter, delta,
-                    remembered, baseGroup, baseSurface);
+                    remembered, baseGroup, baseSurface, anchor, dragAxis);
         }
 
         private DragState withRemembered() {
             return new DragState(selection, mode, axis, startParameter,
-                    lastDelta, true, baseGroup, baseSurface);
+                    lastDelta, true, baseGroup, baseSurface, anchor, dragAxis);
         }
     }
 }

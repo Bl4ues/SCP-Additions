@@ -448,34 +448,16 @@ public final class Scp079FacilityMapScreen extends Screen {
         hoveredDoor = resolveHoveredDoor(cachedDoorMarkers, transform,
                 mouseX, mouseY);
         for (MapDoorMarker marker : cachedDoorMarkers) {
-            Vec3 span = marker.span();
-            double half = marker.width() * 0.5D;
-            Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
-            Vec3 a = center.subtract(span.scale(half));
-            Vec3 b = center.add(span.scale(half));
             boolean open = doorOpen(marker);
             boolean locked = doorLocked(marker, open);
             boolean hovered = hoveredDoor != null
                     && sameDoor(hoveredDoor, marker);
+            boolean unavailable = !marker.controllable();
             int color = hovered ? 0xFFF2D67C
+                    : unavailable ? 0xFF4C5D64
                     : locked ? 0xFF61747B : 0xFFB8D8E1;
-            if (open && !locked) {
-                // Open doorway: two short jamb-side leaves with a visible gap.
-                // Closed doorway: one continuous barrier across the opening.
-                double leafInnerHalf = marker.width() * 0.24D;
-                Vec3 leftInner = center.subtract(span.scale(leafInnerHalf));
-                Vec3 rightInner = center.add(span.scale(leafInnerHalf));
-                drawDoorLine(graphics, transform.sx(a.x),
-                        transform.sy(a.z), transform.sx(leftInner.x),
-                        transform.sy(leftInner.z), color);
-                drawDoorLine(graphics, transform.sx(rightInner.x),
-                        transform.sy(rightInner.z), transform.sx(b.x),
-                        transform.sy(b.z), color);
-            } else {
-                drawDoorLine(graphics, transform.sx(a.x),
-                        transform.sy(a.z), transform.sx(b.x),
-                        transform.sy(b.z), color);
-            }
+            renderDoorPath(graphics, marker, transform, color,
+                    open && !locked);
             if (marker.requiredLevel() > 0) {
                 renderKeycardLevel(graphics, marker, transform,
                         geometryByRoom, color);
@@ -540,16 +522,18 @@ public final class Scp079FacilityMapScreen extends Screen {
         MapDoorMarker best = null;
         double bestDistance = 9.0D * 9.0D;
         for (MapDoorMarker marker : markers) {
-            Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
-            double half = marker.width() * 0.5D;
-            Vec3 a = center.subtract(marker.span().scale(half));
-            Vec3 b = center.add(marker.span().scale(half));
-            double distance = pointSegmentDistanceSqr(mouseX, mouseY,
-                    transform.sx(a.x), transform.sy(a.z),
-                    transform.sx(b.x), transform.sy(b.z));
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                best = marker;
+            if (!marker.controllable()) continue;
+            List<Vec3> path = doorPath(marker);
+            for (int index = 0; index + 1 < path.size(); index++) {
+                Vec3 a = path.get(index);
+                Vec3 b = path.get(index + 1);
+                double distance = pointSegmentDistanceSqr(mouseX, mouseY,
+                        transform.sx(a.x), transform.sy(a.z),
+                        transform.sx(b.x), transform.sy(b.z));
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = marker;
+                }
             }
         }
         return best;
@@ -603,7 +587,9 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private void renderDoorHoverHelp(GuiGraphics graphics,
             MapDoorMarker marker, int mouseX, int mouseY) {
-        if (marker.source() != DoorSource.NETWORK || marker.pos() == null) {
+        if (!marker.controllable()
+                || marker.source() != DoorSource.NETWORK
+                || marker.pos() == null) {
             return;
         }
         String primary = doorOpen(marker) ? "LMB  CLOSE" : "LMB  OPEN";
@@ -674,11 +660,12 @@ public final class Scp079FacilityMapScreen extends Screen {
             double x = pos.getX() + 0.5D;
             double z = pos.getZ() + 0.5D;
             if (!nearMappedRoom(x, z, geometryByRoom)) continue;
-            result.add(snapMarkerToBoundary(marker(x, z, entry.facing(),
-                    entry.blast() ? 5.0D : 0.94D,
+            MapDoorMarker snapped = snapMarkerToBoundary(marker(x, z,
+                    entry.facing(), entry.blast() ? 5.0D : 0.94D,
                     DoorSource.NETWORK, pos, null, null, null,
-                    entry.open(), entry.requiredLevel(), entry.lockable()),
-                    geometryByRoom));
+                    entry.open(), entry.requiredLevel(), entry.lockable(),
+                    entry.controllable(), List.of()), geometryByRoom);
+            addDoorMarker(result, snapped);
         }
 
         ResourceLocation dimension = minecraft.level.dimension().location();
@@ -697,10 +684,12 @@ public final class Scp079FacilityMapScreen extends Screen {
                 Vec3 facing = TransformMath.rotate(
                         Vec3.atLowerCornerOf(local.getNormal()),
                         group.rotationX(), group.rotationY(), group.rotationZ());
-                result.add(snapMarkerToBoundary(marker(center.x, center.z,
-                        facing, 0.94D, DoorSource.GROUP, null, group.id(),
-                        entry.getKey(), null, FacilityModule.isDoorPassable(state),
-                        0, false), geometryByRoom));
+                MapDoorMarker snapped = snapMarkerToBoundary(marker(
+                        center.x, center.z, facing, 0.94D, DoorSource.GROUP,
+                        null, group.id(), entry.getKey(), null,
+                        FacilityModule.isDoorPassable(state), 0, false,
+                        false, List.of()), geometryByRoom);
+                addDoorMarker(result, snapped);
             }
         }
         for (ConstructionSurface surface
@@ -723,10 +712,12 @@ public final class Scp079FacilityMapScreen extends Screen {
                 Vec3 normal = surface.gridNormal(u, v);
                 Vec3 facing = tangent.scale(local.getStepX())
                         .add(normal.scale(local.getStepZ()));
-                result.add(snapMarkerToBoundary(marker(center.x, center.z,
+                List<Vec3> curvedPath = surfaceDoorPath(surface, slot, v);
+                MapDoorMarker surfaceMarker = marker(center.x, center.z,
                         facing, 0.94D, DoorSource.SURFACE, null, surface.id(),
                         null, slot, FacilityModule.isDoorPassable(state),
-                        0, false), geometryByRoom));
+                        0, false, false, curvedPath);
+                addDoorMarker(result, surfaceMarker);
             }
         }
         return List.copyOf(result);
@@ -745,17 +736,19 @@ public final class Scp079FacilityMapScreen extends Screen {
             Direction facing, double width, DoorSource source, BlockPos pos,
             UUID ownerId, TransformGroup.GridPos groupCell,
             ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen,
-            int requiredLevel, boolean lockable) {
+            int requiredLevel, boolean lockable, boolean controllable,
+            List<Vec3> path) {
         return marker(x, z, Vec3.atLowerCornerOf(facing.getNormal()), width,
                 source, pos, ownerId, groupCell, surfaceSlot, fallbackOpen,
-                requiredLevel, lockable);
+                requiredLevel, lockable, controllable, path);
     }
 
     private static MapDoorMarker marker(double x, double z,
             Vec3 facing, double width, DoorSource source, BlockPos pos,
             UUID ownerId, TransformGroup.GridPos groupCell,
             ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen,
-            int requiredLevel, boolean lockable) {
+            int requiredLevel, boolean lockable, boolean controllable,
+            List<Vec3> path) {
         Vec3 horizontal = new Vec3(facing.x, 0.0D, facing.z);
         if (horizontal.lengthSqr() < 1.0E-9D) {
             horizontal = new Vec3(0.0D, 0.0D, 1.0D);
@@ -765,16 +758,20 @@ public final class Scp079FacilityMapScreen extends Screen {
         Vec3 span = new Vec3(-horizontal.z, 0.0D, horizontal.x);
         return new MapDoorMarker(x, z, span, width, source, pos, ownerId,
                 groupCell, surfaceSlot, fallbackOpen, requiredLevel,
-                lockable);
+                lockable, controllable,
+                path == null ? List.of() : List.copyOf(path));
     }
 
     private static MapDoorMarker snapMarkerToBoundary(
             MapDoorMarker marker,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometries) {
+        if (marker == null) return null;
         Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
         Vec3 span = marker.span().normalize();
-        Vec3 best = null;
-        double bestDistance = 2.75D * 2.75D;
+        Vec3 normal = new Vec3(-span.z, 0.0D, span.x).normalize();
+
+        BoundaryHit best = null;
+        double bestDistance = marker.width() >= 4.0D ? 3.75D : 2.25D;
         for (FacilityRoomOutlineGeometry geometry : geometries.values()) {
             for (List<FacilityFloorPatch.Vertex> contour
                     : geometry.contours()) {
@@ -785,26 +782,143 @@ public final class Scp079FacilityMapScreen extends Screen {
                     Vec3 a = new Vec3(va.x(), 0.0D, va.z());
                     Vec3 b = new Vec3(vb.x(), 0.0D, vb.z());
                     Vec3 edge = b.subtract(a);
-                    if (edge.lengthSqr() < 1.0E-8D) continue;
-                    Vec3 edgeDirection = edge.normalize();
-                    if (Math.abs(edgeDirection.dot(span)) < 0.60D) continue;
-                    double t = Mth.clamp(center.subtract(a).dot(edge)
-                            / edge.lengthSqr(), 0.0D, 1.0D);
-                    Vec3 point = a.add(edge.scale(t));
-                    double distance = point.distanceToSqr(center);
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        best = point;
+                    if (edge.lengthSqr() < 1.0E-10D) continue;
+
+                    BoundaryHit hit = raySegmentIntersection(center, normal,
+                            a, b);
+                    if (hit != null && Math.abs(hit.normalDistance())
+                            <= bestDistance
+                            && (best == null || Math.abs(hit.normalDistance())
+                            < Math.abs(best.normalDistance()))) {
+                        best = hit;
                     }
                 }
             }
         }
-        if (best == null) return marker;
-        return new MapDoorMarker(best.x, best.z, marker.span(),
+
+        // Numerical/floor-polygon seams can miss an exact intersection by a
+        // fraction of a block. Allow only a narrow lateral fallback so a door
+        // can never jump to an unrelated diagonal wall elsewhere in the room.
+        if (best == null) {
+            double bestScore = Double.POSITIVE_INFINITY;
+            for (FacilityRoomOutlineGeometry geometry : geometries.values()) {
+                for (List<FacilityFloorPatch.Vertex> contour
+                        : geometry.contours()) {
+                    for (int index = 0; index < contour.size(); index++) {
+                        FacilityFloorPatch.Vertex va = contour.get(index);
+                        FacilityFloorPatch.Vertex vb = contour.get(
+                                (index + 1) % contour.size());
+                        Vec3 a = new Vec3(va.x(), 0.0D, va.z());
+                        Vec3 b = new Vec3(vb.x(), 0.0D, vb.z());
+                        Vec3 edge = b.subtract(a);
+                        if (edge.lengthSqr() < 1.0E-10D) continue;
+                        double t = Mth.clamp(center.subtract(a).dot(edge)
+                                / edge.lengthSqr(), 0.0D, 1.0D);
+                        Vec3 point = a.add(edge.scale(t));
+                        Vec3 delta = point.subtract(center);
+                        double lateral = Math.abs(delta.dot(span));
+                        double normalDistance = Math.abs(delta.dot(normal));
+                        if (lateral > 0.42D || normalDistance > bestDistance) {
+                            continue;
+                        }
+                        double score = normalDistance + lateral * 3.0D;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            best = new BoundaryHit(point,
+                                    edge.normalize(), delta.dot(normal));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (best == null) return null;
+        Vec3 tangent = best.tangent();
+        return new MapDoorMarker(best.point().x, best.point().z, tangent,
                 marker.width(), marker.source(), marker.pos(),
                 marker.ownerId(), marker.groupCell(), marker.surfaceSlot(),
                 marker.fallbackOpen(), marker.requiredLevel(),
-                marker.lockable());
+                marker.lockable(), marker.controllable(), marker.path());
+    }
+
+    private static BoundaryHit raySegmentIntersection(Vec3 center,
+            Vec3 normal, Vec3 a, Vec3 b) {
+        double rx = normal.x;
+        double rz = normal.z;
+        double sx = b.x - a.x;
+        double sz = b.z - a.z;
+        double denominator = cross2(rx, rz, sx, sz);
+        if (Math.abs(denominator) < 1.0E-9D) return null;
+        double qx = a.x - center.x;
+        double qz = a.z - center.z;
+        double t = cross2(qx, qz, sx, sz) / denominator;
+        double u = cross2(qx, qz, rx, rz) / denominator;
+        if (u < -1.0E-5D || u > 1.00001D) return null;
+        Vec3 point = center.add(normal.scale(t));
+        return new BoundaryHit(point, new Vec3(sx, 0.0D, sz).normalize(), t);
+    }
+
+    private static double cross2(double ax, double az,
+            double bx, double bz) {
+        return ax * bz - az * bx;
+    }
+
+    private static void addDoorMarker(List<MapDoorMarker> result,
+            MapDoorMarker candidate) {
+        if (candidate == null) return;
+        for (MapDoorMarker existing : result) {
+            double dx = existing.x() - candidate.x();
+            double dz = existing.z() - candidate.z();
+            if (dx * dx + dz * dz > 0.45D * 0.45D) continue;
+            if (Math.abs(existing.span().normalize().dot(
+                    candidate.span().normalize())) < 0.72D) continue;
+            // Network entries are authoritative for ordinary world doors and
+            // already carry control/keycard state. They win over any coincident
+            // transformed visual marker.
+            return;
+        }
+        result.add(candidate);
+    }
+
+    private static List<Vec3> surfaceDoorPath(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, double v) {
+        int samples = 8;
+        double u0 = slot.column() / (double) surface.columns();
+        double u1 = (slot.column() + 1.0D) / surface.columns();
+        List<Vec3> path = new ArrayList<>(samples + 1);
+        for (int index = 0; index <= samples; index++) {
+            double u = Mth.lerp(index / (double) samples, u0, u1);
+            Vec3 point = surface.gridPoint(u, v);
+            path.add(new Vec3(point.x, 0.0D, point.z));
+        }
+        return List.copyOf(path);
+    }
+
+    private static List<Vec3> doorPath(MapDoorMarker marker) {
+        if (marker.path() != null && marker.path().size() >= 2) {
+            return marker.path();
+        }
+        Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
+        double half = marker.width() * 0.5D;
+        return List.of(center.subtract(marker.span().scale(half)),
+                center.add(marker.span().scale(half)));
+    }
+
+    private static void renderDoorPath(GuiGraphics graphics,
+            MapDoorMarker marker, MapTransform transform, int color,
+            boolean open) {
+        List<Vec3> path = doorPath(marker);
+        if (path.size() < 2) return;
+        int segmentCount = path.size() - 1;
+        for (int index = 0; index < segmentCount; index++) {
+            double mid = (index + 0.5D) / segmentCount;
+            if (open && mid > 0.31D && mid < 0.69D) continue;
+            Vec3 a = path.get(index);
+            Vec3 b = path.get(index + 1);
+            drawDoorLine(graphics, transform.sx(a.x),
+                    transform.sy(a.z), transform.sx(b.x),
+                    transform.sy(b.z), color);
+        }
     }
 
     private void renderTrackers(GuiGraphics graphics, FloorGroup floor,
@@ -880,7 +994,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             else onClose();
             return true;
         }
-        if (button == 1 && hoveredDoor != null
+        if (button == 1 && hoveredDoor != null && hoveredDoor.controllable()
                 && hoveredDoor.source() == DoorSource.NETWORK
                 && hoveredDoor.pos() != null && hoveredDoor.lockable()
                 && Scp079PlayableClient.networkAvailable()) {
@@ -973,7 +1087,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         if (button == 0 && draggingMap) {
             draggingMap = false;
             if (!dragMoved && Scp079PlayableClient.networkAvailable()) {
-                if (pressedDoor != null
+                if (pressedDoor != null && pressedDoor.controllable()
                         && pressedDoor.source() == DoorSource.NETWORK
                         && pressedDoor.pos() != null) {
                     Scp079PlayableNetwork.requestMapDoorAction(
@@ -1308,7 +1422,12 @@ public final class Scp079FacilityMapScreen extends Screen {
             double width, DoorSource source, BlockPos pos, UUID ownerId,
             TransformGroup.GridPos groupCell,
             ConstructionSurface.SurfaceSlot surfaceSlot,
-            boolean fallbackOpen, int requiredLevel, boolean lockable) {
+            boolean fallbackOpen, int requiredLevel, boolean lockable,
+            boolean controllable, List<Vec3> path) {
+    }
+
+    private record BoundaryHit(Vec3 point, Vec3 tangent,
+            double normalDistance) {
     }
 
     private record FloorGroup(String longLabel, int y,

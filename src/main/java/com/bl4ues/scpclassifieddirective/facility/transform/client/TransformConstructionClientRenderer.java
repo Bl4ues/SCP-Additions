@@ -784,19 +784,19 @@ public final class TransformConstructionClientRenderer {
                 double t0 = iy / (double) ySteps;
                 double t1 = (iy + 1.0D) / ySteps;
                 emitSurfaceVertex(output, surface, slot, attachment, normalSign,
-                        bilerp(points, s0, t0), quadNormal,
+                        overlay, bilerp(points, s0, t0), quadNormal,
                         bilerp(us, s0, t0), bilerp(vs, s0, t0),
                         red, green, blue, fallbackLight);
                 emitSurfaceVertex(output, surface, slot, attachment, normalSign,
-                        bilerp(points, s1, t0), quadNormal,
+                        overlay, bilerp(points, s1, t0), quadNormal,
                         bilerp(us, s1, t0), bilerp(vs, s1, t0),
                         red, green, blue, fallbackLight);
                 emitSurfaceVertex(output, surface, slot, attachment, normalSign,
-                        bilerp(points, s1, t1), quadNormal,
+                        overlay, bilerp(points, s1, t1), quadNormal,
                         bilerp(us, s1, t1), bilerp(vs, s1, t1),
                         red, green, blue, fallbackLight);
                 emitSurfaceVertex(output, surface, slot, attachment, normalSign,
-                        bilerp(points, s0, t1), quadNormal,
+                        overlay, bilerp(points, s0, t1), quadNormal,
                         bilerp(us, s0, t1), bilerp(vs, s0, t1),
                         red, green, blue, fallbackLight);
             }

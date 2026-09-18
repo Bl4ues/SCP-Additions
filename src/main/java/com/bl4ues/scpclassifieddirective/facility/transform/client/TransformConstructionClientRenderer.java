@@ -386,50 +386,120 @@ public final class TransformConstructionClientRenderer {
                 > (192.0D + radius) * (192.0D + radius)) return;
 
         CachedSurface cached = SURFACE_MESHES.get(surface.id());
-        if (cached == null || !cached.surface().equals(surface)) {
+        if (cached == null || !sameSurfaceGeometry(cached.surface(), surface)) {
             cached = buildSurfaceMesh(minecraft, surface);
             SURFACE_MESHES.put(surface.id(), cached);
+        } else if (!cached.surface().attachments().equals(
+                surface.attachments())) {
+            cached = updateSurfaceMesh(minecraft, surface, cached);
+            SURFACE_MESHES.put(surface.id(), cached);
         }
-        for (Map.Entry<RenderType, List<PreparedVertex>> layer
-                : cached.layers().entrySet()) {
-            VertexConsumer consumer = buffers.getBuffer(layer.getKey());
-            for (PreparedVertex vertex : layer.getValue()) {
-                consumer.vertex(pose.last().pose(),
-                                (float) vertex.position().x,
-                                (float) vertex.position().y,
-                                (float) vertex.position().z)
-                        .color(vertex.red(), vertex.green(), vertex.blue(), 255)
-                        .uv(vertex.u(), vertex.v())
-                        .overlayCoords(OverlayTexture.NO_OVERLAY)
-                        .uv2(vertex.fallbackLight())
-                        .normal(pose.last().normal(),
-                                (float) vertex.normal().x,
-                                (float) vertex.normal().y,
-                                (float) vertex.normal().z)
-                        .endVertex();
+        for (CachedSurfaceSlot slot : cached.slots().values()) {
+            for (Map.Entry<RenderType, List<PreparedVertex>> layer
+                    : slot.layers().entrySet()) {
+                VertexConsumer consumer = buffers.getBuffer(layer.getKey());
+                for (PreparedVertex vertex : layer.getValue()) {
+                    consumer.vertex(pose.last().pose(),
+                                    (float) vertex.position().x,
+                                    (float) vertex.position().y,
+                                    (float) vertex.position().z)
+                            .color(vertex.red(), vertex.green(),
+                                    vertex.blue(), 255)
+                            .uv(vertex.u(), vertex.v())
+                            .overlayCoords(OverlayTexture.NO_OVERLAY)
+                            .uv2(vertex.fallbackLight())
+                            .normal(pose.last().normal(),
+                                    (float) vertex.normal().x,
+                                    (float) vertex.normal().y,
+                                    (float) vertex.normal().z)
+                            .endVertex();
+                }
             }
         }
     }
 
-    private static CachedSurface buildSurfaceMesh(Minecraft minecraft,
-            ConstructionSurface surface) {
-        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
+    private static boolean sameSurfaceGeometry(ConstructionSurface a,
+            ConstructionSurface b) {
+        return a != null && b != null
+                && java.util.Objects.equals(a.id(), b.id())
+                && java.util.Objects.equals(a.dimension(), b.dimension())
+                && java.util.Objects.equals(a.bottomStart(), b.bottomStart())
+                && java.util.Objects.equals(a.bottomEnd(), b.bottomEnd())
+                && java.util.Objects.equals(a.topStart(), b.topStart())
+                && java.util.Objects.equals(a.topEnd(), b.topEnd())
+                && java.util.Objects.equals(a.curveOffset(), b.curveOffset())
+                && java.util.Objects.equals(a.heightCurveOffset(),
+                        b.heightCurveOffset())
+                && a.flipped() == b.flipped();
+    }
+
+    private static CachedSurface updateSurfaceMesh(Minecraft minecraft,
+            ConstructionSurface surface, CachedSurface cached) {
+        Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots =
+                new LinkedHashMap<>(cached.slots());
+        Set<ConstructionSurface.SurfaceSlot> dirty =
+                new java.util.LinkedHashSet<>();
+        for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : cached.surface().attachments().entrySet()) {
+            if (!java.util.Objects.equals(entry.getValue(),
+                    surface.attachments().get(entry.getKey()))) {
+                dirty.add(entry.getKey());
+            }
+        }
         for (Map.Entry<ConstructionSurface.SurfaceSlot,
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
-            BlockState state = entry.getValue().state();
-            if (state == null || state.isAir()
-                    || state.getRenderShape() != RenderShape.MODEL) continue;
-            RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
-            List<PreparedVertex> output = layers.computeIfAbsent(renderType,
-                    ignored -> new ArrayList<>());
-            appendSurfaceBlock(minecraft, output, surface, entry.getKey(),
-                    entry.getValue());
+            if (!java.util.Objects.equals(entry.getValue(),
+                    cached.surface().attachments().get(entry.getKey()))) {
+                dirty.add(entry.getKey());
+            }
         }
+
+        for (ConstructionSurface.SurfaceSlot slot : dirty) {
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.attachments().get(slot);
+            if (attachment == null || attachment.state().isAir()) {
+                slots.remove(slot);
+                continue;
+            }
+            CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
+                    slot, attachment);
+            if (rebuilt == null) slots.remove(slot);
+            else slots.put(slot, rebuilt);
+        }
+        return new CachedSurface(surface, Map.copyOf(slots));
+    }
+
+    private static CachedSurface buildSurfaceMesh(Minecraft minecraft,
+            ConstructionSurface surface) {
+        Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots =
+                new LinkedHashMap<>();
+        for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.attachments().entrySet()) {
+            CachedSurfaceSlot slot = buildSurfaceSlot(minecraft, surface,
+                    entry.getKey(), entry.getValue());
+            if (slot != null) slots.put(entry.getKey(), slot);
+        }
+        return new CachedSurface(surface, Map.copyOf(slots));
+    }
+
+    private static CachedSurfaceSlot buildSurfaceSlot(Minecraft minecraft,
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceAttachment attachment) {
+        BlockState state = attachment.state();
+        if (state == null || state.isAir()
+                || state.getRenderShape() != RenderShape.MODEL) return null;
+        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
+        RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
+        List<PreparedVertex> output = layers.computeIfAbsent(renderType,
+                ignored -> new ArrayList<>());
+        appendSurfaceBlock(minecraft, output, surface, slot, attachment);
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
-        layers.forEach((type, vertices) -> immutable.put(type,
-                List.copyOf(vertices)));
-        return new CachedSurface(surface, Map.copyOf(immutable));
+        layers.forEach((type, vertices) ->
+                immutable.put(type, List.copyOf(vertices)));
+        return new CachedSurfaceSlot(Map.copyOf(immutable));
     }
 
     private static void appendSurfaceBlock(Minecraft minecraft,
@@ -912,6 +982,10 @@ public final class TransformConstructionClientRenderer {
     }
 
     private record CachedSurface(ConstructionSurface surface,
+            Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots) {
+    }
+
+    private record CachedSurfaceSlot(
             Map<RenderType, List<PreparedVertex>> layers) {
     }
 

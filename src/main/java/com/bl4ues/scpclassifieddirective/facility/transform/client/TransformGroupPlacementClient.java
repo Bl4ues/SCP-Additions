@@ -181,6 +181,15 @@ public final class TransformGroupPlacementClient {
     }
 
     static PayloadTarget findPayloadTarget(LocalPlayer player) {
+        return findPayloadTarget(player, true);
+    }
+
+    static PayloadTarget findBreakTarget(LocalPlayer player) {
+        return findPayloadTarget(player, false);
+    }
+
+    private static PayloadTarget findPayloadTarget(LocalPlayer player,
+            boolean interactiveOnly) {
         Minecraft minecraft = Minecraft.getInstance();
         Vec3 eye = player.getEyePosition();
         Vec3 worldRay = player.getViewVector(1.0F).normalize();
@@ -210,7 +219,8 @@ public final class TransformGroupPlacementClient {
             for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                     : group.cells().entrySet()) {
                 BlockState state = entry.getValue();
-                if (state == null || state.isAir() || !interactive(state)) {
+                if (state == null || state.isAir()
+                        || interactiveOnly && !interactive(state)) {
                     continue;
                 }
                 Hit hit = intersectState(localEye, localRay, entry.getKey(),

@@ -168,7 +168,8 @@ public final class TransformGroupPlacementClient {
                     : group.cells().entrySet()) {
                 BlockState state = entry.getValue();
                 if (state == null || state.isAir()) continue;
-                Hit hit = intersect(localEye, localRay, entry.getKey());
+                Hit hit = intersectState(localEye, localRay, entry.getKey(),
+                        state, false);
                 if (hit == null || hit.distance() < 0.0D
                         || hit.distance() > limit
                         || hit.distance() >= bestDistance) continue;
@@ -212,7 +213,8 @@ public final class TransformGroupPlacementClient {
                 if (state == null || state.isAir() || !interactive(state)) {
                     continue;
                 }
-                Hit hit = intersect(localEye, localRay, entry.getKey());
+                Hit hit = intersectState(localEye, localRay, entry.getKey(),
+                        state, false);
                 if (hit == null || hit.distance() < 0.0D
                         || hit.distance() > limit
                         || hit.distance() >= bestDistance) continue;

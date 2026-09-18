@@ -2,8 +2,10 @@ package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -16,12 +18,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Raycasts the authored parametric Surface grid directly.
- *
- * Picking is hierarchical: a ray first walks conservative UV patches and only
- * tessellates the handful of logical cells whose patches it can actually hit.
- * Cost therefore follows visible geometric complexity instead of
- * columns*rows, which is essential for large curved facility walls.
+ * Raycasts the Surface's own logical block grid rather than the parent-world
+ * proxy shapes. Occupied cells are six-faced logical blocks following the same
+ * parametric frame used by rendering/collision; empty cells retain the authored
+ * guide plane for construction.
  */
 public final class TransformSurfaceRaycast {
     private static final double MAX_DISTANCE = 32.0D;
@@ -66,10 +66,9 @@ public final class TransformSurfaceRaycast {
             if (surface == null || !surface.dimension().equals(
                     minecraft.level.dimension().location())) continue;
 
-            // Cheap sphere rejection before touching the parametric hierarchy.
             Vec3 center = surface.gridPoint(0.5D, 0.5D);
             double radius = Math.max(surface.width(), surface.height()) * 0.75D
-                    + 1.5D;
+                    + 3.0D;
             double along = center.subtract(eye).dot(ray);
             if (along < -radius || along - radius > bestDistance) continue;
             Vec3 nearest = eye.add(ray.scale(Math.max(0.0D, along)));
@@ -141,8 +140,6 @@ public final class TransformSurfaceRaycast {
                 continue;
             }
 
-            // Split only the denser logical dimension. Unlike a quadtree this
-            // creates two children, keeping broad-phase growth close to O(log n).
             if (columnSpan >= rowSpan) {
                 double middle = (patch.u0() + patch.u1()) * 0.5D;
                 pending.addFirst(new Patch(middle, patch.u1(),
@@ -162,15 +159,117 @@ public final class TransformSurfaceRaycast {
 
     private static Target targetCell(ConstructionSurface surface,
             int column, int row, Vec3 eye, Vec3 ray, double limit) {
-        int columns = surface.columns();
-        int rows = surface.rows();
-        double cellU0 = column / (double) columns;
-        double cellU1 = (column + 1.0D) / columns;
-        double cellV0 = row / (double) rows;
-        double cellV1 = (row + 1.0D) / rows;
         ConstructionSurface.SurfaceSlot slot =
                 new ConstructionSurface.SurfaceSlot(column, row);
+        Target best = null;
+        double bestDistance = limit + 1.0D;
 
+        ConstructionSurface.SurfaceAttachment positive =
+                surface.overlay(slot, 1);
+        if (positive != null && !positive.state().isAir()) {
+            best = nearer(best, targetLogicalCell(surface, slot, positive,
+                    1, true, Layer.POSITIVE_OVERLAY, eye, ray,
+                    Math.min(limit, bestDistance)));
+            if (best != null) bestDistance = best.distance();
+        }
+
+        ConstructionSurface.SurfaceAttachment negative =
+                surface.overlay(slot, -1);
+        if (negative != null && !negative.state().isAir()) {
+            best = nearer(best, targetLogicalCell(surface, slot, negative,
+                    -1, true, Layer.NEGATIVE_OVERLAY, eye, ray,
+                    Math.min(limit, bestDistance)));
+            if (best != null) bestDistance = best.distance();
+        }
+
+        ConstructionSurface.SurfaceAttachment main =
+                surface.attachments().get(slot);
+        if (main != null && !main.state().isAir()) {
+            best = nearer(best, targetLogicalCell(surface, slot, main,
+                    1, false, Layer.MAIN, eye, ray,
+                    Math.min(limit, bestDistance)));
+            if (best != null) bestDistance = best.distance();
+        }
+
+        if (best != null) return best;
+
+        // Empty authored cell: the guide itself is the placement plane.
+        return targetGuideCell(surface, slot, eye, ray, limit);
+    }
+
+    private static Target targetLogicalCell(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceAttachment attachment, int normalSign,
+            boolean overlay, Layer layer, Vec3 eye, Vec3 ray, double limit) {
+        Target best = null;
+        double bestDistance = limit + 1.0D;
+        for (Direction face : Direction.values()) {
+            for (int a = 0; a < CELL_SUBDIVISIONS; a++) {
+                double a0 = a / (double) CELL_SUBDIVISIONS;
+                double a1 = (a + 1.0D) / CELL_SUBDIVISIONS;
+                for (int b = 0; b < CELL_SUBDIVISIONS; b++) {
+                    double b0 = b / (double) CELL_SUBDIVISIONS;
+                    double b1 = (b + 1.0D) / CELL_SUBDIVISIONS;
+                    Vec3 p00 = facePoint(surface, slot, attachment.deform(),
+                            normalSign, overlay, face, a0, b0);
+                    Vec3 p10 = facePoint(surface, slot, attachment.deform(),
+                            normalSign, overlay, face, a1, b0);
+                    Vec3 p11 = facePoint(surface, slot, attachment.deform(),
+                            normalSign, overlay, face, a1, b1);
+                    Vec3 p01 = facePoint(surface, slot, attachment.deform(),
+                            normalSign, overlay, face, a0, b1);
+
+                    double first = triangle(eye, ray, p00, p10, p11);
+                    if (first >= 0.0D && first <= limit
+                            && first < bestDistance) {
+                        bestDistance = first;
+                        best = new Target(surface, slot,
+                                eye.add(ray.scale(first)), first,
+                                normalSign, face, layer);
+                    }
+                    double second = triangle(eye, ray, p00, p11, p01);
+                    if (second >= 0.0D && second <= limit
+                            && second < bestDistance) {
+                        bestDistance = second;
+                        best = new Target(surface, slot,
+                                eye.add(ray.scale(second)), second,
+                                normalSign, face, layer);
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    private static Vec3 facePoint(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, boolean deform,
+            int normalSign, boolean overlay, Direction face,
+            double a, double b) {
+        double x;
+        double y;
+        double z;
+        switch (face) {
+            case WEST -> { x = 0.0D; y = a; z = b; }
+            case EAST -> { x = 1.0D; y = a; z = b; }
+            case DOWN -> { x = a; y = 0.0D; z = b; }
+            case UP -> { x = a; y = 1.0D; z = b; }
+            case NORTH -> { x = a; y = b; z = 0.0D; }
+            case SOUTH -> { x = a; y = b; z = 1.0D; }
+            default -> throw new IllegalStateException("Unexpected face " + face);
+        }
+        return TransformSurfaceGeometry.logicalPoint(surface, slot, deform,
+                normalSign, overlay, x, y, z);
+    }
+
+    private static Target targetGuideCell(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, Vec3 eye, Vec3 ray,
+            double limit) {
+        int columns = surface.columns();
+        int rows = surface.rows();
+        double cellU0 = slot.column() / (double) columns;
+        double cellU1 = (slot.column() + 1.0D) / columns;
+        double cellV0 = slot.row() / (double) rows;
+        double cellV1 = (slot.row() + 1.0D) / rows;
         Target best = null;
         double bestDistance = limit + 1.0D;
         for (int su = 0; su < CELL_SUBDIVISIONS; su++) {
@@ -183,42 +282,44 @@ public final class TransformSurfaceRaycast {
                         sv / (double) CELL_SUBDIVISIONS);
                 double v1 = lerp(cellV0, cellV1,
                         (sv + 1.0D) / CELL_SUBDIVISIONS);
-
                 Vec3 p00 = surface.gridPoint(u0, v0);
                 Vec3 p10 = surface.gridPoint(u1, v0);
                 Vec3 p11 = surface.gridPoint(u1, v1);
                 Vec3 p01 = surface.gridPoint(u0, v1);
+                int sign = normalSign(surface, ray,
+                        (u0 + u1) * 0.5D, (v0 + v1) * 0.5D);
+                Direction face = sign > 0 ? Direction.SOUTH : Direction.NORTH;
 
                 double first = triangle(eye, ray, p00, p10, p11);
                 if (first >= 0.0D && first <= limit
                         && first < bestDistance) {
                     bestDistance = first;
                     best = new Target(surface, slot,
-                            eye.add(ray.scale(first)), first,
-                            normalSign(surface, ray,
-                                    (u0 + u1) * 0.5D,
-                                    (v0 + v1) * 0.5D));
+                            eye.add(ray.scale(first)), first, sign,
+                            face, Layer.GUIDE);
                 }
                 double second = triangle(eye, ray, p00, p11, p01);
                 if (second >= 0.0D && second <= limit
                         && second < bestDistance) {
                     bestDistance = second;
                     best = new Target(surface, slot,
-                            eye.add(ray.scale(second)), second,
-                            normalSign(surface, ray,
-                                    (u0 + u1) * 0.5D,
-                                    (v0 + v1) * 0.5D));
+                            eye.add(ray.scale(second)), second, sign,
+                            face, Layer.GUIDE);
                 }
             }
         }
         return best;
     }
 
+    private static Target nearer(Target current, Target candidate) {
+        if (candidate == null) return current;
+        return current == null || candidate.distance() < current.distance()
+                ? candidate : current;
+    }
+
     private static int normalSign(ConstructionSurface surface,
             Vec3 ray, double u, double v) {
         Vec3 normal = surface.gridNormal(u, v);
-        // A ray approaching from +normal travels against the normal and authors
-        // on the existing outside. Approaching from the back uses -normal.
         return ray.dot(normal) <= 0.0D ? 1 : -1;
     }
 
@@ -230,20 +331,21 @@ public final class TransformSurfaceRaycast {
         double maxY = Double.NEGATIVE_INFINITY;
         double maxZ = Double.NEGATIVE_INFINITY;
 
-        // 5x5 catches the extrema of the quadratic authored surface much more
-        // conservatively than corners alone, while still being tiny compared
-        // with walking every logical cell.
         for (int ui = 0; ui <= 4; ui++) {
             double u = lerp(patch.u0(), patch.u1(), ui / 4.0D);
             for (int vi = 0; vi <= 4; vi++) {
                 double v = lerp(patch.v0(), patch.v1(), vi / 4.0D);
                 Vec3 point = surface.gridPoint(u, v);
-                minX = Math.min(minX, point.x);
-                minY = Math.min(minY, point.y);
-                minZ = Math.min(minZ, point.z);
-                maxX = Math.max(maxX, point.x);
-                maxY = Math.max(maxY, point.y);
-                maxZ = Math.max(maxZ, point.z);
+                Vec3 normal = surface.gridNormal(u, v);
+                for (double depth : new double[]{-1.1D, 0.0D, 2.1D}) {
+                    Vec3 sample = point.add(normal.scale(depth));
+                    minX = Math.min(minX, sample.x);
+                    minY = Math.min(minY, sample.y);
+                    minZ = Math.min(minZ, sample.z);
+                    maxX = Math.max(maxX, sample.x);
+                    maxY = Math.max(maxY, sample.y);
+                    maxZ = Math.max(maxZ, sample.z);
+                }
             }
         }
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ)
@@ -253,19 +355,18 @@ public final class TransformSurfaceRaycast {
     private static double rayBox(Vec3 origin, Vec3 direction, AABB box) {
         double tMin = 0.0D;
         double tMax = MAX_DISTANCE;
-
         double[] origins = {origin.x, origin.y, origin.z};
         double[] directions = {direction.x, direction.y, direction.z};
         double[] mins = {box.minX, box.minY, box.minZ};
         double[] maxs = {box.maxX, box.maxY, box.maxZ};
         for (int axis = 0; axis < 3; axis++) {
-            double ray = directions[axis];
-            if (Math.abs(ray) < EPSILON) {
+            double value = directions[axis];
+            if (Math.abs(value) < EPSILON) {
                 if (origins[axis] < mins[axis]
                         || origins[axis] > maxs[axis]) return -1.0D;
                 continue;
             }
-            double inverse = 1.0D / ray;
+            double inverse = 1.0D / value;
             double near = (mins[axis] - origins[axis]) * inverse;
             double far = (maxs[axis] - origins[axis]) * inverse;
             if (near > far) {
@@ -310,11 +411,23 @@ public final class TransformSurfaceRaycast {
             int depth) {
     }
 
+    public enum Layer {
+        GUIDE, MAIN, POSITIVE_OVERLAY, NEGATIVE_OVERLAY;
+
+        public boolean overlay() {
+            return this == POSITIVE_OVERLAY || this == NEGATIVE_OVERLAY;
+        }
+    }
+
     public record Target(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, Vec3 hit, double distance,
-            int normalSign) {
+            int normalSign, Direction faceLocal, Layer layer) {
         public Target {
             normalSign = normalSign < 0 ? -1 : 1;
+            faceLocal = faceLocal == null
+                    ? (normalSign > 0 ? Direction.SOUTH : Direction.NORTH)
+                    : faceLocal;
+            layer = layer == null ? Layer.GUIDE : layer;
         }
     }
 }

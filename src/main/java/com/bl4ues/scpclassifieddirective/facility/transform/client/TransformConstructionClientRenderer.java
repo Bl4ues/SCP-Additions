@@ -61,12 +61,15 @@ public final class TransformConstructionClientRenderer {
     };
     private static final Map<UUID, CachedSurface> SURFACE_MESHES =
             new HashMap<>();
+    private static final Map<UUID, CachedGroup> GROUP_MESHES =
+            new HashMap<>();
 
     private TransformConstructionClientRenderer() {
     }
 
     public static void clearSurfaceCache() {
         SURFACE_MESHES.clear();
+        GROUP_MESHES.clear();
     }
 
     @SubscribeEvent
@@ -157,32 +160,110 @@ public final class TransformConstructionClientRenderer {
         Set<UUID> current = surfaces.stream().map(ConstructionSurface::id)
                 .collect(Collectors.toSet());
         SURFACE_MESHES.keySet().removeIf(id -> !current.contains(id));
+        Set<UUID> currentGroups = groups.stream().map(TransformGroup::id)
+                .collect(Collectors.toSet());
+        GROUP_MESHES.keySet().removeIf(id -> !currentGroups.contains(id));
     }
 
     private static void renderGroup(Minecraft minecraft, PoseStack pose,
             MultiBufferSource.BufferSource buffers, TransformGroup group,
             Vec3 camera) {
         if (group.origin().distanceToSqr(camera) > MAX_RENDER_DISTANCE_SQR) return;
+        CachedGroup cached = GROUP_MESHES.get(group.id());
+        if (cached == null || !cached.group().equals(group)) {
+            cached = buildGroupMesh(minecraft, group);
+            GROUP_MESHES.put(group.id(), cached);
+        }
+        for (Map.Entry<RenderType, List<PreparedVertex>> layer
+                : cached.layers().entrySet()) {
+            VertexConsumer consumer = buffers.getBuffer(layer.getKey());
+            for (PreparedVertex vertex : layer.getValue()) {
+                consumer.vertex(pose.last().pose(),
+                                (float) vertex.position().x,
+                                (float) vertex.position().y,
+                                (float) vertex.position().z)
+                        .color(vertex.red(), vertex.green(), vertex.blue(), 255)
+                        .uv(vertex.u(), vertex.v())
+                        .overlayCoords(OverlayTexture.NO_OVERLAY)
+                        .uv2(vertex.fallbackLight())
+                        .normal(pose.last().normal(),
+                                (float) vertex.normal().x,
+                                (float) vertex.normal().y,
+                                (float) vertex.normal().z)
+                        .endVertex();
+            }
+        }
+    }
+
+    private static CachedGroup buildGroupMesh(Minecraft minecraft,
+            TransformGroup group) {
+        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
         for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                 : group.cells().entrySet()) {
             BlockState state = entry.getValue();
             if (state == null || state.isAir()
-                    || state.getRenderShape() == RenderShape.INVISIBLE) continue;
+                    || state.getRenderShape() != RenderShape.MODEL) continue;
             TransformGroup.GridPos cell = entry.getKey();
+            BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
+            RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
+            List<PreparedVertex> output = layers.computeIfAbsent(renderType,
+                    ignored -> new ArrayList<>());
             Vec3 center = group.cellCenter(cell);
-            if (center.distanceToSqr(camera) > MAX_RENDER_DISTANCE_SQR) continue;
             BlockPos lightPos = BlockPos.containing(center);
-            int light = LevelRenderer.getLightColor(minecraft.level, state,
-                    lightPos);
-            pose.pushPose();
-            pose.translate(group.origin().x, group.origin().y, group.origin().z);
-            pose.mulPose(TransformMath.quaternion(group.rotationX(),
-                    group.rotationY(), group.rotationZ()));
-            pose.translate(cell.x() - 0.5D, cell.y() - 0.5D,
-                    cell.z() - 0.5D);
-            minecraft.getBlockRenderer().renderSingleBlock(state, pose, buffers,
-                    light, OverlayTexture.NO_OVERLAY);
-            pose.popPose();
+            int packedLight = minecraft.level.hasChunkAt(lightPos)
+                    ? LevelRenderer.getLightColor(minecraft.level, state, lightPos)
+                    : 0x00F000F0;
+            RandomSource random = RandomSource.create(
+                    42L ^ cell.hashCode() * 31L);
+            for (Direction side : SIDES) {
+                random.setSeed(42L ^ cell.hashCode() * 31L);
+                for (BakedQuad quad : model.getQuads(state, side, random,
+                        ModelData.EMPTY, null)) {
+                    appendGroupQuad(minecraft, output, group, cell, state,
+                            quad, lightPos, packedLight);
+                }
+            }
+        }
+        Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
+        layers.forEach((type, vertices) -> immutable.put(type,
+                List.copyOf(vertices)));
+        return new CachedGroup(group, Map.copyOf(immutable));
+    }
+
+    private static void appendGroupQuad(Minecraft minecraft,
+            List<PreparedVertex> output, TransformGroup group,
+            TransformGroup.GridPos cell, BlockState state, BakedQuad quad,
+            BlockPos lightPos, int packedLight) {
+        int[] vertices = quad.getVertices();
+        int stride = vertices.length / 4;
+        int tint = quad.isTinted() ? minecraft.getBlockColors().getColor(
+                state, minecraft.level, lightPos, quad.getTintIndex())
+                : 0xFFFFFF;
+        int red = tint < 0 ? 255 : tint >> 16 & 0xFF;
+        int green = tint < 0 ? 255 : tint >> 8 & 0xFF;
+        int blue = tint < 0 ? 255 : tint & 0xFF;
+        Vec3 localNormal = new Vec3(quad.getDirection().getStepX(),
+                quad.getDirection().getStepY(),
+                quad.getDirection().getStepZ());
+        Vec3 worldNormal = TransformMath.rotate(localNormal,
+                group.rotationX(), group.rotationY(), group.rotationZ())
+                .normalize();
+
+        for (int vertex = 0; vertex < 4; vertex++) {
+            int offset = vertex * stride;
+            double x = Float.intBitsToFloat(vertices[offset]);
+            double y = Float.intBitsToFloat(vertices[offset + 1]);
+            double z = Float.intBitsToFloat(vertices[offset + 2]);
+            float u = stride > 4
+                    ? Float.intBitsToFloat(vertices[offset + 4]) : 0.0F;
+            float v = stride > 5
+                    ? Float.intBitsToFloat(vertices[offset + 5]) : 0.0F;
+            Vec3 local = new Vec3(cell.x() - 0.5D + x,
+                    cell.y() - 0.5D + y, cell.z() - 0.5D + z);
+            Vec3 world = TransformMath.localToWorld(group.origin(), local,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            output.add(new PreparedVertex(state, world, worldNormal, u, v,
+                    red, green, blue, packedLight));
         }
     }
 
@@ -203,11 +284,6 @@ public final class TransformConstructionClientRenderer {
                 : cached.layers().entrySet()) {
             VertexConsumer consumer = buffers.getBuffer(layer.getKey());
             for (PreparedVertex vertex : layer.getValue()) {
-                BlockPos sample = BlockPos.containing(vertex.position());
-                int light = minecraft.level.hasChunkAt(sample)
-                        ? LevelRenderer.getLightColor(minecraft.level,
-                                vertex.state(), sample)
-                        : vertex.fallbackLight();
                 consumer.vertex(pose.last().pose(),
                                 (float) vertex.position().x,
                                 (float) vertex.position().y,
@@ -215,7 +291,7 @@ public final class TransformConstructionClientRenderer {
                         .color(vertex.red(), vertex.green(), vertex.blue(), 255)
                         .uv(vertex.u(), vertex.v())
                         .overlayCoords(OverlayTexture.NO_OVERLAY)
-                        .uv2(light)
+                        .uv2(vertex.fallbackLight())
                         .normal(pose.last().normal(),
                                 (float) vertex.normal().x,
                                 (float) vertex.normal().y,
@@ -630,6 +706,10 @@ public final class TransformConstructionClientRenderer {
     }
 
     private record CachedSurface(ConstructionSurface surface,
+            Map<RenderType, List<PreparedVertex>> layers) {
+    }
+
+    private record CachedGroup(TransformGroup group,
             Map<RenderType, List<PreparedVertex>> layers) {
     }
 }

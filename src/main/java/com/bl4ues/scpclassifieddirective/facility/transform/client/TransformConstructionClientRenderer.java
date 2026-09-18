@@ -144,7 +144,8 @@ public final class TransformConstructionClientRenderer {
                 placingBlock ? TransformGroupPlacementClient.findTarget(
                         minecraft.player) : null;
         if (offGridTool || surfaceTool || mappingTool || showSelectedGroup
-                || showSelectedSurface || placementTarget != null) {
+                || showSelectedSurface || placementTarget != null
+                || placingBlock && !surfaces.isEmpty()) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
             if (offGridTool) {
                 for (TransformGroup group : groups) {
@@ -192,6 +193,14 @@ public final class TransformConstructionClientRenderer {
                         TransformConstructionClientState.surface(selection.id());
                 if (selectedSurface != null) {
                     renderSurfaceGrid(pose, lines, selectedSurface, camera);
+                }
+            } else if (placingBlock) {
+                for (ConstructionSurface surface : surfaces) {
+                    Vec3 center = surface.gridPoint(0.5D, 0.5D);
+                    if (center.distanceToSqr(camera) <= 40.0D * 40.0D
+                            && !surface.attachments().isEmpty()) {
+                        renderSurfaceGrid(pose, lines, surface, camera);
+                    }
                 }
             } else if (mappingTool) {
                 for (ConstructionSurface surface : surfaces) {

@@ -41,16 +41,26 @@ public final class TransformSurfacePlacementClient {
         }
 
         if (player.getMainHandItem().getItem() instanceof BlockItem) {
-            if (!player.isCreative() || selection == null
-                    || selection.type() != SelectionType.SURFACE) return;
-            ConstructionSurface surface =
-                    TransformConstructionClientState.surface(selection.id());
-            if (surface == null) return;
-            TransformSurfaceRaycast.Target target =
-                    TransformSurfaceRaycast.target(player, surface);
+            if (!player.isCreative()) return;
+            TransformSurfaceRaycast.Target target = null;
+            if (selection != null && selection.type() == SelectionType.SURFACE) {
+                ConstructionSurface selectedSurface =
+                        TransformConstructionClientState.surface(selection.id());
+                if (selectedSurface != null) {
+                    target = TransformSurfaceRaycast.target(player,
+                            selectedSurface);
+                }
+            } else {
+                // A Surface is its own logical grid. Once it contains physical
+                // construction, builders may continue from it directly without
+                // switching back to the tool merely to re-select the scaffold.
+                target = TransformSurfaceRaycast.target(player,
+                        TransformConstructionClientState.surfaces(
+                                minecraft.level.dimension().location()));
+            }
             if (target == null) return;
-            TransformConstructionNetwork.placeSurfaceBlock(surface.id(),
-                    target.slot(), target.hit());
+            TransformConstructionNetwork.placeSurfaceBlock(
+                    target.surface().id(), target.slot(), target.hit());
             event.setCanceled(true);
             return;
         }

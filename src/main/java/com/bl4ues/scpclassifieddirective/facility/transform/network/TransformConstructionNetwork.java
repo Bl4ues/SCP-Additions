@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructio
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionSavedData;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformControlRuntime;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformDoorRuntime;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceDoorRuntime;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringManager;
 import net.minecraft.core.BlockPos;
@@ -91,6 +92,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(12, UseGroupCell.class,
                 UseGroupCell::encode, UseGroupCell::decode,
                 UseGroupCell::handle);
+        CHANNEL.registerMessage(13, UseSurfaceSlot.class,
+                UseSurfaceSlot::encode, UseSurfaceSlot::decode,
+                UseSurfaceSlot::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -145,6 +149,12 @@ public final class TransformConstructionNetwork {
             TransformGroup.GridPos cell) {
         if (groupId == null || cell == null) return;
         CHANNEL.sendToServer(new UseGroupCell(groupId, cell));
+    }
+
+    public static void useSurfaceSlot(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (surfaceId == null || slot == null) return;
+        CHANNEL.sendToServer(new UseSurfaceSlot(surfaceId, slot));
     }
 
     public static void placeSurfaceBlock(UUID surfaceId,
@@ -507,6 +517,37 @@ public final class TransformConstructionNetwork {
                         message.groupId, message.cell)) {
                     TransformDoorRuntime.useGroupCell(sender,
                             message.groupId, message.cell);
+                }
+            });
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record UseSurfaceSlot(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        private static void encode(UseSurfaceSlot message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+        }
+
+        private static UseSurfaceSlot decode(FriendlyByteBuf buffer) {
+            return new UseSurfaceSlot(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()));
+        }
+
+        private static void handle(UseSurfaceSlot message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
+                if (sender == null) return;
+                if (!TransformControlRuntime.useSurfaceSlot(sender,
+                        message.surfaceId, message.slot)) {
+                    TransformSurfaceDoorRuntime.useSurfaceSlot(sender,
+                            message.surfaceId, message.slot);
                 }
             });
             context.setPacketHandled(true);

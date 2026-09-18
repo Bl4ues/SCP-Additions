@@ -97,8 +97,8 @@ public final class TransformAlarmRuntime {
             double u = (alarm.slot().column() + 0.5D) / surface.columns();
             double v = (alarm.slot().row() + 0.5D) / surface.rows();
             int side = alarm.normalSign() == 0 ? 1 : alarm.normalSign();
-            Vec3 center = surface.gridPoint(u, v)
-                    .add(surface.gridNormal(u, v).scale(side * 0.5D));
+            Vec3 center = TransformSurfaceGeometry.cellCenter(surface,
+                    alarm.slot(), side, alarm.normalSign() != 0);
             boolean active = shouldBeActive(level, center,
                     TransformPowerQuery.powered(level, surface, alarm.slot())
                             || adjacentOpenDoor(surface, alarm.slot()));

@@ -1215,7 +1215,7 @@ public final class TransformConstructionClientState {
                     || overlay.getValue().state().isAir()) continue;
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, overlay.getValue(),
-                    overlay.getKey().normalSign())) {
+                    overlay.getKey().normalSign(), true)) {
                 addWorldBox(index, collision, null, surface.id(), false, true,
                         overlay.getValue().state().getLightEmission());
             }

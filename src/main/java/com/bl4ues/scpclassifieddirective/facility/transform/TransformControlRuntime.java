@@ -310,9 +310,9 @@ public final class TransformControlRuntime {
             ConstructionSurface.SurfaceSlot slot, int normalSign) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
+        boolean overlay = normalSign != 0;
         int side = normalSign < 0 ? -1 : 1;
-        return surface.gridPoint(u, v)
-                .add(surface.gridNormal(u, v).scale(side * 0.5D));
+        return TransformSurfaceGeometry.cellCenter(surface, slot, side, overlay);
     }
 
     private static ServerLevel level(MinecraftServer server,

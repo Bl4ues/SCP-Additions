@@ -1210,7 +1210,7 @@ public final class TransformConstructionManager {
                     || overlay.getValue().state().isAir()) continue;
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, overlay.getValue(),
-                    overlay.getKey().normalSign())) {
+                    overlay.getKey().normalSign(), true)) {
                 addWorldBox(index, owner, collision, false, true,
                         overlay.getValue().state().getLightEmission());
             }

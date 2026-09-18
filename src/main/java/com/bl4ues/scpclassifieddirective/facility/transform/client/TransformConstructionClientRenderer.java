@@ -660,7 +660,7 @@ public final class TransformConstructionClientRenderer {
                         entry.getValue();
                 if (overlay == null || overlay.state().isAir()) continue;
                 CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
-                        slot, overlay, entry.getKey().normalSign());
+                        slot, overlay, entry.getKey().normalSign(), true);
                 if (rebuilt != null) overlays.put(entry.getKey(), rebuilt);
             }
         }
@@ -676,7 +676,7 @@ public final class TransformConstructionClientRenderer {
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
             CachedSurfaceSlot slot = buildSurfaceSlot(minecraft, surface,
-                    entry.getKey(), entry.getValue(), 1);
+                    entry.getKey(), entry.getValue(), 1, false);
             if (slot != null) slots.put(entry.getKey(), slot);
         }
         Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot> overlays =
@@ -696,7 +696,7 @@ public final class TransformConstructionClientRenderer {
     private static CachedSurfaceSlot buildSurfaceSlot(Minecraft minecraft,
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment,
-            int normalSign) {
+            int normalSign, boolean overlay) {
         BlockState state = attachment.state();
         if (state == null || state.isAir()
                 || state.getRenderShape() != RenderShape.MODEL) return null;
@@ -705,7 +705,7 @@ public final class TransformConstructionClientRenderer {
         List<PreparedVertex> output = layers.computeIfAbsent(renderType,
                 ignored -> new ArrayList<>());
         appendSurfaceBlock(minecraft, output, surface, slot, attachment,
-                normalSign);
+                normalSign, overlay);
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
         layers.forEach((type, vertices) ->
                 immutable.put(type, List.copyOf(vertices)));
@@ -716,7 +716,7 @@ public final class TransformConstructionClientRenderer {
             List<PreparedVertex> output, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment,
-            int normalSign) {
+            int normalSign, boolean overlay) {
         BlockState state = attachment.state();
         BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
         RandomSource random = RandomSource.create(42L);
@@ -730,7 +730,7 @@ public final class TransformConstructionClientRenderer {
             for (BakedQuad quad : model.getQuads(state, side, random,
                     ModelData.EMPTY, null)) {
                 prepareQuad(minecraft, output, surface, slot, attachment,
-                        normalSign, quad, lightPos, packedLight);
+                        normalSign, overlay, quad, lightPos, packedLight);
             }
         }
     }
@@ -739,7 +739,8 @@ public final class TransformConstructionClientRenderer {
             List<PreparedVertex> output, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment, int normalSign,
-            BakedQuad quad, BlockPos lightPos, int fallbackLight) {
+            boolean overlay, BakedQuad quad, BlockPos lightPos,
+            int fallbackLight) {
         int[] vertices = quad.getVertices();
         int stride = vertices.length / 4;
         int tint = quad.isTinted() ? minecraft.getBlockColors().getColor(
@@ -805,13 +806,14 @@ public final class TransformConstructionClientRenderer {
     private static void emitSurfaceVertex(List<PreparedVertex> output,
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment, int normalSign,
-            Vec3 point, Vec3 localNormal, float u, float v,
+            boolean overlay, Vec3 point, Vec3 localNormal, float u, float v,
             int red, int green, int blue, int light) {
+        double depthOffset = overlay && normalSign >= 0 ? 1.0D : 0.0D;
         VertexFrame frame = attachment.deform()
                 ? deformedFrame(surface, slot, point.x, point.y, point.z,
-                        localNormal, normalSign)
+                        localNormal, normalSign, depthOffset)
                 : rigidFrame(surface, slot, point.x, point.y, point.z,
-                        localNormal, normalSign);
+                        localNormal, normalSign, depthOffset);
         output.add(new PreparedVertex(attachment.state(), frame.position(),
                 frame.normal(), u, v, red, green, blue, light));
     }
@@ -832,7 +834,7 @@ public final class TransformConstructionClientRenderer {
 
     private static VertexFrame deformedFrame(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, double x, double y, double z,
-            Vec3 localNormal, int normalSign) {
+            Vec3 localNormal, int normalSign, double depthOffset) {
         int side = normalSign < 0 ? -1 : 1;
         double baseX = surface.flipped() ? 1.0D - x : x;
         double localX = side < 0 ? 1.0D - baseX : baseX;
@@ -842,7 +844,8 @@ public final class TransformConstructionClientRenderer {
         Vec3 normal = surface.gridNormal(u, v).scale(side);
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u, v));
-        Vec3 position = surface.gridPoint(u, v).add(normal.scale(z));
+        Vec3 position = surface.gridPoint(u, v)
+                .add(normal.scale(z + depthOffset));
         Vec3 transformedNormal = TransformMath.safeNormalize(
                 tangent.scale(localNormal.x)
                         .add(vertical.scale(localNormal.y))
@@ -852,7 +855,7 @@ public final class TransformConstructionClientRenderer {
 
     private static VertexFrame rigidFrame(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, double x, double y, double z,
-            Vec3 localNormal, int normalSign) {
+            Vec3 localNormal, int normalSign, double depthOffset) {
         int side = normalSign < 0 ? -1 : 1;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
@@ -863,7 +866,7 @@ public final class TransformConstructionClientRenderer {
         Vec3 position = surface.gridPoint(u, v)
                 .add(tangent.scale(x - 0.5D))
                 .add(vertical.scale(y - 0.5D))
-                .add(normal.scale(z));
+                .add(normal.scale(z + depthOffset));
         Vec3 transformedNormal = TransformMath.safeNormalize(
                 tangent.scale(localNormal.x)
                         .add(vertical.scale(localNormal.y))

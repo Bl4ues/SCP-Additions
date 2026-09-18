@@ -24,13 +24,20 @@ public final class TransformSurfaceGeometry {
     public static List<AABB> collisionBoxes(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment) {
-        return collisionBoxes(surface, slot, attachment, 1);
+        return collisionBoxes(surface, slot, attachment, 1, false);
     }
 
     public static List<AABB> collisionBoxes(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment,
             int normalSign) {
+        return collisionBoxes(surface, slot, attachment, normalSign, false);
+    }
+
+    public static List<AABB> collisionBoxes(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceAttachment attachment,
+            int normalSign, boolean overlay) {
         if (surface == null || slot == null || attachment == null
                 || attachment.state().isAir()) return List.of();
         if (FacilityModule.isFacilityDoor(attachment.state())
@@ -38,6 +45,7 @@ public final class TransformSurfaceGeometry {
             return List.of();
         }
         int side = normalSign < 0 ? -1 : 1;
+        double depthOffset = overlay && side > 0 ? 1.0D : 0.0D;
         VoxelShape shape = attachment.state().getCollisionShape(
                 EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
                 CollisionContext.empty());
@@ -45,9 +53,9 @@ public final class TransformSurfaceGeometry {
         List<AABB> result = new ArrayList<>();
         for (AABB box : shape.toAabbs()) {
             if (attachment.deform()) {
-                addDeformed(surface, slot, box, side, result);
+                addDeformed(surface, slot, box, side, depthOffset, result);
             } else {
-                addRigid(surface, slot, box, side, result);
+                addRigid(surface, slot, box, side, depthOffset, result);
             }
         }
         return List.copyOf(result);
@@ -55,7 +63,7 @@ public final class TransformSurfaceGeometry {
 
     private static void addDeformed(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, AABB box, int side,
-            List<AABB> output) {
+            double depthOffset, List<AABB> output) {
         int uSteps = box.getXsize() < 1.0E-5D ? 1 : CURVE_U_SUBDIVISIONS;
         int vSteps = surface.heightCurveOffset().lengthSqr() < 1.0E-8D
                 || box.getYsize() < 1.0E-5D ? 1 : CURVE_V_SUBDIVISIONS;
@@ -71,14 +79,14 @@ public final class TransformSurfaceGeometry {
                         : box.minY + dy * (vy + 1);
                 output.add(deformedBounds(surface, slot,
                         new AABB(minX, minY, box.minZ,
-                                maxX, maxY, box.maxZ), side));
+                                maxX, maxY, box.maxZ), side, depthOffset));
             }
         }
     }
 
     private static void addRigid(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, AABB box, int side,
-            List<AABB> output) {
+            double depthOffset, List<AABB> output) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 tangent = surface.gridFrameTangent(u, v).normalize();
@@ -105,7 +113,7 @@ public final class TransformSurfaceGeometry {
                             : box.minZ + dz * (sz + 1);
                     output.add(rigidBounds(surface, slot,
                             new AABB(minX, minY, minZ, maxX, maxY, maxZ),
-                            side));
+                            side, depthOffset));
                 }
             }
         }
@@ -118,7 +126,8 @@ public final class TransformSurfaceGeometry {
     }
 
     private static AABB rigidBounds(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, AABB local, int side) {
+            ConstructionSurface.SurfaceSlot slot, AABB local, int side,
+            double depthOffset) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
@@ -132,19 +141,33 @@ public final class TransformSurfaceGeometry {
                 // The authored surface is the BACK face of the placed block.
                 // This keeps walls/equipment on the chosen side instead of
                 // burying half of every payload through the guide plane.
-                .add(normal.scale(z)), local);
+                .add(normal.scale(z + depthOffset)), local);
     }
 
     private static AABB deformedBounds(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, AABB local, int side) {
+            ConstructionSurface.SurfaceSlot slot, AABB local, int side,
+            double depthOffset) {
         return bounds((x, y, z) -> {
             double baseX = surface.flipped() ? 1.0D - x : x;
             double localX = side < 0 ? 1.0D - baseX : baseX;
             double u = (slot.column() + localX) / surface.columns();
             double v = (slot.row() + y) / surface.rows();
             Vec3 normal = surface.gridNormal(u, v).scale(side);
-            return surface.gridPoint(u, v).add(normal.scale(z));
+            return surface.gridPoint(u, v)
+                    .add(normal.scale(z + depthOffset));
         }, local);
+    }
+
+    public static Vec3 cellCenter(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            boolean overlay) {
+        if (surface == null || slot == null) return Vec3.ZERO;
+        int side = normalSign < 0 ? -1 : 1;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        double depthOffset = overlay && side > 0 ? 1.0D : 0.0D;
+        return surface.gridPoint(u, v).add(
+                surface.gridNormal(u, v).scale(side * (depthOffset + 0.5D)));
     }
 
     private static AABB bounds(PointTransform transform, AABB local) {

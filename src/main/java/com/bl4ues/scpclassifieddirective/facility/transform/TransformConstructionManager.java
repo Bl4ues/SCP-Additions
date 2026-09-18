@@ -742,7 +742,7 @@ public final class TransformConstructionManager {
                             level.dimension().location(), id);
                 }
             } else {
-                TransformPowerQuery.refreshGroup(server, group);
+                TransformPowerQuery.refreshGroupCell(server, group, cell);
             }
         }
 
@@ -784,7 +784,7 @@ public final class TransformConstructionManager {
                             level.dimension().location(), id);
                 }
             } else {
-                TransformPowerQuery.refreshSurface(server, surface);
+                TransformPowerQuery.refreshSurfaceSlot(server, surface, slot);
             }
         }
 

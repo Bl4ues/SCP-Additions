@@ -233,7 +233,7 @@ public final class TransformGroupPlacementClient {
                 || FacilityModule.isFacilityDoor(state));
     }
 
-    private static Target findTarget(LocalPlayer player) {
+    static Target findTarget(LocalPlayer player) {
         Minecraft minecraft = Minecraft.getInstance();
         Vec3 eye = player.getEyePosition();
         Vec3 worldRay = player.getViewVector(1.0F).normalize();
@@ -385,8 +385,12 @@ public final class TransformGroupPlacementClient {
     private record Hit(double distance, Direction face) {
     }
 
-    private record Target(TransformGroup group, TransformGroup.GridPos source,
+    static record Target(TransformGroup group, TransformGroup.GridPos source,
             Direction face, Vec3 worldHit) {
+        TransformGroup.GridPos adjacentCell() {
+            return source.offset(face.getStepX(), face.getStepY(),
+                    face.getStepZ());
+        }
     }
 
     private record PayloadTarget(TransformGroup group,

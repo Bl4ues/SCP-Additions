@@ -54,9 +54,10 @@ public final class BuilderToolGuideHud {
         int actionWidth = 0;
         for (Line line : guide.lines()) {
             keyWidth = Math.max(keyWidth, keyWidth(font, line));
-            actionWidth = Math.max(actionWidth, font.width(line.action()));
+            actionWidth = Math.max(actionWidth,
+                    font.width(ScpFonts.roboto(line.action())));
         }
-        int width = Math.max(font.width(guide.title()),
+        int width = Math.max(font.width(ScpFonts.roboto(guide.title())),
                 keyWidth + 8 + actionWidth) + 16;
         int height = 18 + guide.lines().size() * 11 + 6;
         int x = event.getWindow().getGuiScaledWidth() - width - 8;
@@ -64,7 +65,7 @@ public final class BuilderToolGuideHud {
 
         graphics.fill(x, y, x + width, y + height, 0xA90A0D11);
         graphics.fill(x, y, x + 2, y + height, 0xD9C8A74B);
-        graphics.drawString(font, guide.title(), x + 8, y + 6,
+        graphics.drawString(font, ScpFonts.roboto(guide.title()), x + 8, y + 6,
                 0xFFE7E8EB, false);
         int rowY = y + 18;
         for (Line line : guide.lines()) {
@@ -72,26 +73,27 @@ public final class BuilderToolGuideHud {
             if (AXES.equals(line.key())) {
                 drawAxes(graphics, font, keyX, rowY);
             } else {
-                graphics.drawString(font, line.key(), keyX, rowY,
+                graphics.drawString(font, ScpFonts.roboto(line.key()), keyX, rowY,
                         0xFFD2B65B, false);
             }
-            graphics.drawString(font, line.action(), x + 16 + keyWidth,
-                    rowY, line.muted() ? 0xFF8F949C : 0xFFB7BBC2, false);
+            graphics.drawString(font, ScpFonts.roboto(line.action()),
+                    x + 16 + keyWidth, rowY,
+                    line.muted() ? 0xFF8F949C : 0xFFB7BBC2, false);
             rowY += 11;
         }
     }
 
     private static int keyWidth(Font font, Line line) {
-        return AXES.equals(line.key()) ? font.width("X Y Z")
-                : font.width(line.key());
+        return AXES.equals(line.key()) ? font.width(ScpFonts.roboto("X Y Z"))
+                : font.width(ScpFonts.roboto(line.key()));
     }
 
     private static void drawAxes(GuiGraphics graphics, Font font, int x, int y) {
-        graphics.drawString(font, "X", x, y, 0xFFFF514B, false);
-        x += font.width("X ");
-        graphics.drawString(font, "Y", x, y, 0xFF56FF67, false);
-        x += font.width("Y ");
-        graphics.drawString(font, "Z", x, y, 0xFF5590FF, false);
+        graphics.drawString(font, ScpFonts.roboto("X"), x, y, 0xFFFF514B, false);
+        x += font.width(ScpFonts.roboto("X "));
+        graphics.drawString(font, ScpFonts.roboto("Y"), x, y, 0xFF56FF67, false);
+        x += font.width(ScpFonts.roboto("Y "));
+        graphics.drawString(font, ScpFonts.roboto("Z"), x, y, 0xFF5590FF, false);
     }
 
     private static Guide guide(Minecraft minecraft) {

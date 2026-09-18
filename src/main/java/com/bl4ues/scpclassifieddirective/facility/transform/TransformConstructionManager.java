@@ -224,6 +224,59 @@ public final class TransformConstructionManager {
         return true;
     }
 
+    public static boolean placeGroupBlock(ServerPlayer player, UUID groupId,
+            GridPos sourceCell, GridPos targetCell, Direction outwardLocal,
+            Vec3 hit) {
+        if (!canEdit(player) || groupId == null || sourceCell == null
+                || targetCell == null || outwardLocal == null || hit == null
+                || !(player.level() instanceof ServerLevel level)
+                || !(player.getMainHandItem().getItem()
+                        instanceof BlockItem blockItem)) {
+            return false;
+        }
+        if (player.getEyePosition().distanceToSqr(hit) > 36.0D * 36.0D) {
+            return false;
+        }
+
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        TransformGroup group = data.group(groupId);
+        if (group == null || !group.dimension().equals(
+                level.dimension().location())) return false;
+
+        BlockState source = group.cells().getOrDefault(sourceCell,
+                Blocks.AIR.defaultBlockState());
+        GridPos target = source.isAir() ? sourceCell : targetCell;
+        if (group.cells().size() >= MAX_GROUP_CELLS
+                && !group.cells().containsKey(target)) return false;
+        if (!group.cells().getOrDefault(target,
+                Blocks.AIR.defaultBlockState()).isAir()) {
+            TransformConstructionNetwork.sendBlockedPlacement(player,
+                    BlockPos.containing(group.cellCenter(target)));
+            player.displayClientMessage(Component.literal(
+                    "That off-grid cell is already occupied."), true);
+            return true;
+        }
+
+        BlockState payload = TransformPlacementStateRuntime.groupPlacementState(
+                player, blockItem, group, target, outwardLocal, hit);
+        TransformGroup next = group.withCell(target, payload);
+        BlockPos obstruction = firstObstruction(level, next, null,
+                group.id(), null);
+        if (obstruction != null) {
+            TransformConstructionNetwork.sendBlockedPlacement(player,
+                    obstruction);
+            player.displayClientMessage(Component.literal(
+                    "That off-grid block would intersect existing geometry."),
+                    true);
+            return true;
+        }
+
+        data.putGroup(next);
+        refresh(level.getServer());
+        return true;
+    }
+
     public static boolean placeSurfaceBlock(ServerPlayer player, UUID surfaceId,
             SurfaceSlot slot, Vec3 hit) {
         if (!canEdit(player) || surfaceId == null || slot == null || hit == null

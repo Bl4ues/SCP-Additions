@@ -83,6 +83,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(10, PlaceSurfaceBlock.class,
                 PlaceSurfaceBlock::encode, PlaceSurfaceBlock::decode,
                 PlaceSurfaceBlock::handle);
+        CHANNEL.registerMessage(11, PlaceGroupBlock.class,
+                PlaceGroupBlock::encode, PlaceGroupBlock::decode,
+                PlaceGroupBlock::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -116,6 +119,15 @@ public final class TransformConstructionNetwork {
 
     public static void cancelSurfaceAuthoring() {
         CHANNEL.sendToServer(new CancelSurfaceAuthoring());
+    }
+
+    public static void placeGroupBlock(UUID groupId,
+            TransformGroup.GridPos sourceCell, TransformGroup.GridPos targetCell,
+            net.minecraft.core.Direction outwardLocal, Vec3 hit) {
+        if (groupId == null || sourceCell == null || targetCell == null
+                || outwardLocal == null || hit == null) return;
+        CHANNEL.sendToServer(new PlaceGroupBlock(groupId, sourceCell,
+                targetCell, outwardLocal, hit));
     }
 
     public static void placeSurfaceBlock(UUID surfaceId,
@@ -404,6 +416,46 @@ public final class TransformConstructionNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() ->
                     TransformSurfaceAuthoringManager.cancel(context.getSender()));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record PlaceGroupBlock(UUID groupId, TransformGroup.GridPos sourceCell,
+            TransformGroup.GridPos targetCell,
+            net.minecraft.core.Direction outwardLocal, Vec3 hit) {
+        private static void encode(PlaceGroupBlock message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.groupId);
+            buffer.writeVarInt(message.sourceCell.x());
+            buffer.writeVarInt(message.sourceCell.y());
+            buffer.writeVarInt(message.sourceCell.z());
+            buffer.writeVarInt(message.targetCell.x());
+            buffer.writeVarInt(message.targetCell.y());
+            buffer.writeVarInt(message.targetCell.z());
+            buffer.writeEnum(message.outwardLocal);
+            writeVec(buffer, message.hit);
+        }
+
+        private static PlaceGroupBlock decode(FriendlyByteBuf buffer) {
+            TransformGroup.GridPos source = new TransformGroup.GridPos(
+                    buffer.readVarInt(), buffer.readVarInt(),
+                    buffer.readVarInt());
+            TransformGroup.GridPos target = new TransformGroup.GridPos(
+                    buffer.readVarInt(), buffer.readVarInt(),
+                    buffer.readVarInt());
+            return new PlaceGroupBlock(buffer.readUUID(), source, target,
+                    buffer.readEnum(net.minecraft.core.Direction.class),
+                    readVec(buffer));
+        }
+
+        private static void handle(PlaceGroupBlock message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() ->
+                    TransformConstructionManager.placeGroupBlock(
+                            context.getSender(), message.groupId,
+                            message.sourceCell, message.targetCell,
+                            message.outwardLocal, message.hit));
             context.setPacketHandled(true);
         }
     }

@@ -81,6 +81,39 @@ public final class TransformPlacementStateRuntime {
         TransformConstructionManager.refresh(level.getServer());
     }
 
+    public static BlockState groupPlacementState(ServerPlayer player,
+            BlockItem item, TransformGroup group, TransformGroup.GridPos cell,
+            Direction outwardLocal, Vec3 hit) {
+        if (player == null || item == null || group == null || cell == null
+                || outwardLocal == null) {
+            return item == null ? net.minecraft.world.level.block.Blocks.AIR
+                    .defaultBlockState() : item.getBlock().defaultBlockState();
+        }
+        Vec3 safeHit = hit == null ? group.cellCenter(cell) : hit;
+        Vec3 worldNormal = TransformMath.rotate(
+                Vec3.atLowerCornerOf(outwardLocal.getNormal()),
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        Direction worldFace = nearestDirection(worldNormal);
+        BlockHitResult virtualHit = new BlockHitResult(safeHit, worldFace,
+                net.minecraft.core.BlockPos.containing(safeHit), false);
+        BlockState contextual = item.getBlock().getStateForPlacement(
+                new BlockPlaceContext(new UseOnContext(player,
+                        InteractionHand.MAIN_HAND, virtualHit)));
+        if (contextual == null) contextual = item.getBlock().defaultBlockState();
+
+        Vec3 x = TransformMath.rotate(new Vec3(1, 0, 0), group.rotationX(),
+                group.rotationY(), group.rotationZ());
+        Vec3 y = TransformMath.rotate(new Vec3(0, 1, 0), group.rotationX(),
+                group.rotationY(), group.rotationZ());
+        Vec3 z = TransformMath.rotate(new Vec3(0, 0, 1), group.rotationX(),
+                group.rotationY(), group.rotationZ());
+        BlockState local = localize(contextual, x, y, z);
+        if (local.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+            local = attachToLocalFace(local, outwardLocal);
+        }
+        return local;
+    }
+
     public static BlockState surfacePlacementState(ServerPlayer player,
             BlockItem item, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, Vec3 hit) {
@@ -241,6 +274,18 @@ public final class TransformPlacementStateRuntime {
             return x >= 0 ? Direction.EAST : Direction.WEST;
         }
         return z >= 0 ? Direction.SOUTH : Direction.NORTH;
+    }
+
+    private static Direction nearestDirection(Vec3 vector) {
+        double ax = Math.abs(vector.x);
+        double ay = Math.abs(vector.y);
+        double az = Math.abs(vector.z);
+        if (ay >= ax && ay >= az) {
+            return vector.y >= 0.0D ? Direction.UP : Direction.DOWN;
+        }
+        if (ax >= az) return vector.x >= 0.0D
+                ? Direction.EAST : Direction.WEST;
+        return vector.z >= 0.0D ? Direction.SOUTH : Direction.NORTH;
     }
 
     private static Direction dominantDirection(Vec3 delta) {

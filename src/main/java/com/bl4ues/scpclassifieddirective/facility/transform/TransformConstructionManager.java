@@ -167,6 +167,22 @@ public final class TransformConstructionManager {
         return cell == null ? Shapes.empty() : cell.groupCollision();
     }
 
+    /**
+     * Cached transformed collision from both rigid Off-Grid groups and curved
+     * Surfaces. This is used from BlockState#getCollisionShape and therefore
+     * must never construct/rebuild the spatial index on demand.
+     */
+    public static VoxelShape transformedCollisionShape(BlockGetter getter,
+            BlockPos pos) {
+        if (!(getter instanceof ServerLevel level) || pos == null) {
+            return Shapes.empty();
+        }
+        SpatialIndex cached = INDEXES.get(level.getServer());
+        if (cached == null) return Shapes.empty();
+        ProxyCell cell = cached.cell(level.dimension().location(), pos);
+        return cell == null ? Shapes.empty() : cell.collision();
+    }
+
     public static int proxyLight(BlockGetter level, BlockPos pos) {
         ProxyCell cell = proxyCell(level, pos);
         return cell == null ? 0 : cell.light();

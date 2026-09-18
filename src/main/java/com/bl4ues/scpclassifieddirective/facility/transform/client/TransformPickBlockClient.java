@@ -2,22 +2,16 @@ package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
-import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
-import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
-import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.Map;
 
 /** Restores vanilla middle-click copy semantics for transformed proxy blocks. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
@@ -34,17 +28,30 @@ public final class TransformPickBlockClient {
         if (player == null || minecraft.level == null || minecraft.gameMode == null
                 || minecraft.screen != null || !player.isCreative()) return;
 
-        // Rigid Off-Grid payloads are picked in their authored local grid even
-        // when they share a vanilla cell and no proxy could be materialized.
-        BlockState state = TransformGroupPlacementClient
-                .findAimedPayloadState(player);
-        if (state == null && minecraft.hitResult instanceof BlockHitResult hit
-                && minecraft.level.getBlockState(hit.getBlockPos()).is(
-                        TransformConstructionModule.getProxy())) {
-            // Surface construction still uses its existing proxy-backed nearest
-            // lookup, which is appropriate for its deformed slot geometry.
-            state = nearestState(minecraft, hit.getLocation());
+        TransformGroupPlacementClient.PayloadTarget group =
+                TransformGroupPlacementClient.findBreakTarget(player);
+        TransformSurfaceRaycast.Target surface = TransformSurfaceRaycast.target(
+                player, TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location()));
+
+        BlockState groupState = group == null ? null : group.state();
+        BlockState surfaceState = null;
+        if (surface != null) {
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.surface().attachments().get(surface.slot());
+            if (attachment != null && !attachment.state().isAir()) {
+                surfaceState = attachment.state();
+            } else {
+                surface = null;
+            }
         }
+
+        double groupDistance = group == null
+                ? Double.POSITIVE_INFINITY : group.distance();
+        double surfaceDistance = surface == null
+                ? Double.POSITIVE_INFINITY : surface.distance();
+        BlockState state = groupDistance <= surfaceDistance
+                ? groupState : surfaceState;
         if (state == null || state.isAir()) return;
         ItemStack picked = state.getBlock().asItem().getDefaultInstance();
         if (picked.isEmpty()) return;
@@ -57,43 +64,5 @@ public final class TransformPickBlockClient {
         event.setSwingHand(false);
     }
 
-    private static BlockState nearestState(Minecraft minecraft, Vec3 world) {
-        BlockState best = null;
-        double bestDistance = 4.0D;
-        var dimension = minecraft.level.dimension().location();
-        for (TransformGroup group
-                : TransformConstructionClientState.groups(dimension)) {
-            Vec3 local = TransformMath.worldToLocal(group.origin(), world,
-                    group.rotationX(), group.rotationY(), group.rotationZ());
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                if (entry.getValue() == null || entry.getValue().isAir()) continue;
-                TransformGroup.GridPos cell = entry.getKey();
-                double distance = local.distanceToSqr(
-                        new Vec3(cell.x(), cell.y(), cell.z()));
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = entry.getValue();
-                }
-            }
-        }
-        for (ConstructionSurface surface
-                : TransformConstructionClientState.surfaces(dimension)) {
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                double u = (slot.column() + 0.5D) / surface.columns();
-                double v = (slot.row() + 0.5D) / surface.rows();
-                Vec3 center = surface.gridPoint(u, v)
-                        .add(surface.gridNormal(u, v).scale(0.5D));
-                double distance = center.distanceToSqr(world);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = entry.getValue().state();
-                }
-            }
-        }
-        return best;
-    }
+
 }

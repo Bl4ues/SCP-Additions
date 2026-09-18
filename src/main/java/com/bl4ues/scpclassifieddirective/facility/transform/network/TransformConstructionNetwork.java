@@ -437,13 +437,14 @@ public final class TransformConstructionNetwork {
         }
 
         private static PlaceGroupBlock decode(FriendlyByteBuf buffer) {
+            UUID groupId = buffer.readUUID();
             TransformGroup.GridPos source = new TransformGroup.GridPos(
                     buffer.readVarInt(), buffer.readVarInt(),
                     buffer.readVarInt());
             TransformGroup.GridPos target = new TransformGroup.GridPos(
                     buffer.readVarInt(), buffer.readVarInt(),
                     buffer.readVarInt());
-            return new PlaceGroupBlock(buffer.readUUID(), source, target,
+            return new PlaceGroupBlock(groupId, source, target,
                     buffer.readEnum(net.minecraft.core.Direction.class),
                     readVec(buffer));
         }

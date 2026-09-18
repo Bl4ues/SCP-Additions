@@ -262,7 +262,7 @@ public final class TransformConstructionManager {
                 level.dimension().location())) return false;
         ConstructionSurface next = surface.withFlipped(flipped);
         data.putSurface(next);
-        refresh(level.getServer());
+        refreshSurface(level.getServer(), id);
         return true;
     }
 
@@ -477,7 +477,11 @@ public final class TransformConstructionManager {
                     && !group.cells().containsKey(target)) return false;
             TransformGroup next = group.withCell(target, payload);
             data.putGroup(next);
-            refresh(level.getServer());
+            refreshGroup(level.getServer(), group.id());
+            TransformConstructionNetwork.broadcastGroupCell(level,
+                    group.id(), target, payload);
+            TransformConstructionNetwork.acknowledgeRevision(
+                    level.getServer());
             return true;
         }
 
@@ -502,7 +506,11 @@ public final class TransformConstructionManager {
             ConstructionSurface next = surface.withAttachment(surfaceHit.slot(),
                     payload, deform);
             data.putSurface(next);
-            refresh(level.getServer());
+            refreshSurface(level.getServer(), surface.id());
+            TransformConstructionNetwork.broadcastSurfaceSlot(level,
+                    surface.id(), surfaceHit.slot(), payload, deform);
+            TransformConstructionNetwork.acknowledgeRevision(
+                    level.getServer());
             return true;
         }
         return false;
@@ -543,9 +551,19 @@ public final class TransformConstructionManager {
             TransformGroup group = data.group(groupHit.groupId());
             if (group != null) {
                 TransformGroup next = group.withoutCell(groupHit.cell());
-                if (next.cells().isEmpty()) data.removeGroup(group.id());
-                else data.putGroup(next);
-                refresh(level.getServer());
+                if (next.cells().isEmpty()) {
+                    data.removeGroup(group.id());
+                    refreshGroup(level.getServer(), group.id());
+                    // Owner deletion remains a structural revision and will be
+                    // distributed by the normal snapshot path.
+                } else {
+                    data.putGroup(next);
+                    refreshGroup(level.getServer(), group.id());
+                    TransformConstructionNetwork.broadcastGroupCellRemoved(
+                            level, group.id(), groupHit.cell());
+                    TransformConstructionNetwork.acknowledgeRevision(
+                            level.getServer());
+                }
                 return;
             }
         }
@@ -555,8 +573,13 @@ public final class TransformConstructionManager {
             ConstructionSurface surface = data.surface(surfaceHit.surfaceId());
             if (surface != null && surface.attachments().containsKey(
                     surfaceHit.slot())) {
-                data.putSurface(surface.withoutAttachment(surfaceHit.slot()));
-                refresh(level.getServer());
+                data.putSurface(surface.withoutAttachment(
+                        surfaceHit.slot()));
+                refreshSurface(level.getServer(), surface.id());
+                TransformConstructionNetwork.broadcastSurfaceSlotRemoved(
+                        level, surface.id(), surfaceHit.slot());
+                TransformConstructionNetwork.acknowledgeRevision(
+                        level.getServer());
             }
         }
     }

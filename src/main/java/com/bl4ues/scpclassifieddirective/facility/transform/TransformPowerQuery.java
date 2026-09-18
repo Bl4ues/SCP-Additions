@@ -29,6 +29,38 @@ public final class TransformPowerQuery {
     private TransformPowerQuery() {
     }
 
+    public static boolean powered(ServerLevel level, TransformGroup group,
+            TransformGroup.GridPos consumer) {
+        if (level == null || group == null || consumer == null) return false;
+        for (net.minecraft.core.Direction direction
+                : net.minecraft.core.Direction.values()) {
+            TransformGroup.GridPos neighbor = consumer.offset(
+                    direction.getStepX(), direction.getStepY(),
+                    direction.getStepZ());
+            if (source(group.cells().get(neighbor))) return true;
+        }
+        return powered(level, group.cellCenter(consumer));
+    }
+
+    public static boolean powered(ServerLevel level, ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot consumer) {
+        if (level == null || surface == null || consumer == null) return false;
+        int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        for (int[] offset : offsets) {
+            ConstructionSurface.SurfaceSlot neighbor =
+                    new ConstructionSurface.SurfaceSlot(
+                            consumer.column() + offset[0],
+                            consumer.row() + offset[1]);
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.attachments().get(neighbor);
+            if (attachment != null && source(attachment.state())) return true;
+        }
+        double u = (consumer.column() + 0.5D) / surface.columns();
+        double v = (consumer.row() + 0.5D) / surface.rows();
+        return powered(level, surface.gridPoint(u, v)
+                .add(surface.gridNormal(u, v).scale(0.5D)));
+    }
+
     public static boolean powered(ServerLevel level, Vec3 center) {
         if (level == null || center == null) return false;
         BlockPos base = BlockPos.containing(center);

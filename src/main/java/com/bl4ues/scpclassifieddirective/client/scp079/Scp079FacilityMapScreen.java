@@ -5,7 +5,6 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
-import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoom;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
@@ -767,16 +766,23 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static boolean belongsToFloor(double x, double y, double z,
             FloorGroup floor,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
+        // Doors live on/next to a room boundary. They do not inherit the much
+        // taller camera-association column, otherwise a door from a stacked
+        // room can be projected onto the current floor as a phantom marker.
+        final double horizontalTolerance = 0.72D;
+        final double doorColumnHeight = 5.25D;
         for (FacilityRoomSnapshot room : floor.rooms()) {
             FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
             if (geometry == null || geometry.empty()
-                    || !geometry.intersects(x - 1.1D, z - 1.1D,
-                    2.2D, 2.2D)) {
+                    || !geometry.intersects(x - horizontalTolerance,
+                    z - horizontalTolerance,
+                    horizontalTolerance * 2.0D,
+                    horizontalTolerance * 2.0D)) {
                 continue;
             }
             for (FacilityFloorPatch patch : room.patches()) {
-                if (y >= patch.y() - 1.0D
-                        && y <= patch.y() + FacilityRoom.CAMERA_COLUMN_HEIGHT) {
+                if (y >= patch.y() - 0.75D
+                        && y <= patch.y() + doorColumnHeight) {
                     return true;
                 }
             }

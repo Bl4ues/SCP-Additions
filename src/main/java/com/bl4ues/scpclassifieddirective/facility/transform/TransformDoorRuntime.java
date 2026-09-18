@@ -64,11 +64,12 @@ public final class TransformDoorRuntime {
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || event.getHand() != InteractionHand.MAIN_HAND
                 || !(event.getLevel() instanceof ServerLevel level)
-                || !level.getBlockState(event.getPos()).is(
-                        TransformConstructionModule.getProxy())
                 || event.getItemStack().getItem() instanceof BlockItem) {
             return;
         }
+        // Rigid transformed doors may be clipped into occupied vanilla cells,
+        // where no proxy can exist. Resolve the authored door from the hit
+        // location itself so direct-use doors remain functional there too.
         DoorHit hit = nearestDoor(level, event.getHitVec().getLocation(), 4.0D);
         if (hit == null || !hit.address().family().directUse()) return;
         DoorAddress address = hit.address();

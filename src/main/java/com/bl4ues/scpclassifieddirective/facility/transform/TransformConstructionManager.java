@@ -288,12 +288,14 @@ public final class TransformConstructionManager {
 
         BlockState source = group.cells().getOrDefault(sourceCell,
                 Blocks.AIR.defaultBlockState());
-        Vec3 localHit = TransformMath.worldToLocal(group.origin(), hit,
-                group.rotationX(), group.rotationY(), group.rotationZ());
-        Vec3 outside = localHit.add(
-                Vec3.atLowerCornerOf(outwardLocal.getNormal()).scale(0.501D));
-        GridPos hitTarget = nearestGridCell(outside);
-        GridPos target = source.isAir() ? sourceCell : hitTarget;
+        GridPos expected = source.isAir() ? sourceCell : sourceCell.offset(
+                outwardLocal.getStepX(), outwardLocal.getStepY(),
+                outwardLocal.getStepZ());
+        // The client authors against the group's clean local 1x1 grid. Validate
+        // that discrete intent instead of re-deriving a cell by rounding a
+        // transformed world-space hit a second time.
+        if (!expected.equals(targetCell)) return false;
+        GridPos target = expected;
         if (group.cells().size() >= MAX_GROUP_CELLS
                 && !group.cells().containsKey(target)) return false;
         if (!group.cells().getOrDefault(target,

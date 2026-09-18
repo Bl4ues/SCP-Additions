@@ -1373,24 +1373,55 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private static void drawMapLine(GuiGraphics graphics, int x0, int y0,
             int x1, int y1, int color) {
-        int dx = Math.abs(x1 - x0);
-        int sx = x0 < x1 ? 1 : -1;
-        int dy = -Math.abs(y1 - y0);
-        int sy = y0 < y1 ? 1 : -1;
-        int error = dx + dy;
-        while (true) {
-            graphics.fill(x0, y0, x0 + 1, y0 + 1, color);
-            if (x0 == x1 && y0 == y1) return;
-            int twice = error * 2;
-            if (twice >= dy) {
-                error += dy;
-                x0 += sx;
-            }
-            if (twice <= dx) {
-                error += dx;
-                y0 += sy;
-            }
+        int dx = x1 - x0;
+        int dy = y1 - y0;
+        if (dx == 0 || dy == 0) {
+            int minX = Math.min(x0, x1);
+            int maxX = Math.max(x0, x1);
+            int minY = Math.min(y0, y1);
+            int maxY = Math.max(y0, y1);
+            graphics.fill(minX, minY, maxX + 1, maxY + 1, color);
+            return;
         }
+
+        // Lightweight Xiaolin-Wu-style coverage. The room geometry remains
+        // authored in world units; only its final pixel coverage is smoothed,
+        // preserving the CRT language without the staircase on 37/45° walls
+        // and curved Surface contours.
+        int steps = Math.max(Math.abs(dx), Math.abs(dy));
+        double stepX = dx / (double) steps;
+        double stepY = dy / (double) steps;
+        double x = x0;
+        double y = y0;
+        boolean shallow = Math.abs(dx) >= Math.abs(dy);
+        for (int step = 0; step <= steps; step++) {
+            if (shallow) {
+                int px = (int) Math.round(x);
+                int py = (int) Math.floor(y);
+                double fraction = y - Math.floor(y);
+                plotMapPixel(graphics, px, py, color, 1.0D - fraction);
+                plotMapPixel(graphics, px, py + 1, color, fraction);
+            } else {
+                int px = (int) Math.floor(x);
+                int py = (int) Math.round(y);
+                double fraction = x - Math.floor(x);
+                plotMapPixel(graphics, px, py, color, 1.0D - fraction);
+                plotMapPixel(graphics, px + 1, py, color, fraction);
+            }
+            x += stepX;
+            y += stepY;
+        }
+    }
+
+    private static void plotMapPixel(GuiGraphics graphics, int x, int y,
+            int color, double coverage) {
+        if (coverage <= 0.035D) return;
+        int alpha = color >>> 24 & 0xFF;
+        int weighted = Mth.clamp((int) Math.round(alpha
+                * Mth.clamp(coverage, 0.0D, 1.0D)), 0, 255);
+        if (weighted <= 0) return;
+        int blended = color & 0x00FFFFFF | weighted << 24;
+        graphics.fill(x, y, x + 1, y + 1, blended);
     }
 
     private static long pack(int x, int z) {

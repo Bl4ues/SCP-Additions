@@ -232,6 +232,13 @@ public final class TransformConstructionClientControls {
             }
             case GLFW.GLFW_KEY_L -> {
                 finishDrag();
+                // L is also Minecraft's default Advancements key. While an
+                // authoring tool owns this press it must remain an editor
+                // command instead of opening another screen on top of the gizmo.
+                while (minecraft.options.keyAdvancements.consumeClick()) {
+                    // Drain the click queued by this physical key press.
+                }
+                minecraft.options.keyAdvancements.setDown(false);
                 TransformConstructionClientState.toggleTransformSpace();
                 status(TransformConstructionClientState.transformSpace()
                         == TransformConstructionClientState.TransformSpace.LOCAL

@@ -832,11 +832,21 @@ public final class TransformConstructionManager {
 
         LogicalPart part = LogicalPart.group(cell);
         Map<ResourceLocation, Set<Long>> affected = new LinkedHashMap<>();
-        for (OwnerKey key : index.ownerKeys(id, false)) {
-            if (!part.equals(key.part())) continue;
-            affected.computeIfAbsent(key.dimension(), ignored ->
+        if (group != null) {
+            OwnerKey key = OwnerKey.groupCell(group.dimension(), id, cell);
+            affected.computeIfAbsent(group.dimension(), ignored ->
                     new LinkedHashSet<>()).addAll(index.ownerPositions(key));
             index.removeOwner(key);
+        } else {
+            // Owner deletion is rare. Only this recovery path needs to search
+            // by structure id; normal cell edits have an exact deterministic
+            // owner key and stay O(1).
+            for (OwnerKey key : index.ownerKeys(id, false)) {
+                if (!part.equals(key.part())) continue;
+                affected.computeIfAbsent(key.dimension(), ignored ->
+                        new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+                index.removeOwner(key);
+            }
         }
 
         if (group != null && group.cells().containsKey(cell)) {
@@ -881,11 +891,18 @@ public final class TransformConstructionManager {
 
         LogicalPart part = LogicalPart.surface(slot);
         Map<ResourceLocation, Set<Long>> affected = new LinkedHashMap<>();
-        for (OwnerKey key : index.ownerKeys(id, true)) {
-            if (!part.equals(key.part())) continue;
-            affected.computeIfAbsent(key.dimension(), ignored ->
+        if (surface != null) {
+            OwnerKey key = OwnerKey.surfaceSlot(surface.dimension(), id, slot);
+            affected.computeIfAbsent(surface.dimension(), ignored ->
                     new LinkedHashSet<>()).addAll(index.ownerPositions(key));
             index.removeOwner(key);
+        } else {
+            for (OwnerKey key : index.ownerKeys(id, true)) {
+                if (!part.equals(key.part())) continue;
+                affected.computeIfAbsent(key.dimension(), ignored ->
+                        new LinkedHashSet<>()).addAll(index.ownerPositions(key));
+                index.removeOwner(key);
+            }
         }
 
         if (surface != null

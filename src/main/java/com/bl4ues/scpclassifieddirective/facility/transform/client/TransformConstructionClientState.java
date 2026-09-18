@@ -64,6 +64,13 @@ public final class TransformConstructionClientState {
             Map<ConstructionSurface.SurfaceSlot,
                     TransformConstructionManager.ProxyCell>>>
             SURFACE_WORLD_CONTRIBUTORS = new LinkedHashMap<>();
+    /** World-cell -> authored structure ids. Keeps incremental proxy recompute
+     * proportional to the actual overlap at that cell instead of every
+     * transformed structure in the dimension. */
+    private static final Map<Long, Set<UUID>> GROUP_IDS_BY_WORLD =
+            new LinkedHashMap<>();
+    private static final Map<Long, Set<UUID>> SURFACE_IDS_BY_WORLD =
+            new LinkedHashMap<>();
     private static Selection selection;
     private static EditMode mode = EditMode.MOVE;
     private static Axis axis = Axis.X;
@@ -130,6 +137,8 @@ public final class TransformConstructionClientState {
         SURFACE_SLOT_PROXY_CONTRIBUTIONS.clear();
         GROUP_WORLD_CONTRIBUTORS.clear();
         SURFACE_WORLD_CONTRIBUTORS.clear();
+        GROUP_IDS_BY_WORLD.clear();
+        SURFACE_IDS_BY_WORLD.clear();
         selection = null;
         hoveredSurfaceId = null;
         hoveredSurfaceHandle = null;
@@ -615,6 +624,8 @@ public final class TransformConstructionClientState {
         SURFACE_SLOT_PROXY_CONTRIBUTIONS.clear();
         GROUP_WORLD_CONTRIBUTORS.clear();
         SURFACE_WORLD_CONTRIBUTORS.clear();
+        GROUP_IDS_BY_WORLD.clear();
+        SURFACE_IDS_BY_WORLD.clear();
         proxyCells = new LinkedHashMap<>();
         if (dimension == null) return;
 
@@ -630,6 +641,8 @@ public final class TransformConstructionClientState {
             Map<Long, TransformConstructionManager.ProxyCell> contribution =
                     aggregateContributions(cells.values());
             GROUP_PROXY_CONTRIBUTIONS.put(group.id(), contribution);
+            indexWorldIds(GROUP_IDS_BY_WORLD, group.id(),
+                    contribution.keySet());
             affected.addAll(contribution.keySet());
         }
         for (ConstructionSurface surface : surfaces) {
@@ -643,6 +656,8 @@ public final class TransformConstructionClientState {
             Map<Long, TransformConstructionManager.ProxyCell> contribution =
                     aggregateContributions(slots.values());
             SURFACE_PROXY_CONTRIBUTIONS.put(surface.id(), contribution);
+            indexWorldIds(SURFACE_IDS_BY_WORLD, surface.id(),
+                    contribution.keySet());
             affected.addAll(contribution.keySet());
         }
         recomputeProxyCells(affected);
@@ -653,7 +668,10 @@ public final class TransformConstructionClientState {
         Set<Long> affected = new LinkedHashSet<>();
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 GROUP_PROXY_CONTRIBUTIONS.remove(id);
-        if (old != null) affected.addAll(old.keySet());
+        if (old != null) {
+            affected.addAll(old.keySet());
+            removeWorldIds(GROUP_IDS_BY_WORLD, id, old.keySet());
+        }
         GROUP_CELL_PROXY_CONTRIBUTIONS.remove(id);
         GROUP_WORLD_CONTRIBUTORS.remove(id);
         TransformGroup group = group(id);
@@ -667,6 +685,7 @@ public final class TransformConstructionClientState {
             Map<Long, TransformConstructionManager.ProxyCell> next =
                     aggregateContributions(cells.values());
             GROUP_PROXY_CONTRIBUTIONS.put(id, next);
+            indexWorldIds(GROUP_IDS_BY_WORLD, id, next.keySet());
             affected.addAll(next.keySet());
         }
         recomputeProxyCells(affected);
@@ -677,7 +696,10 @@ public final class TransformConstructionClientState {
         Set<Long> affected = new LinkedHashSet<>();
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 SURFACE_PROXY_CONTRIBUTIONS.remove(id);
-        if (old != null) affected.addAll(old.keySet());
+        if (old != null) {
+            affected.addAll(old.keySet());
+            removeWorldIds(SURFACE_IDS_BY_WORLD, id, old.keySet());
+        }
         SURFACE_SLOT_PROXY_CONTRIBUTIONS.remove(id);
         SURFACE_WORLD_CONTRIBUTORS.remove(id);
         ConstructionSurface surface = surface(id);
@@ -692,6 +714,7 @@ public final class TransformConstructionClientState {
             Map<Long, TransformConstructionManager.ProxyCell> next =
                     aggregateContributions(slots.values());
             SURFACE_PROXY_CONTRIBUTIONS.put(id, next);
+            indexWorldIds(SURFACE_IDS_BY_WORLD, id, next.keySet());
             affected.addAll(next.keySet());
         }
         recomputeProxyCells(affected);
@@ -765,8 +788,13 @@ public final class TransformConstructionClientState {
             TransformConstructionManager.ProxyCell merged =
                     mergeContributors(contributors == null
                             ? List.of() : contributors.values());
-            if (merged == null) aggregate.remove(packed);
-            else aggregate.put(packed, merged);
+            if (merged == null) {
+                aggregate.remove(packed);
+                removeWorldId(GROUP_IDS_BY_WORLD, id, packed);
+            } else {
+                aggregate.put(packed, merged);
+                addWorldId(GROUP_IDS_BY_WORLD, id, packed);
+            }
         }
         if (aggregate.isEmpty()) GROUP_PROXY_CONTRIBUTIONS.remove(id);
     }
@@ -786,8 +814,13 @@ public final class TransformConstructionClientState {
             TransformConstructionManager.ProxyCell merged =
                     mergeContributors(contributors == null
                             ? List.of() : contributors.values());
-            if (merged == null) aggregate.remove(packed);
-            else aggregate.put(packed, merged);
+            if (merged == null) {
+                aggregate.remove(packed);
+                removeWorldId(SURFACE_IDS_BY_WORLD, id, packed);
+            } else {
+                aggregate.put(packed, merged);
+                addWorldId(SURFACE_IDS_BY_WORLD, id, packed);
+            }
         }
         if (aggregate.isEmpty()) SURFACE_PROXY_CONTRIBUTIONS.remove(id);
     }
@@ -912,7 +945,10 @@ public final class TransformConstructionClientState {
         GROUP_WORLD_CONTRIBUTORS.remove(id);
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 GROUP_PROXY_CONTRIBUTIONS.remove(id);
-        if (old != null) recomputeProxyCells(old.keySet());
+        if (old != null) {
+            removeWorldIds(GROUP_IDS_BY_WORLD, id, old.keySet());
+            recomputeProxyCells(old.keySet());
+        }
     }
 
     private static void removeSurfaceProxyCells(UUID id) {
@@ -920,7 +956,10 @@ public final class TransformConstructionClientState {
         SURFACE_WORLD_CONTRIBUTORS.remove(id);
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 SURFACE_PROXY_CONTRIBUTIONS.remove(id);
-        if (old != null) recomputeProxyCells(old.keySet());
+        if (old != null) {
+            removeWorldIds(SURFACE_IDS_BY_WORLD, id, old.keySet());
+            recomputeProxyCells(old.keySet());
+        }
     }
 
     private static Map<TransformGroup.GridPos,
@@ -1023,27 +1062,67 @@ public final class TransformConstructionClientState {
             if (packed == null) continue;
             MutableProxyCell aggregate = new MutableProxyCell();
             boolean any = false;
-            for (Map<Long, TransformConstructionManager.ProxyCell> contribution
-                    : GROUP_PROXY_CONTRIBUTIONS.values()) {
-                TransformConstructionManager.ProxyCell cell =
-                        contribution.get(packed);
-                if (cell != null) {
-                    aggregate.merge(cell);
-                    any = true;
+
+            Set<UUID> groupIds = GROUP_IDS_BY_WORLD.get(packed);
+            if (groupIds != null) {
+                for (UUID id : groupIds) {
+                    Map<Long, TransformConstructionManager.ProxyCell> contribution =
+                            GROUP_PROXY_CONTRIBUTIONS.get(id);
+                    TransformConstructionManager.ProxyCell cell =
+                            contribution == null ? null : contribution.get(packed);
+                    if (cell != null) {
+                        aggregate.merge(cell);
+                        any = true;
+                    }
                 }
             }
-            for (Map<Long, TransformConstructionManager.ProxyCell> contribution
-                    : SURFACE_PROXY_CONTRIBUTIONS.values()) {
-                TransformConstructionManager.ProxyCell cell =
-                        contribution.get(packed);
-                if (cell != null) {
-                    aggregate.merge(cell);
-                    any = true;
+
+            Set<UUID> surfaceIds = SURFACE_IDS_BY_WORLD.get(packed);
+            if (surfaceIds != null) {
+                for (UUID id : surfaceIds) {
+                    Map<Long, TransformConstructionManager.ProxyCell> contribution =
+                            SURFACE_PROXY_CONTRIBUTIONS.get(id);
+                    TransformConstructionManager.ProxyCell cell =
+                            contribution == null ? null : contribution.get(packed);
+                    if (cell != null) {
+                        aggregate.merge(cell);
+                        any = true;
+                    }
                 }
             }
+
             if (any) proxyCells.put(packed, aggregate.freeze());
             else proxyCells.remove(packed);
         }
+    }
+
+    private static void indexWorldIds(Map<Long, Set<UUID>> index, UUID id,
+            Iterable<Long> positions) {
+        if (id == null || positions == null) return;
+        for (Long packed : positions) {
+            if (packed != null) addWorldId(index, id, packed);
+        }
+    }
+
+    private static void removeWorldIds(Map<Long, Set<UUID>> index, UUID id,
+            Iterable<Long> positions) {
+        if (id == null || positions == null) return;
+        for (Long packed : positions) {
+            if (packed != null) removeWorldId(index, id, packed);
+        }
+    }
+
+    private static void addWorldId(Map<Long, Set<UUID>> index, UUID id,
+            long packed) {
+        index.computeIfAbsent(packed, ignored -> new LinkedHashSet<>()).add(id);
+    }
+
+    private static void removeWorldId(Map<Long, Set<UUID>> index, UUID id,
+            long packed) {
+        Set<UUID> ids = index.get(packed);
+        if (ids == null) return;
+        ids.remove(id);
+        if (ids.isEmpty()) index.remove(packed);
     }
 
     private static void addGroup(Map<Long, MutableProxyCell> index,

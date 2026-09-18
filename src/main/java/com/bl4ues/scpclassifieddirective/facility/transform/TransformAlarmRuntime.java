@@ -20,6 +20,9 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * Server-side Alarm adapter for transformed construction. A transformed Alarm
@@ -34,6 +37,8 @@ public final class TransformAlarmRuntime {
     private static final int UPDATE_INTERVAL = 2;
     private static final int LOOP_INTERVAL = 40;
     private static final double TRANSFORMED_DOOR_RANGE_SQR = 1.75D * 1.75D;
+    private static final Map<MinecraftServer, AlarmIndex> INDEXES =
+            new WeakHashMap<>();
 
     private TransformAlarmRuntime() {
     }
@@ -45,102 +50,140 @@ public final class TransformAlarmRuntime {
         int tick = server.getTickCount();
         if (tick % UPDATE_INTERVAL != 0) return;
 
-        TransformConstructionSavedData data = TransformConstructionSavedData.get(
-                server);
-        for (ServerLevel level : server.getAllLevels()) {
-            updateGroups(level, data, tick);
-            updateSurfaces(level, data, tick);
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        AlarmIndex index = INDEXES.get(server);
+        if (index == null || index.revision() != data.revision()) {
+            index = AlarmIndex.build(data);
+            INDEXES.put(server, index);
         }
-    }
 
-    private static boolean updateGroups(ServerLevel level,
-            TransformConstructionSavedData data, int tick) {
-        boolean changed = false;
-        for (TransformGroup original : data.groups()) {
-            if (!original.dimension().equals(level.dimension().location())) {
-                continue;
+        for (GroupAlarm alarm : index.groups()) {
+            ServerLevel level = level(server, alarm.dimension());
+            TransformGroup group = data.group(alarm.groupId());
+            if (level == null || group == null) continue;
+            BlockState state = group.cells().get(alarm.cell());
+            if (!isAlarm(state)) continue;
+
+            Vec3 center = group.cellCenter(alarm.cell());
+            boolean active = shouldBeActive(level, center,
+                    TransformPowerQuery.powered(level, group, alarm.cell())
+                            || adjacentOpenDoor(group, alarm.cell(), state));
+            boolean wasActive = state.getValue(AlarmModule.ACTIVE);
+            if (active != wasActive) {
+                BlockState updated = state.setValue(
+                        AlarmModule.ACTIVE, active);
+                data.putGroupState(group.withCell(alarm.cell(), updated));
+                TransformConstructionNetwork.broadcastGroupCell(level,
+                        group.id(), alarm.cell(), updated);
+                TransformConstructionManager.refreshGroupCellRuntime(
+                        server, group.id(), alarm.cell());
             }
-            TransformGroup current = original;
-            List<TransformGroup.GridPos> changedCells = new ArrayList<>();
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : original.cells().entrySet()) {
-                BlockState state = entry.getValue();
-                if (!isAlarm(state)) continue;
-                Vec3 center = original.cellCenter(entry.getKey());
-                boolean active = shouldBeActive(level, center,
-                        TransformPowerQuery.powered(level, original,
-                                entry.getKey())
-                                || adjacentOpenDoor(original, entry.getKey(),
-                                        state));
-                boolean wasActive = state.getValue(AlarmModule.ACTIVE);
-                if (active != wasActive) {
-                    BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
-                    current = current.withCell(entry.getKey(), updated);
-                    TransformConstructionNetwork.broadcastGroupCell(level,
-                            original.id(), entry.getKey(), updated);
-                    changedCells.add(entry.getKey());
-                }
-                if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
-                    playLoop(level, center);
-                }
-            }
-            if (!changedCells.isEmpty()) {
-                data.putGroupState(current);
-                for (TransformGroup.GridPos cell : changedCells) {
-                    TransformConstructionManager.refreshGroupCellRuntime(
-                            level.getServer(), original.id(), cell);
-                }
-                changed = true;
+            if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
+                playLoop(level, center);
             }
         }
-        return changed;
-    }
 
-    private static boolean updateSurfaces(ServerLevel level,
-            TransformConstructionSavedData data, int tick) {
-        boolean changed = false;
-        for (ConstructionSurface original : data.surfaces()) {
-            if (!original.dimension().equals(level.dimension().location())) {
-                continue;
-            }
-            ConstructionSurface current = original;
-            List<ConstructionSurface.SurfaceSlot> changedSlots =
-                    new ArrayList<>();
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : original.attachments().entrySet()) {
-                ConstructionSurface.SurfaceAttachment attachment =
-                        entry.getValue();
-                BlockState state = attachment.state();
-                if (!isAlarm(state)) continue;
-                ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                Vec3 center = surfaceCenter(original, slot);
-                boolean active = shouldBeActive(level, center,
-                        TransformPowerQuery.powered(level, original, slot)
-                                || adjacentOpenDoor(original, slot));
-                boolean wasActive = state.getValue(AlarmModule.ACTIVE);
-                if (active != wasActive) {
-                    BlockState updated = state.setValue(AlarmModule.ACTIVE, active);
-                    current = current.withAttachment(slot, updated,
+        for (SurfaceAlarm alarm : index.surfaces()) {
+            ServerLevel level = level(server, alarm.dimension());
+            ConstructionSurface surface = data.surface(alarm.surfaceId());
+            if (level == null || surface == null) continue;
+            ConstructionSurface.SurfaceAttachment attachment =
+                    alarm.normalSign() == 0
+                            ? surface.attachments().get(alarm.slot())
+                            : surface.overlay(alarm.slot(), alarm.normalSign());
+            if (attachment == null || !isAlarm(attachment.state())) continue;
+
+            double u = (alarm.slot().column() + 0.5D) / surface.columns();
+            double v = (alarm.slot().row() + 0.5D) / surface.rows();
+            int side = alarm.normalSign() == 0 ? 1 : alarm.normalSign();
+            Vec3 center = surface.gridPoint(u, v)
+                    .add(surface.gridNormal(u, v).scale(side * 0.5D));
+            boolean active = shouldBeActive(level, center,
+                    TransformPowerQuery.powered(level, surface, alarm.slot())
+                            || adjacentOpenDoor(surface, alarm.slot()));
+            BlockState state = attachment.state();
+            boolean wasActive = state.getValue(AlarmModule.ACTIVE);
+            if (active != wasActive) {
+                BlockState updated = state.setValue(
+                        AlarmModule.ACTIVE, active);
+                ConstructionSurface next;
+                if (alarm.normalSign() == 0) {
+                    next = surface.withAttachment(alarm.slot(), updated,
                             attachment.deform());
                     TransformConstructionNetwork.broadcastSurfaceSlot(level,
-                            original.id(), slot, updated, attachment.deform());
-                    changedSlots.add(slot);
+                            surface.id(), alarm.slot(), updated,
+                            attachment.deform());
+                } else {
+                    next = surface.withOverlay(alarm.slot(),
+                            alarm.normalSign(), updated, attachment.deform());
+                    TransformConstructionNetwork.broadcastSurfaceOverlay(level,
+                            surface.id(), alarm.slot(), alarm.normalSign(),
+                            updated, attachment.deform());
                 }
-                if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
-                    playLoop(level, center);
-                }
+                data.putSurfaceState(next);
+                TransformConstructionManager.refreshSurfaceSlotRuntime(
+                        server, surface.id(), alarm.slot());
             }
-            if (!changedSlots.isEmpty()) {
-                data.putSurfaceState(current);
-                for (ConstructionSurface.SurfaceSlot slot : changedSlots) {
-                    TransformConstructionManager.refreshSurfaceSlotRuntime(
-                            level.getServer(), original.id(), slot);
-                }
-                changed = true;
+            if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
+                playLoop(level, center);
             }
         }
-        return changed;
+    }
+
+    private static ServerLevel level(MinecraftServer server,
+            ResourceLocation dimension) {
+        if (server == null || dimension == null) return null;
+        for (ServerLevel level : server.getAllLevels()) {
+            if (dimension.equals(level.dimension().location())) return level;
+        }
+        return null;
+    }
+
+    private record GroupAlarm(ResourceLocation dimension, UUID groupId,
+            TransformGroup.GridPos cell) {
+    }
+
+    private record SurfaceAlarm(ResourceLocation dimension, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+    }
+
+    private record AlarmIndex(long revision, List<GroupAlarm> groups,
+            List<SurfaceAlarm> surfaces) {
+        private static AlarmIndex build(TransformConstructionSavedData data) {
+            List<GroupAlarm> groups = new ArrayList<>();
+            List<SurfaceAlarm> surfaces = new ArrayList<>();
+            for (TransformGroup group : data.groups()) {
+                for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                        : group.cells().entrySet()) {
+                    if (isAlarm(entry.getValue())) {
+                        groups.add(new GroupAlarm(group.dimension(), group.id(),
+                                entry.getKey()));
+                    }
+                }
+            }
+            for (ConstructionSurface surface : data.surfaces()) {
+                for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                        ConstructionSurface.SurfaceAttachment> entry
+                        : surface.attachments().entrySet()) {
+                    if (isAlarm(entry.getValue().state())) {
+                        surfaces.add(new SurfaceAlarm(surface.dimension(),
+                                surface.id(), entry.getKey(), 0));
+                    }
+                }
+                for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                        ConstructionSurface.SurfaceAttachment> entry
+                        : surface.overlays().entrySet()) {
+                    if (isAlarm(entry.getValue().state())) {
+                        surfaces.add(new SurfaceAlarm(surface.dimension(),
+                                surface.id(), entry.getKey().slot(),
+                                entry.getKey().normalSign()));
+                    }
+                }
+            }
+            return new AlarmIndex(data.revision(), List.copyOf(groups),
+                    List.copyOf(surfaces));
+        }
     }
 
     private static boolean adjacentOpenDoor(TransformGroup group,

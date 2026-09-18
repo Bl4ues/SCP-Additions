@@ -736,8 +736,8 @@ public final class TransformConstructionClientState {
     private static void refreshGroupAggregateAt(UUID id,
             Set<Long> affected) {
         Map<Long, TransformConstructionManager.ProxyCell> aggregate =
-                new LinkedHashMap<>(GROUP_PROXY_CONTRIBUTIONS
-                        .getOrDefault(id, Map.of()));
+                GROUP_PROXY_CONTRIBUTIONS.computeIfAbsent(id,
+                        ignored -> new LinkedHashMap<>());
         Map<Long, Map<TransformGroup.GridPos,
                 TransformConstructionManager.ProxyCell>> reverse =
                 GROUP_WORLD_CONTRIBUTORS.getOrDefault(id, Map.of());
@@ -751,14 +751,13 @@ public final class TransformConstructionClientState {
             else aggregate.put(packed, merged);
         }
         if (aggregate.isEmpty()) GROUP_PROXY_CONTRIBUTIONS.remove(id);
-        else GROUP_PROXY_CONTRIBUTIONS.put(id, Map.copyOf(aggregate));
     }
 
     private static void refreshSurfaceAggregateAt(UUID id,
             Set<Long> affected) {
         Map<Long, TransformConstructionManager.ProxyCell> aggregate =
-                new LinkedHashMap<>(SURFACE_PROXY_CONTRIBUTIONS
-                        .getOrDefault(id, Map.of()));
+                SURFACE_PROXY_CONTRIBUTIONS.computeIfAbsent(id,
+                        ignored -> new LinkedHashMap<>());
         Map<Long, Map<ConstructionSurface.SurfaceSlot,
                 TransformConstructionManager.ProxyCell>> reverse =
                 SURFACE_WORLD_CONTRIBUTORS.getOrDefault(id, Map.of());
@@ -773,7 +772,6 @@ public final class TransformConstructionClientState {
             else aggregate.put(packed, merged);
         }
         if (aggregate.isEmpty()) SURFACE_PROXY_CONTRIBUTIONS.remove(id);
-        else SURFACE_PROXY_CONTRIBUTIONS.put(id, Map.copyOf(aggregate));
     }
 
     private static TransformConstructionManager.ProxyCell mergeContributors(

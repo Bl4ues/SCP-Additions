@@ -686,7 +686,7 @@ public final class TransformConstructionClientRenderer {
                 : surface.overlays().entrySet()) {
             CachedSurfaceSlot overlay = buildSurfaceSlot(minecraft, surface,
                     entry.getKey().slot(), entry.getValue(),
-                    entry.getKey().normalSign());
+                    entry.getKey().normalSign(), true);
             if (overlay != null) overlays.put(entry.getKey(), overlay);
         }
         return new CachedSurface(surface, Map.copyOf(slots),

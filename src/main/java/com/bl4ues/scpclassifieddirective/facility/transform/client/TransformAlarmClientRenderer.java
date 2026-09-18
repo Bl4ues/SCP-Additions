@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -81,7 +82,7 @@ public final class TransformAlarmClientRenderer {
                     : surface.attachments().entrySet()) {
                 if (AlarmModule.isController(entry.getValue().state())) {
                     surfaceKeys.add(new SurfaceKey(surface.id(),
-                            entry.getKey(), 1));
+                            entry.getKey(), 1, false));
                 }
             }
             for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
@@ -90,7 +91,7 @@ public final class TransformAlarmClientRenderer {
                 if (AlarmModule.isController(entry.getValue().state())) {
                     surfaceKeys.add(new SurfaceKey(surface.id(),
                             entry.getKey().slot(),
-                            entry.getKey().normalSign() < 0 ? -1 : 1));
+                            entry.getKey().normalSign() < 0 ? -1 : 1, true));
                 }
             }
         }
@@ -142,14 +143,16 @@ public final class TransformAlarmClientRenderer {
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
             renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
-                    surface, entry.getKey(), 1, entry.getValue().state());
+                    surface, entry.getKey(), 1, false,
+                    entry.getValue().state());
         }
         for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.overlays().entrySet()) {
             renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
                     surface, entry.getKey().slot(),
-                    entry.getKey().normalSign(), entry.getValue().state());
+                    entry.getKey().normalSign(), true,
+                    entry.getValue().state());
         }
     }
 
@@ -158,16 +161,17 @@ public final class TransformAlarmClientRenderer {
             MultiBufferSource.BufferSource buffers, Vec3 camera,
             ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, int normalSign,
-            BlockState state) {
+            boolean overlay, BlockState state) {
         if (state == null || !AlarmModule.isController(state)) return;
         int side = normalSign < 0 ? -1 : 1;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 normal = surface.gridNormal(u, v).scale(side);
-        Vec3 center = surface.gridPoint(u, v).add(normal.scale(0.5D));
+        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot,
+                side, overlay);
         if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) return;
 
-        SurfaceKey key = new SurfaceKey(surface.id(), slot, side);
+        SurfaceKey key = new SurfaceKey(surface.id(), slot, side, overlay);
         AlarmModule.AlarmBlockEntity alarm = host(minecraft,
                 SURFACE_HOSTS.get(key), center, state);
         if (alarm == null) return;
@@ -213,6 +217,7 @@ public final class TransformAlarmClientRenderer {
     }
 
     private record SurfaceKey(UUID surfaceId,
-            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            boolean overlay) {
     }
 }

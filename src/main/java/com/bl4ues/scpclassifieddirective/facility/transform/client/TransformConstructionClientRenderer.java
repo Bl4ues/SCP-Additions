@@ -140,8 +140,11 @@ public final class TransformConstructionClientRenderer {
                 && selection.type() == SelectionType.GROUP;
         boolean showSelectedSurface = placingBlock && selection != null
                 && selection.type() == SelectionType.SURFACE;
+        TransformGroupPlacementClient.Target placementTarget =
+                placingBlock ? TransformGroupPlacementClient.findTarget(
+                        minecraft.player) : null;
         if (offGridTool || surfaceTool || mappingTool || showSelectedGroup
-                || showSelectedSurface) {
+                || showSelectedSurface || placementTarget != null) {
             VertexConsumer lines = buffers.getBuffer(RenderType.lines());
             if (offGridTool) {
                 for (TransformGroup group : groups) {
@@ -161,6 +164,16 @@ public final class TransformConstructionClientRenderer {
                 if (selectedGroup != null) {
                     renderGroupGrid(pose, lines, selectedGroup, camera);
                 }
+            }
+            if (placementTarget != null
+                    && !(showSelectedGroup && selection != null
+                    && placementTarget.group().id().equals(selection.id()))) {
+                renderLogicalGroupCell(pose, lines, placementTarget.group(),
+                        placementTarget.source(),
+                        0.72F, 0.88F, 0.96F, 0.94F);
+                renderLogicalGroupCell(pose, lines, placementTarget.group(),
+                        placementTarget.adjacentCell(),
+                        0.24F, 1.0F, 0.38F, 0.98F);
             }
             if (surfaceTool) {
                 for (ConstructionSurface surface : surfaces) {
@@ -638,6 +651,35 @@ public final class TransformConstructionClientRenderer {
         for (int[] edge : edges) {
             line(pose, lines, corners[edge[0]], corners[edge[1]],
                     0.12F, 1.0F, 0.28F, 0.72F);
+        }
+    }
+
+    private static void renderLogicalGroupCell(PoseStack pose,
+            VertexConsumer lines, TransformGroup group,
+            TransformGroup.GridPos cell, float red, float green,
+            float blue, float alpha) {
+        Vec3[] corners = new Vec3[8];
+        int index = 0;
+        for (int yi = 0; yi < 2; yi++) {
+            for (int zi = 0; zi < 2; zi++) {
+                for (int xi = 0; xi < 2; xi++) {
+                    Vec3 local = new Vec3(cell.x() + xi - 0.5D,
+                            cell.y() + yi - 0.5D,
+                            cell.z() + zi - 0.5D);
+                    corners[index++] = TransformMath.localToWorld(
+                            group.origin(), local, group.rotationX(),
+                            group.rotationY(), group.rotationZ());
+                }
+            }
+        }
+        int[][] edges = {
+                {0,1},{2,3},{4,5},{6,7},
+                {0,2},{1,3},{4,6},{5,7},
+                {0,4},{1,5},{2,6},{3,7}
+        };
+        for (int[] edge : edges) {
+            line(pose, lines, corners[edge[0]], corners[edge[1]],
+                    red, green, blue, alpha);
         }
     }
 

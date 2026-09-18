@@ -369,8 +369,8 @@ public final class Scp079FacilityMapScreen extends Screen {
             FacilityRoomOutlineGeometry geometry, MapTransform transform,
             int fill, int lineColor) {
         Rectangle2D bounds = geometry.bounds();
-        int minY = Math.max(MAP_TOP, transform.sy(bounds.getMinY()));
-        int maxY = Math.min(graphics.guiHeight() - MAP_BOTTOM,
+        int minY = Math.max(0, transform.sy(bounds.getMinY()));
+        int maxY = Math.min(graphics.guiHeight() - 1,
                 transform.sy(bounds.getMaxY()));
         if (maxY < minY) {
             int swap = minY;
@@ -396,8 +396,8 @@ public final class Scp079FacilityMapScreen extends Screen {
                 }
             }
             intersections.sort(Double::compare);
-            int clipLeft = MAP_MARGIN_X;
-            int clipRight = graphics.guiWidth() - MAP_MARGIN_X;
+            int clipLeft = 0;
+            int clipRight = graphics.guiWidth() - 1;
             for (int index = 0; index + 1 < intersections.size(); index += 2) {
                 double worldX0 = intersections.get(index);
                 double worldX1 = intersections.get(index + 1);

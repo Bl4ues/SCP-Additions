@@ -743,20 +743,24 @@ public final class Scp079FacilityMapScreen extends Screen {
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
                 double u = (slot.column() + 0.5D) / surface.columns();
                 double v = (slot.row() + 0.5D) / surface.rows();
-                Vec3 center = surface.gridPoint(u, v);
+                Vec3 normal = surface.gridNormal(u, v);
+                // Surface attachments occupy the rigid cell centered half a
+                // block out from the authored wall plane. Doors are rigid too:
+                // only their local frame follows the curve, never the door
+                // segment itself.
+                Vec3 center = surface.gridPoint(u, v)
+                        .add(normal.scale(0.5D));
                 if (!belongsToFloor(center.x, center.y, center.z, floor,
                         geometryByRoom)) continue;
                 Direction local = state.getValue(
                         HorizontalDirectionalBlock.FACING);
                 Vec3 tangent = surface.gridFrameTangent(u, v);
-                Vec3 normal = surface.gridNormal(u, v);
                 Vec3 facing = tangent.scale(local.getStepX())
                         .add(normal.scale(local.getStepZ()));
-                List<Vec3> curvedPath = surfaceDoorPath(surface, slot, v);
                 MapDoorMarker surfaceMarker = marker(center.x, center.z,
                         facing, 0.94D, DoorSource.SURFACE, null, surface.id(),
                         null, slot, FacilityModule.isDoorPassable(state),
-                        0, false, false, curvedPath);
+                        0, false, false, List.of());
                 addDoorMarker(result, surfaceMarker);
             }
         }
@@ -820,107 +824,6 @@ public final class Scp079FacilityMapScreen extends Screen {
                 path == null ? List.of() : List.copyOf(path));
     }
 
-    private static MapDoorMarker snapMarkerToBoundary(
-            MapDoorMarker marker,
-            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometries) {
-        if (marker == null) return null;
-        Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
-        Vec3 span = marker.span().normalize();
-        Vec3 normal = new Vec3(-span.z, 0.0D, span.x).normalize();
-
-        BoundaryHit best = null;
-        double bestDistance = marker.width() >= 4.0D ? 3.75D : 2.25D;
-        for (FacilityRoomOutlineGeometry geometry : geometries.values()) {
-            for (List<FacilityFloorPatch.Vertex> contour
-                    : geometry.contours()) {
-                for (int index = 0; index < contour.size(); index++) {
-                    FacilityFloorPatch.Vertex va = contour.get(index);
-                    FacilityFloorPatch.Vertex vb = contour.get(
-                            (index + 1) % contour.size());
-                    Vec3 a = new Vec3(va.x(), 0.0D, va.z());
-                    Vec3 b = new Vec3(vb.x(), 0.0D, vb.z());
-                    Vec3 edge = b.subtract(a);
-                    if (edge.lengthSqr() < 1.0E-10D) continue;
-
-                    BoundaryHit hit = raySegmentIntersection(center, normal,
-                            a, b);
-                    if (hit != null && Math.abs(hit.normalDistance())
-                            <= bestDistance
-                            && (best == null || Math.abs(hit.normalDistance())
-                            < Math.abs(best.normalDistance()))) {
-                        best = hit;
-                    }
-                }
-            }
-        }
-
-        // Numerical/floor-polygon seams can miss an exact intersection by a
-        // fraction of a block. Allow only a narrow lateral fallback so a door
-        // can never jump to an unrelated diagonal wall elsewhere in the room.
-        if (best == null) {
-            double bestScore = Double.POSITIVE_INFINITY;
-            for (FacilityRoomOutlineGeometry geometry : geometries.values()) {
-                for (List<FacilityFloorPatch.Vertex> contour
-                        : geometry.contours()) {
-                    for (int index = 0; index < contour.size(); index++) {
-                        FacilityFloorPatch.Vertex va = contour.get(index);
-                        FacilityFloorPatch.Vertex vb = contour.get(
-                                (index + 1) % contour.size());
-                        Vec3 a = new Vec3(va.x(), 0.0D, va.z());
-                        Vec3 b = new Vec3(vb.x(), 0.0D, vb.z());
-                        Vec3 edge = b.subtract(a);
-                        if (edge.lengthSqr() < 1.0E-10D) continue;
-                        double t = Mth.clamp(center.subtract(a).dot(edge)
-                                / edge.lengthSqr(), 0.0D, 1.0D);
-                        Vec3 point = a.add(edge.scale(t));
-                        Vec3 delta = point.subtract(center);
-                        double lateral = Math.abs(delta.dot(span));
-                        double normalDistance = Math.abs(delta.dot(normal));
-                        if (lateral > 0.42D || normalDistance > bestDistance) {
-                            continue;
-                        }
-                        double score = normalDistance + lateral * 3.0D;
-                        if (score < bestScore) {
-                            bestScore = score;
-                            best = new BoundaryHit(point,
-                                    edge.normalize(), delta.dot(normal));
-                        }
-                    }
-                }
-            }
-        }
-
-        if (best == null) return null;
-        Vec3 tangent = best.tangent();
-        return new MapDoorMarker(best.point().x, best.point().z, tangent,
-                marker.width(), marker.source(), marker.pos(),
-                marker.ownerId(), marker.groupCell(), marker.surfaceSlot(),
-                marker.fallbackOpen(), marker.requiredLevel(),
-                marker.lockable(), marker.controllable(), marker.path());
-    }
-
-    private static BoundaryHit raySegmentIntersection(Vec3 center,
-            Vec3 normal, Vec3 a, Vec3 b) {
-        double rx = normal.x;
-        double rz = normal.z;
-        double sx = b.x - a.x;
-        double sz = b.z - a.z;
-        double denominator = cross2(rx, rz, sx, sz);
-        if (Math.abs(denominator) < 1.0E-9D) return null;
-        double qx = a.x - center.x;
-        double qz = a.z - center.z;
-        double t = cross2(qx, qz, sx, sz) / denominator;
-        double u = cross2(qx, qz, rx, rz) / denominator;
-        if (u < -1.0E-5D || u > 1.00001D) return null;
-        Vec3 point = center.add(normal.scale(t));
-        return new BoundaryHit(point, new Vec3(sx, 0.0D, sz).normalize(), t);
-    }
-
-    private static double cross2(double ax, double az,
-            double bx, double bz) {
-        return ax * bz - az * bx;
-    }
-
     private static void addDoorMarker(List<MapDoorMarker> result,
             MapDoorMarker candidate) {
         if (candidate == null) return;
@@ -936,20 +839,6 @@ public final class Scp079FacilityMapScreen extends Screen {
             return;
         }
         result.add(candidate);
-    }
-
-    private static List<Vec3> surfaceDoorPath(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, double v) {
-        int samples = 8;
-        double u0 = slot.column() / (double) surface.columns();
-        double u1 = (slot.column() + 1.0D) / surface.columns();
-        List<Vec3> path = new ArrayList<>(samples + 1);
-        for (int index = 0; index <= samples; index++) {
-            double u = Mth.lerp(index / (double) samples, u0, u1);
-            Vec3 point = surface.gridPoint(u, v);
-            path.add(new Vec3(point.x, 0.0D, point.z));
-        }
-        return List.copyOf(path);
     }
 
     private static List<Vec3> doorPath(MapDoorMarker marker) {
@@ -1569,10 +1458,6 @@ public final class Scp079FacilityMapScreen extends Screen {
             ConstructionSurface.SurfaceSlot surfaceSlot,
             boolean fallbackOpen, int requiredLevel, boolean lockable,
             boolean controllable, List<Vec3> path) {
-    }
-
-    private record BoundaryHit(Vec3 point, Vec3 tangent,
-            double normalDistance) {
     }
 
     private record FloorGroup(String longLabel, int y,

@@ -180,7 +180,7 @@ public final class TransformGroupPlacementClient {
         return bestState;
     }
 
-    private static PayloadTarget findPayloadTarget(LocalPlayer player) {
+    static PayloadTarget findPayloadTarget(LocalPlayer player) {
         Minecraft minecraft = Minecraft.getInstance();
         Vec3 eye = player.getEyePosition();
         Vec3 worldRay = player.getViewVector(1.0F).normalize();
@@ -393,7 +393,7 @@ public final class TransformGroupPlacementClient {
         }
     }
 
-    private record PayloadTarget(TransformGroup group,
+    static record PayloadTarget(TransformGroup group,
             TransformGroup.GridPos cell, BlockState state, Direction face,
             Vec3 worldHit, double distance) {
     }

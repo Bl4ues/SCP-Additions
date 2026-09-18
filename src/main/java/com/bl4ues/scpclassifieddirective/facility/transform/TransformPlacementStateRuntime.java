@@ -12,6 +12,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -102,6 +104,41 @@ public final class TransformPlacementStateRuntime {
         // grid, so reproduce that placement convention directly in local space.
         if (item.getBlock() == AlarmModule.BLOCK.get()) {
             return alarmPlacementState(cell, outwardLocal, localHit);
+        }
+
+        // Face-attached controls are authored against the group's own grid.
+        // Asking vanilla for placement first lets the cardinal parent world
+        // choose a face/facing that may have no relationship to the inclined
+        // wall, then trying to translate that answer back is inherently lossy.
+        if (item.getBlock() instanceof ButtonBlock
+                || item.getBlock() instanceof LeverBlock) {
+            BlockState local = item.getBlock().defaultBlockState();
+            local = attachToLocalFace(local, outwardLocal);
+            if (local.hasProperty(BlockStateProperties.POWERED)) {
+                local = local.setValue(BlockStateProperties.POWERED, false);
+            }
+            return local;
+        }
+
+        // SCP:CD wall fixtures follow the clicked LOCAL face directly as well.
+        // Preserve every other authored default property; only the mounting
+        // direction is supplied by the transformed grid.
+        if (outwardLocal.getAxis().isHorizontal()
+                && WallMountedSupportEvents.isWallMountedFacingBlock(
+                        item.getBlock())) {
+            BlockState local = item.getBlock().defaultBlockState();
+            if (local.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+                local = local.setValue(BlockStateProperties.HORIZONTAL_FACING,
+                        outwardLocal);
+            }
+            if (local.hasProperty(BlockStateProperties.FACING)) {
+                local = local.setValue(BlockStateProperties.FACING,
+                        outwardLocal);
+            }
+            if (local.hasProperty(BlockStateProperties.ATTACH_FACE)) {
+                local = attachToLocalFace(local, outwardLocal);
+            }
+            return local;
         }
 
         Vec3 worldNormal = TransformMath.rotate(

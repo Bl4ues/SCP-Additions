@@ -59,8 +59,14 @@ public final class TransformSurfacePlacementClient {
                                 minecraft.level.dimension().location()));
             }
             if (target == null) return;
-            TransformConstructionNetwork.placeSurfaceBlock(
-                    target.surface().id(), target.slot(), target.hit());
+            if (target.surface().attachments().containsKey(target.slot())) {
+                TransformConstructionNetwork.placeSurfaceOverlay(
+                        target.surface().id(), target.slot(),
+                        target.normalSign(), target.hit());
+            } else {
+                TransformConstructionNetwork.placeSurfaceBlock(
+                        target.surface().id(), target.slot(), target.hit());
+            }
             event.setCanceled(true);
             return;
         }

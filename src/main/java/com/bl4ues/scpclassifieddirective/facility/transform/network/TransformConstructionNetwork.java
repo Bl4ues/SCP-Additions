@@ -107,6 +107,18 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(17, SurfaceSlotRemoved.class,
                 SurfaceSlotRemoved::encode, SurfaceSlotRemoved::decode,
                 SurfaceSlotRemoved::handle);
+        CHANNEL.registerMessage(18, PlaceSurfaceOverlay.class,
+                PlaceSurfaceOverlay::encode, PlaceSurfaceOverlay::decode,
+                PlaceSurfaceOverlay::handle);
+        CHANNEL.registerMessage(19, BreakSurfaceOverlay.class,
+                BreakSurfaceOverlay::encode, BreakSurfaceOverlay::decode,
+                BreakSurfaceOverlay::handle);
+        CHANNEL.registerMessage(20, SurfaceOverlayState.class,
+                SurfaceOverlayState::encode, SurfaceOverlayState::decode,
+                SurfaceOverlayState::handle);
+        CHANNEL.registerMessage(21, SurfaceOverlayRemoved.class,
+                SurfaceOverlayRemoved::encode, SurfaceOverlayRemoved::decode,
+                SurfaceOverlayRemoved::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -175,6 +187,20 @@ public final class TransformConstructionNetwork {
         CHANNEL.sendToServer(new PlaceSurfaceBlock(surfaceId, slot, hit));
     }
 
+    public static void placeSurfaceOverlay(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign, Vec3 hit) {
+        if (surfaceId == null || slot == null || hit == null) return;
+        CHANNEL.sendToServer(new PlaceSurfaceOverlay(surfaceId, slot,
+                normalSign < 0 ? -1 : 1, hit));
+    }
+
+    public static void breakSurfaceOverlay(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        if (surfaceId == null || slot == null) return;
+        CHANNEL.sendToServer(new BreakSurfaceOverlay(surfaceId, slot,
+                normalSign < 0 ? -1 : 1));
+    }
+
     public static void breakGroupCell(UUID groupId,
             TransformGroup.GridPos cell) {
         if (groupId != null && cell != null) {
@@ -228,6 +254,26 @@ public final class TransformConstructionNetwork {
         }
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
                 new GroupCellState(groupId, cell, state));
+    }
+
+    public static void broadcastSurfaceOverlay(ServerLevel level,
+            UUID surfaceId, ConstructionSurface.SurfaceSlot slot,
+            int normalSign, BlockState state, boolean deform) {
+        if (level == null || surfaceId == null || slot == null || state == null) {
+            return;
+        }
+        CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
+                new SurfaceOverlayState(surfaceId, slot,
+                        normalSign < 0 ? -1 : 1, state, deform));
+    }
+
+    public static void broadcastSurfaceOverlayRemoved(ServerLevel level,
+            UUID surfaceId, ConstructionSurface.SurfaceSlot slot,
+            int normalSign) {
+        if (level == null || surfaceId == null || slot == null) return;
+        CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
+                new SurfaceOverlayRemoved(surfaceId, slot,
+                        normalSign < 0 ? -1 : 1));
     }
 
     /** Tiny runtime-state packet for one rigid/deformed surface attachment. */
@@ -752,6 +798,123 @@ public final class TransformConstructionNetwork {
             context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
                     () -> () -> com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
                             .flashBlocked(message.pos)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record PlaceSurfaceOverlay(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign, Vec3 hit) {
+        private static void encode(PlaceSurfaceOverlay message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+            buffer.writeByte(message.normalSign);
+            writeVec(buffer, message.hit);
+        }
+
+        private static PlaceSurfaceOverlay decode(FriendlyByteBuf buffer) {
+            return new PlaceSurfaceOverlay(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()), buffer.readByte(),
+                    readVec(buffer));
+        }
+
+        private static void handle(PlaceSurfaceOverlay message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> TransformConstructionManager
+                    .placeSurfaceOverlay(context.getSender(),
+                            message.surfaceId, message.slot,
+                            message.normalSign, message.hit));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record BreakSurfaceOverlay(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        private static void encode(BreakSurfaceOverlay message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+            buffer.writeByte(message.normalSign);
+        }
+
+        private static BreakSurfaceOverlay decode(FriendlyByteBuf buffer) {
+            return new BreakSurfaceOverlay(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()), buffer.readByte());
+        }
+
+        private static void handle(BreakSurfaceOverlay message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> TransformConstructionManager
+                    .removeSurfaceOverlay(context.getSender(),
+                            message.surfaceId, message.slot,
+                            message.normalSign));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SurfaceOverlayState(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            BlockState state, boolean deform) {
+        private static void encode(SurfaceOverlayState message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+            buffer.writeByte(message.normalSign);
+            writeState(buffer, message.state);
+            buffer.writeBoolean(message.deform);
+        }
+
+        private static SurfaceOverlayState decode(FriendlyByteBuf buffer) {
+            return new SurfaceOverlayState(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()), buffer.readByte(),
+                    readState(buffer), buffer.readBoolean());
+        }
+
+        private static void handle(SurfaceOverlayState message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility
+                            .transform.client.TransformConstructionClientState
+                            .applySurfaceOverlayState(message.surfaceId,
+                                    message.slot, message.normalSign,
+                                    message.state, message.deform)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SurfaceOverlayRemoved(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        private static void encode(SurfaceOverlayRemoved message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+            buffer.writeByte(message.normalSign);
+        }
+
+        private static SurfaceOverlayRemoved decode(FriendlyByteBuf buffer) {
+            return new SurfaceOverlayRemoved(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()), buffer.readByte());
+        }
+
+        private static void handle(SurfaceOverlayRemoved message,
+                Supplier<NetworkEvent.Context> supplier) {
+            NetworkEvent.Context context = supplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility
+                            .transform.client.TransformConstructionClientState
+                            .removeSurfaceOverlayState(message.surfaceId,
+                                    message.slot, message.normalSign)));
             context.setPacketHandled(true);
         }
     }

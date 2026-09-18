@@ -297,6 +297,36 @@ public final class TransformConstructionClientState {
         }
     }
 
+    public static void applySurfaceOverlayState(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            BlockState state, boolean deform) {
+        if (surfaceId == null || slot == null || state == null) return;
+        ArrayList<ConstructionSurface> next = new ArrayList<>(surfaces);
+        for (int index = 0; index < next.size(); index++) {
+            ConstructionSurface current = next.get(index);
+            if (!surfaceId.equals(current.id())) continue;
+            next.set(index, current.withOverlay(slot, normalSign,
+                    state, deform));
+            surfaces = List.copyOf(next);
+            rebuildSurfaceSlotProxyCells(surfaceId, slot);
+            return;
+        }
+    }
+
+    public static void removeSurfaceOverlayState(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        if (surfaceId == null || slot == null) return;
+        ArrayList<ConstructionSurface> next = new ArrayList<>(surfaces);
+        for (int index = 0; index < next.size(); index++) {
+            ConstructionSurface current = next.get(index);
+            if (!surfaceId.equals(current.id())) continue;
+            next.set(index, current.withoutOverlay(slot, normalSign));
+            surfaces = List.copyOf(next);
+            rebuildSurfaceSlotProxyCells(surfaceId, slot);
+            return;
+        }
+    }
+
     public static void removeGroupCellState(UUID groupId,
             TransformGroup.GridPos cell) {
         if (groupId == null || cell == null) return;

@@ -372,6 +372,67 @@ public final class TransformConstructionManager {
         return true;
     }
 
+    public static boolean placeSurfaceOverlay(ServerPlayer player,
+            UUID surfaceId, SurfaceSlot slot, int normalSign, Vec3 hit) {
+        if (!canEdit(player) || surfaceId == null || slot == null || hit == null
+                || !(player.level() instanceof ServerLevel level)
+                || !(player.getMainHandItem().getItem()
+                        instanceof BlockItem blockItem)) return false;
+        int side = normalSign < 0 ? -1 : 1;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(level.getServer());
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())
+                || !surface.attachments().containsKey(slot)) return false;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 center = surface.gridPoint(u, v);
+        if (player.getEyePosition().distanceToSqr(hit) > 36.0D * 36.0D
+                || center.distanceToSqr(hit) > 2.25D) return false;
+        if (surface.overlay(slot, side) != null) {
+            TransformConstructionNetwork.sendBlockedPlacement(player,
+                    BlockPos.containing(center));
+            player.displayClientMessage(Component.literal(
+                    "That side of the surface cell is already occupied."), true);
+            return true;
+        }
+        BlockState payload =
+                TransformPlacementStateRuntime.surfacePlacementState(
+                        player, blockItem, surface, slot, hit, side);
+        boolean deform = !payload.hasBlockEntity();
+        ConstructionSurface next = surface.withOverlay(slot, side,
+                payload, deform);
+        data.putSurface(next);
+        refreshSurfaceSlot(level.getServer(), surfaceId, slot);
+        TransformConstructionNetwork.broadcastSurfaceOverlay(level, surfaceId,
+                slot, side, payload, deform);
+        TransformConstructionNetwork.acknowledgeRevision(level.getServer());
+        return true;
+    }
+
+    public static boolean removeSurfaceOverlay(ServerPlayer player, UUID id,
+            SurfaceSlot slot, int normalSign) {
+        if (!canEdit(player) || id == null || slot == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        int side = normalSign < 0 ? -1 : 1;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(level.getServer());
+        ConstructionSurface surface = data.surface(id);
+        if (surface == null || surface.overlay(slot, side) == null) return false;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 center = surface.gridPoint(u, v)
+                .add(surface.gridNormal(u, v).scale(side * 0.5D));
+        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
+        data.putSurface(surface.withoutOverlay(slot, side));
+        refreshSurfaceSlot(level.getServer(), id, slot);
+        TransformConstructionNetwork.broadcastSurfaceOverlayRemoved(level, id,
+                slot, side);
+        TransformConstructionNetwork.acknowledgeRevision(level.getServer());
+        return true;
+    }
+
     public static boolean removeGroupCell(ServerPlayer player, UUID id,
             GridPos cell) {
         if (!canEdit(player) || id == null || cell == null

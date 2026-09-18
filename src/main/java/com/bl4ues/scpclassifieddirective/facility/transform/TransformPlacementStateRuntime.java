@@ -215,6 +215,13 @@ public final class TransformPlacementStateRuntime {
     public static BlockState surfacePlacementState(ServerPlayer player,
             BlockItem item, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, Vec3 hit) {
+        return surfacePlacementState(player, item, surface, slot, hit, 1);
+    }
+
+    public static BlockState surfacePlacementState(ServerPlayer player,
+            BlockItem item, ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, Vec3 hit, int normalSign) {
+        int side = normalSign < 0 ? -1 : 1;
         if (player == null || item == null || surface == null || slot == null) {
             return item == null ? net.minecraft.world.level.block.Blocks.AIR
                     .defaultBlockState() : item.getBlock().defaultBlockState();
@@ -228,8 +235,9 @@ public final class TransformPlacementStateRuntime {
         // authored in that local grid, not by asking vanilla about an unrelated
         // cardinal world wall.
         if (item.getBlock() == AlarmModule.BLOCK.get()) {
-            Vec3 tangent = surface.gridFrameTangent(u, v).normalize();
-            Vec3 normal = surface.gridNormal(u, v).normalize();
+            Vec3 tangent = surface.gridFrameTangent(u, v)
+                    .scale(side).normalize();
+            Vec3 normal = surface.gridNormal(u, v).scale(side).normalize();
             Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                     surface.gridVertical(u, v));
             Vec3 center = surface.gridPoint(u, v);
@@ -279,7 +287,7 @@ public final class TransformPlacementStateRuntime {
                 new BlockPlaceContext(new UseOnContext(player,
                         InteractionHand.MAIN_HAND, virtualHit)));
         if (contextual == null) contextual = item.getBlock().defaultBlockState();
-        return localizeForSurface(contextual, surface, slot);
+        return localizeForSurface(contextual, surface, slot, side);
     }
 
     private static Match nearestMatching(TransformConstructionSavedData data,
@@ -344,10 +352,17 @@ public final class TransformPlacementStateRuntime {
 
     private static BlockState localizeForSurface(BlockState state,
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot) {
+        return localizeForSurface(state, surface, slot, 1);
+    }
+
+    private static BlockState localizeForSurface(BlockState state,
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
+            int normalSign) {
+        int side = normalSign < 0 ? -1 : 1;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 x = surface.gridFrameTangent(u, v);
-        Vec3 z = surface.gridNormal(u, v);
+        Vec3 x = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 z = surface.gridNormal(u, v).scale(side);
         Vec3 y = TransformMath.safeNormalize(z.cross(x),
                 surface.gridVertical(u, v));
         state = localize(state, x, y, z);

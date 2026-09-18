@@ -37,21 +37,22 @@ public abstract class TransformOffGridCollisionMixin {
             return;
         }
 
+        VoxelShape vanilla = cir.getReturnValue();
+        // Most facility walls/floors are full cubes. A transformed contribution
+        // cannot add any collision inside this BlockPos, so avoid even touching
+        // the transformed spatial index on this extremely hot path.
+        if (vanilla == Shapes.block()) return;
+
         VoxelShape transformed = world.isClientSide
                 ? TransformConstructionClientBridge.transformedCollision(pos)
                 : TransformConstructionManager.transformedCollisionShape(
                         level, pos);
         if (transformed == null || transformed.isEmpty()) return;
 
-        VoxelShape vanilla = cir.getReturnValue();
         if (vanilla == null || vanilla.isEmpty()) {
             cir.setReturnValue(transformed);
             return;
         }
-        // A full vanilla cube already occupies every point this transformed
-        // contribution could add inside the current BlockPos.
-        if (vanilla == Shapes.block()) return;
-
         cir.setReturnValue(Shapes.joinUnoptimized(vanilla, transformed,
                 BooleanOp.OR));
     }

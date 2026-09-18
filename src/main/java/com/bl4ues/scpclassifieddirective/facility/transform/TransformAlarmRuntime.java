@@ -131,6 +131,127 @@ public final class TransformAlarmRuntime {
         }
     }
 
+    public static synchronized void structuralGroupCellChanged(
+            MinecraftServer server, UUID groupId, TransformGroup.GridPos cell) {
+        AlarmIndex index = INDEXES.get(server);
+        if (server == null || index == null || groupId == null || cell == null) {
+            return;
+        }
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<GroupAlarm> groups = new ArrayList<>(index.groups());
+        groups.removeIf(ref -> ref.groupId().equals(groupId)
+                && ref.cell().equals(cell));
+        TransformGroup group = data.group(groupId);
+        if (group != null) {
+            BlockState state = group.cells().get(cell);
+            if (isAlarm(state)) {
+                groups.add(new GroupAlarm(group.dimension(), groupId, cell));
+            }
+        }
+        INDEXES.put(server, new AlarmIndex(data.revision(),
+                List.copyOf(groups), index.surfaces()));
+    }
+
+    public static synchronized void structuralSurfaceSlotChanged(
+            MinecraftServer server, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        AlarmIndex index = INDEXES.get(server);
+        if (server == null || index == null || surfaceId == null || slot == null) {
+            return;
+        }
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<SurfaceAlarm> surfaces = new ArrayList<>(index.surfaces());
+        surfaces.removeIf(ref -> ref.surfaceId().equals(surfaceId)
+                && ref.slot().equals(slot));
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface != null) {
+            ConstructionSurface.SurfaceAttachment main =
+                    surface.attachments().get(slot);
+            if (main != null && isAlarm(main.state())) {
+                surfaces.add(new SurfaceAlarm(surface.dimension(), surfaceId,
+                        slot, 0));
+            }
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.overlays().entrySet()) {
+                if (entry.getKey().slot().equals(slot)
+                        && isAlarm(entry.getValue().state())) {
+                    surfaces.add(new SurfaceAlarm(surface.dimension(), surfaceId,
+                            slot, entry.getKey().normalSign()));
+                }
+            }
+        }
+        INDEXES.put(server, new AlarmIndex(data.revision(), index.groups(),
+                List.copyOf(surfaces)));
+    }
+
+    public static synchronized void structuralGroupChanged(
+            MinecraftServer server, UUID groupId) {
+        AlarmIndex index = INDEXES.get(server);
+        if (server == null || index == null || groupId == null) return;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<GroupAlarm> groups = new ArrayList<>(index.groups());
+        groups.removeIf(ref -> ref.groupId().equals(groupId));
+        TransformGroup group = data.group(groupId);
+        if (group != null) {
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                if (isAlarm(entry.getValue())) {
+                    groups.add(new GroupAlarm(group.dimension(), groupId,
+                            entry.getKey()));
+                }
+            }
+        }
+        INDEXES.put(server, new AlarmIndex(data.revision(),
+                List.copyOf(groups), index.surfaces()));
+    }
+
+    public static synchronized void structuralSurfaceChanged(
+            MinecraftServer server, UUID surfaceId) {
+        AlarmIndex index = INDEXES.get(server);
+        if (server == null || index == null || surfaceId == null) return;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<SurfaceAlarm> surfaces = new ArrayList<>(index.surfaces());
+        surfaces.removeIf(ref -> ref.surfaceId().equals(surfaceId));
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface != null) {
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                if (isAlarm(entry.getValue().state())) {
+                    surfaces.add(new SurfaceAlarm(surface.dimension(), surfaceId,
+                            entry.getKey(), 0));
+                }
+            }
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.overlays().entrySet()) {
+                if (isAlarm(entry.getValue().state())) {
+                    surfaces.add(new SurfaceAlarm(surface.dimension(), surfaceId,
+                            entry.getKey().slot(),
+                            entry.getKey().normalSign()));
+                }
+            }
+        }
+        INDEXES.put(server, new AlarmIndex(data.revision(), index.groups(),
+                List.copyOf(surfaces)));
+    }
+
+    public static synchronized void acknowledgeStructuralRevision(
+            MinecraftServer server) {
+        AlarmIndex index = INDEXES.get(server);
+        if (server == null || index == null) return;
+        long revision = TransformConstructionSavedData.get(server).revision();
+        if (index.revision() != revision) {
+            INDEXES.put(server, new AlarmIndex(revision,
+                    index.groups(), index.surfaces()));
+        }
+    }
+
     private static ServerLevel level(MinecraftServer server,
             ResourceLocation dimension) {
         if (server == null || dimension == null) return null;

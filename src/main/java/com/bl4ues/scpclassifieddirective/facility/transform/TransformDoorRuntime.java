@@ -276,6 +276,56 @@ public final class TransformDoorRuntime {
         }
     }
 
+    public static synchronized void structuralCellChanged(
+            MinecraftServer server, UUID groupId, GridPos cell) {
+        DoorIndex index = DOOR_INDEX.get(server);
+        if (server == null || index == null || groupId == null || cell == null) {
+            return;
+        }
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<DoorRef> refs = new java.util.ArrayList<>(index.refs());
+        refs.removeIf(ref -> ref.groupId().equals(groupId)
+                && ref.cell().equals(cell));
+        TransformGroup group = data.group(groupId);
+        if (group != null && address(group.cells().get(cell)) != null) {
+            refs.add(new DoorRef(groupId, cell));
+        }
+        DOOR_INDEX.put(server, new DoorIndex(data.revision(),
+                List.copyOf(refs)));
+    }
+
+    public static synchronized void structuralGroupChanged(
+            MinecraftServer server, UUID groupId) {
+        DoorIndex index = DOOR_INDEX.get(server);
+        if (server == null || index == null || groupId == null) return;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<DoorRef> refs = new java.util.ArrayList<>(index.refs());
+        refs.removeIf(ref -> ref.groupId().equals(groupId));
+        TransformGroup group = data.group(groupId);
+        if (group != null) {
+            for (Map.Entry<GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                if (address(entry.getValue()) != null) {
+                    refs.add(new DoorRef(groupId, entry.getKey()));
+                }
+            }
+        }
+        DOOR_INDEX.put(server, new DoorIndex(data.revision(),
+                List.copyOf(refs)));
+    }
+
+    public static synchronized void acknowledgeStructuralRevision(
+            MinecraftServer server) {
+        DoorIndex index = DOOR_INDEX.get(server);
+        if (server == null || index == null) return;
+        long revision = TransformConstructionSavedData.get(server).revision();
+        if (index.revision() != revision) {
+            DOOR_INDEX.put(server, new DoorIndex(revision, index.refs()));
+        }
+    }
+
     private static DoorHit nearestDoor(ServerLevel level, Vec3 world,
             double maxDistanceSqr) {
         DoorHit best = null;

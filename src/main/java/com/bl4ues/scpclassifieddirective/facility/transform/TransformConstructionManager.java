@@ -793,6 +793,17 @@ public final class TransformConstructionManager {
         }
 
         materializeAffected(server, index, affected);
+        if (surfaceOwner) {
+            TransformSurfaceDoorRuntime.structuralSurfaceChanged(server, id);
+            TransformAlarmRuntime.structuralSurfaceChanged(server, id);
+            TransformPoweredBlockRuntime.structuralSurfaceChanged(server, id);
+            TransformDoorRuntime.acknowledgeStructuralRevision(server);
+        } else {
+            TransformDoorRuntime.structuralGroupChanged(server, id);
+            TransformAlarmRuntime.structuralGroupChanged(server, id);
+            TransformPoweredBlockRuntime.structuralGroupChanged(server, id);
+            TransformSurfaceDoorRuntime.acknowledgeStructuralRevision(server);
+        }
     }
 
     private static void refreshGroupCell(MinecraftServer server,
@@ -835,6 +846,13 @@ public final class TransformConstructionManager {
                     new LinkedHashSet<>()).addAll(index.ownerPositions(key));
         }
         materializeAffected(server, index, affected);
+        if (invalidatePower) {
+            TransformDoorRuntime.structuralCellChanged(server, id, cell);
+            TransformAlarmRuntime.structuralGroupCellChanged(server, id, cell);
+            TransformPoweredBlockRuntime.structuralGroupCellChanged(
+                    server, id, cell);
+            TransformSurfaceDoorRuntime.acknowledgeStructuralRevision(server);
+        }
     }
 
     private static void refreshSurfaceSlot(MinecraftServer server,
@@ -879,6 +897,13 @@ public final class TransformConstructionManager {
                     new LinkedHashSet<>()).addAll(index.ownerPositions(key));
         }
         materializeAffected(server, index, affected);
+        if (invalidatePower) {
+            TransformSurfaceDoorRuntime.structuralSlotChanged(server, id, slot);
+            TransformAlarmRuntime.structuralSurfaceSlotChanged(server, id, slot);
+            TransformPoweredBlockRuntime.structuralSurfaceSlotChanged(
+                    server, id, slot);
+            TransformDoorRuntime.acknowledgeStructuralRevision(server);
+        }
     }
 
     private static void materializeAffected(MinecraftServer server,

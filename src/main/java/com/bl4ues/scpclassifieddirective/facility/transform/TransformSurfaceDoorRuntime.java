@@ -277,6 +277,62 @@ public final class TransformSurfaceDoorRuntime {
         }
     }
 
+    public static synchronized void structuralSlotChanged(
+            MinecraftServer server, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot) {
+        DoorIndex index = DOOR_INDEX.get(server);
+        if (server == null || index == null || surfaceId == null || slot == null) {
+            return;
+        }
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<DoorRef> refs = new java.util.ArrayList<>(index.refs());
+        refs.removeIf(ref -> ref.surfaceId().equals(surfaceId)
+                && ref.slot().equals(slot));
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface != null) {
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.attachments().get(slot);
+            if (attachment != null && address(attachment.state()) != null) {
+                refs.add(new DoorRef(surfaceId, slot));
+            }
+        }
+        DOOR_INDEX.put(server, new DoorIndex(data.revision(),
+                List.copyOf(refs)));
+    }
+
+    public static synchronized void structuralSurfaceChanged(
+            MinecraftServer server, UUID surfaceId) {
+        DoorIndex index = DOOR_INDEX.get(server);
+        if (server == null || index == null || surfaceId == null) return;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        List<DoorRef> refs = new java.util.ArrayList<>(index.refs());
+        refs.removeIf(ref -> ref.surfaceId().equals(surfaceId));
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface != null) {
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                if (address(entry.getValue().state()) != null) {
+                    refs.add(new DoorRef(surfaceId, entry.getKey()));
+                }
+            }
+        }
+        DOOR_INDEX.put(server, new DoorIndex(data.revision(),
+                List.copyOf(refs)));
+    }
+
+    public static synchronized void acknowledgeStructuralRevision(
+            MinecraftServer server) {
+        DoorIndex index = DOOR_INDEX.get(server);
+        if (server == null || index == null) return;
+        long revision = TransformConstructionSavedData.get(server).revision();
+        if (index.revision() != revision) {
+            DOOR_INDEX.put(server, new DoorIndex(revision, index.refs()));
+        }
+    }
+
     private static DoorHit nearestDoor(ServerLevel level, Vec3 world,
             double maxDistanceSqr) {
         DoorHit best = null;

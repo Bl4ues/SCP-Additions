@@ -786,10 +786,11 @@ public final class Scp079FacilityMapScreen extends Screen {
             Vec3 facing, FloorGroup floor,
             Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
         // Door centres sit roughly half a block inside a wall cell. A generous
-        // 1.35-block radius was associating unrelated doors with nearby curved
-        // boundaries, producing phantom markers. Match both proximity and the
-        // actual physical door span against the local boundary tangent.
-        final double boundaryToleranceSqr = 0.78D * 0.78D;
+        // A broad radius can let a nearby curved wall adopt a real door from
+        // another boundary and create a phantom marker. Door centres should sit
+        // about half a block from the mapped room edge, so keep only a small
+        // tolerance above that and still require span/tangent alignment.
+        final double boundaryToleranceSqr = 0.62D * 0.62D;
         final double doorColumnHeight = 5.25D;
         Vec3 horizontal = new Vec3(facing.x, 0.0D, facing.z);
         if (horizontal.lengthSqr() < 1.0E-9D) {

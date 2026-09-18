@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
@@ -68,6 +69,8 @@ public final class Scp079FacilityMapScreen extends Screen {
     private double panStartX;
     private double panStartY;
     private FacilityRoomSnapshot pressedRoom;
+    private MapDoorMarker hoveredDoor;
+    private MapDoorMarker pressedDoor;
     private final Map<UUID, FacilityRoomOutlineGeometry> roomGeometryCache =
             new HashMap<>();
     private List<MapDoorMarker> cachedDoorMarkers = List.of();
@@ -282,7 +285,8 @@ public final class Scp079FacilityMapScreen extends Screen {
                 }
             }
         }
-        renderDoorMarkers(graphics, floor, transform, geometryByRoom);
+        renderDoorMarkers(graphics, floor, transform, geometryByRoom,
+                mouseX, mouseY);
         renderTrackers(graphics, floor, transform);
     }
 
@@ -430,7 +434,8 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private void renderDoorMarkers(GuiGraphics graphics, FloorGroup floor,
             MapTransform transform,
-            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom) {
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom,
+            int mouseX, int mouseY) {
         long now = System.currentTimeMillis();
         // Door topology is cached separately from its live state. Ordinary
         // network doors refresh through Scp079DoorMapClientState without
@@ -440,14 +445,21 @@ public final class Scp079FacilityMapScreen extends Screen {
             cachedDoorFloor = floorIndex;
             doorTopologyRefreshAt = now + 1_000L;
         }
+        hoveredDoor = resolveHoveredDoor(cachedDoorMarkers, transform,
+                mouseX, mouseY);
         for (MapDoorMarker marker : cachedDoorMarkers) {
             Vec3 span = marker.span();
             double half = marker.width() * 0.5D;
             Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
             Vec3 a = center.subtract(span.scale(half));
             Vec3 b = center.add(span.scale(half));
-            int color = 0xFFB8D8E1;
-            if (doorOpen(marker)) {
+            boolean open = doorOpen(marker);
+            boolean locked = doorLocked(marker, open);
+            boolean hovered = hoveredDoor != null
+                    && sameDoor(hoveredDoor, marker);
+            int color = hovered ? 0xFFF2D67C
+                    : locked ? 0xFF61747B : 0xFFB8D8E1;
+            if (open && !locked) {
                 // Open doorway: two short jamb-side leaves with a visible gap.
                 // Closed doorway: one continuous barrier across the opening.
                 double leafInnerHalf = marker.width() * 0.24D;
@@ -464,6 +476,13 @@ public final class Scp079FacilityMapScreen extends Screen {
                         transform.sy(a.z), transform.sx(b.x),
                         transform.sy(b.z), color);
             }
+            if (marker.requiredLevel() > 0) {
+                renderKeycardLevel(graphics, marker, transform,
+                        geometryByRoom, color);
+            }
+        }
+        if (hoveredDoor != null) {
+            renderDoorHoverHelp(graphics, hoveredDoor, mouseX, mouseY);
         }
     }
 
@@ -495,6 +514,140 @@ public final class Scp079FacilityMapScreen extends Screen {
         };
     }
 
+    private boolean doorLocked(MapDoorMarker marker, boolean open) {
+        if (open) return false;
+        if (marker.pos() != null
+                && Scp079DoorLockClientState.isLocked(marker.pos())) {
+            return true;
+        }
+        return marker.requiredLevel() > 0;
+    }
+
+    private static boolean sameDoor(MapDoorMarker a, MapDoorMarker b) {
+        if (a == null || b == null) return false;
+        if (a.pos() != null || b.pos() != null) {
+            return java.util.Objects.equals(a.pos(), b.pos());
+        }
+        return a.source() == b.source()
+                && java.util.Objects.equals(a.ownerId(), b.ownerId())
+                && java.util.Objects.equals(a.groupCell(), b.groupCell())
+                && java.util.Objects.equals(a.surfaceSlot(), b.surfaceSlot());
+    }
+
+    private MapDoorMarker resolveHoveredDoor(List<MapDoorMarker> markers,
+            MapTransform transform, double mouseX, double mouseY) {
+        if (leaveConfirmation || floorMenuOpen) return null;
+        MapDoorMarker best = null;
+        double bestDistance = 9.0D * 9.0D;
+        for (MapDoorMarker marker : markers) {
+            Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
+            double half = marker.width() * 0.5D;
+            Vec3 a = center.subtract(marker.span().scale(half));
+            Vec3 b = center.add(marker.span().scale(half));
+            double distance = pointSegmentDistanceSqr(mouseX, mouseY,
+                    transform.sx(a.x), transform.sy(a.z),
+                    transform.sx(b.x), transform.sy(b.z));
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = marker;
+            }
+        }
+        return best;
+    }
+
+    private static double pointSegmentDistanceSqr(double px, double py,
+            double ax, double ay, double bx, double by) {
+        double dx = bx - ax;
+        double dy = by - ay;
+        double length = dx * dx + dy * dy;
+        if (length < 1.0E-8D) {
+            double ox = px - ax;
+            double oy = py - ay;
+            return ox * ox + oy * oy;
+        }
+        double t = Mth.clamp(((px - ax) * dx + (py - ay) * dy) / length,
+                0.0D, 1.0D);
+        double x = ax + dx * t;
+        double y = ay + dy * t;
+        double ox = px - x;
+        double oy = py - y;
+        return ox * ox + oy * oy;
+    }
+
+    private void renderKeycardLevel(GuiGraphics graphics, MapDoorMarker marker,
+            MapTransform transform,
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometryByRoom,
+            int color) {
+        Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
+        Vec3 normal = new Vec3(-marker.span().z, 0.0D,
+                marker.span().x).normalize();
+        Vec3 plus = center.add(normal.scale(0.58D));
+        Vec3 minus = center.subtract(normal.scale(0.58D));
+        boolean plusInside = insideAnyRoom(plus.x, plus.z, geometryByRoom);
+        boolean minusInside = insideAnyRoom(minus.x, minus.z, geometryByRoom);
+        Vec3 label = plusInside && !minusInside ? minus
+                : minusInside && !plusInside ? plus : plus;
+        Scp079UiTheme.drawCentered(graphics, font,
+                Integer.toString(marker.requiredLevel()),
+                transform.sx(label.x), transform.sy(label.z) - 4,
+                0.82F, color);
+    }
+
+    private static boolean insideAnyRoom(double x, double z,
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometries) {
+        for (FacilityRoomOutlineGeometry geometry : geometries.values()) {
+            if (geometry.contains(x, z)) return true;
+        }
+        return false;
+    }
+
+    private void renderDoorHoverHelp(GuiGraphics graphics,
+            MapDoorMarker marker, int mouseX, int mouseY) {
+        if (marker.source() != DoorSource.NETWORK || marker.pos() == null) {
+            return;
+        }
+        String primary = doorOpen(marker) ? "LMB  CLOSE" : "LMB  OPEN";
+        primary += "   " + mapCost(Scp079PlayableManager.DOOR_ACTION_COST);
+        String lock = marker.lockable()
+                ? "RMB  LOCK   "
+                    + mapCost(Scp079PlayableManager.DOOR_LOCK_COST)
+                : "";
+        int boxW = Math.max(136, Math.max(
+                Scp079UiTheme.scaledWidth(font, primary, 0.92F),
+                lock.isBlank() ? 0
+                        : Scp079UiTheme.scaledWidth(font, lock, 0.92F)) + 16);
+        int boxH = lock.isBlank() ? 24 : 36;
+        int x = Mth.clamp(mouseX + 12, 4,
+                Math.max(4, width - boxW - 4));
+        int y = Mth.clamp(mouseY + 12, 4,
+                Math.max(4, height - boxH - 4));
+        graphics.fill(x, y, x + boxW, y + boxH, 0xD90A151C);
+        border(graphics, x, y, boxW, boxH, 0xFF8AAAB6);
+        Scp079UiTheme.draw(graphics, font, primary, x + 8, y + 7,
+                0.92F, 0xFFE6F4F8);
+        if (!lock.isBlank()) {
+            Scp079UiTheme.draw(graphics, font, lock, x + 8, y + 19,
+                    0.92F, 0xFF9FC0CB);
+        }
+    }
+
+    private String mapCost(double base) {
+        if (minecraft == null || minecraft.level == null) {
+            return ((int) base) + " AP";
+        }
+        double multiplier = switch (minecraft.level.getDifficulty()) {
+            case PEACEFUL -> 1.50D;
+            case EASY -> 1.25D;
+            case HARD -> 0.80D;
+            default -> 1.0D;
+        };
+        double value = base * multiplier;
+        return Math.abs(value - Math.rint(value)) < 0.01D
+                ? (int) Math.rint(value) + " AP"
+                : String.format(java.util.Locale.ROOT,
+                        "%.1f AP", value);
+    }
+
     private static void drawDoorLine(GuiGraphics graphics,
             int x0, int y0, int x1, int y1, int color) {
         drawMapLine(graphics, x0, y0, x1, y1, color);
@@ -521,10 +674,11 @@ public final class Scp079FacilityMapScreen extends Screen {
             double x = pos.getX() + 0.5D;
             double z = pos.getZ() + 0.5D;
             if (!nearMappedRoom(x, z, geometryByRoom)) continue;
-            result.add(marker(x, z, entry.facing(),
+            result.add(snapMarkerToBoundary(marker(x, z, entry.facing(),
                     entry.blast() ? 5.0D : 0.94D,
                     DoorSource.NETWORK, pos, null, null, null,
-                    entry.open()));
+                    entry.open(), entry.requiredLevel(), entry.lockable()),
+                    geometryByRoom));
         }
 
         ResourceLocation dimension = minecraft.level.dimension().location();
@@ -543,9 +697,10 @@ public final class Scp079FacilityMapScreen extends Screen {
                 Vec3 facing = TransformMath.rotate(
                         Vec3.atLowerCornerOf(local.getNormal()),
                         group.rotationX(), group.rotationY(), group.rotationZ());
-                result.add(marker(center.x, center.z, facing, 0.94D,
-                        DoorSource.GROUP, null, group.id(), entry.getKey(), null,
-                        FacilityModule.isDoorPassable(state)));
+                result.add(snapMarkerToBoundary(marker(center.x, center.z,
+                        facing, 0.94D, DoorSource.GROUP, null, group.id(),
+                        entry.getKey(), null, FacilityModule.isDoorPassable(state),
+                        0, false), geometryByRoom));
             }
         }
         for (ConstructionSurface surface
@@ -568,9 +723,10 @@ public final class Scp079FacilityMapScreen extends Screen {
                 Vec3 normal = surface.gridNormal(u, v);
                 Vec3 facing = tangent.scale(local.getStepX())
                         .add(normal.scale(local.getStepZ()));
-                result.add(marker(center.x, center.z, facing, 0.94D,
-                        DoorSource.SURFACE, null, surface.id(), null, slot,
-                        FacilityModule.isDoorPassable(state)));
+                result.add(snapMarkerToBoundary(marker(center.x, center.z,
+                        facing, 0.94D, DoorSource.SURFACE, null, surface.id(),
+                        null, slot, FacilityModule.isDoorPassable(state),
+                        0, false), geometryByRoom));
             }
         }
         return List.copyOf(result);
@@ -588,15 +744,18 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static MapDoorMarker marker(double x, double z,
             Direction facing, double width, DoorSource source, BlockPos pos,
             UUID ownerId, TransformGroup.GridPos groupCell,
-            ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen) {
+            ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen,
+            int requiredLevel, boolean lockable) {
         return marker(x, z, Vec3.atLowerCornerOf(facing.getNormal()), width,
-                source, pos, ownerId, groupCell, surfaceSlot, fallbackOpen);
+                source, pos, ownerId, groupCell, surfaceSlot, fallbackOpen,
+                requiredLevel, lockable);
     }
 
     private static MapDoorMarker marker(double x, double z,
             Vec3 facing, double width, DoorSource source, BlockPos pos,
             UUID ownerId, TransformGroup.GridPos groupCell,
-            ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen) {
+            ConstructionSurface.SurfaceSlot surfaceSlot, boolean fallbackOpen,
+            int requiredLevel, boolean lockable) {
         Vec3 horizontal = new Vec3(facing.x, 0.0D, facing.z);
         if (horizontal.lengthSqr() < 1.0E-9D) {
             horizontal = new Vec3(0.0D, 0.0D, 1.0D);
@@ -605,7 +764,47 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
         Vec3 span = new Vec3(-horizontal.z, 0.0D, horizontal.x);
         return new MapDoorMarker(x, z, span, width, source, pos, ownerId,
-                groupCell, surfaceSlot, fallbackOpen);
+                groupCell, surfaceSlot, fallbackOpen, requiredLevel,
+                lockable);
+    }
+
+    private static MapDoorMarker snapMarkerToBoundary(
+            MapDoorMarker marker,
+            Map<FacilityRoomSnapshot, FacilityRoomOutlineGeometry> geometries) {
+        Vec3 center = new Vec3(marker.x(), 0.0D, marker.z());
+        Vec3 span = marker.span().normalize();
+        Vec3 best = null;
+        double bestDistance = 2.75D * 2.75D;
+        for (FacilityRoomOutlineGeometry geometry : geometries.values()) {
+            for (List<FacilityFloorPatch.Vertex> contour
+                    : geometry.contours()) {
+                for (int index = 0; index < contour.size(); index++) {
+                    FacilityFloorPatch.Vertex va = contour.get(index);
+                    FacilityFloorPatch.Vertex vb = contour.get(
+                            (index + 1) % contour.size());
+                    Vec3 a = new Vec3(va.x(), 0.0D, va.z());
+                    Vec3 b = new Vec3(vb.x(), 0.0D, vb.z());
+                    Vec3 edge = b.subtract(a);
+                    if (edge.lengthSqr() < 1.0E-8D) continue;
+                    Vec3 edgeDirection = edge.normalize();
+                    if (Math.abs(edgeDirection.dot(span)) < 0.60D) continue;
+                    double t = Mth.clamp(center.subtract(a).dot(edge)
+                            / edge.lengthSqr(), 0.0D, 1.0D);
+                    Vec3 point = a.add(edge.scale(t));
+                    double distance = point.distanceToSqr(center);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        best = point;
+                    }
+                }
+            }
+        }
+        if (best == null) return marker;
+        return new MapDoorMarker(best.x, best.z, marker.span(),
+                marker.width(), marker.source(), marker.pos(),
+                marker.ownerId(), marker.groupCell(), marker.surfaceSlot(),
+                marker.fallbackOpen(), marker.requiredLevel(),
+                marker.lockable());
     }
 
     private void renderTrackers(GuiGraphics graphics, FloorGroup floor,
@@ -681,6 +880,15 @@ public final class Scp079FacilityMapScreen extends Screen {
             else onClose();
             return true;
         }
+        if (button == 1 && hoveredDoor != null
+                && hoveredDoor.source() == DoorSource.NETWORK
+                && hoveredDoor.pos() != null && hoveredDoor.lockable()
+                && Scp079PlayableClient.networkAvailable()) {
+            Scp079PlayableNetwork.requestMapDoorAction(
+                    Scp079PlayableManager.ManualAction.LOCK,
+                    hoveredDoor.pos());
+            return true;
+        }
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
         if (leaveConfirmation) {
             return handleLeaveConfirmationClick(mouseX, mouseY);
@@ -738,7 +946,8 @@ public final class Scp079FacilityMapScreen extends Screen {
             dragStartY = mouseY;
             panStartX = panX;
             panStartY = panY;
-            pressedRoom = hoveredRoom;
+            pressedDoor = hoveredDoor;
+            pressedRoom = pressedDoor == null ? hoveredRoom : null;
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -763,10 +972,18 @@ public final class Scp079FacilityMapScreen extends Screen {
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (button == 0 && draggingMap) {
             draggingMap = false;
-            if (!dragMoved && pressedRoom != null
-                    && Scp079PlayableClient.networkAvailable()) {
-                Scp079PlayableNetwork.requestRoom(pressedRoom.id());
+            if (!dragMoved && Scp079PlayableClient.networkAvailable()) {
+                if (pressedDoor != null
+                        && pressedDoor.source() == DoorSource.NETWORK
+                        && pressedDoor.pos() != null) {
+                    Scp079PlayableNetwork.requestMapDoorAction(
+                            Scp079PlayableManager.ManualAction.PRIMARY,
+                            pressedDoor.pos());
+                } else if (pressedRoom != null) {
+                    Scp079PlayableNetwork.requestRoom(pressedRoom.id());
+                }
             }
+            pressedDoor = null;
             pressedRoom = null;
             return true;
         }
@@ -1091,7 +1308,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             double width, DoorSource source, BlockPos pos, UUID ownerId,
             TransformGroup.GridPos groupCell,
             ConstructionSurface.SurfaceSlot surfaceSlot,
-            boolean fallbackOpen) {
+            boolean fallbackOpen, int requiredLevel, boolean lockable) {
     }
 
     private record FloorGroup(String longLabel, int y,

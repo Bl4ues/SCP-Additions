@@ -19,6 +19,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Server-side Alarm adapter for transformed construction. A transformed Alarm

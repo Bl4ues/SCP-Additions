@@ -97,12 +97,19 @@ public final class TransformAttachmentNetwork {
                         new LinkedHashMap<>(surface.attachments());
                 attachments.put(slot, new ConstructionSurface.SurfaceAttachment(
                         current.state(), message.deform));
-                data.putSurface(new ConstructionSurface(surface.id(),
-                        surface.dimension(), surface.bottomStart(),
+                ConstructionSurface updated = new ConstructionSurface(
+                        surface.id(), surface.dimension(), surface.bottomStart(),
                         surface.bottomEnd(), surface.topStart(), surface.topEnd(),
                         surface.curveOffset(), surface.heightCurveOffset(),
-                        attachments, surface.flipped()));
-                TransformConstructionManager.refresh(player.getServer());
+                        attachments, surface.flipped());
+                data.putSurface(updated);
+                TransformConstructionManager.refreshSurface(player.getServer(),
+                        surface.id());
+                TransformConstructionNetwork.broadcastSurfaceSlot(
+                        (net.minecraft.server.level.ServerLevel) player.level(),
+                        surface.id(), slot, current.state(), message.deform);
+                TransformConstructionNetwork.acknowledgeRevision(
+                        player.getServer());
             });
             context.setPacketHandled(true);
         }

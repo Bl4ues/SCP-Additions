@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructio
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionSavedData;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformControlRuntime;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformDoorRuntime;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformFacilityButtonRuntime;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceDoorRuntime;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringManager;
@@ -621,7 +622,9 @@ public final class TransformConstructionNetwork {
                 ServerPlayer sender = context.getSender();
                 if (sender == null) return;
                 if (!TransformControlRuntime.useGroupCell(sender,
-                        message.groupId, message.cell)) {
+                        message.groupId, message.cell)
+                        && !TransformFacilityButtonRuntime.useGroupCell(sender,
+                                message.groupId, message.cell)) {
                     TransformDoorRuntime.useGroupCell(sender,
                             message.groupId, message.cell);
                 }
@@ -652,7 +655,9 @@ public final class TransformConstructionNetwork {
                 ServerPlayer sender = context.getSender();
                 if (sender == null) return;
                 if (!TransformControlRuntime.useSurfaceSlot(sender,
-                        message.surfaceId, message.slot)) {
+                        message.surfaceId, message.slot)
+                        && !TransformFacilityButtonRuntime.useSurfaceSlot(sender,
+                                message.surfaceId, message.slot)) {
                     TransformSurfaceDoorRuntime.useSurfaceSlot(sender,
                             message.surfaceId, message.slot);
                 }
@@ -683,8 +688,11 @@ public final class TransformConstructionNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer sender = context.getSender();
-                if (sender != null) {
-                    TransformControlRuntime.useSurfaceOverlay(sender,
+                if (sender != null
+                        && !TransformControlRuntime.useSurfaceOverlay(sender,
+                                message.surfaceId, message.slot,
+                                message.normalSign)) {
+                    TransformFacilityButtonRuntime.useSurfaceOverlay(sender,
                             message.surfaceId, message.slot,
                             message.normalSign);
                 }

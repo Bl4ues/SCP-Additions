@@ -3,15 +3,12 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -55,8 +52,8 @@ public final class TransformPoweredBlockRuntime {
                     : original.cells().entrySet()) {
                 BlockState state = entry.getValue();
                 if (!eligible(state)) continue;
-                boolean powered = hasSignal(level,
-                        original.cellCenter(entry.getKey()));
+                boolean powered = TransformPowerQuery.powered(
+                        level, original, entry.getKey());
                 BlockState updated = poweredState(state, powered);
                 if (updated.equals(state)) continue;
                 next = next.withCell(entry.getKey(), updated);
@@ -87,10 +84,8 @@ public final class TransformPoweredBlockRuntime {
                 BlockState state = entry.getValue().state();
                 if (!eligible(state)) continue;
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                Vec3 center = original.gridPoint(
-                        (slot.column() + 0.5D) / original.columns(),
-                        (slot.row() + 0.5D) / original.rows());
-                boolean powered = hasSignal(level, center);
+                boolean powered = TransformPowerQuery.powered(
+                        level, original, slot);
                 BlockState updated = poweredState(state, powered);
                 if (updated.equals(state)) continue;
                 boolean deform = entry.getValue().deform();
@@ -126,14 +121,4 @@ public final class TransformPoweredBlockRuntime {
         return updated;
     }
 
-    private static boolean hasSignal(ServerLevel level, Vec3 center) {
-        BlockPos base = BlockPos.containing(center);
-        if (level.hasNeighborSignal(base)) return true;
-        // A rotated object's physical body can cross the immediately adjacent
-        // vanilla cell. Keep this local so redstone does not become wireless.
-        for (Direction direction : Direction.values()) {
-            if (level.hasNeighborSignal(base.relative(direction))) return true;
-        }
-        return false;
-    }
 }

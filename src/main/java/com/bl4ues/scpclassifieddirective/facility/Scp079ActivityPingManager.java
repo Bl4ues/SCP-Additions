@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class Scp079ActivityPingManager {
     private static final long SAME_DEVICE_DEBOUNCE_TICKS = 8L;
+    private static final long DOOR_DEBOUNCE_TICKS = 45L;
     private static final Map<DeviceKey, Long> LAST_PING =
             new ConcurrentHashMap<>();
 
@@ -41,8 +42,10 @@ public final class Scp079ActivityPingManager {
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         BlockPos pos = event.getPos();
-        if (isFacilityActivityDevice(level, pos, level.getBlockState(pos))) {
-            emit(level, pos);
+        BlockState state = level.getBlockState(pos);
+        if (isFacilityActivityDevice(level, pos, state)) {
+            emit(level, pos, FacilityModule.isFacilityDoor(state)
+                    ? DOOR_DEBOUNCE_TICKS : SAME_DEVICE_DEBOUNCE_TICKS);
         }
     }
 
@@ -55,13 +58,22 @@ public final class Scp079ActivityPingManager {
     public static void onNeighborNotify(BlockEvent.NeighborNotifyEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         if (isFacilityActivityDevice(level, event.getPos(), event.getState())) {
-            emit(level, event.getPos());
+            emit(level, event.getPos(),
+                    FacilityModule.isFacilityDoor(event.getState())
+                            ? DOOR_DEBOUNCE_TICKS
+                            : SAME_DEVICE_DEBOUNCE_TICKS);
         }
     }
 
     public static void emit(ServerLevel level, BlockPos pos) {
+        emit(level, pos, SAME_DEVICE_DEBOUNCE_TICKS);
+    }
+
+    private static void emit(ServerLevel level, BlockPos pos,
+            long debounceTicks) {
         if (level == null || pos == null) return;
-        emitAt(level, pos, pos, pos.getX() + 0.5D, pos.getZ() + 0.5D);
+        emitAt(level, pos, pos, pos.getX() + 0.5D, pos.getZ() + 0.5D,
+                debounceTicks);
     }
 
     /**
@@ -75,11 +87,11 @@ public final class Scp079ActivityPingManager {
         Vec3 center = DecontaminationStructure.chamberBox(
                 controllerPos, facing).getCenter();
         emitAt(level, BlockPos.containing(center), controllerPos,
-                center.x, center.z);
+                center.x, center.z, SAME_DEVICE_DEBOUNCE_TICKS);
     }
 
     private static void emitAt(ServerLevel level, BlockPos roomProbe,
-            BlockPos debouncePos, double x, double z) {
+            BlockPos debouncePos, double x, double z, long debounceTicks) {
         if (level == null || roomProbe == null || debouncePos == null
                 || level.getServer() == null) {
             return;
@@ -93,7 +105,7 @@ public final class Scp079ActivityPingManager {
         DeviceKey key = new DeviceKey(level.dimension().location(),
                 debouncePos.asLong());
         Long previous = LAST_PING.put(key, now);
-        if (previous != null && now - previous < SAME_DEVICE_DEBOUNCE_TICKS) {
+        if (previous != null && now - previous < Math.max(1L, debounceTicks)) {
             return;
         }
 

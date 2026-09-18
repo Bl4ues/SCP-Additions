@@ -53,6 +53,17 @@ public final class TransformConstructionClientState {
     private static final Map<UUID, Map<ConstructionSurface.SurfaceSlot,
             Map<Long, TransformConstructionManager.ProxyCell>>>
             SURFACE_SLOT_PROXY_CONTRIBUTIONS = new LinkedHashMap<>();
+
+    // Reverse lookup used by incremental edits. Rebuilding one world proxy cell
+    // must only visit logical parts that actually touch that cell, not every
+    // block in a large authored room.
+    private static final Map<UUID, Map<Long, Map<TransformGroup.GridPos,
+            TransformConstructionManager.ProxyCell>>>
+            GROUP_WORLD_CONTRIBUTORS = new LinkedHashMap<>();
+    private static final Map<UUID, Map<Long,
+            Map<ConstructionSurface.SurfaceSlot,
+                    TransformConstructionManager.ProxyCell>>>
+            SURFACE_WORLD_CONTRIBUTORS = new LinkedHashMap<>();
     private static Selection selection;
     private static EditMode mode = EditMode.MOVE;
     private static Axis axis = Axis.X;
@@ -117,6 +128,8 @@ public final class TransformConstructionClientState {
         SURFACE_PROXY_CONTRIBUTIONS.clear();
         GROUP_CELL_PROXY_CONTRIBUTIONS.clear();
         SURFACE_SLOT_PROXY_CONTRIBUTIONS.clear();
+        GROUP_WORLD_CONTRIBUTORS.clear();
+        SURFACE_WORLD_CONTRIBUTORS.clear();
         selection = null;
         hoveredSurfaceId = null;
         hoveredSurfaceHandle = null;
@@ -540,6 +553,8 @@ public final class TransformConstructionClientState {
         SURFACE_PROXY_CONTRIBUTIONS.clear();
         GROUP_CELL_PROXY_CONTRIBUTIONS.clear();
         SURFACE_SLOT_PROXY_CONTRIBUTIONS.clear();
+        GROUP_WORLD_CONTRIBUTORS.clear();
+        SURFACE_WORLD_CONTRIBUTORS.clear();
         proxyCells = new LinkedHashMap<>();
         if (dimension == null) return;
 
@@ -550,6 +565,8 @@ public final class TransformConstructionClientState {
                     Map<Long, TransformConstructionManager.ProxyCell>> cells =
                     buildGroupCellContributions(group);
             GROUP_CELL_PROXY_CONTRIBUTIONS.put(group.id(), cells);
+            GROUP_WORLD_CONTRIBUTORS.put(group.id(),
+                    reverseGroupContributions(cells));
             Map<Long, TransformConstructionManager.ProxyCell> contribution =
                     aggregateContributions(cells.values());
             GROUP_PROXY_CONTRIBUTIONS.put(group.id(), contribution);
@@ -561,6 +578,8 @@ public final class TransformConstructionClientState {
                     Map<Long, TransformConstructionManager.ProxyCell>> slots =
                     buildSurfaceSlotContributions(surface);
             SURFACE_SLOT_PROXY_CONTRIBUTIONS.put(surface.id(), slots);
+            SURFACE_WORLD_CONTRIBUTORS.put(surface.id(),
+                    reverseSurfaceContributions(slots));
             Map<Long, TransformConstructionManager.ProxyCell> contribution =
                     aggregateContributions(slots.values());
             SURFACE_PROXY_CONTRIBUTIONS.put(surface.id(), contribution);
@@ -576,6 +595,7 @@ public final class TransformConstructionClientState {
                 GROUP_PROXY_CONTRIBUTIONS.remove(id);
         if (old != null) affected.addAll(old.keySet());
         GROUP_CELL_PROXY_CONTRIBUTIONS.remove(id);
+        GROUP_WORLD_CONTRIBUTORS.remove(id);
         TransformGroup group = group(id);
         if (group != null && dimension != null
                 && dimension.equals(group.dimension())) {
@@ -583,6 +603,7 @@ public final class TransformConstructionClientState {
                     Map<Long, TransformConstructionManager.ProxyCell>> cells =
                     buildGroupCellContributions(group);
             GROUP_CELL_PROXY_CONTRIBUTIONS.put(id, cells);
+            GROUP_WORLD_CONTRIBUTORS.put(id, reverseGroupContributions(cells));
             Map<Long, TransformConstructionManager.ProxyCell> next =
                     aggregateContributions(cells.values());
             GROUP_PROXY_CONTRIBUTIONS.put(id, next);
@@ -598,6 +619,7 @@ public final class TransformConstructionClientState {
                 SURFACE_PROXY_CONTRIBUTIONS.remove(id);
         if (old != null) affected.addAll(old.keySet());
         SURFACE_SLOT_PROXY_CONTRIBUTIONS.remove(id);
+        SURFACE_WORLD_CONTRIBUTORS.remove(id);
         ConstructionSurface surface = surface(id);
         if (surface != null && dimension != null
                 && dimension.equals(surface.dimension())) {
@@ -605,6 +627,8 @@ public final class TransformConstructionClientState {
                     Map<Long, TransformConstructionManager.ProxyCell>> slots =
                     buildSurfaceSlotContributions(surface);
             SURFACE_SLOT_PROXY_CONTRIBUTIONS.put(id, slots);
+            SURFACE_WORLD_CONTRIBUTORS.put(id,
+                    reverseSurfaceContributions(slots));
             Map<Long, TransformConstructionManager.ProxyCell> next =
                     aggregateContributions(slots.values());
             SURFACE_PROXY_CONTRIBUTIONS.put(id, next);
@@ -623,7 +647,10 @@ public final class TransformConstructionClientState {
         Set<Long> affected = new LinkedHashSet<>();
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 cells.remove(cell);
-        if (old != null) affected.addAll(old.keySet());
+        if (old != null) {
+            affected.addAll(old.keySet());
+            removeGroupReverse(id, cell, old);
+        }
 
         TransformGroup group = group(id);
         if (group != null && group.cells().containsKey(cell)) {
@@ -631,9 +658,9 @@ public final class TransformConstructionClientState {
                     buildGroupCellContribution(group, cell);
             cells.put(cell, next);
             affected.addAll(next.keySet());
+            addGroupReverse(id, cell, next);
         }
-        refreshOwnerAggregateAt(GROUP_PROXY_CONTRIBUTIONS, id,
-                cells.values(), affected);
+        refreshGroupAggregateAt(id, affected);
         recomputeProxyCells(affected);
     }
 
@@ -647,7 +674,10 @@ public final class TransformConstructionClientState {
         Set<Long> affected = new LinkedHashSet<>();
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 slots.remove(slot);
-        if (old != null) affected.addAll(old.keySet());
+        if (old != null) {
+            affected.addAll(old.keySet());
+            removeSurfaceReverse(id, slot, old);
+        }
 
         ConstructionSurface surface = surface(id);
         if (surface != null) {
@@ -655,41 +685,173 @@ public final class TransformConstructionClientState {
                     buildSurfaceSlotContribution(surface, slot);
             slots.put(slot, next);
             affected.addAll(next.keySet());
+            addSurfaceReverse(id, slot, next);
         }
-        refreshOwnerAggregateAt(SURFACE_PROXY_CONTRIBUTIONS, id,
-                slots.values(), affected);
+        refreshSurfaceAggregateAt(id, affected);
         recomputeProxyCells(affected);
     }
 
-    private static void refreshOwnerAggregateAt(
-            Map<UUID, Map<Long, TransformConstructionManager.ProxyCell>> owners,
-            UUID id,
-            Iterable<Map<Long, TransformConstructionManager.ProxyCell>>
-                    parts,
+    private static void refreshGroupAggregateAt(UUID id,
             Set<Long> affected) {
         Map<Long, TransformConstructionManager.ProxyCell> aggregate =
-                new LinkedHashMap<>(owners.getOrDefault(id, Map.of()));
+                new LinkedHashMap<>(GROUP_PROXY_CONTRIBUTIONS
+                        .getOrDefault(id, Map.of()));
+        Map<Long, Map<TransformGroup.GridPos,
+                TransformConstructionManager.ProxyCell>> reverse =
+                GROUP_WORLD_CONTRIBUTORS.getOrDefault(id, Map.of());
         for (long packed : affected) {
-            MutableProxyCell merged = new MutableProxyCell();
-            boolean any = false;
-            for (Map<Long, TransformConstructionManager.ProxyCell> part
-                    : parts) {
-                TransformConstructionManager.ProxyCell value =
-                        part.get(packed);
-                if (value != null) {
-                    merged.merge(value);
-                    any = true;
-                }
-            }
-            if (any) aggregate.put(packed, merged.freeze());
-            else aggregate.remove(packed);
+            Map<TransformGroup.GridPos, TransformConstructionManager.ProxyCell>
+                    contributors = reverse.get(packed);
+            TransformConstructionManager.ProxyCell merged =
+                    mergeContributors(contributors == null
+                            ? List.of() : contributors.values());
+            if (merged == null) aggregate.remove(packed);
+            else aggregate.put(packed, merged);
         }
-        if (aggregate.isEmpty()) owners.remove(id);
-        else owners.put(id, Map.copyOf(aggregate));
+        if (aggregate.isEmpty()) GROUP_PROXY_CONTRIBUTIONS.remove(id);
+        else GROUP_PROXY_CONTRIBUTIONS.put(id, Map.copyOf(aggregate));
+    }
+
+    private static void refreshSurfaceAggregateAt(UUID id,
+            Set<Long> affected) {
+        Map<Long, TransformConstructionManager.ProxyCell> aggregate =
+                new LinkedHashMap<>(SURFACE_PROXY_CONTRIBUTIONS
+                        .getOrDefault(id, Map.of()));
+        Map<Long, Map<ConstructionSurface.SurfaceSlot,
+                TransformConstructionManager.ProxyCell>> reverse =
+                SURFACE_WORLD_CONTRIBUTORS.getOrDefault(id, Map.of());
+        for (long packed : affected) {
+            Map<ConstructionSurface.SurfaceSlot,
+                    TransformConstructionManager.ProxyCell> contributors =
+                    reverse.get(packed);
+            TransformConstructionManager.ProxyCell merged =
+                    mergeContributors(contributors == null
+                            ? List.of() : contributors.values());
+            if (merged == null) aggregate.remove(packed);
+            else aggregate.put(packed, merged);
+        }
+        if (aggregate.isEmpty()) SURFACE_PROXY_CONTRIBUTIONS.remove(id);
+        else SURFACE_PROXY_CONTRIBUTIONS.put(id, Map.copyOf(aggregate));
+    }
+
+    private static TransformConstructionManager.ProxyCell mergeContributors(
+            Iterable<TransformConstructionManager.ProxyCell> values) {
+        MutableProxyCell merged = new MutableProxyCell();
+        boolean any = false;
+        for (TransformConstructionManager.ProxyCell value : values) {
+            if (value == null) continue;
+            merged.merge(value);
+            any = true;
+        }
+        return any ? merged.freeze() : null;
+    }
+
+    private static Map<Long, Map<TransformGroup.GridPos,
+            TransformConstructionManager.ProxyCell>> reverseGroupContributions(
+            Map<TransformGroup.GridPos,
+                    Map<Long, TransformConstructionManager.ProxyCell>> cells) {
+        Map<Long, Map<TransformGroup.GridPos,
+                TransformConstructionManager.ProxyCell>> result =
+                new LinkedHashMap<>();
+        for (Map.Entry<TransformGroup.GridPos,
+                Map<Long, TransformConstructionManager.ProxyCell>> part
+                : cells.entrySet()) {
+            for (Map.Entry<Long, TransformConstructionManager.ProxyCell> world
+                    : part.getValue().entrySet()) {
+                result.computeIfAbsent(world.getKey(),
+                                ignored -> new LinkedHashMap<>())
+                        .put(part.getKey(), world.getValue());
+            }
+        }
+        return result;
+    }
+
+    private static Map<Long, Map<ConstructionSurface.SurfaceSlot,
+            TransformConstructionManager.ProxyCell>> reverseSurfaceContributions(
+            Map<ConstructionSurface.SurfaceSlot,
+                    Map<Long, TransformConstructionManager.ProxyCell>> slots) {
+        Map<Long, Map<ConstructionSurface.SurfaceSlot,
+                TransformConstructionManager.ProxyCell>> result =
+                new LinkedHashMap<>();
+        for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                Map<Long, TransformConstructionManager.ProxyCell>> part
+                : slots.entrySet()) {
+            for (Map.Entry<Long, TransformConstructionManager.ProxyCell> world
+                    : part.getValue().entrySet()) {
+                result.computeIfAbsent(world.getKey(),
+                                ignored -> new LinkedHashMap<>())
+                        .put(part.getKey(), world.getValue());
+            }
+        }
+        return result;
+    }
+
+    private static void addGroupReverse(UUID id, TransformGroup.GridPos cell,
+            Map<Long, TransformConstructionManager.ProxyCell> contribution) {
+        Map<Long, Map<TransformGroup.GridPos,
+                TransformConstructionManager.ProxyCell>> reverse =
+                GROUP_WORLD_CONTRIBUTORS.computeIfAbsent(id,
+                        ignored -> new LinkedHashMap<>());
+        for (Map.Entry<Long, TransformConstructionManager.ProxyCell> entry
+                : contribution.entrySet()) {
+            reverse.computeIfAbsent(entry.getKey(),
+                            ignored -> new LinkedHashMap<>())
+                    .put(cell, entry.getValue());
+        }
+    }
+
+    private static void removeGroupReverse(UUID id, TransformGroup.GridPos cell,
+            Map<Long, TransformConstructionManager.ProxyCell> contribution) {
+        Map<Long, Map<TransformGroup.GridPos,
+                TransformConstructionManager.ProxyCell>> reverse =
+                GROUP_WORLD_CONTRIBUTORS.get(id);
+        if (reverse == null) return;
+        for (long packed : contribution.keySet()) {
+            Map<TransformGroup.GridPos, TransformConstructionManager.ProxyCell>
+                    contributors = reverse.get(packed);
+            if (contributors == null) continue;
+            contributors.remove(cell);
+            if (contributors.isEmpty()) reverse.remove(packed);
+        }
+        if (reverse.isEmpty()) GROUP_WORLD_CONTRIBUTORS.remove(id);
+    }
+
+    private static void addSurfaceReverse(UUID id,
+            ConstructionSurface.SurfaceSlot slot,
+            Map<Long, TransformConstructionManager.ProxyCell> contribution) {
+        Map<Long, Map<ConstructionSurface.SurfaceSlot,
+                TransformConstructionManager.ProxyCell>> reverse =
+                SURFACE_WORLD_CONTRIBUTORS.computeIfAbsent(id,
+                        ignored -> new LinkedHashMap<>());
+        for (Map.Entry<Long, TransformConstructionManager.ProxyCell> entry
+                : contribution.entrySet()) {
+            reverse.computeIfAbsent(entry.getKey(),
+                            ignored -> new LinkedHashMap<>())
+                    .put(slot, entry.getValue());
+        }
+    }
+
+    private static void removeSurfaceReverse(UUID id,
+            ConstructionSurface.SurfaceSlot slot,
+            Map<Long, TransformConstructionManager.ProxyCell> contribution) {
+        Map<Long, Map<ConstructionSurface.SurfaceSlot,
+                TransformConstructionManager.ProxyCell>> reverse =
+                SURFACE_WORLD_CONTRIBUTORS.get(id);
+        if (reverse == null) return;
+        for (long packed : contribution.keySet()) {
+            Map<ConstructionSurface.SurfaceSlot,
+                    TransformConstructionManager.ProxyCell> contributors =
+                    reverse.get(packed);
+            if (contributors == null) continue;
+            contributors.remove(slot);
+            if (contributors.isEmpty()) reverse.remove(packed);
+        }
+        if (reverse.isEmpty()) SURFACE_WORLD_CONTRIBUTORS.remove(id);
     }
 
     private static void removeGroupProxyCells(UUID id) {
         GROUP_CELL_PROXY_CONTRIBUTIONS.remove(id);
+        GROUP_WORLD_CONTRIBUTORS.remove(id);
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 GROUP_PROXY_CONTRIBUTIONS.remove(id);
         if (old != null) recomputeProxyCells(old.keySet());
@@ -697,6 +859,7 @@ public final class TransformConstructionClientState {
 
     private static void removeSurfaceProxyCells(UUID id) {
         SURFACE_SLOT_PROXY_CONTRIBUTIONS.remove(id);
+        SURFACE_WORLD_CONTRIBUTORS.remove(id);
         Map<Long, TransformConstructionManager.ProxyCell> old =
                 SURFACE_PROXY_CONTRIBUTIONS.remove(id);
         if (old != null) recomputeProxyCells(old.keySet());

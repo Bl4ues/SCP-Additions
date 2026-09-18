@@ -269,7 +269,7 @@ public final class TransformSurfaceRaycast {
                     if (first >= 0.0D && first <= limit
                             && first < bestDistance) {
                         bestDistance = first;
-                        best = new Target(surface, addressSlot,
+                        best = new Target(surface, addressSlot, visualSlot,
                                 eye.add(ray.scale(first)), first,
                                 normalSign, face, layer);
                     }
@@ -277,7 +277,7 @@ public final class TransformSurfaceRaycast {
                     if (second >= 0.0D && second <= limit
                             && second < bestDistance) {
                         bestDistance = second;
-                        best = new Target(surface, addressSlot,
+                        best = new Target(surface, addressSlot, visualSlot,
                                 eye.add(ray.scale(second)), second,
                                 normalSign, face, layer);
                     }
@@ -471,14 +471,25 @@ public final class TransformSurfaceRaycast {
     }
 
     public record Target(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, Vec3 hit, double distance,
-            int normalSign, Direction faceLocal, Layer layer) {
+            ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceSlot visualSlot,
+            Vec3 hit, double distance, int normalSign,
+            Direction faceLocal, Layer layer) {
         public Target {
+            visualSlot = visualSlot == null ? slot : visualSlot;
             normalSign = normalSign < 0 ? -1 : 1;
             faceLocal = faceLocal == null
                     ? (normalSign > 0 ? Direction.SOUTH : Direction.NORTH)
                     : faceLocal;
             layer = layer == null ? Layer.GUIDE : layer;
+        }
+
+        public Target(ConstructionSurface surface,
+                ConstructionSurface.SurfaceSlot slot, Vec3 hit,
+                double distance, int normalSign, Direction faceLocal,
+                Layer layer) {
+            this(surface, slot, slot, hit, distance, normalSign,
+                    faceLocal, layer);
         }
     }
 }

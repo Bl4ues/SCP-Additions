@@ -163,6 +163,8 @@ public final class TransformGroupPlacementClient {
         Vec3 eye = player.getEyePosition();
         Vec3 worldRay = player.getViewVector(1.0F).normalize();
         double limit = MAX_DISTANCE;
+        BlockPos vanillaBlocker = null;
+        double vanillaDistance = Double.POSITIVE_INFINITY;
 
         HitResult vanilla = minecraft.hitResult;
         if (vanilla instanceof BlockHitResult blockHit
@@ -170,11 +172,8 @@ public final class TransformGroupPlacementClient {
                 && !minecraft.level.getBlockState(blockHit.getBlockPos()).is(
                         com.bl4ues.scpclassifieddirective.facility.transform
                                 .TransformConstructionModule.getProxy())) {
-            // A transformed cell can legitimately share the vanilla cell at a
-            // wall seam. Permit a small amount beyond that face, but never ray
-            // through unrelated world geometry.
-            limit = Math.min(limit,
-                    eye.distanceTo(blockHit.getLocation()) + 0.18D);
+            vanillaBlocker = blockHit.getBlockPos();
+            vanillaDistance = eye.distanceTo(blockHit.getLocation());
         }
 
         GridTarget best = null;
@@ -189,8 +188,21 @@ public final class TransformGroupPlacementClient {
             GridTarget candidate = traceGroup(group, localEye, localRay,
                     Math.min(limit, bestDistance), payloadShape, accepted, eye,
                     worldRay);
-            if (candidate != null
-                    && candidate.hit().distance() < bestDistance) {
+            if (candidate == null) continue;
+
+            // Main-level geometry occludes unrelated transformed grids, but a
+            // transformed local cell is allowed to coexist with that exact
+            // vanilla world cell. This is the important sub-level rule: do not
+            // let the parent's axis-aligned BlockPos steal a hit that belongs
+            // to the logical grid occupying the same physical space.
+            if (vanillaBlocker != null
+                    && candidate.hit().distance() > vanillaDistance + 1.0E-4D
+                    && (!TransformConstructionClientState
+                            .groupTouchesWorldCell(group.id(), vanillaBlocker)
+                    || candidate.hit().distance() > vanillaDistance + 1.80D)) {
+                continue;
+            }
+            if (candidate.hit().distance() < bestDistance) {
                 bestDistance = candidate.hit().distance();
                 best = candidate;
             }

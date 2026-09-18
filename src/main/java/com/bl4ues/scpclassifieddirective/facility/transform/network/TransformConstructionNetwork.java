@@ -119,6 +119,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(21, SurfaceOverlayRemoved.class,
                 SurfaceOverlayRemoved::encode, SurfaceOverlayRemoved::decode,
                 SurfaceOverlayRemoved::handle);
+        CHANNEL.registerMessage(22, UseSurfaceOverlay.class,
+                UseSurfaceOverlay::encode, UseSurfaceOverlay::decode,
+                UseSurfaceOverlay::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -179,6 +182,13 @@ public final class TransformConstructionNetwork {
             ConstructionSurface.SurfaceSlot slot) {
         if (surfaceId == null || slot == null) return;
         CHANNEL.sendToServer(new UseSurfaceSlot(surfaceId, slot));
+    }
+
+    public static void useSurfaceOverlay(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        if (surfaceId == null || slot == null) return;
+        CHANNEL.sendToServer(new UseSurfaceOverlay(surfaceId, slot,
+                normalSign < 0 ? -1 : 1));
     }
 
     public static void placeSurfaceBlock(UUID surfaceId,
@@ -645,6 +655,38 @@ public final class TransformConstructionNetwork {
                         message.surfaceId, message.slot)) {
                     TransformSurfaceDoorRuntime.useSurfaceSlot(sender,
                             message.surfaceId, message.slot);
+                }
+            });
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record UseSurfaceOverlay(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        private static void encode(UseSurfaceOverlay message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.surfaceId);
+            buffer.writeVarInt(message.slot.column());
+            buffer.writeVarInt(message.slot.row());
+            buffer.writeByte(message.normalSign < 0 ? -1 : 1);
+        }
+
+        private static UseSurfaceOverlay decode(FriendlyByteBuf buffer) {
+            return new UseSurfaceOverlay(buffer.readUUID(),
+                    new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
+                            buffer.readVarInt()),
+                    buffer.readByte() < 0 ? -1 : 1);
+        }
+
+        private static void handle(UseSurfaceOverlay message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
+                if (sender != null) {
+                    TransformControlRuntime.useSurfaceOverlay(sender,
+                            message.surfaceId, message.slot,
+                            message.normalSign);
                 }
             });
             context.setPacketHandled(true);

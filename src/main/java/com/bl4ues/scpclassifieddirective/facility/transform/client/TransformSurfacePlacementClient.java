@@ -83,6 +83,14 @@ public final class TransformSurfacePlacementClient {
                 player, TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location()));
         if (target == null) return;
+        ConstructionSurface.SurfaceAttachment overlay =
+                target.surface().overlay(target.slot(), target.normalSign());
+        if (overlay != null && interactive(overlay.state())) {
+            TransformConstructionNetwork.useSurfaceOverlay(
+                    target.surface().id(), target.slot(), target.normalSign());
+            event.setCanceled(true);
+            return;
+        }
         ConstructionSurface.SurfaceAttachment attachment =
                 target.surface().attachments().get(target.slot());
         if (attachment == null || !interactive(attachment.state())) return;

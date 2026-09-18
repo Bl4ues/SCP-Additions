@@ -94,6 +94,25 @@ public final class TransformControlRuntime {
                 attachment.state(), center));
     }
 
+    public static boolean useSurfaceOverlay(ServerPlayer player, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        if (player == null || surfaceId == null || slot == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        int side = normalSign < 0 ? -1 : 1;
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        ConstructionSurface surface = data.surface(surfaceId);
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())) return false;
+        ConstructionSurface.SurfaceAttachment attachment =
+                surface.overlay(slot, side);
+        if (attachment == null || !control(attachment.state())) return false;
+        Vec3 center = surfaceCenter(surface, slot, side);
+        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
+        return activate(level, ControlHit.surface(surface, slot, side,
+                attachment.state(), center));
+    }
+
     private static boolean activate(ServerLevel level, ControlHit hit) {
         BlockState state = hit.state();
         if (state == null || !state.hasProperty(BlockStateProperties.POWERED)) {
@@ -169,7 +188,9 @@ public final class TransformControlRuntime {
         if (surface == null) return;
         ServerLevel level = level(server, surface.dimension());
         ConstructionSurface.SurfaceAttachment attachment =
-                surface.attachments().get(key.slot());
+                key.normalSign() == 0
+                        ? surface.attachments().get(key.slot())
+                        : surface.overlay(key.slot(), key.normalSign());
         if (level == null || attachment == null
                 || !(attachment.state().getBlock() instanceof ButtonBlock)
                 || !attachment.state().hasProperty(BlockStateProperties.POWERED)
@@ -178,13 +199,23 @@ public final class TransformControlRuntime {
         }
         BlockState nextState = attachment.state().setValue(
                 BlockStateProperties.POWERED, false);
-        ConstructionSurface updated = surface.withAttachment(key.slot(),
-                nextState, attachment.deform());
+        ConstructionSurface updated;
+        if (key.normalSign() == 0) {
+            updated = surface.withAttachment(key.slot(),
+                    nextState, attachment.deform());
+            TransformConstructionNetwork.broadcastSurfaceSlot(level,
+                    surface.id(), key.slot(), nextState, attachment.deform());
+        } else {
+            updated = surface.withOverlay(key.slot(), key.normalSign(),
+                    nextState, attachment.deform());
+            TransformConstructionNetwork.broadcastSurfaceOverlay(level,
+                    surface.id(), key.slot(), key.normalSign(), nextState,
+                    attachment.deform());
+        }
         data.putSurfaceState(updated);
         TransformPowerQuery.refreshSurfaceSlot(server, updated, key.slot());
-        TransformConstructionNetwork.broadcastSurfaceSlot(level, surface.id(),
-                key.slot(), nextState, attachment.deform());
-        Vec3 center = surfaceCenter(surface, key.slot());
+        Vec3 center = surfaceCenter(surface, key.slot(),
+                key.normalSign() == 0 ? 1 : key.normalSign());
         level.playSound(null, center.x, center.y, center.z,
                 SoundEvents.STONE_BUTTON_CLICK_OFF, SoundSource.BLOCKS,
                 0.3F, 0.5F);
@@ -202,16 +233,28 @@ public final class TransformControlRuntime {
             TransformConstructionNetwork.broadcastGroupCell(level,
                     hit.group().id(), hit.gridPos(), state);
         } else {
-            ConstructionSurface.SurfaceAttachment old = hit.surface()
-                    .attachments().get(hit.slot());
+            ConstructionSurface.SurfaceAttachment old =
+                    hit.normalSign() == 0
+                            ? hit.surface().attachments().get(hit.slot())
+                            : hit.surface().overlay(hit.slot(),
+                                    hit.normalSign());
             if (old == null) return;
-            ConstructionSurface updated = hit.surface().withAttachment(hit.slot(),
-                    state, old.deform());
+            ConstructionSurface updated;
+            if (hit.normalSign() == 0) {
+                updated = hit.surface().withAttachment(hit.slot(),
+                        state, old.deform());
+                TransformConstructionNetwork.broadcastSurfaceSlot(level,
+                        hit.surface().id(), hit.slot(), state, old.deform());
+            } else {
+                updated = hit.surface().withOverlay(hit.slot(),
+                        hit.normalSign(), state, old.deform());
+                TransformConstructionNetwork.broadcastSurfaceOverlay(level,
+                        hit.surface().id(), hit.slot(), hit.normalSign(),
+                        state, old.deform());
+            }
             data.putSurfaceState(updated);
             TransformPowerQuery.refreshSurfaceSlot(level.getServer(),
                     updated, hit.slot());
-            TransformConstructionNetwork.broadcastSurfaceSlot(level,
-                    hit.surface().id(), hit.slot(), state, old.deform());
         }
     }
 
@@ -260,10 +303,16 @@ public final class TransformControlRuntime {
 
     private static Vec3 surfaceCenter(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot) {
+        return surfaceCenter(surface, slot, 1);
+    }
+
+    private static Vec3 surfaceCenter(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
+        int side = normalSign < 0 ? -1 : 1;
         return surface.gridPoint(u, v)
-                .add(surface.gridNormal(u, v).scale(0.5D));
+                .add(surface.gridNormal(u, v).scale(side * 0.5D));
     }
 
     private static ServerLevel level(MinecraftServer server,
@@ -275,34 +324,42 @@ public final class TransformControlRuntime {
     }
 
     private record ControlKey(UUID groupId, TransformGroup.GridPos gridPos,
-            UUID surfaceId, ConstructionSurface.SurfaceSlot slot) {
+            UUID surfaceId, ConstructionSurface.SurfaceSlot slot,
+            int normalSign) {
         private static ControlKey group(UUID id, TransformGroup.GridPos pos) {
-            return new ControlKey(id, pos, null, null);
+            return new ControlKey(id, pos, null, null, 0);
         }
 
         private static ControlKey surface(UUID id,
-                ConstructionSurface.SurfaceSlot slot) {
-            return new ControlKey(null, null, id, slot);
+                ConstructionSurface.SurfaceSlot slot, int normalSign) {
+            return new ControlKey(null, null, id, slot, normalSign);
         }
     }
 
     private record ControlHit(TransformGroup group, TransformGroup.GridPos gridPos,
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
-            BlockState state, Vec3 center) {
+            int normalSign, BlockState state, Vec3 center) {
         private static ControlHit group(TransformGroup group,
                 TransformGroup.GridPos pos, BlockState state, Vec3 center) {
-            return new ControlHit(group, pos, null, null, state, center);
+            return new ControlHit(group, pos, null, null, 0, state, center);
         }
 
         private static ControlHit surface(ConstructionSurface surface,
                 ConstructionSurface.SurfaceSlot slot, BlockState state,
                 Vec3 center) {
-            return new ControlHit(null, null, surface, slot, state, center);
+            return surface(surface, slot, 0, state, center);
+        }
+
+        private static ControlHit surface(ConstructionSurface surface,
+                ConstructionSurface.SurfaceSlot slot, int normalSign,
+                BlockState state, Vec3 center) {
+            return new ControlHit(null, null, surface, slot, normalSign,
+                    state, center);
         }
 
         private ControlKey key() {
             return group != null ? ControlKey.group(group.id(), gridPos)
-                    : ControlKey.surface(surface.id(), slot);
+                    : ControlKey.surface(surface.id(), slot, normalSign);
         }
     }
 }

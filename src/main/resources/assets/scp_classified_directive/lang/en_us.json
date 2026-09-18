@@ -515,6 +515,8 @@
   "subtitles.scp_classified_directive.roomba": "Roomba hums",
   "block.scp_classified_directive.speaker": "Speaker",
   "key.scp_classified_directive.scp_079_speaker": "Use Speaker",
+  "key.scp_classified_directive.scp_079_blackout": "Blackout",
+  "key.scp_classified_directive.scp_079_lockdown": "Lockdown",
   "subtitles.scp_classified_directive.speaker_on": "Speaker switches on",
   "subtitles.scp_classified_directive.speaker_off": "Speaker switches off",
   "subtitles.scp_classified_directive.speaker_loop": "Speaker emits static",

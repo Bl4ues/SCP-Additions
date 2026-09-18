@@ -95,22 +95,33 @@ public final class TransformPowerQuery {
         if (index != null) index.replaceSurface(surface);
     }
 
+    public static synchronized void refreshGroupCell(MinecraftServer server,
+            TransformGroup group, TransformGroup.GridPos cell) {
+        if (server == null || group == null || cell == null) return;
+        PowerIndex index = INDEXES.get(server);
+        if (index != null) index.replaceGroupCell(group, cell);
+    }
+
+    public static synchronized void refreshSurfaceSlot(MinecraftServer server,
+            ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (server == null || surface == null || slot == null) return;
+        PowerIndex index = INDEXES.get(server);
+        if (index != null) index.replaceSurfaceSlot(surface, slot);
+    }
+
     public static synchronized void removeGroup(MinecraftServer server,
             ResourceLocation dimension, UUID id) {
         if (server == null || dimension == null || id == null) return;
         PowerIndex index = INDEXES.get(server);
-        if (index != null) {
-            index.replace(new SourceOwner(dimension, id, false), List.of());
-        }
+        if (index != null) index.removeOwner(dimension, id, false);
     }
 
     public static synchronized void removeSurface(MinecraftServer server,
             ResourceLocation dimension, UUID id) {
         if (server == null || dimension == null || id == null) return;
         PowerIndex index = INDEXES.get(server);
-        if (index != null) {
-            index.replace(new SourceOwner(dimension, id, true), List.of());
-        }
+        if (index != null) index.removeOwner(dimension, id, true);
     }
 
     public static synchronized void invalidate(MinecraftServer server) {
@@ -142,7 +153,18 @@ public final class TransformPowerQuery {
     }
 
     private record SourceOwner(ResourceLocation dimension, UUID id,
-            boolean surface) {
+            boolean surface, int x, int y, int z) {
+        private static SourceOwner group(TransformGroup group,
+                TransformGroup.GridPos cell) {
+            return new SourceOwner(group.dimension(), group.id(), false,
+                    cell.x(), cell.y(), cell.z());
+        }
+
+        private static SourceOwner surface(ConstructionSurface surface,
+                ConstructionSurface.SurfaceSlot slot) {
+            return new SourceOwner(surface.dimension(), surface.id(), true,
+                    slot.column(), slot.row(), 0);
+        }
     }
 
     private record SourcePoint(ResourceLocation dimension, Vec3 world) {
@@ -155,33 +177,56 @@ public final class TransformPowerQuery {
                 new HashMap<>();
 
         private void replaceGroup(TransformGroup group) {
-            List<SourcePoint> points = new ArrayList<>();
-            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                    : group.cells().entrySet()) {
-                if (source(entry.getValue())) {
-                    points.add(new SourcePoint(group.dimension(),
-                            group.cellCenter(entry.getKey())));
-                }
+            removeOwner(group.dimension(), group.id(), false);
+            for (TransformGroup.GridPos cell : group.cells().keySet()) {
+                replaceGroupCell(group, cell);
             }
-            replace(new SourceOwner(group.dimension(), group.id(), false),
-                    points);
+        }
+
+        private void replaceGroupCell(TransformGroup group,
+                TransformGroup.GridPos cell) {
+            SourceOwner owner = SourceOwner.group(group, cell);
+            BlockState state = group.cells().get(cell);
+            if (!source(state)) {
+                replace(owner, List.of());
+                return;
+            }
+            replace(owner, List.of(new SourcePoint(group.dimension(),
+                    group.cellCenter(cell))));
         }
 
         private void replaceSurface(ConstructionSurface surface) {
-            List<SourcePoint> points = new ArrayList<>();
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                if (!source(entry.getValue().state())) continue;
-                ConstructionSurface.SurfaceSlot slot = entry.getKey();
-                double u = (slot.column() + 0.5D) / surface.columns();
-                double v = (slot.row() + 0.5D) / surface.rows();
-                points.add(new SourcePoint(surface.dimension(),
-                        surface.gridPoint(u, v)
-                                .add(surface.gridNormal(u, v).scale(0.5D))));
+            removeOwner(surface.dimension(), surface.id(), true);
+            for (ConstructionSurface.SurfaceSlot slot
+                    : surface.attachments().keySet()) {
+                replaceSurfaceSlot(surface, slot);
             }
-            replace(new SourceOwner(surface.dimension(), surface.id(), true),
-                    points);
+        }
+
+        private void replaceSurfaceSlot(ConstructionSurface surface,
+                ConstructionSurface.SurfaceSlot slot) {
+            SourceOwner owner = SourceOwner.surface(surface, slot);
+            ConstructionSurface.SurfaceAttachment attachment =
+                    surface.attachments().get(slot);
+            if (attachment == null || !source(attachment.state())) {
+                replace(owner, List.of());
+                return;
+            }
+            double u = (slot.column() + 0.5D) / surface.columns();
+            double v = (slot.row() + 0.5D) / surface.rows();
+            replace(owner, List.of(new SourcePoint(surface.dimension(),
+                    surface.gridPoint(u, v)
+                            .add(surface.gridNormal(u, v).scale(0.5D)))));
+        }
+
+        private void removeOwner(ResourceLocation dimension, UUID id,
+                boolean surface) {
+            List<SourceOwner> matches = byOwner.keySet().stream()
+                    .filter(owner -> owner.surface() == surface
+                            && owner.id().equals(id)
+                            && owner.dimension().equals(dimension))
+                    .toList();
+            for (SourceOwner owner : matches) replace(owner, List.of());
         }
 
         private void replace(SourceOwner owner, List<SourcePoint> next) {

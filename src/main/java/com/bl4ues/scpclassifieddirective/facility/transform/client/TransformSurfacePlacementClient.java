@@ -40,24 +40,41 @@ public final class TransformSurfacePlacementClient {
             return;
         }
 
+        TransformSurfaceRaycast.Target aimed = null;
+        if (selection != null && selection.type() == SelectionType.SURFACE) {
+            ConstructionSurface selectedSurface =
+                    TransformConstructionClientState.surface(selection.id());
+            if (selectedSurface != null) {
+                aimed = TransformSurfaceRaycast.target(player, selectedSurface);
+            }
+        } else {
+            aimed = TransformSurfaceRaycast.target(player,
+                    TransformConstructionClientState.surfaces(
+                            minecraft.level.dimension().location()));
+        }
+
+        if (!player.isShiftKeyDown() && aimed != null) {
+            ConstructionSurface.SurfaceAttachment overlay =
+                    aimed.surface().overlay(aimed.slot(), aimed.normalSign());
+            if (overlay != null && interactive(overlay.state())) {
+                TransformConstructionNetwork.useSurfaceOverlay(
+                        aimed.surface().id(), aimed.slot(), aimed.normalSign());
+                event.setCanceled(true);
+                return;
+            }
+            ConstructionSurface.SurfaceAttachment attachment =
+                    aimed.surface().attachments().get(aimed.slot());
+            if (attachment != null && interactive(attachment.state())) {
+                TransformConstructionNetwork.useSurfaceSlot(
+                        aimed.surface().id(), aimed.slot());
+                event.setCanceled(true);
+                return;
+            }
+        }
+
         if (player.getMainHandItem().getItem() instanceof BlockItem) {
             if (!player.isCreative()) return;
-            TransformSurfaceRaycast.Target target = null;
-            if (selection != null && selection.type() == SelectionType.SURFACE) {
-                ConstructionSurface selectedSurface =
-                        TransformConstructionClientState.surface(selection.id());
-                if (selectedSurface != null) {
-                    target = TransformSurfaceRaycast.target(player,
-                            selectedSurface);
-                }
-            } else {
-                // A Surface is its own logical grid. Once it contains physical
-                // construction, builders may continue from it directly without
-                // switching back to the tool merely to re-select the scaffold.
-                target = TransformSurfaceRaycast.target(player,
-                        TransformConstructionClientState.surfaces(
-                                minecraft.level.dimension().location()));
-            }
+            TransformSurfaceRaycast.Target target = aimed;
             if (target == null) return;
             if (target.surface().attachments().containsKey(target.slot())) {
                 TransformConstructionNetwork.placeSurfaceOverlay(
@@ -79,9 +96,7 @@ public final class TransformSurfacePlacementClient {
                         TransformConstructionModule.getOffGridTool())) {
             return;
         }
-        TransformSurfaceRaycast.Target target = TransformSurfaceRaycast.target(
-                player, TransformConstructionClientState.surfaces(
-                        minecraft.level.dimension().location()));
+        TransformSurfaceRaycast.Target target = aimed;
         if (target == null) return;
         ConstructionSurface.SurfaceAttachment overlay =
                 target.surface().overlay(target.slot(), target.normalSign());

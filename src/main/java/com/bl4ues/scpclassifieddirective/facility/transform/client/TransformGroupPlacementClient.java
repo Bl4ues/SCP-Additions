@@ -62,6 +62,15 @@ public final class TransformGroupPlacementClient {
             return;
         }
 
+        PayloadTarget logicalUse = findPayloadTarget(player);
+        if (!player.isShiftKeyDown() && logicalUse != null
+                && interactive(logicalUse.state())) {
+            TransformConstructionNetwork.useGroupCell(
+                    logicalUse.group().id(), logicalUse.cell());
+            event.setCanceled(true);
+            return;
+        }
+
         if (player.getMainHandItem().getItem() instanceof BlockItem) {
             if (!player.isCreative()) return;
             Target target = findTarget(player);

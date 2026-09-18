@@ -175,7 +175,6 @@ public final class TransformConstructionClientRenderer {
     private static void renderGroup(Minecraft minecraft, PoseStack pose,
             MultiBufferSource.BufferSource buffers, TransformGroup group,
             Vec3 camera) {
-        if (group.origin().distanceToSqr(camera) > MAX_RENDER_DISTANCE_SQR) return;
         CachedGroup cached = GROUP_MESHES.get(group.id());
         if (cached == null || !cached.cells().equals(group.cells())) {
             cached = buildGroupMesh(minecraft, group);

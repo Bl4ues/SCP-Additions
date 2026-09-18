@@ -799,6 +799,11 @@ public final class TransformConstructionClientControls {
                     TransformConstructionNetwork.updateGroup(current.id(),
                             current.origin(), current.rotationX(),
                             current.rotationY(), current.rotationZ());
+                    // Transform-only movement reuses the local mesh throughout
+                    // the drag. Rebuild once here so world-light samples match
+                    // the accepted final position.
+                    TransformConstructionClientRenderer.invalidateGroup(
+                            current.id());
                 }
             } else {
                 ConstructionSurface current =

@@ -616,7 +616,32 @@ public final class TransformConstructionManager {
     private static void refreshOwner(MinecraftServer server, UUID id,
             boolean surfaceOwner, boolean invalidatePower) {
         if (server == null || id == null) return;
-        if (invalidatePower) TransformPowerQuery.invalidate(server);
+
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
+        if (invalidatePower) {
+            if (surfaceOwner) {
+                ConstructionSurface surface = data.surface(id);
+                if (surface == null) {
+                    for (ServerLevel level : server.getAllLevels()) {
+                        TransformPowerQuery.removeSurface(server,
+                                level.dimension().location(), id);
+                    }
+                } else {
+                    TransformPowerQuery.refreshSurface(server, surface);
+                }
+            } else {
+                TransformGroup group = data.group(id);
+                if (group == null) {
+                    for (ServerLevel level : server.getAllLevels()) {
+                        TransformPowerQuery.removeGroup(server,
+                                level.dimension().location(), id);
+                    }
+                } else {
+                    TransformPowerQuery.refreshGroup(server, group);
+                }
+            }
+        }
 
         SpatialIndex index = INDEXES.get(server);
         if (index == null) {
@@ -632,8 +657,6 @@ public final class TransformConstructionManager {
             index.removeOwner(key);
         }
 
-        TransformConstructionSavedData data =
-                TransformConstructionSavedData.get(server);
         if (surfaceOwner) {
             ConstructionSurface surface = data.surface(id);
             if (surface != null) {

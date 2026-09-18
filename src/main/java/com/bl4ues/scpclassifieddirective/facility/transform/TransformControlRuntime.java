@@ -156,7 +156,7 @@ public final class TransformControlRuntime {
             BlockState next = state.setValue(BlockStateProperties.POWERED, false);
             TransformGroup updated = group.withCell(key.gridPos(), next);
             data.putGroupState(updated);
-            TransformPowerQuery.invalidate(server);
+            TransformPowerQuery.refreshGroup(server, updated);
             TransformConstructionNetwork.broadcastGroupCell(level, group.id(),
                     key.gridPos(), next);
             Vec3 center = group.cellCenter(key.gridPos());
@@ -181,7 +181,7 @@ public final class TransformControlRuntime {
         ConstructionSurface updated = surface.withAttachment(key.slot(),
                 nextState, attachment.deform());
         data.putSurfaceState(updated);
-        TransformPowerQuery.invalidate(server);
+        TransformPowerQuery.refreshSurface(server, updated);
         TransformConstructionNetwork.broadcastSurfaceSlot(level, surface.id(),
                 key.slot(), nextState, attachment.deform());
         Vec3 center = surfaceCenter(surface, key.slot());
@@ -197,7 +197,7 @@ public final class TransformControlRuntime {
         if (hit.group() != null) {
             TransformGroup updated = hit.group().withCell(hit.gridPos(), state);
             data.putGroupState(updated);
-            TransformPowerQuery.invalidate(level.getServer());
+            TransformPowerQuery.refreshGroup(level.getServer(), updated);
             TransformConstructionNetwork.broadcastGroupCell(level,
                     hit.group().id(), hit.gridPos(), state);
         } else {
@@ -207,7 +207,7 @@ public final class TransformControlRuntime {
             ConstructionSurface updated = hit.surface().withAttachment(hit.slot(),
                     state, old.deform());
             data.putSurfaceState(updated);
-            TransformPowerQuery.invalidate(level.getServer());
+            TransformPowerQuery.refreshSurface(level.getServer(), updated);
             TransformConstructionNetwork.broadcastSurfaceSlot(level,
                     hit.surface().id(), hit.slot(), state, old.deform());
         }

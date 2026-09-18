@@ -449,9 +449,11 @@ public final class TransformConstructionClientState {
             addWorldBox(index, transformedBounds(group, selection), group.id(),
                     null, true, false, state.getLightEmission());
 
-            VoxelShape collision = state.getCollisionShape(
-                    EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
-                    CollisionContext.empty());
+            VoxelShape collision = FacilityModule.isFacilityDoor(state)
+                    && FacilityModule.isDoorPassable(state)
+                    ? Shapes.empty()
+                    : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
+                            BlockPos.ZERO, CollisionContext.empty());
             if (collision.isEmpty()) continue;
             int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
             double inv = 1.0D / subdivisions;

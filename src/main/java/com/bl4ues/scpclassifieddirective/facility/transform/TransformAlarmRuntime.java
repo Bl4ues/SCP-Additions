@@ -143,24 +143,13 @@ public final class TransformAlarmRuntime {
 
     private static boolean shouldBeActive(ServerLevel level, Vec3 center,
             List<DoorPoint> transformedDoors) {
-        if (hasRedstone(level, center) || hasVanillaDoor(level, center)) {
+        if (TransformPowerQuery.powered(level, center)
+                || hasVanillaDoor(level, center)) {
             return true;
         }
         for (DoorPoint door : transformedDoors) {
             if (door.position().distanceToSqr(center)
                     <= TRANSFORMED_DOOR_RANGE_SQR) return true;
-        }
-        return false;
-    }
-
-    private static boolean hasRedstone(ServerLevel level, Vec3 center) {
-        BlockPos base = BlockPos.containing(center);
-        if (level.hasNeighborSignal(base)) return true;
-        // Off-grid objects may overlap a neighbouring vanilla cell even when
-        // their logical centre remains in this one. Check those immediate cells
-        // only; this deliberately does not turn the Alarm into a remote sensor.
-        for (Direction direction : Direction.values()) {
-            if (level.hasNeighborSignal(base.relative(direction))) return true;
         }
         return false;
     }

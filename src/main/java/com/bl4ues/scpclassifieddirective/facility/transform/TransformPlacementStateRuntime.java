@@ -89,11 +89,11 @@ public final class TransformPlacementStateRuntime {
                     surface.id(), match.surfaceSlot, local, old.deform());
         }
         if (match.group != null) {
-            TransformConstructionManager.refreshGroupRuntime(
-                    level.getServer(), match.group.id());
+            TransformConstructionManager.refreshGroupCellRuntime(
+                    level.getServer(), match.group.id(), match.gridPos);
         } else if (match.surface != null) {
-            TransformConstructionManager.refreshSurfaceRuntime(
-                    level.getServer(), match.surface.id());
+            TransformConstructionManager.refreshSurfaceSlotRuntime(
+                    level.getServer(), match.surface.id(), match.surfaceSlot);
         }
     }
 

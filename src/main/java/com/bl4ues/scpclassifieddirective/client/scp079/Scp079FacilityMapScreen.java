@@ -399,15 +399,18 @@ public final class Scp079FacilityMapScreen extends Screen {
             int clipLeft = MAP_MARGIN_X;
             int clipRight = graphics.guiWidth() - MAP_MARGIN_X;
             for (int index = 0; index + 1 < intersections.size(); index += 2) {
-                int rawX0 = transform.sx(intersections.get(index));
-                int rawX1 = transform.sx(intersections.get(index + 1));
+                double worldX0 = intersections.get(index);
+                double worldX1 = intersections.get(index + 1);
+                int rawX0 = transform.sx(worldX0);
+                int rawX1 = transform.sx(worldX1);
                 int left = Math.min(rawX0, rawX1);
                 int right = Math.max(rawX0, rawX1);
                 if (right < clipLeft || left > clipRight) continue;
                 int x0 = Mth.clamp(left, clipLeft, clipRight);
                 int x1 = Mth.clamp(right, clipLeft, clipRight);
-                if (x1 == x0 && right > left) {
-                    x1 = Math.min(clipRight, x0 + 1);
+                if (x1 == x0 && Math.abs(worldX1 - worldX0) > 1.0E-7D) {
+                    if (x0 < clipRight) x1 = x0 + 1;
+                    else if (x0 > clipLeft) x0--;
                 }
                 if (x1 > x0) graphics.fill(x0, y, x1, y + 1, fill);
             }

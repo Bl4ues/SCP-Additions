@@ -168,6 +168,14 @@ public final class WallMountedSupportEvents {
         level.destroyBlock(pos, true);
     }
 
+    /**
+     * Placement adapters use the same classification as support validation so
+     * transformed wall fixtures keep their authored facing convention.
+     */
+    public static boolean isWallMountedFacingBlock(Block block) {
+        return block != null && isTrackedWallObject(block);
+    }
+
     private static boolean isTrackedWallObject(Block block) {
         return block == FacilityModule.WALLLIGHT.get()
                 || block == FacilityModule.WALLLIGHT_2.get()

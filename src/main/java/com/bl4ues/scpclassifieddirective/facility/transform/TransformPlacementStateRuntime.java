@@ -1,6 +1,9 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.WallMountedSupportEvents;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmMountStructure;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -90,6 +93,17 @@ public final class TransformPlacementStateRuntime {
                     .defaultBlockState() : item.getBlock().defaultBlockState();
         }
         Vec3 safeHit = hit == null ? group.cellCenter(cell) : hit;
+        Vec3 localHit = TransformMath.worldToLocal(group.origin(), safeHit,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+
+        // Alarm placement uses the clicked sub-cell position as part of its
+        // authored state. Its vanilla getStateForPlacement also validates real
+        // world support, which is intentionally wrong for a transformed local
+        // grid, so reproduce that placement convention directly in local space.
+        if (item.getBlock() == AlarmModule.BLOCK.get()) {
+            return alarmPlacementState(cell, outwardLocal, localHit);
+        }
+
         Vec3 worldNormal = TransformMath.rotate(
                 Vec3.atLowerCornerOf(outwardLocal.getNormal()),
                 group.rotationX(), group.rotationY(), group.rotationZ());
@@ -108,10 +122,48 @@ public final class TransformPlacementStateRuntime {
         Vec3 z = TransformMath.rotate(new Vec3(0, 0, 1), group.rotationX(),
                 group.rotationY(), group.rotationZ());
         BlockState local = localize(contextual, x, y, z);
+
         if (local.hasProperty(BlockStateProperties.ATTACH_FACE)) {
             local = attachToLocalFace(local, outwardLocal);
         }
+        if (outwardLocal.getAxis().isHorizontal()
+                && local.hasProperty(BlockStateProperties.HORIZONTAL_FACING)
+                && WallMountedSupportEvents.isWallMountedFacingBlock(
+                        item.getBlock())) {
+            // Wall fixtures care about the face that was clicked, not the
+            // player's world yaw. In transformed construction that face exists
+            // in the group's local frame.
+            local = local.setValue(BlockStateProperties.HORIZONTAL_FACING,
+                    outwardLocal);
+        }
         return local;
+    }
+
+    private static BlockState alarmPlacementState(
+            TransformGroup.GridPos target, Direction outwardLocal,
+            Vec3 localHit) {
+        if (!outwardLocal.getAxis().isHorizontal()) {
+            return AlarmModule.BLOCK.get().defaultBlockState();
+        }
+        TransformGroup.GridPos support = target.offset(
+                -outwardLocal.getStepX(), -outwardLocal.getStepY(),
+                -outwardLocal.getStepZ());
+        Vec3 supportCenter = new Vec3(support.x(), support.y(), support.z());
+        Vec3 relative = localHit.subtract(supportCenter);
+        Direction right = outwardLocal.getClockWise();
+        double horizontal = 0.5D
+                + relative.x * right.getStepX()
+                + relative.z * right.getStepZ();
+        double vertical = localHit.y - (support.y() - 0.5D);
+        return AlarmModule.BLOCK.get().defaultBlockState()
+                .setValue(AlarmModule.FACING, outwardLocal)
+                .setValue(AlarmModule.ACTIVE, false)
+                .setValue(AlarmModule.MOUNT_X,
+                        AlarmMountStructure.encodeSlot(
+                                AlarmMountStructure.quantize(horizontal)))
+                .setValue(AlarmModule.MOUNT_Y,
+                        AlarmMountStructure.encodeSlot(
+                                AlarmMountStructure.quantize(vertical)));
     }
 
     public static BlockState surfacePlacementState(ServerPlayer player,

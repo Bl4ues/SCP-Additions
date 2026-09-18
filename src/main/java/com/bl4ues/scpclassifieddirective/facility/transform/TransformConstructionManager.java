@@ -650,7 +650,14 @@ public final class TransformConstructionManager {
         if (overlap <= 1.0E-5D) return false;
         double ratio = overlap / volume;
         double remaining = Math.max(0.0D, volume - overlap);
-        return ratio > 0.62D || remaining < 0.10D;
+
+        // Transformed construction is an authoring system, not a vanilla block
+        // placement validator. Existing solid cells already keep their own
+        // collision because proxies never replace them, so overlapping visual
+        // geometry should only be rejected when there is effectively no usable
+        // part of the new piece left. This is intentionally permissive for
+        // curved walls, arches and tight off-grid detailing.
+        return ratio > 0.95D || remaining < 0.0125D;
     }
 
     private static double shapeVolume(VoxelShape shape) {

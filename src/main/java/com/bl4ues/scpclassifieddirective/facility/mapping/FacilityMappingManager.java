@@ -76,7 +76,7 @@ public final class FacilityMappingManager {
         FacilityFloorPatch initialPatch = FacilityFloorPatch.between(
                 pending.first(), pos);
         FacilityFloorPatch patch = FacilitySurfaceBoundaryConformer.conform(
-                level, initialPatch);
+                level, initialPatch, pos);
         int xSpan = patch.maxX() - patch.minX() + 1;
         int zSpan = patch.maxZ() - patch.minZ() + 1;
         if (patch.area() <= 0L || patch.area() > MAX_PATCH_AREA

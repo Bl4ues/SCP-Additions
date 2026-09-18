@@ -2,8 +2,13 @@ package com.bl4ues.scpclassifieddirective.facility.mapping;
 
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
@@ -33,6 +38,11 @@ public final class FacilitySurfaceBoundaryConformer {
 
     public static FacilityFloorPatch conform(ServerLevel level,
             FacilityFloorPatch base) {
+        return conform(level, base, null);
+    }
+
+    public static FacilityFloorPatch conform(ServerLevel level,
+            FacilityFloorPatch base, BlockPos interiorProbe) {
         if (level == null || base == null) return base;
         Area result = polygonArea(base.outline());
         if (result.isEmpty()) return base;
@@ -62,11 +72,166 @@ public final class FacilitySurfaceBoundaryConformer {
             result = clipped;
         }
 
+        Vec3 interior = interiorProbe == null
+                ? new Vec3((base.minX() + base.maxX() + 1.0D) * 0.5D,
+                        base.y() + 1.0D,
+                        (base.minZ() + base.maxZ() + 1.0D) * 0.5D)
+                : Vec3.atCenterOf(interiorProbe);
+        for (TransformGroup group : TransformConstructionManager.groups(level)) {
+            Area exterior = offGridExteriorRegion(group, base, interior, far);
+            if (exterior.isEmpty()) continue;
+            Area clipped = new Area(result);
+            clipped.subtract(exterior);
+            if (clipped.isEmpty()) continue;
+            double before = areaMagnitude(result);
+            double after = areaMagnitude(clipped);
+            if (after < 0.02D || after < before * 0.015D) continue;
+            if (!sameArea(result, clipped)) changed = true;
+            result = clipped;
+        }
+
         if (!changed) return base;
-        List<FacilityFloorPatch.Vertex> vertices = largestPolygon(result);
+        List<FacilityFloorPatch.Vertex> vertices =
+                selectedPolygon(result, interior.x, interior.z);
         FacilityFloorPatch refined = FacilityFloorPatch.polygon(base.y(),
                 vertices);
         return refined == null ? base : refined;
+    }
+
+    private static Area offGridExteriorRegion(TransformGroup group,
+            FacilityFloorPatch patch, Vec3 interior, double distance) {
+        Area result = new Area();
+        if (group == null || group.cells().isEmpty()) return result;
+
+        Vec3 worldUp = TransformMath.rotate(new Vec3(0.0D, 1.0D, 0.0D),
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        if (Math.abs(worldUp.y) < 0.72D) return result;
+
+        java.util.Set<TransformGroup.GridPos> solids =
+                new java.util.LinkedHashSet<>();
+        for (var entry : group.cells().entrySet()) {
+            if (entry.getValue() == null || entry.getValue().isAir()
+                    || entry.getValue().getCollisionShape(
+                            EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
+                            CollisionContext.empty()).isEmpty()) {
+                continue;
+            }
+            Vec3 center = group.cellCenter(entry.getKey());
+            if (Math.abs(center.y - (patch.y() + 1.5D)) > 1.15D) continue;
+            if (center.x < patch.minX() - BOUNDS_MARGIN - 1.0D
+                    || center.x > patch.maxX() + 1.0D + BOUNDS_MARGIN
+                    || center.z < patch.minZ() - BOUNDS_MARGIN - 1.0D
+                    || center.z > patch.maxZ() + 1.0D + BOUNDS_MARGIN) {
+                continue;
+            }
+            solids.add(entry.getKey());
+        }
+        if (solids.isEmpty()) return result;
+
+        for (TransformGroup.GridPos cell : solids) {
+            boolean alongX = solids.contains(cell.offset(-1, 0, 0))
+                    || solids.contains(cell.offset(1, 0, 0));
+            boolean alongZ = solids.contains(cell.offset(0, 0, -1))
+                    || solids.contains(cell.offset(0, 0, 1));
+
+            List<LocalFace> faces = new ArrayList<>(4);
+            if (!solids.contains(cell.offset(-1, 0, 0))
+                    && (!alongX || alongZ)) {
+                faces.add(LocalFace.WEST);
+            }
+            if (!solids.contains(cell.offset(1, 0, 0))
+                    && (!alongX || alongZ)) {
+                faces.add(LocalFace.EAST);
+            }
+            if (!solids.contains(cell.offset(0, 0, -1))
+                    && (!alongZ || alongX)) {
+                faces.add(LocalFace.NORTH);
+            }
+            if (!solids.contains(cell.offset(0, 0, 1))
+                    && (!alongZ || alongX)) {
+                faces.add(LocalFace.SOUTH);
+            }
+            if (faces.isEmpty()) continue;
+
+            FaceEdge best = null;
+            double bestDistance = Double.POSITIVE_INFINITY;
+            for (LocalFace face : faces) {
+                FaceEdge edge = worldFaceEdge(group, cell, face);
+                double value = pointSegmentDistanceSqr(interior.x, interior.z,
+                        edge.a().x, edge.a().z, edge.b().x, edge.b().z);
+                if (value < bestDistance) {
+                    bestDistance = value;
+                    best = edge;
+                }
+            }
+            if (best == null) continue;
+
+            Vec3 midpoint = best.a().add(best.b()).scale(0.5D);
+            Vec3 tangent = horizontal(best.b().subtract(best.a()));
+            if (tangent.lengthSqr() < 1.0E-10D) continue;
+            tangent = tangent.normalize();
+            Vec3 normal = new Vec3(-tangent.z, 0.0D, tangent.x);
+            if (interior.subtract(midpoint).dot(normal) < 0.0D) {
+                normal = normal.scale(-1.0D);
+            }
+            Vec3 outward = normal.scale(-1.0D);
+            addStrip(result, best.a(), best.b(), outward, distance);
+        }
+        return result;
+    }
+
+    private static FaceEdge worldFaceEdge(TransformGroup group,
+            TransformGroup.GridPos cell, LocalFace face) {
+        double x0 = cell.x() - 0.5D;
+        double x1 = cell.x() + 0.5D;
+        double z0 = cell.z() - 0.5D;
+        double z1 = cell.z() + 0.5D;
+        double y = cell.y();
+        Vec3 a;
+        Vec3 b;
+        switch (face) {
+            case WEST -> {
+                a = new Vec3(x0, y, z0);
+                b = new Vec3(x0, y, z1);
+            }
+            case EAST -> {
+                a = new Vec3(x1, y, z0);
+                b = new Vec3(x1, y, z1);
+            }
+            case NORTH -> {
+                a = new Vec3(x0, y, z0);
+                b = new Vec3(x1, y, z0);
+            }
+            case SOUTH -> {
+                a = new Vec3(x0, y, z1);
+                b = new Vec3(x1, y, z1);
+            }
+            default -> throw new IllegalStateException();
+        }
+        return new FaceEdge(
+                TransformMath.localToWorld(group.origin(), a,
+                        group.rotationX(), group.rotationY(),
+                        group.rotationZ()),
+                TransformMath.localToWorld(group.origin(), b,
+                        group.rotationX(), group.rotationY(),
+                        group.rotationZ()));
+    }
+
+    private static double pointSegmentDistanceSqr(double px, double pz,
+            double ax, double az, double bx, double bz) {
+        double dx = bx - ax;
+        double dz = bz - az;
+        double length = dx * dx + dz * dz;
+        if (length < 1.0E-10D) {
+            double ox = px - ax;
+            double oz = pz - az;
+            return ox * ox + oz * oz;
+        }
+        double t = Math.max(0.0D, Math.min(1.0D,
+                ((px - ax) * dx + (pz - az) * dz) / length));
+        double ox = px - (ax + dx * t);
+        double oz = pz - (az + dz * t);
+        return ox * ox + oz * oz;
     }
 
     private static Area exteriorRegion(ConstructionSurface surface,
@@ -196,18 +361,31 @@ public final class FacilitySurfaceBoundaryConformer {
         return delta.isEmpty();
     }
 
-    private static List<FacilityFloorPatch.Vertex> largestPolygon(Area area) {
-        List<FacilityFloorPatch.Vertex> best = List.of();
-        double bestArea = 0.0D;
+    private static List<FacilityFloorPatch.Vertex> selectedPolygon(
+            Area area, double probeX, double probeZ) {
+        List<FacilityFloorPatch.Vertex> bestContaining = List.of();
+        double containingArea = 0.0D;
+        List<FacilityFloorPatch.Vertex> largest = List.of();
+        double largestArea = 0.0D;
         for (List<FacilityFloorPatch.Vertex> polygon : polygons(area)) {
             List<FacilityFloorPatch.Vertex> clean = simplify(polygon);
             double value = Math.abs(signedArea(clean));
-            if (value > bestArea) {
-                bestArea = value;
-                best = clean;
+            if (value > largestArea) {
+                largestArea = value;
+                largest = clean;
+            }
+            if (value > containingArea
+                    && polygonArea(clean).contains(probeX, probeZ)) {
+                containingArea = value;
+                bestContaining = clean;
             }
         }
-        return limit(best, MAX_OUTPUT_VERTICES);
+        return limit(bestContaining.isEmpty() ? largest : bestContaining,
+                MAX_OUTPUT_VERTICES);
+    }
+
+    private static List<FacilityFloorPatch.Vertex> largestPolygon(Area area) {
+        return selectedPolygon(area, Double.NaN, Double.NaN);
     }
 
     private static List<List<FacilityFloorPatch.Vertex>> polygons(Area area) {
@@ -300,4 +478,9 @@ public final class FacilitySurfaceBoundaryConformer {
         double dz = a.z() - b.z();
         return dx * dx + dz * dz;
     }
+    private enum LocalFace { WEST, EAST, NORTH, SOUTH }
+
+    private record FaceEdge(Vec3 a, Vec3 b) {
+    }
+
 }

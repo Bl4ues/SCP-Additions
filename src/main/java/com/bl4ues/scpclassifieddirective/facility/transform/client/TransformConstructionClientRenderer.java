@@ -68,6 +68,10 @@ public final class TransformConstructionClientRenderer {
             new HashMap<>();
     private static final Map<UUID, CachedGroup> GROUP_MESHES =
             new HashMap<>();
+    private static final Map<UUID, Set<GroupBatchKey>> DIRTY_GROUP_BATCHES =
+            new HashMap<>();
+    private static final Map<UUID, Set<ConstructionSurface.SurfaceSlot>>
+            DIRTY_SURFACE_SLOTS = new HashMap<>();
 
     private TransformConstructionClientRenderer() {
     }
@@ -75,6 +79,22 @@ public final class TransformConstructionClientRenderer {
     public static void clearSurfaceCache() {
         SURFACE_MESHES.clear();
         GROUP_MESHES.clear();
+        DIRTY_GROUP_BATCHES.clear();
+        DIRTY_SURFACE_SLOTS.clear();
+    }
+
+    static void markGroupCellDirty(UUID id, TransformGroup.GridPos cell) {
+        if (id == null || cell == null) return;
+        DIRTY_GROUP_BATCHES.computeIfAbsent(id,
+                ignored -> new java.util.LinkedHashSet<>())
+                .add(GroupBatchKey.of(cell));
+    }
+
+    static void markSurfaceSlotDirty(UUID id,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (id == null || slot == null) return;
+        DIRTY_SURFACE_SLOTS.computeIfAbsent(id,
+                ignored -> new java.util.LinkedHashSet<>()).add(slot);
     }
 
     static void invalidateGroup(UUID id) {
@@ -198,6 +218,11 @@ public final class TransformConstructionClientRenderer {
             if (placementTarget != null
                     && !(showSelectedGroup && selection != null
                     && placementTarget.group().id().equals(selection.id()))) {
+                // Building against transformed construction should expose the
+                // same local cell grid the raycast uses. The vanilla proxy AABB
+                // is only broad-phase plumbing and must never be the builder's
+                // visual reference.
+                renderGroupGrid(pose, lines, placementTarget.group(), camera);
                 renderLogicalGroupCell(pose, lines, placementTarget.group(),
                         placementTarget.source(),
                         0.72F, 0.88F, 0.96F, 0.94F);
@@ -215,6 +240,11 @@ public final class TransformConstructionClientRenderer {
                         0.78F, 0.93F, 1.0F, 0.96F);
             }
             if (surfaceTarget != null) {
+                if (!(showSelectedSurface && selection != null
+                        && surfaceTarget.surface().id().equals(selection.id()))) {
+                    renderSurfaceGrid(pose, lines,
+                            surfaceTarget.surface(), camera);
+                }
                 renderLogicalSurfaceSlot(pose, lines,
                         surfaceTarget.surface(), surfaceTarget.slot(),
                         0.24F, 1.0F, 0.38F, 0.98F);
@@ -321,19 +351,28 @@ public final class TransformConstructionClientRenderer {
 
     private static CachedGroup updateGroupMesh(Minecraft minecraft,
             TransformGroup group, CachedGroup cached) {
-        Set<GroupBatchKey> dirty = new java.util.HashSet<>();
-        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                : cached.cells().entrySet()) {
-            BlockState next = group.cells().get(entry.getKey());
-            if (!java.util.Objects.equals(entry.getValue(), next)) {
-                dirty.add(GroupBatchKey.of(entry.getKey()));
+        Set<GroupBatchKey> hinted = DIRTY_GROUP_BATCHES.remove(
+                group.id());
+        Set<GroupBatchKey> dirty = hinted == null
+                ? new java.util.LinkedHashSet<>()
+                : new java.util.LinkedHashSet<>(hinted);
+        if (hinted == null) {
+            // Full snapshots/geometry edits do not carry a tiny-cell hint.
+            // Only those uncommon paths pay the O(n) diff. Runtime block edits
+            // arrive through markGroupCellDirty and jump straight to one batch.
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : cached.cells().entrySet()) {
+                BlockState next = group.cells().get(entry.getKey());
+                if (!java.util.Objects.equals(entry.getValue(), next)) {
+                    dirty.add(GroupBatchKey.of(entry.getKey()));
+                }
             }
-        }
-        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                : group.cells().entrySet()) {
-            BlockState previous = cached.cells().get(entry.getKey());
-            if (!java.util.Objects.equals(previous, entry.getValue())) {
-                dirty.add(GroupBatchKey.of(entry.getKey()));
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                BlockState previous = cached.cells().get(entry.getKey());
+                if (!java.util.Objects.equals(previous, entry.getValue())) {
+                    dirty.add(GroupBatchKey.of(entry.getKey()));
+                }
             }
         }
         if (dirty.isEmpty()) {
@@ -513,22 +552,45 @@ public final class TransformConstructionClientRenderer {
             ConstructionSurface surface, CachedSurface cached) {
         Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots =
                 new LinkedHashMap<>(cached.slots());
-        Set<ConstructionSurface.SurfaceSlot> dirty =
-                new java.util.LinkedHashSet<>();
-        for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                ConstructionSurface.SurfaceAttachment> entry
-                : cached.surface().attachments().entrySet()) {
-            if (!java.util.Objects.equals(entry.getValue(),
-                    surface.attachments().get(entry.getKey()))) {
-                dirty.add(entry.getKey());
+        Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot> overlays =
+                new LinkedHashMap<>(cached.overlays());
+
+        Set<ConstructionSurface.SurfaceSlot> hinted =
+                DIRTY_SURFACE_SLOTS.remove(surface.id());
+        Set<ConstructionSurface.SurfaceSlot> dirty = hinted == null
+                ? new java.util.LinkedHashSet<>()
+                : new java.util.LinkedHashSet<>(hinted);
+
+        if (hinted == null) {
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : cached.surface().attachments().entrySet()) {
+                if (!java.util.Objects.equals(entry.getValue(),
+                        surface.attachments().get(entry.getKey()))) {
+                    dirty.add(entry.getKey());
+                }
             }
-        }
-        for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                ConstructionSurface.SurfaceAttachment> entry
-                : surface.attachments().entrySet()) {
-            if (!java.util.Objects.equals(entry.getValue(),
-                    cached.surface().attachments().get(entry.getKey()))) {
-                dirty.add(entry.getKey());
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                if (!java.util.Objects.equals(entry.getValue(),
+                        cached.surface().attachments().get(entry.getKey()))) {
+                    dirty.add(entry.getKey());
+                }
+            }
+            for (ConstructionSurface.SurfaceOverlaySlot key
+                    : cached.surface().overlays().keySet()) {
+                if (!java.util.Objects.equals(cached.surface().overlays().get(key),
+                        surface.overlays().get(key))) {
+                    dirty.add(key.slot());
+                }
+            }
+            for (ConstructionSurface.SurfaceOverlaySlot key
+                    : surface.overlays().keySet()) {
+                if (!java.util.Objects.equals(surface.overlays().get(key),
+                        cached.surface().overlays().get(key))) {
+                    dirty.add(key.slot());
+                }
             }
         }
 
@@ -537,45 +599,25 @@ public final class TransformConstructionClientRenderer {
                     surface.attachments().get(slot);
             if (attachment == null || attachment.state().isAir()) {
                 slots.remove(slot);
-                continue;
+            } else {
+                CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
+                        slot, attachment, 1);
+                if (rebuilt == null) slots.remove(slot);
+                else slots.put(slot, rebuilt);
             }
-            CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
-                    slot, attachment, 1);
-            if (rebuilt == null) slots.remove(slot);
-            else slots.put(slot, rebuilt);
-        }
-        Map<ConstructionSurface.SurfaceOverlaySlot,
-                CachedSurfaceSlot> overlays =
-                new LinkedHashMap<>(cached.overlays());
-        Set<ConstructionSurface.SurfaceOverlaySlot> dirtyOverlays =
-                new java.util.LinkedHashSet<>();
-        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
-                ConstructionSurface.SurfaceAttachment> entry
-                : cached.surface().overlays().entrySet()) {
-            if (!java.util.Objects.equals(entry.getValue(),
-                    surface.overlays().get(entry.getKey()))) {
-                dirtyOverlays.add(entry.getKey());
+
+            overlays.keySet().removeIf(key -> key.slot().equals(slot));
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.overlays().entrySet()) {
+                if (!entry.getKey().slot().equals(slot)) continue;
+                ConstructionSurface.SurfaceAttachment overlay =
+                        entry.getValue();
+                if (overlay == null || overlay.state().isAir()) continue;
+                CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
+                        slot, overlay, entry.getKey().normalSign());
+                if (rebuilt != null) overlays.put(entry.getKey(), rebuilt);
             }
-        }
-        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
-                ConstructionSurface.SurfaceAttachment> entry
-                : surface.overlays().entrySet()) {
-            if (!java.util.Objects.equals(entry.getValue(),
-                    cached.surface().overlays().get(entry.getKey()))) {
-                dirtyOverlays.add(entry.getKey());
-            }
-        }
-        for (ConstructionSurface.SurfaceOverlaySlot key : dirtyOverlays) {
-            ConstructionSurface.SurfaceAttachment attachment =
-                    surface.overlays().get(key);
-            if (attachment == null || attachment.state().isAir()) {
-                overlays.remove(key);
-                continue;
-            }
-            CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
-                    key.slot(), attachment, key.normalSign());
-            if (rebuilt == null) overlays.remove(key);
-            else overlays.put(key, rebuilt);
         }
         return new CachedSurface(surface, Map.copyOf(slots),
                 Map.copyOf(overlays));

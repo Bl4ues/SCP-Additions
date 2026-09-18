@@ -32,11 +32,19 @@ public final class TransformPickBlockClient {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null || minecraft.gameMode == null
-                || minecraft.screen != null || !player.isCreative()
-                || !(minecraft.hitResult instanceof BlockHitResult hit)
-                || !minecraft.level.getBlockState(hit.getBlockPos()).is(
-                        TransformConstructionModule.getProxy())) return;
-        BlockState state = nearestState(minecraft, hit.getLocation());
+                || minecraft.screen != null || !player.isCreative()) return;
+
+        // Rigid Off-Grid payloads are picked in their authored local grid even
+        // when they share a vanilla cell and no proxy could be materialized.
+        BlockState state = TransformGroupPlacementClient
+                .findAimedPayloadState(player);
+        if (state == null && minecraft.hitResult instanceof BlockHitResult hit
+                && minecraft.level.getBlockState(hit.getBlockPos()).is(
+                        TransformConstructionModule.getProxy())) {
+            // Surface construction still uses its existing proxy-backed nearest
+            // lookup, which is appropriate for its deformed slot geometry.
+            state = nearestState(minecraft, hit.getLocation());
+        }
         if (state == null || state.isAir()) return;
         ItemStack picked = state.getBlock().asItem().getDefaultInstance();
         if (picked.isEmpty()) return;

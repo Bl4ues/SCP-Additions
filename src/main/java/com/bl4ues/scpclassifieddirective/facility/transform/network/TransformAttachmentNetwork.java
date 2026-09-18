@@ -100,7 +100,8 @@ public final class TransformAttachmentNetwork {
                 data.putSurface(new ConstructionSurface(surface.id(),
                         surface.dimension(), surface.bottomStart(),
                         surface.bottomEnd(), surface.topStart(), surface.topEnd(),
-                        surface.curveOffset(), attachments));
+                        surface.curveOffset(), surface.heightCurveOffset(),
+                        attachments, surface.flipped()));
                 TransformConstructionManager.refresh(player.getServer());
             });
             context.setPacketHandled(true);

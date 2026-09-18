@@ -19,8 +19,8 @@ import java.util.UUID;
  */
 public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
-        Vec3 curveOffset, Map<SurfaceSlot, SurfaceAttachment> attachments,
-        boolean flipped) {
+        Vec3 curveOffset, Vec3 heightCurveOffset,
+        Map<SurfaceSlot, SurfaceAttachment> attachments, boolean flipped) {
     private static final int ARC_SAMPLES = 32;
 
     public ConstructionSurface {
@@ -33,6 +33,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 : topStart;
         topEnd = topEnd == null ? bottomEnd.add(0.0D, 3.0D, 0.0D) : topEnd;
         curveOffset = curveOffset == null ? Vec3.ZERO : curveOffset;
+        heightCurveOffset = heightCurveOffset == null
+                ? Vec3.ZERO : heightCurveOffset;
         attachments = attachments == null ? Map.of()
                 : Map.copyOf(attachments);
     }
@@ -41,7 +43,15 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
             Vec3 curveOffset, Map<SurfaceSlot, SurfaceAttachment> attachments) {
         this(id, dimension, bottomStart, bottomEnd, topStart, topEnd,
-                curveOffset, attachments, false);
+                curveOffset, Vec3.ZERO, attachments, false);
+    }
+
+    public ConstructionSurface(UUID id, ResourceLocation dimension,
+            Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
+            Vec3 curveOffset, Map<SurfaceSlot, SurfaceAttachment> attachments,
+            boolean flipped) {
+        this(id, dimension, bottomStart, bottomEnd, topStart, topEnd,
+                curveOffset, Vec3.ZERO, attachments, flipped);
     }
 
     public static ConstructionSurface wall(ResourceLocation dimension,
@@ -64,7 +74,9 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Vec3 bottom = TransformMath.quadratic(bottomStart, bottomControl(),
                 bottomEnd, u);
         Vec3 top = TransformMath.quadratic(topStart, topControl(), topEnd, u);
-        return bottom.scale(1.0D - v).add(top.scale(v));
+        double bulge = 4.0D * v * (1.0D - v);
+        return bottom.scale(1.0D - v).add(top.scale(v))
+                .add(heightCurveOffset.scale(bulge));
     }
 
     public Vec3 tangent(double u, double v) {
@@ -77,16 +89,22 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public Vec3 vertical(double u) {
+        return vertical(u, 0.5D);
+    }
+
+    public Vec3 vertical(double u, double v) {
         Vec3 bottom = TransformMath.quadratic(bottomStart, bottomControl(),
                 bottomEnd, u);
         Vec3 top = TransformMath.quadratic(topStart, topControl(), topEnd, u);
-        return TransformMath.safeNormalize(top.subtract(bottom),
+        Vec3 derivative = top.subtract(bottom)
+                .add(heightCurveOffset.scale(4.0D * (1.0D - 2.0D * v)));
+        return TransformMath.safeNormalize(derivative,
                 new Vec3(0.0D, 1.0D, 0.0D));
     }
 
     public Vec3 normal(double u, double v) {
         Vec3 tangent = tangent(u, v);
-        Vec3 vertical = vertical(u);
+        Vec3 vertical = vertical(u, v);
         Vec3 base = TransformMath.safeNormalize(tangent.cross(vertical),
                 new Vec3(0.0D, 0.0D, 1.0D));
         return flipped ? base.scale(-1.0D) : base;
@@ -123,12 +141,42 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         return 1.0D;
     }
 
+    private double gridVerticalParameter(double uParameter, double fraction) {
+        double targetFraction = Math.max(0.0D, Math.min(1.0D, fraction));
+        if (targetFraction <= 0.0D || targetFraction >= 1.0D
+                || heightCurveOffset.lengthSqr() < 1.0E-10D) {
+            return targetFraction;
+        }
+        final int samples = 24;
+        double[] lengths = new double[samples + 1];
+        Vec3 previous = point(uParameter, 0.0D);
+        double total = 0.0D;
+        for (int index = 1; index <= samples; index++) {
+            Vec3 current = point(uParameter, index / (double) samples);
+            total += current.distanceTo(previous);
+            lengths[index] = total;
+            previous = current;
+        }
+        if (total < 1.0E-8D) return targetFraction;
+        double target = total * targetFraction;
+        for (int index = 1; index <= samples; index++) {
+            if (lengths[index] < target) continue;
+            double segment = lengths[index] - lengths[index - 1];
+            double local = segment < 1.0E-8D ? 0.0D
+                    : (target - lengths[index - 1]) / segment;
+            return ((index - 1) + local) / samples;
+        }
+        return 1.0D;
+    }
+
     public Vec3 gridPoint(double u, double v) {
-        return point(gridParameter(u), v);
+        double parameterU = gridParameter(u);
+        return point(parameterU, gridVerticalParameter(parameterU, v));
     }
 
     public Vec3 gridTangent(double u, double v) {
-        return tangent(gridParameter(u), v);
+        double parameterU = gridParameter(u);
+        return tangent(parameterU, gridVerticalParameter(parameterU, v));
     }
 
     /**
@@ -142,11 +190,18 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public Vec3 gridVertical(double u) {
-        return vertical(gridParameter(u));
+        return gridVertical(u, 0.5D);
+    }
+
+    public Vec3 gridVertical(double u, double v) {
+        double parameterU = gridParameter(u);
+        return vertical(parameterU, gridVerticalParameter(parameterU, v));
     }
 
     public Vec3 gridNormal(double u, double v) {
-        return normal(gridParameter(u), v);
+        double parameterU = gridParameter(u);
+        double parameterV = gridVerticalParameter(parameterU, v);
+        return normal(parameterU, parameterV);
     }
 
     public double width() {
@@ -162,13 +217,20 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
 
     public double height() {
         double total = 0.0D;
-        for (int index = 0; index <= 8; index++) {
-            double u = index / 8.0D;
-            total += TransformMath.quadratic(topStart, topControl(), topEnd, u)
-                    .distanceTo(TransformMath.quadratic(bottomStart,
-                            bottomControl(), bottomEnd, u));
+        final int uSamples = 8;
+        final int vSamples = 24;
+        for (int ui = 0; ui <= uSamples; ui++) {
+            double u = gridParameter(ui / (double) uSamples);
+            Vec3 previous = point(u, 0.0D);
+            double length = 0.0D;
+            for (int vi = 1; vi <= vSamples; vi++) {
+                Vec3 current = point(u, vi / (double) vSamples);
+                length += current.distanceTo(previous);
+                previous = current;
+            }
+            total += length;
         }
-        return total / 9.0D;
+        return total / (uSamples + 1.0D);
     }
 
     public int columns() {
@@ -182,9 +244,16 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     public ConstructionSurface withGeometry(Vec3 nextBottomStart,
             Vec3 nextBottomEnd, Vec3 nextTopStart, Vec3 nextTopEnd,
             Vec3 nextCurveOffset) {
+        return withGeometry(nextBottomStart, nextBottomEnd, nextTopStart,
+                nextTopEnd, nextCurveOffset, heightCurveOffset);
+    }
+
+    public ConstructionSurface withGeometry(Vec3 nextBottomStart,
+            Vec3 nextBottomEnd, Vec3 nextTopStart, Vec3 nextTopEnd,
+            Vec3 nextCurveOffset, Vec3 nextHeightCurveOffset) {
         ConstructionSurface geometry = new ConstructionSurface(id, dimension,
                 nextBottomStart, nextBottomEnd, nextTopStart, nextTopEnd,
-                nextCurveOffset, Map.of(), flipped);
+                nextCurveOffset, nextHeightCurveOffset, Map.of(), flipped);
         if (attachments.isEmpty()) return geometry;
 
         int oldColumns = columns();
@@ -204,7 +273,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         }
         return new ConstructionSurface(id, dimension, nextBottomStart,
                 nextBottomEnd, nextTopStart, nextTopEnd, nextCurveOffset,
-                remapped, flipped);
+                nextHeightCurveOffset, remapped, flipped);
     }
 
     public ConstructionSurface withAttachment(SurfaceSlot slot,
@@ -213,13 +282,14 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new LinkedHashMap<>(attachments);
         next.put(slot, new SurfaceAttachment(state, deform));
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, next, flipped);
+                topStart, topEnd, curveOffset, heightCurveOffset, next, flipped);
     }
 
     public ConstructionSurface withFlipped(boolean nextFlipped) {
         if (nextFlipped == flipped) return this;
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, attachments, nextFlipped);
+                topStart, topEnd, curveOffset, heightCurveOffset, attachments,
+                nextFlipped);
     }
 
     public ConstructionSurface withoutAttachment(SurfaceSlot slot) {
@@ -240,6 +310,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         putVec(tag, "TopStart", topStart);
         putVec(tag, "TopEnd", topEnd);
         putVec(tag, "CurveOffset", curveOffset);
+        putVec(tag, "HeightCurveOffset", heightCurveOffset);
         tag.putBoolean("Flipped", flipped);
         ListTag list = new ListTag();
         for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
@@ -275,8 +346,10 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         return new ConstructionSurface(tag.getUUID("Id"), dimension,
                 getVec(tag, "BottomStart"), getVec(tag, "BottomEnd"),
                 getVec(tag, "TopStart"), getVec(tag, "TopEnd"),
-                getVec(tag, "CurveOffset"), attachments,
-                tag.getBoolean("Flipped"));
+                getVec(tag, "CurveOffset"),
+                tag.contains("HeightCurveOffset", Tag.TAG_COMPOUND)
+                        ? getVec(tag, "HeightCurveOffset") : Vec3.ZERO,
+                attachments, tag.getBoolean("Flipped"));
     }
 
     private static void putVec(CompoundTag tag, String key, Vec3 value) {

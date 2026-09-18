@@ -192,6 +192,18 @@ public final class TransformConstructionManager {
     public static boolean updateSurface(ServerPlayer player, UUID id,
             Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
             Vec3 curveOffset) {
+        if (player == null || player.getServer() == null) return false;
+        ConstructionSurface current =
+                TransformConstructionSavedData.get(player.getServer()).surface(id);
+        Vec3 heightCurve = current == null ? Vec3.ZERO
+                : current.heightCurveOffset();
+        return updateSurface(player, id, bottomStart, bottomEnd, topStart,
+                topEnd, curveOffset, heightCurve);
+    }
+
+    public static boolean updateSurface(ServerPlayer player, UUID id,
+            Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
+            Vec3 curveOffset, Vec3 heightCurveOffset) {
         if (!canEdit(player) || id == null
                 || !(player.level() instanceof ServerLevel level)) return false;
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
@@ -200,7 +212,7 @@ public final class TransformConstructionManager {
         if (surface == null || !surface.dimension().equals(
                 level.dimension().location())) return false;
         ConstructionSurface next = surface.withGeometry(bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset);
+                topStart, topEnd, curveOffset, heightCurveOffset);
         if ((long) next.columns() * next.rows() > MAX_SURFACE_SLOTS
                 || !canOccupy(level, null, next, null, id)) return false;
         data.putSurface(next);

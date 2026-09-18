@@ -97,12 +97,18 @@ public final class TransformConstructionNetwork {
 
     public static void updateSurface(UUID id, Vec3 bottomStart, Vec3 bottomEnd,
             Vec3 topStart, Vec3 topEnd, Vec3 curveOffset) {
+        updateSurface(id, bottomStart, bottomEnd, topStart, topEnd,
+                curveOffset, Vec3.ZERO);
+    }
+
+    public static void updateSurface(UUID id, Vec3 bottomStart, Vec3 bottomEnd,
+            Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
+            Vec3 heightCurveOffset) {
         if (id == null || bottomStart == null || bottomEnd == null
-                || topStart == null || topEnd == null || curveOffset == null) {
-            return;
-        }
+                || topStart == null || topEnd == null || curveOffset == null
+                || heightCurveOffset == null) return;
         CHANNEL.sendToServer(new UpdateSurface(id, bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset));
+                topStart, topEnd, curveOffset, heightCurveOffset));
     }
 
     public static void delete(UUID id, boolean surface) {
@@ -300,7 +306,8 @@ public final class TransformConstructionNetwork {
     }
 
     public record UpdateSurface(UUID id, Vec3 bottomStart, Vec3 bottomEnd,
-            Vec3 topStart, Vec3 topEnd, Vec3 curveOffset) {
+            Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
+            Vec3 heightCurveOffset) {
         private static void encode(UpdateSurface message,
                 FriendlyByteBuf buffer) {
             buffer.writeUUID(message.id);
@@ -309,12 +316,13 @@ public final class TransformConstructionNetwork {
             writeVec(buffer, message.topStart);
             writeVec(buffer, message.topEnd);
             writeVec(buffer, message.curveOffset);
+            writeVec(buffer, message.heightCurveOffset);
         }
 
         private static UpdateSurface decode(FriendlyByteBuf buffer) {
             return new UpdateSurface(buffer.readUUID(), readVec(buffer),
                     readVec(buffer), readVec(buffer), readVec(buffer),
-                    readVec(buffer));
+                    readVec(buffer), readVec(buffer));
         }
 
         private static void handle(UpdateSurface message,
@@ -324,7 +332,8 @@ public final class TransformConstructionNetwork {
                 ServerPlayer sender = context.getSender();
                 TransformConstructionManager.updateSurface(sender, message.id,
                         message.bottomStart, message.bottomEnd, message.topStart,
-                        message.topEnd, message.curveOffset);
+                        message.topEnd, message.curveOffset,
+                        message.heightCurveOffset);
                 sendSnapshot(sender);
             });
             context.setPacketHandled(true);

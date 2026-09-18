@@ -238,6 +238,7 @@ public final class TransformConstructionTemplate {
 
     public record SurfaceTemplate(Vec3 bottomStart, Vec3 bottomEnd,
             Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
+            Vec3 heightCurveOffset,
             Map<SurfaceSlot, SurfaceAttachment> attachments, boolean flipped) {
         public SurfaceTemplate {
             bottomStart = bottomStart == null ? Vec3.ZERO : bottomStart;
@@ -245,6 +246,8 @@ public final class TransformConstructionTemplate {
             topStart = topStart == null ? Vec3.ZERO : topStart;
             topEnd = topEnd == null ? Vec3.ZERO : topEnd;
             curveOffset = curveOffset == null ? Vec3.ZERO : curveOffset;
+            heightCurveOffset = heightCurveOffset == null
+                    ? Vec3.ZERO : heightCurveOffset;
             attachments = attachments == null ? Map.of()
                     : Map.copyOf(attachments);
         }
@@ -255,7 +258,8 @@ public final class TransformConstructionTemplate {
                     relative(surface.bottomEnd(), origin),
                     relative(surface.topStart(), origin),
                     relative(surface.topEnd(), origin), surface.curveOffset(),
-                    surface.attachments(), surface.flipped());
+                    surface.heightCurveOffset(), surface.attachments(),
+                    surface.flipped());
         }
 
         private ConstructionSurface instantiate(ResourceLocation dimension,
@@ -265,7 +269,7 @@ public final class TransformConstructionTemplate {
                     absolute(bottomEnd, target, yaw),
                     absolute(topStart, target, yaw),
                     absolute(topEnd, target, yaw), rotateY(curveOffset, yaw),
-                    attachments, flipped);
+                    rotateY(heightCurveOffset, yaw), attachments, flipped);
         }
 
         private CompoundTag save() {
@@ -275,6 +279,7 @@ public final class TransformConstructionTemplate {
             putVec(tag, "TopStart", topStart);
             putVec(tag, "TopEnd", topEnd);
             putVec(tag, "CurveOffset", curveOffset);
+            putVec(tag, "HeightCurveOffset", heightCurveOffset);
             tag.putBoolean("Flipped", flipped);
             ListTag list = new ListTag();
             for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
@@ -307,6 +312,8 @@ public final class TransformConstructionTemplate {
             return new SurfaceTemplate(getVec(tag, "BottomStart"),
                     getVec(tag, "BottomEnd"), getVec(tag, "TopStart"),
                     getVec(tag, "TopEnd"), getVec(tag, "CurveOffset"),
+                    tag.contains("HeightCurveOffset", Tag.TAG_COMPOUND)
+                            ? getVec(tag, "HeightCurveOffset") : Vec3.ZERO,
                     attachments, tag.getBoolean("Flipped"));
         }
     }

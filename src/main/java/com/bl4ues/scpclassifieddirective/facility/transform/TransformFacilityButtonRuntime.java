@@ -74,9 +74,9 @@ public final class TransformFacilityButtonRuntime {
                         attachment.state())) return false;
         ConstructionSurface.SurfaceSlot visual =
                 TransformWallFixturePlacement.visualSlot(surface, slot,
-                        attachment.state(), 1);
-        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, visual, 1,
-                false);
+                        attachment.state(), TransformSurfaceGeometry.MAIN_SIDE);
+        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, visual,
+                TransformSurfaceGeometry.MAIN_SIDE, false);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
         return activate(level, ButtonTarget.surface(surface, slot, 0,
                 attachment.state()));

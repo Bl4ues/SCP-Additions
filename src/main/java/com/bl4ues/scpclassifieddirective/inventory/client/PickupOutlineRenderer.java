@@ -7,6 +7,12 @@ import com.bl4ues.scpclassifieddirective.client.Scp914InteractionClient;
 import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
 import com.bl4ues.scpclassifieddirective.init.Scp714Items;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
+import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import com.bl4ues.scpclassifieddirective.mixin.client.LevelRendererEntityTargetAccessor;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -110,6 +116,9 @@ public final class PickupOutlineRenderer {
             OUTLINE_BUFFER.setColor(255, 255, 255, 255);
             if (pickup != null && pickup.isAlive()) {
                 renderEntityMask(minecraft, pickup, poseStack, camera);
+            } else if (context != null && context.isTransformed()) {
+                renderTransformedMask(minecraft, context.transformed(),
+                        poseStack, camera);
             } else if (context != null && context.isBlock()
                     && Scp294PhysicalClient.isContextControl(
                     context.interactionKey())) {
@@ -180,6 +189,72 @@ public final class PickupOutlineRenderer {
         minecraft.getEntityRenderDispatcher().render(entity, x, y, z,
                 yaw, partialTick, poseStack, OUTLINE_BUFFER,
                 LightTexture.FULL_BRIGHT);
+    }
+
+    /**
+     * Render the exact logical payload used by transformed construction into
+     * the same outline buffer as ordinary Context Interaction blocks. No fake
+     * parent-world BlockPos participates in this path.
+     */
+    private static void renderTransformedMask(Minecraft minecraft,
+            TransformContextTargetClient.Target target, PoseStack poseStack,
+            Camera camera) {
+        if (minecraft.level == null || target == null) return;
+        BlockState state = target.state();
+        if (state == null || state.isAir()
+                || state.getRenderShape() == RenderShape.INVISIBLE) return;
+
+        Vec3 cameraPosition = camera.getPosition();
+        poseStack.pushPose();
+        try {
+            if (target.kind() == TransformContextTargetClient.Kind.GROUP) {
+                TransformGroup group = TransformConstructionClientState.group(
+                        target.groupId());
+                if (group == null || target.groupCell() == null) return;
+                poseStack.translate(group.origin().x - cameraPosition.x,
+                        group.origin().y - cameraPosition.y,
+                        group.origin().z - cameraPosition.z);
+                poseStack.mulPose(TransformMath.quaternion(group.rotationX(),
+                        group.rotationY(), group.rotationZ()));
+                poseStack.translate(target.groupCell().x() - 0.5D,
+                        target.groupCell().y() - 0.5D,
+                        target.groupCell().z() - 0.5D);
+            } else {
+                ConstructionSurface surface =
+                        TransformConstructionClientState.surface(
+                                target.surfaceId());
+                if (surface == null || target.surfaceSlot() == null) return;
+                boolean overlay = target.kind()
+                        == TransformContextTargetClient.Kind.SURFACE_OVERLAY;
+                int side = overlay
+                        ? (target.normalSign() < 0 ? -1 : 1)
+                        : TransformSurfaceGeometry.MAIN_SIDE;
+                double u = (target.surfaceSlot().column() + 0.5D)
+                        / surface.columns();
+                double v = (target.surfaceSlot().row() + 0.5D)
+                        / surface.rows();
+                Vec3 normal = surface.gridNormal(u, v).scale(side);
+                Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+                Vec3 vertical = TransformMath.safeNormalize(
+                        normal.cross(tangent), surface.gridVertical(u, v));
+                Vec3 center = TransformSurfaceGeometry.cellCenter(surface,
+                        target.surfaceSlot(), side, overlay);
+                poseStack.translate(center.x - cameraPosition.x,
+                        center.y - cameraPosition.y,
+                        center.z - cameraPosition.z);
+                poseStack.mulPose(TransformMath.frameQuaternion(
+                        tangent, vertical, normal));
+                poseStack.translate(-0.5D, -0.5D, -0.5D);
+            }
+
+            if (state.getRenderShape() != RenderShape.ENTITYBLOCK_ANIMATED) {
+                minecraft.getBlockRenderer().renderSingleBlock(state,
+                        poseStack, OUTLINE_BUFFER, LightTexture.FULL_BRIGHT,
+                        OverlayTexture.NO_OVERLAY);
+            }
+        } finally {
+            poseStack.popPose();
+        }
     }
 
     /**

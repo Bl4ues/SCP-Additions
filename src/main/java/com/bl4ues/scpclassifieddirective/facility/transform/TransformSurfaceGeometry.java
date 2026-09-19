@@ -3,7 +3,6 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.ButtonBlock;
@@ -17,11 +16,15 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Shared world-space geometry for rigid and curve-deformed surface payloads. */
+/** Geometry shared by Surface rendering, selection and physical collision. */
 public final class TransformSurfaceGeometry {
-    /** The main wall payload occupies the mapped/corridor side of the guide. */
-    public static final int MAIN_SIDE = -1;
-    /** +normal is the exterior side used by Facility Mapping. */
+    /**
+     * The original, authored wall occupies +normal, starting at the guide.
+     * The inward-facing fixtures occupy -normal, starting at the SAME guide;
+     * they must never move the structural wall into the corridor.
+     */
+    public static final int MAIN_SIDE = 1;
+    /** +normal is also the exterior side used by Facility Mapping. */
     public static final int OUTER_SIDE = 1;
 
     private static final int CURVE_U_SUBDIVISIONS = 4;
@@ -31,12 +34,6 @@ public final class TransformSurfaceGeometry {
     private TransformSurfaceGeometry() {
     }
 
-    /**
-     * Saved attachment mode describes builder intent. Functional fixtures that
-     * rely on a stable local frame remain rigid even when an older save marked
-     * them deformable. Structural/model-only blocks may still bend with the
-     * authored curve.
-     */
     public static boolean canDeform(BlockState state) {
         if (state == null || state.isAir() || state.hasBlockEntity()) {
             return false;
@@ -79,7 +76,7 @@ public final class TransformSurfaceGeometry {
             return List.of();
         }
         int side = normalSign < 0 ? -1 : 1;
-        double depthOffset = overlay && side > 0 ? 1.0D : 0.0D;
+        double depthOffset = overlay && side == MAIN_SIDE ? 1.0D : 0.0D;
         VoxelShape shape = attachment.state().getCollisionShape(
                 EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
                 CollisionContext.empty());
@@ -127,7 +124,6 @@ public final class TransformSurfaceGeometry {
         Vec3 normal = surface.gridNormal(u, v).normalize();
         Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
                 surface.gridVertical(u, v));
-
         int subdivisions = cardinal(tangent) && cardinal(vertical)
                 && cardinal(normal) ? 1 : RIGID_SUBDIVISIONS;
         double dx = box.getXsize() / subdivisions;
@@ -172,9 +168,6 @@ public final class TransformSurfaceGeometry {
         return bounds((x, y, z) -> center
                 .add(tangent.scale(x - 0.5D))
                 .add(vertical.scale(y - 0.5D))
-                // The authored surface is the BACK face of the placed block.
-                // This keeps walls/equipment on the chosen side instead of
-                // burying half of every payload through the guide plane.
                 .add(normal.scale(z + depthOffset)), local);
     }
 
@@ -192,18 +185,13 @@ public final class TransformSurfaceGeometry {
         }, local);
     }
 
-    /**
-     * Maps one logical Surface-cell coordinate into world space. Local X/Y/Z
-     * keep vanilla block conventions; only the cell frame bends with the
-     * authored wall. This is shared by raycast/grid rendering so the visible
-     * grid and the clickable grid cannot drift apart.
-     */
+    /** One logical cell position in the same frame used by the mesh/raycast. */
     public static Vec3 logicalPoint(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, boolean deform,
             int normalSign, boolean overlay, double x, double y, double z) {
         if (surface == null || slot == null) return Vec3.ZERO;
         int side = normalSign < 0 ? -1 : 1;
-        double depthOffset = overlay && side > 0 ? 1.0D : 0.0D;
+        double depthOffset = overlay && side == MAIN_SIDE ? 1.0D : 0.0D;
         if (deform) {
             double baseX = surface.flipped() ? 1.0D - x : x;
             double localX = side < 0 ? 1.0D - baseX : baseX;
@@ -213,7 +201,6 @@ public final class TransformSurfaceGeometry {
             return surface.gridPoint(u, v)
                     .add(normal.scale(z + depthOffset));
         }
-
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
@@ -233,7 +220,7 @@ public final class TransformSurfaceGeometry {
         int side = normalSign < 0 ? -1 : 1;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        double depthOffset = overlay && side > 0 ? 1.0D : 0.0D;
+        double depthOffset = overlay && side == MAIN_SIDE ? 1.0D : 0.0D;
         return surface.gridPoint(u, v).add(
                 surface.gridNormal(u, v).scale(side * (depthOffset + 0.5D)));
     }

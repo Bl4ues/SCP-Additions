@@ -66,6 +66,11 @@ public final class TransformSurfaceAttachmentControls {
         }
         ConstructionSurface.SurfaceAttachment attachment =
                 surface.attachments().get(best);
+        if (!attachment.deform()
+                && !TransformSurfaceGeometry.canDeform(attachment.state())) {
+            status("Functional fixture: RIGID local surface frame");
+            return;
+        }
         boolean deform = !attachment.deform();
         TransformAttachmentNetwork.setMode(surface.id(), best, deform);
         status(deform

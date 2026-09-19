@@ -32,22 +32,22 @@ public final class TransformSurfaceGeometry {
      * them deformable. Structural/model-only blocks may still bend with the
      * authored curve.
      */
-    public static boolean effectiveDeform(
-            ConstructionSurface.SurfaceAttachment attachment) {
-        if (attachment == null || !attachment.deform()) return false;
-        BlockState state = attachment.state();
+    public static boolean canDeform(BlockState state) {
         if (state == null || state.isAir() || state.hasBlockEntity()) {
             return false;
         }
-        if (FacilityModule.isFacilityDoor(state)
-                || AlarmModule.isController(state)
-                || TransformWallFixturePlacement.isDoorButton(state)
-                || KeycardReaderLevels.describe(state) != null
-                || state.getBlock() instanceof ButtonBlock
-                || state.getBlock() instanceof LeverBlock) {
-            return false;
-        }
-        return true;
+        return !FacilityModule.isFacilityDoor(state)
+                && !AlarmModule.isController(state)
+                && !TransformWallFixturePlacement.isDoorButton(state)
+                && KeycardReaderLevels.describe(state) == null
+                && !(state.getBlock() instanceof ButtonBlock)
+                && !(state.getBlock() instanceof LeverBlock);
+    }
+
+    public static boolean effectiveDeform(
+            ConstructionSurface.SurfaceAttachment attachment) {
+        return attachment != null && attachment.deform()
+                && canDeform(attachment.state());
     }
 
     public static List<AABB> collisionBoxes(ConstructionSurface surface,

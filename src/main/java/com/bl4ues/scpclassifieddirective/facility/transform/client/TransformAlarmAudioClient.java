@@ -316,7 +316,8 @@ public final class TransformAlarmAudioClient {
             ConstructionSurface surface =
                     TransformConstructionClientState.surface(surfaceId);
             if (surface == null) return null;
-            int side = normalSign == 0 ? 1 : normalSign;
+            int side = normalSign == 0
+                    ? TransformSurfaceGeometry.MAIN_SIDE : normalSign;
             return TransformSurfaceGeometry.cellCenter(surface, surfaceSlot,
                     side, normalSign != 0);
         }

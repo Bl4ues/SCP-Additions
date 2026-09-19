@@ -1206,11 +1206,11 @@ public final class TransformConstructionClientRenderer {
         float blue = active ? 0.12F : 0.28F;
         int columns = surface.columns();
         int rows = surface.rows();
-        boolean positivePayload = !surface.attachments().isEmpty()
+        boolean positivePayload = surface.overlays().keySet().stream()
+                .anyMatch(key -> key.normalSign() > 0);
+        boolean negativePayload = !surface.attachments().isEmpty()
                 || surface.overlays().keySet().stream()
-                        .anyMatch(key -> key.normalSign() > 0);
-        boolean negativePayload = surface.overlays().keySet().stream()
-                .anyMatch(key -> key.normalSign() < 0);
+                        .anyMatch(key -> key.normalSign() < 0);
         for (int column = 0; column <= columns; column++) {
             double u = column / (double) columns;
             Vec3 previous = visibleSurfaceGridPoint(surface, u, 0.0D,

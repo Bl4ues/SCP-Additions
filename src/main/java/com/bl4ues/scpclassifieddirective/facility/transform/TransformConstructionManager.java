@@ -544,10 +544,8 @@ public final class TransformConstructionManager {
         ConstructionSurface.SurfaceAttachment attachment =
                 surface.attachments().get(slot);
         if (attachment == null || attachment.state().isAir()) return false;
-        double u = (slot.column() + 0.5D) / surface.columns();
-        double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 center = surface.gridPoint(u, v)
-                .add(surface.gridNormal(u, v).scale(0.5D));
+        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot,
+                TransformSurfaceGeometry.MAIN_SIDE, false);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
 
         data.putSurface(surface.withoutAttachment(slot));

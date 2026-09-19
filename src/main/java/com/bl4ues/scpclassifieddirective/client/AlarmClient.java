@@ -773,11 +773,15 @@ public final class AlarmClient {
         Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
         Vec3 mount = AlarmMountStructure.visualOffset(state);
 
+        // FACING is the wall's outward normal. The Alarm occupies the air
+        // cell in front of that wall, so its support plane is the OPPOSITE face
+        // of the Alarm cell. The old code used the outward face and projected
+        // the transformed cone into empty space.
         Vec3 center = switch (facing) {
-            case NORTH -> new Vec3(0.5D, 0.5D, 0.0025D);
-            case SOUTH -> new Vec3(0.5D, 0.5D, 0.9975D);
-            case WEST -> new Vec3(0.0025D, 0.5D, 0.5D);
-            case EAST -> new Vec3(0.9975D, 0.5D, 0.5D);
+            case NORTH -> new Vec3(0.5D, 0.5D, 0.9975D);
+            case SOUTH -> new Vec3(0.5D, 0.5D, 0.0025D);
+            case WEST -> new Vec3(0.9975D, 0.5D, 0.5D);
+            case EAST -> new Vec3(0.0025D, 0.5D, 0.5D);
             default -> new Vec3(0.5D, 0.5D, 0.5D);
         };
         center = center.add(right.scale(mount.dot(right)))

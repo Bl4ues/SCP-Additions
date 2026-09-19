@@ -10,7 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
@@ -35,7 +34,6 @@ import net.minecraft.resources.ResourceLocation;
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TransformAlarmRuntime {
     private static final int UPDATE_INTERVAL = 2;
-    private static final int LOOP_INTERVAL = 40;
     private static final double TRANSFORMED_DOOR_RANGE_SQR = 1.75D * 1.75D;
     private static final Map<MinecraftServer, AlarmIndex> INDEXES =
             new WeakHashMap<>();
@@ -79,9 +77,6 @@ public final class TransformAlarmRuntime {
                 TransformConstructionManager.refreshGroupCellRuntime(
                         server, group.id(), alarm.cell());
             }
-            if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
-                playLoop(level, center);
-            }
         }
 
         for (SurfaceAlarm alarm : index.surfaces()) {
@@ -124,9 +119,6 @@ public final class TransformAlarmRuntime {
                 data.putSurfaceState(next);
                 TransformConstructionManager.refreshSurfaceSlotRuntime(
                         server, surface.id(), alarm.slot());
-            }
-            if (active && (!wasActive || tick % LOOP_INTERVAL == 0)) {
-                playLoop(level, center);
             }
         }
     }
@@ -428,11 +420,5 @@ public final class TransformAlarmRuntime {
         }
         return false;
     }
-
-    private static void playLoop(ServerLevel level, Vec3 center) {
-        level.playSound(null, center.x, center.y, center.z,
-                AlarmModule.LOOP.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-    }
-
 
 }

@@ -123,6 +123,7 @@ public final class TransformConstructionClientState {
         groups = nextGroups == null ? List.of() : List.copyOf(nextGroups);
         surfaces = nextSurfaces == null ? List.of() : List.copyOf(nextSurfaces);
         rebuildProxyCells();
+        TransformAlarmAudioClient.sync(groups, surfaces);
         if (selection != null && !selectionStillExists()) selection = null;
     }
 
@@ -145,6 +146,7 @@ public final class TransformConstructionClientState {
         UNDO.clear();
         blockedPlacement = null;
         blockedPlacementUntil = 0L;
+        TransformAlarmAudioClient.clear();
     }
 
     public static ResourceLocation dimension() {
@@ -302,6 +304,7 @@ public final class TransformConstructionClientState {
             if (physicsChanged(previous, state)) {
                 rebuildGroupCellProxyCells(groupId, cell);
             }
+            TransformAlarmAudioClient.groupCellChanged(groupId, cell, state);
             return;
         }
     }
@@ -324,6 +327,7 @@ public final class TransformConstructionClientState {
                     || physicsChanged(previous.state(), state)) {
                 rebuildSurfaceSlotProxyCells(surfaceId, slot);
             }
+            TransformAlarmAudioClient.surfaceChanged(surfaceId, slot, 0, state);
             return;
         }
     }
@@ -347,6 +351,8 @@ public final class TransformConstructionClientState {
                     || physicsChanged(previous.state(), state)) {
                 rebuildSurfaceSlotProxyCells(surfaceId, slot);
             }
+            TransformAlarmAudioClient.surfaceChanged(surfaceId, slot,
+                    normalSign < 0 ? -1 : 1, state);
             return;
         }
     }
@@ -363,6 +369,8 @@ public final class TransformConstructionClientState {
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
                     surfaceId, slot);
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
+            TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot,
+                    normalSign < 0 ? -1 : 1);
             return;
         }
     }
@@ -379,6 +387,7 @@ public final class TransformConstructionClientState {
             TransformConstructionClientRenderer.markGroupCellDirty(
                     groupId, cell);
             rebuildGroupCellProxyCells(groupId, cell);
+            TransformAlarmAudioClient.groupCellRemoved(groupId, cell);
             return;
         }
     }
@@ -395,6 +404,7 @@ public final class TransformConstructionClientState {
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
                     surfaceId, slot);
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
+            TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot, 0);
             return;
         }
     }

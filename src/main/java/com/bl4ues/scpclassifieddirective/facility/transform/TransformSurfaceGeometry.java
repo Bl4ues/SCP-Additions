@@ -1,9 +1,13 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -19,6 +23,30 @@ public final class TransformSurfaceGeometry {
     private static final int RIGID_SUBDIVISIONS = 2;
 
     private TransformSurfaceGeometry() {
+    }
+
+    /**
+     * Saved attachment mode describes builder intent. Functional fixtures that
+     * rely on a stable local frame remain rigid even when an older save marked
+     * them deformable. Structural/model-only blocks may still bend with the
+     * authored curve.
+     */
+    public static boolean effectiveDeform(
+            ConstructionSurface.SurfaceAttachment attachment) {
+        if (attachment == null || !attachment.deform()) return false;
+        BlockState state = attachment.state();
+        if (state == null || state.isAir() || state.hasBlockEntity()) {
+            return false;
+        }
+        if (FacilityModule.isFacilityDoor(state)
+                || AlarmModule.isController(state)
+                || TransformWallFixturePlacement.isDoorButton(state)
+                || KeycardReaderLevels.describe(state) != null
+                || state.getBlock() instanceof ButtonBlock
+                || state.getBlock() instanceof LeverBlock) {
+            return false;
+        }
+        return true;
     }
 
     public static List<AABB> collisionBoxes(ConstructionSurface surface,
@@ -52,7 +80,7 @@ public final class TransformSurfaceGeometry {
         if (shape.isEmpty()) return List.of();
         List<AABB> result = new ArrayList<>();
         for (AABB box : shape.toAabbs()) {
-            if (attachment.deform()) {
+            if (effectiveDeform(attachment)) {
                 addDeformed(surface, slot, box, side, depthOffset, result);
             } else {
                 addRigid(surface, slot, box, side, depthOffset, result);

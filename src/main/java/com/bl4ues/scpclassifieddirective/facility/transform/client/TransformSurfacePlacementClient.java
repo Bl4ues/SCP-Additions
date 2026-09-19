@@ -84,13 +84,14 @@ public final class TransformSurfacePlacementClient {
             if (target == null) return;
             boolean mainOccupied =
                     target.surface().attachments().containsKey(target.slot());
-            if (target.layer().overlay()
-                    || mainOccupied
-                    || target.normalSign() < 0) {
+            if (target.layer().overlay() || mainOccupied) {
                 TransformConstructionNetwork.placeSurfaceOverlay(
                         target.surface().id(), target.slot(),
                         target.normalSign(), target.hit());
             } else {
+                // Empty guide cells always create the physical wall toward the
+                // mapped corridor. Which side the builder stands on must not
+                // invert the authored room/interior convention.
                 TransformConstructionNetwork.placeSurfaceBlock(
                         target.surface().id(), target.slot(), target.hit());
             }

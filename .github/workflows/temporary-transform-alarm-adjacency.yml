@@ -1,4 +1,4 @@
-name: Apply transformed Alarm adjacency correction
+name: Apply Surface Alarm and power fixes
 on:
   push:
     branches: [master]
@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Detect physically adjacent doors in every Surface layer
+      - name: Align Alarm detection with Surface logical layers
         shell: bash
         run: |
           python3 - <<'PY'
@@ -21,44 +21,63 @@ jobs:
           source = path.read_text(encoding='utf-8')
           begin = source.index('    private static boolean adjacentOpenDoor(ConstructionSurface surface,')
           end = source.index('    private static Vec3 surfaceCenter(', begin)
-          replacement = '''    private static boolean adjacentOpenDoor(ConstructionSurface surface,
-                  ConstructionSurface.SurfaceSlot alarmSlot) {
-              // A wall-mounted Alarm can share a parametric slot with a door
-              // attached to the opposite face. Check the physical footprint,
-              // not just the four main-layer neighbors: inner/outer overlays
-              // are independent logical layers of the SAME construction grid.
-              int[][] offsets = {{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-              for (int[] offset : offsets) {
-                  ConstructionSurface.SurfaceSlot slot =
-                          new ConstructionSurface.SurfaceSlot(
-                                  alarmSlot.column() + offset[0],
-                                  alarmSlot.row() + offset[1]);
-                  if (slot.column() < 0 || slot.column() >= surface.columns()
-                          || slot.row() < 0 || slot.row() >= surface.rows()) {
-                      continue;
-                  }
-                  if (openDoor(surface.attachments().get(slot))) return true;
-                  if (openDoor(surface.overlay(slot, 1))) return true;
-                  if (openDoor(surface.overlay(slot, -1))) return true;
-              }
-              return false;
-          }
-
-          private static boolean openDoor(
-                  ConstructionSurface.SurfaceAttachment attachment) {
-              return attachment != null
-                      && FacilityModule.isElectricDoorOpenOrOpening(
-                              attachment.state());
-          }
-
-          '''
-          replacement = '\n'.join(line[6:] if line.startswith('      ') else line for line in replacement.splitlines()) + '\n'
-          if source.count('    private static boolean adjacentOpenDoor(ConstructionSurface surface,') != 1:
-              raise RuntimeError('Alarm Surface adjacency method is ambiguous')
+          replacement = (
+              '    private static boolean adjacentOpenDoor(ConstructionSurface surface,\n'
+              '            ConstructionSurface.SurfaceSlot alarmSlot) {\n'
+              '        // An Alarm can share a parametric slot with a door on another\n'
+              '        // layer. Check the same slot and only its immediate neighbors,\n'
+              '        // including both independently authored wall faces.\n'
+              '        int[][] offsets = {{0, 0}, {-1, 0}, {1, 0},\n'
+              '                {0, -1}, {0, 1}};\n'
+              '        for (int[] offset : offsets) {\n'
+              '            ConstructionSurface.SurfaceSlot slot =\n'
+              '                    new ConstructionSurface.SurfaceSlot(\n'
+              '                            alarmSlot.column() + offset[0],\n'
+              '                            alarmSlot.row() + offset[1]);\n'
+              '            if (slot.column() < 0 || slot.column() >= surface.columns()\n'
+              '                    || slot.row() < 0 || slot.row() >= surface.rows()) {\n'
+              '                continue;\n'
+              '            }\n'
+              '            if (openDoor(surface.attachments().get(slot))\n'
+              '                    || openDoor(surface.overlay(slot, 1))\n'
+              '                    || openDoor(surface.overlay(slot, -1))) {\n'
+              '                return true;\n'
+              '            }\n'
+              '        }\n'
+              '        return false;\n'
+              '    }\n\n'
+              '    private static boolean openDoor(\n'
+              '            ConstructionSurface.SurfaceAttachment attachment) {\n'
+              '        return attachment != null\n'
+              '                && FacilityModule.isElectricDoorOpenOrOpening(\n'
+              '                        attachment.state());\n'
+              '    }\n\n'
+          )
           path.write_text(source[:begin] + replacement + source[end:], encoding='utf-8')
           PY
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformAlarmRuntime.java
-          git commit -m 'Detect doors on both layers of transformed Surface Alarm footprint'
+          git commit -m 'Normalize Alarm adjacency across the three Surface layers'
+          git push origin HEAD:master
+      - name: Permit local redstone between layers of one Surface slot
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformPowerQuery.java')
+          source = path.read_text(encoding='utf-8')
+          old = ('        if (level == null || surface == null || consumer == null) return false;\n'
+                 '        int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};')
+          new = ('        if (level == null || surface == null || consumer == null) return false;\n'
+                 '        // A button or redstone source on the opposite authored face\n'
+                 '        // is physically adjacent, despite sharing the same (u,v) slot.\n'
+                 '        if (sourceAtLogicalSlot(surface, consumer)) return true;\n'
+                 '        int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};')
+          if source.count(old) != 1:
+              raise RuntimeError('Surface power query changed; refusing uncertain patch')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformPowerQuery.java
+          git commit -m 'Propagate transformed Surface power across occupied local layers'
           git push origin HEAD:master

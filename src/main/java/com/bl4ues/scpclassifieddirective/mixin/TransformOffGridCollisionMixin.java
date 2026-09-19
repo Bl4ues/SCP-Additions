@@ -17,9 +17,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Adds only the free part of rigid Off-Grid collision to an occupied vanilla
- * cell. The ordinary block keeps its own shape and Surface construction is
- * deliberately excluded from this path.
+ * Merges cached transformed collision from Off-Grid groups and parametric
+ * Surfaces into the parent world's ordinary BlockState collision query. The
+ * parent block keeps its own shape; transformed construction supplies only the
+ * extra local-grid geometry without materializing collision proxy blocks.
  */
 @Mixin(BlockBehaviour.BlockStateBase.class)
 public abstract class TransformOffGridCollisionMixin {

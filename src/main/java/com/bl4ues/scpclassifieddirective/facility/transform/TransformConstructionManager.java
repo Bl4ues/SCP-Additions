@@ -47,9 +47,9 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 
 /**
- * Server authority and cached physical proxy index for transformed construction.
- * Geometry is authored in doubles; vanilla proxy cells only bridge collision,
- * selection, lighting and interaction back into Minecraft's integer block grid.
+ * Server authority and cached physical index for transformed construction.
+ * Geometry is authored in doubles. Collision is injected directly from the
+ * logical spatial index; vanilla proxy blocks are reserved for emitted light.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -1053,12 +1053,12 @@ public final class TransformConstructionManager {
     }
 
     private static boolean materialize(ProxyCell cell) {
-        // Selection is now resolved by the authored local-grid raycasts. Do not
-        // place a technical vanilla block merely so Minecraft has something to
-        // outline. Proxies exist only when the parent world needs a physical
-        // bridge for collision or emitted light.
-        return cell != null
-                && (!cell.collision().isEmpty() || cell.light() > 0);
+        // Selection, interaction and collision are resolved directly from the
+        // transformed spatial index. Materializing collision-only proxy blocks
+        // causes chunk/block invalidations on every structural edit and defeats
+        // the whole local-grid model. Keep a vanilla proxy only when Minecraft's
+        // block-light engine actually needs a physical light-emitting cell.
+        return cell != null && cell.light() > 0;
     }
 
     private static boolean canOccupy(ServerLevel level, TransformGroup group,

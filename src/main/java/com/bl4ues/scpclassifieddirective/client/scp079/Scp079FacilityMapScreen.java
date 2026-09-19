@@ -385,72 +385,72 @@ public final class Scp079FacilityMapScreen extends Screen {
             maxY = swap;
         }
 
-        Map<Long, Double> fillCoverage = new HashMap<>();
+        // Scanline fill is O(edges * screen rows) and allocates nothing per
+        // covered pixel. Only the two boundary pixels of each span use
+        // fractional coverage; the antialiased contour below handles the final
+        // silhouette. The previous per-pixel HashMap was the map-view FPS sink.
         List<Double> intersections = new ArrayList<>();
-        double[] verticalSamples = {0.25D, 0.75D};
+        int screenWidth = graphics.guiWidth();
         for (int y = minY; y <= maxY; y++) {
-            for (double sy : verticalSamples) {
-                intersections.clear();
-                double worldZ = (y + sy - transform.originY)
-                        / transform.scale;
-                for (List<FacilityFloorPatch.Vertex> contour
-                        : geometry.contours()) {
-                    for (int index = 0; index < contour.size(); index++) {
-                        FacilityFloorPatch.Vertex a = contour.get(index);
-                        FacilityFloorPatch.Vertex b = contour.get(
-                                (index + 1) % contour.size());
-                        if ((a.z() > worldZ) == (b.z() > worldZ)) continue;
-                        double dz = b.z() - a.z();
-                        if (Math.abs(dz) < 1.0E-10D) continue;
-                        double ratio = (worldZ - a.z()) / dz;
-                        intersections.add(a.x() + (b.x() - a.x()) * ratio);
-                    }
-                }
-                intersections.sort(Double::compare);
-                for (int index = 0; index + 1 < intersections.size();
-                        index += 2) {
-                    double left = Math.min(
-                            transform.fx(intersections.get(index)),
-                            transform.fx(intersections.get(index + 1)));
-                    double right = Math.max(
-                            transform.fx(intersections.get(index)),
-                            transform.fx(intersections.get(index + 1)));
-                    accumulateHorizontalCoverage(fillCoverage, y,
-                            left, right, graphics.guiWidth(),
-                            graphics.guiHeight(), 0.5D);
+            intersections.clear();
+            double worldZ = (y + 0.5D - transform.originY)
+                    / transform.scale;
+            for (List<FacilityFloorPatch.Vertex> contour
+                    : geometry.contours()) {
+                for (int index = 0; index < contour.size(); index++) {
+                    FacilityFloorPatch.Vertex a = contour.get(index);
+                    FacilityFloorPatch.Vertex b = contour.get(
+                            (index + 1) % contour.size());
+                    if ((a.z() > worldZ) == (b.z() > worldZ)) continue;
+                    double dz = b.z() - a.z();
+                    if (Math.abs(dz) < 1.0E-10D) continue;
+                    double ratio = (worldZ - a.z()) / dz;
+                    intersections.add(a.x() + (b.x() - a.x()) * ratio);
                 }
             }
-        }
-        for (Map.Entry<Long, Double> pixel : fillCoverage.entrySet()) {
-            int x = (int) (pixel.getKey() >> 32);
-            int y = (int) (long) pixel.getKey();
-            plotMapPixel(graphics, x, y, fill,
-                    Math.min(1.0D, pixel.getValue()));
+            intersections.sort(Double::compare);
+            for (int index = 0; index + 1 < intersections.size();
+                    index += 2) {
+                double left = Math.min(
+                        transform.fx(intersections.get(index)),
+                        transform.fx(intersections.get(index + 1)));
+                double right = Math.max(
+                        transform.fx(intersections.get(index)),
+                        transform.fx(intersections.get(index + 1)));
+                if (right <= 0.0D || left >= screenWidth
+                        || right <= left + 1.0E-8D) continue;
+                left = Math.max(0.0D, left);
+                right = Math.min(screenWidth, right);
+
+                int firstFull = Math.max(0, (int) Math.ceil(left));
+                int lastFullExclusive = Math.min(screenWidth,
+                        (int) Math.floor(right));
+                if (lastFullExclusive > firstFull) {
+                    graphics.fill(firstFull, y, lastFullExclusive,
+                            y + 1, fill);
+                }
+
+                int leftPixel = (int) Math.floor(left);
+                double leftCoverage = Math.min(1.0D,
+                        Math.max(0.0D, Math.ceil(left) - left));
+                if (leftPixel >= 0 && leftPixel < screenWidth
+                        && leftCoverage > 0.001D) {
+                    plotMapPixel(graphics, leftPixel, y, fill, leftCoverage);
+                }
+
+                int rightPixel = (int) Math.floor(Math.nextDown(right));
+                double rightCoverage = Math.min(1.0D,
+                        Math.max(0.0D, right - Math.floor(right)));
+                if (rightPixel >= 0 && rightPixel < screenWidth
+                        && rightPixel != leftPixel
+                        && rightCoverage > 0.001D) {
+                    plotMapPixel(graphics, rightPixel, y, fill, rightCoverage);
+                }
+            }
         }
 
         drawMapContours(graphics, geometry.contours(),
                 transform, lineColor);
-    }
-
-    private static void accumulateHorizontalCoverage(
-            Map<Long, Double> coverage, int y, double left, double right,
-            int width, int height, double verticalWeight) {
-        if (right <= left + 1.0E-8D || y < 0 || y >= height) return;
-        double clippedLeft = Math.max(0.0D, left);
-        double clippedRight = Math.min(width, right);
-        if (clippedRight <= clippedLeft) return;
-
-        int first = Math.max(0, (int) Math.floor(clippedLeft));
-        int last = Math.min(width - 1,
-                (int) Math.floor(Math.nextDown(clippedRight)));
-        for (int x = first; x <= last; x++) {
-            double pixelLeft = Math.max(clippedLeft, x);
-            double pixelRight = Math.min(clippedRight, x + 1.0D);
-            double horizontal = Math.max(0.0D, pixelRight - pixelLeft);
-            if (horizontal <= 0.0D) continue;
-            long key = ((long) x << 32) ^ (y & 0xFFFFFFFFL);
-            coverage.merge(key, horizontal * verticalWeight, Double::sum);
-        }
     }
 
     private void renderDoorMarkers(GuiGraphics graphics, FloorGroup floor,

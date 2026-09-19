@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.entity.PlayerCorpseEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -34,6 +35,10 @@ final class ContextPromptOutlineTarget {
             Vec3 anchor = (Vec3) ACCESS.anchorMethod().invoke(promptTarget);
             String interactionKey = (String) ACCESS.interactionKeyMethod()
                     .invoke(promptTarget);
+            Object transformed = ACCESS.transformedMethod().invoke(promptTarget);
+            if (transformed instanceof TransformContextTargetClient.Target target) {
+                return Target.transformed(target, anchor, interactionKey);
+            }
             if (entity) {
                 int entityId = (int) ACCESS.entityIdMethod().invoke(promptTarget);
                 Entity candidate = minecraft.level.getEntity(entityId);
@@ -86,13 +91,16 @@ final class ContextPromptOutlineTarget {
             Method entityIdMethod = type.getDeclaredMethod("entityId");
             Method anchorMethod = type.getDeclaredMethod("anchor");
             Method interactionKeyMethod = type.getDeclaredMethod("interactionKey");
+            Method transformedMethod = type.getDeclaredMethod("transformed");
             posMethod.setAccessible(true);
             entityMethod.setAccessible(true);
             entityIdMethod.setAccessible(true);
             anchorMethod.setAccessible(true);
             interactionKeyMethod.setAccessible(true);
+            transformedMethod.setAccessible(true);
             return new Access(targetField, posMethod, entityMethod,
-                    entityIdMethod, anchorMethod, interactionKeyMethod);
+                    entityIdMethod, anchorMethod, interactionKeyMethod,
+                    transformedMethod);
         } catch (ReflectiveOperationException | RuntimeException exception) {
             ScpClassifiedDirectiveMod.LOGGER.warn(
                     "Could not initialize contextual prompt outline bridge",
@@ -102,17 +110,27 @@ final class ContextPromptOutlineTarget {
     }
 
     record Target(BlockPos blockPos, Entity entity, Vec3 anchor,
-            String interactionKey) {
+            String interactionKey,
+            TransformContextTargetClient.Target transformed) {
         static Target block(BlockPos pos, Vec3 anchor, String interactionKey) {
-            return new Target(pos, null, anchor, interactionKey);
+            return new Target(pos, null, anchor, interactionKey, null);
         }
 
         static Target entity(Entity entity, Vec3 anchor, String interactionKey) {
-            return new Target(null, entity, anchor, interactionKey);
+            return new Target(null, entity, anchor, interactionKey, null);
+        }
+
+        static Target transformed(TransformContextTargetClient.Target target,
+                Vec3 anchor, String interactionKey) {
+            return new Target(null, null, anchor, interactionKey, target);
         }
 
         boolean isBlock() {
             return blockPos != null;
+        }
+
+        boolean isTransformed() {
+            return transformed != null;
         }
 
         boolean isCorpse() {
@@ -132,6 +150,6 @@ final class ContextPromptOutlineTarget {
 
     private record Access(Field targetField, Method posMethod,
             Method entityMethod, Method entityIdMethod, Method anchorMethod,
-            Method interactionKeyMethod) {
+            Method interactionKeyMethod, Method transformedMethod) {
     }
 }

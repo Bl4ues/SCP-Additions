@@ -863,7 +863,7 @@ public final class TransformConstructionClientControls {
             }
         }
 
-        if (snap) {
+        if (snap && !Screen.hasControlDown()) {
             switch (handle) {
                 case BOTTOM_START -> bs = snap16(bs);
                 case BOTTOM_END -> be = snap16(be);
@@ -899,6 +899,51 @@ public final class TransformConstructionClientControls {
                         heightCurve = snappedCenter.subtract(geometricCenter)
                                 .subtract(curve.scale(0.5D));
                     }
+                }
+            }
+        }
+
+        // Nearby real blocks and other Surface boundaries are preferred even
+        // without Shift; Ctrl opts out of all snapping for precision editing.
+        // Compute the target from the already-moved handle, not from the
+        // original plane or a vanilla proxy, so a curved join remains exact.
+        if (!Screen.hasControlDown() && handle != SurfaceHandle.CENTER) {
+            Vec3 handlePoint = switch (handle) {
+                case BOTTOM_START -> bs;
+                case BOTTOM_END -> be;
+                case TOP_START -> ts;
+                case TOP_END -> te;
+                case BOTTOM_EDGE -> bs.add(be).scale(0.5D);
+                case TOP_EDGE -> ts.add(te).scale(0.5D);
+                case START_EDGE -> bs.add(ts).scale(0.5D);
+                case END_EDGE -> be.add(te).scale(0.5D);
+                case CENTER -> Vec3.ZERO;
+            };
+            Vec3 adjustment = TransformSurfaceSnapClient.snap(handlePoint,
+                    surface.id()).subtract(handlePoint);
+            if (adjustment.lengthSqr() > 1.0E-10D) {
+                switch (handle) {
+                    case BOTTOM_START -> bs = bs.add(adjustment);
+                    case BOTTOM_END -> be = be.add(adjustment);
+                    case TOP_START -> ts = ts.add(adjustment);
+                    case TOP_END -> te = te.add(adjustment);
+                    case BOTTOM_EDGE -> {
+                        bs = bs.add(adjustment);
+                        be = be.add(adjustment);
+                    }
+                    case TOP_EDGE -> {
+                        ts = ts.add(adjustment);
+                        te = te.add(adjustment);
+                    }
+                    case START_EDGE -> {
+                        bs = bs.add(adjustment);
+                        ts = ts.add(adjustment);
+                    }
+                    case END_EDGE -> {
+                        be = be.add(adjustment);
+                        te = te.add(adjustment);
+                    }
+                    case CENTER -> { }
                 }
             }
         }

@@ -51,6 +51,9 @@ public final class TransformPowerQuery {
     public static boolean powered(ServerLevel level, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot consumer) {
         if (level == null || surface == null || consumer == null) return false;
+        // A button or redstone source on the opposite authored face
+        // is physically adjacent, despite sharing the same (u,v) slot.
+        if (sourceAtLogicalSlot(surface, consumer)) return true;
         int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         for (int[] offset : offsets) {
             ConstructionSurface.SurfaceSlot neighbor =

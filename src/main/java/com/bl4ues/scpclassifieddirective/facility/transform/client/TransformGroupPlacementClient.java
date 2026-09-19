@@ -26,9 +26,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
@@ -49,63 +46,10 @@ public final class TransformGroupPlacementClient {
     private TransformGroupPlacementClient() {
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onInteraction(
-            InputEvent.InteractionKeyMappingTriggered event) {
-        if (!event.isUseItem()) return;
-        Minecraft minecraft = Minecraft.getInstance();
-        LocalPlayer player = minecraft.player;
-        if (player == null || minecraft.level == null || minecraft.screen != null) {
-            return;
-        }
-        Selection selected = TransformConstructionClientState.selection();
-        if (selected != null && selected.type() == SelectionType.SURFACE) {
-            // Surface placement/editing owns the use click while a surface is
-            // selected. Do not let an unrelated rigid group behind it steal it.
-            return;
-        }
-
-        PayloadTarget logicalUse = findPayloadTarget(player);
-        if (!player.isShiftKeyDown() && logicalUse != null
-                && interactive(logicalUse.state())) {
-            TransformConstructionNetwork.useGroupCell(
-                    logicalUse.group().id(), logicalUse.cell());
-            event.setCanceled(true);
-            return;
-        }
-
-        if (player.getMainHandItem().getItem() instanceof BlockItem) {
-            if (!player.isCreative()) return;
-            Target target = findTarget(player);
-            if (target == null) return;
-            Vec3 localHit = TransformMath.worldToLocal(target.group().origin(),
-                    target.worldHit(), target.group().rotationX(),
-                    target.group().rotationY(), target.group().rotationZ());
-            BlockState sourceState = target.group().cells().get(target.source());
-            TransformGroup.GridPos next;
-            if (sourceState == null || sourceState.isAir()) {
-                next = target.source();
-            } else {
-                next = target.source().offset(
-                        target.face().getStepX(),
-                        target.face().getStepY(),
-                        target.face().getStepZ());
-            }
-            TransformConstructionNetwork.placeGroupBlock(target.group().id(),
-                    target.source(), next, target.face(), target.worldHit());
-            event.setCanceled(true);
-            return;
-        }
-
-        // Runtime interaction is also local-space. This is deliberately
-        // independent from minecraft.hitResult: a rotated button may share a
-        // vanilla BlockPos with its mounting wall and may have no proxy there.
-        PayloadTarget payload = findPayloadTarget(player);
-        if (payload == null || !interactive(payload.state())) return;
-        TransformConstructionNetwork.useGroupCell(payload.group().id(),
-                payload.cell());
-        event.setCanceled(true);
-    }
+    // Group placement and use share one nearest-target arbitration with
+        // curved surfaces in TransformSurfacePlacementClient. The former
+        // HIGHEST-priority handler here pre-empted it and could steal a
+        // click from a nearer Surface (or duplicate an interaction).
 
     private static TransformGroup.GridPos nearestCell(Vec3 local) {
         return new TransformGroup.GridPos(

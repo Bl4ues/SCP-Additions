@@ -1,4 +1,4 @@
-name: Apply Surface Alarm and power fixes
+name: Apply incremental transformed Alarm rendering
 on:
   push:
     branches: [master]
@@ -12,72 +12,247 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Align Alarm detection with Surface logical layers
+      - name: Index transformed Alarm render addresses per owner
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformAlarmRuntime.java')
-          source = path.read_text(encoding='utf-8')
-          begin = source.index('    private static boolean adjacentOpenDoor(ConstructionSurface surface,')
-          end = source.index('    private static Vec3 surfaceCenter(', begin)
-          replacement = (
-              '    private static boolean adjacentOpenDoor(ConstructionSurface surface,\n'
-              '            ConstructionSurface.SurfaceSlot alarmSlot) {\n'
-              '        // An Alarm can share a parametric slot with a door on another\n'
-              '        // layer. Check the same slot and only its immediate neighbors,\n'
-              '        // including both independently authored wall faces.\n'
-              '        int[][] offsets = {{0, 0}, {-1, 0}, {1, 0},\n'
-              '                {0, -1}, {0, 1}};\n'
-              '        for (int[] offset : offsets) {\n'
-              '            ConstructionSurface.SurfaceSlot slot =\n'
-              '                    new ConstructionSurface.SurfaceSlot(\n'
-              '                            alarmSlot.column() + offset[0],\n'
-              '                            alarmSlot.row() + offset[1]);\n'
-              '            if (slot.column() < 0 || slot.column() >= surface.columns()\n'
-              '                    || slot.row() < 0 || slot.row() >= surface.rows()) {\n'
-              '                continue;\n'
-              '            }\n'
-              '            if (openDoor(surface.attachments().get(slot))\n'
-              '                    || openDoor(surface.overlay(slot, 1))\n'
-              '                    || openDoor(surface.overlay(slot, -1))) {\n'
-              '                return true;\n'
-              '            }\n'
-              '        }\n'
-              '        return false;\n'
-              '    }\n\n'
-              '    private static boolean openDoor(\n'
-              '            ConstructionSurface.SurfaceAttachment attachment) {\n'
-              '        return attachment != null\n'
-              '                && FacilityModule.isElectricDoorOpenOrOpening(\n'
-              '                        attachment.state());\n'
-              '    }\n\n'
-          )
-          path.write_text(source[:begin] + replacement + source[end:], encoding='utf-8')
+          root = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client')
+          p = root / 'TransformAlarmClientRenderer.java'
+          s = p.read_text(encoding='utf-8')
+          def once(old, new):
+              global s
+              if s.count(old) != 1:
+                  raise RuntimeError(f'Alarm renderer anchor mismatch {s.count(old)}: {old[:100]!r}')
+              s = s.replace(old, new, 1)
+          once('import java.util.HashMap;\n', 'import java.util.HashMap;\nimport java.util.HashSet;\n')
+          once('    private TransformAlarmClientRenderer() {\n    }\n', '''    private static final Map<UUID, Set<TransformGroup.GridPos>> GROUP_ALARMS =
+                  new HashMap<>();
+          private static final Map<UUID, Set<SurfaceKey>> SURFACE_ALARMS =
+                  new HashMap<>();
+
+          private TransformAlarmClientRenderer() {
+          }
+
+          /** Full snapshots and structural edits invalidate only the affected owner. */
+          static void resetIndices() {
+              GROUP_ALARMS.clear();
+              SURFACE_ALARMS.clear();
+              GROUP_HOSTS.clear();
+              SURFACE_HOSTS.clear();
+          }
+
+          static void invalidateGroup(UUID id) {
+              GROUP_ALARMS.remove(id);
+              GROUP_HOSTS.keySet().removeIf(key -> key.groupId().equals(id));
+          }
+
+          static void invalidateSurface(UUID id) {
+              SURFACE_ALARMS.remove(id);
+              SURFACE_HOSTS.keySet().removeIf(key -> key.surfaceId().equals(id));
+          }
+
+          /** Runtime door frames only touch one cell, never rescan a room. */
+          static void groupCellChanged(UUID id, TransformGroup.GridPos cell,
+                  BlockState state) {
+              Set<TransformGroup.GridPos> refs = GROUP_ALARMS.get(id);
+              boolean alarm = state != null && AlarmModule.isController(state);
+              if (refs != null) {
+                  if (alarm) refs.add(cell);
+                  else refs.remove(cell);
+              }
+              if (!alarm) GROUP_HOSTS.remove(new CellKey(id, cell));
+          }
+
+          static void surfaceSlotChanged(UUID id,
+                  ConstructionSurface.SurfaceSlot slot,
+                  ConstructionSurface surface) {
+              Set<SurfaceKey> refs = SURFACE_ALARMS.get(id);
+              if (refs == null) return;
+              refs.removeIf(key -> key.slot().equals(slot));
+              ConstructionSurface.SurfaceAttachment main =
+                      surface.attachments().get(slot);
+              if (main != null && AlarmModule.isController(main.state())) {
+                  refs.add(new SurfaceKey(id, slot,
+                          TransformSurfaceGeometry.MAIN_SIDE, false));
+              }
+              for (int side : new int[]{-1, 1}) {
+                  ConstructionSurface.SurfaceAttachment overlay =
+                          surface.overlay(slot, side);
+                  if (overlay != null && AlarmModule.isController(overlay.state())) {
+                      refs.add(new SurfaceKey(id, slot, side, true));
+                  }
+              }
+              SURFACE_HOSTS.keySet().removeIf(key -> key.surfaceId().equals(id)
+                      && key.slot().equals(slot) && !refs.contains(key));
+          }
+'''.replace('          ', '    '))
+          begin = s.index('        Set<CellKey> groupKeys = groups.stream().flatMap(group ->')
+          end = s.index('    private static void renderGroup(', begin)
+          s = s[:begin] + '''        // Cache membership by logical address. Door animation creates a new
+                // BlockState/owner snapshot, but does not make a new Alarm and must
+                // not trigger a full facility scan on every rendered frame.
+                Set<UUID> groupIds = groups.stream().map(TransformGroup::id)
+                        .collect(Collectors.toSet());
+                Set<UUID> surfaceIds = surfaces.stream().map(ConstructionSurface::id)
+                        .collect(Collectors.toSet());
+                GROUP_ALARMS.keySet().retainAll(groupIds);
+                SURFACE_ALARMS.keySet().retainAll(surfaceIds);
+                GROUP_HOSTS.keySet().removeIf(key -> !groupIds.contains(key.groupId())
+                        || !GROUP_ALARMS.getOrDefault(key.groupId(), Set.of())
+                                .contains(key.cell()));
+                SURFACE_HOSTS.keySet().removeIf(key -> !surfaceIds.contains(key.surfaceId())
+                        || !SURFACE_ALARMS.getOrDefault(key.surfaceId(), Set.of())
+                                .contains(key));
+            }
+
+            private static Set<TransformGroup.GridPos> groupAlarms(TransformGroup group) {
+                return GROUP_ALARMS.computeIfAbsent(group.id(), ignored -> {
+                    Set<TransformGroup.GridPos> cells = new HashSet<>();
+                    group.cells().forEach((cell, state) -> {
+                        if (AlarmModule.isController(state)) cells.add(cell);
+                    });
+                    return cells;
+                });
+            }
+
+            private static Set<SurfaceKey> surfaceAlarms(ConstructionSurface surface) {
+                return SURFACE_ALARMS.computeIfAbsent(surface.id(), ignored -> {
+                    Set<SurfaceKey> keys = new HashSet<>();
+                    surface.attachments().forEach((slot, attachment) -> {
+                        if (AlarmModule.isController(attachment.state())) {
+                            keys.add(new SurfaceKey(surface.id(), slot,
+                                    TransformSurfaceGeometry.MAIN_SIDE, false));
+                        }
+                    });
+                    surface.overlays().forEach((slot, attachment) -> {
+                        if (AlarmModule.isController(attachment.state())) {
+                            keys.add(new SurfaceKey(surface.id(), slot.slot(),
+                                    slot.normalSign() < 0 ? -1 : 1, true));
+                        }
+                    });
+                    return keys;
+                });
+            }
+
+        '''.replace('            ', '    ') + s[end:]
+          once('''        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                  : group.cells().entrySet()) {
+              BlockState state = entry.getValue();
+              if (state == null || !AlarmModule.isController(state)) continue;
+              TransformGroup.GridPos cell = entry.getKey();'''.replace('          ', '    '), '''        for (TransformGroup.GridPos cell : groupAlarms(group)) {
+              BlockState state = group.cells().get(cell);
+              if (state == null || !AlarmModule.isController(state)) continue;'''.replace('          ', '    '))
+          begin = s.index('    private static void renderSurface(Minecraft minecraft,')
+          end = s.index('    private static void renderSurfaceAlarm(', begin)
+          s = s[:begin] + '''    private static void renderSurface(Minecraft minecraft,
+                  RenderLevelStageEvent event, PoseStack pose,
+                  MultiBufferSource.BufferSource buffers, Vec3 camera,
+                  ConstructionSurface surface) {
+              for (SurfaceKey key : surfaceAlarms(surface)) {
+                  ConstructionSurface.SurfaceAttachment attachment = key.overlay()
+                          ? surface.overlay(key.slot(), key.normalSign())
+                          : surface.attachments().get(key.slot());
+                  if (attachment == null) continue;
+                  renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
+                          surface, key.slot(), key.normalSign(), key.overlay(),
+                          attachment.state());
+              }
+          }
+
+          '''.replace('          ', '    ') + s[end:]
+          once('''        if (minecraft.level == null || minecraft.player == null) {
+              GROUP_HOSTS.clear();
+              SURFACE_HOSTS.clear();
+              return;
+          }'''.replace('          ', '    '), '''        if (minecraft.level == null || minecraft.player == null) {
+              resetIndices();
+              return;
+          }'''.replace('          ', '    '))
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Update only changed logical Alarm addresses on client deltas
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientState.java')
+          s = p.read_text(encoding='utf-8')
+          def once(old, new):
+              global s
+              if s.count(old) != 1:
+                  raise RuntimeError(f'Client state anchor mismatch {s.count(old)}: {old[:120]!r}')
+              s = s.replace(old, new, 1)
+          once('''        surfaces = nextSurfaces == null ? List.of() : List.copyOf(nextSurfaces);
+              rebuildProxyCells();'''.replace('          ', '    '), '''        surfaces = nextSurfaces == null ? List.of() : List.copyOf(nextSurfaces);
+              TransformAlarmClientRenderer.resetIndices();
+              rebuildProxyCells();'''.replace('          ', '    '))
+          once('''        TransformAlarmAudioClient.clear();
+      }'''.replace('          ', '    '), '''        TransformAlarmAudioClient.clear();
+              TransformAlarmClientRenderer.resetIndices();
+      }'''.replace('          ', '    '))
+          once('''            next.set(index, current.withCell(cell, state));
+                  groups = List.copyOf(next);
+                  TransformConstructionClientRenderer.markGroupCellDirty('''.replace('          ', '    '), '''            next.set(index, current.withCell(cell, state));
+                  groups = List.copyOf(next);
+                  TransformAlarmClientRenderer.groupCellChanged(groupId, cell, state);
+                  TransformConstructionClientRenderer.markGroupCellDirty('''.replace('          ', '    '))
+          once('''            next.set(index, current.withAttachment(slot, state, deform));
+                  surfaces = List.copyOf(next);
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '), '''            next.set(index, current.withAttachment(slot, state, deform));
+                  surfaces = List.copyOf(next);
+                  TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                          next.get(index));
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '))
+          once('''            next.set(index, current.withOverlay(slot, normalSign,
+                          state, deform));
+                  surfaces = List.copyOf(next);
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '), '''            next.set(index, current.withOverlay(slot, normalSign,
+                          state, deform));
+                  surfaces = List.copyOf(next);
+                  TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                          next.get(index));
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '))
+          once('''            next.set(index, current.withoutOverlay(slot, normalSign));
+                  surfaces = List.copyOf(next);
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '), '''            next.set(index, current.withoutOverlay(slot, normalSign));
+                  surfaces = List.copyOf(next);
+                  TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                          next.get(index));
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '))
+          once('''            next.set(index, current.withoutCell(cell));
+                  groups = List.copyOf(next);
+                  TransformConstructionClientRenderer.markGroupCellDirty('''.replace('          ', '    '), '''            next.set(index, current.withoutCell(cell));
+                  groups = List.copyOf(next);
+                  TransformAlarmClientRenderer.groupCellChanged(groupId, cell, null);
+                  TransformConstructionClientRenderer.markGroupCellDirty('''.replace('          ', '    '))
+          once('''            next.set(index, current.withoutAttachment(slot));
+                  surfaces = List.copyOf(next);
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '), '''            next.set(index, current.withoutAttachment(slot));
+                  surfaces = List.copyOf(next);
+                  TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                          next.get(index));
+                  TransformConstructionClientRenderer.markSurfaceSlotDirty('''.replace('          ', '    '))
+          once('''    public static void upsertGroup(TransformGroup replacement) {
+              if (replacement == null || dimension == null
+                      || !dimension.equals(replacement.dimension())) return;
+'''.replace('          ', '    '), '''    public static void upsertGroup(TransformGroup replacement) {
+              if (replacement == null || dimension == null
+                      || !dimension.equals(replacement.dimension())) return;
+              TransformAlarmClientRenderer.invalidateGroup(replacement.id());
+'''.replace('          ', '    '))
+          once('''    public static void upsertSurface(ConstructionSurface replacement) {
+              if (replacement == null || dimension == null
+                      || !dimension.equals(replacement.dimension())) return;
+'''.replace('          ', '    '), '''    public static void upsertSurface(ConstructionSurface replacement) {
+              if (replacement == null || dimension == null
+                      || !dimension.equals(replacement.dimension())) return;
+              TransformAlarmClientRenderer.invalidateSurface(replacement.id());
+'''.replace('          ', '    '))
+          p.write_text(s, encoding='utf-8')
           PY
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformAlarmRuntime.java
-          git commit -m 'Normalize Alarm adjacency across the three Surface layers'
-          git push origin HEAD:master
-      - name: Permit local redstone between layers of one Surface slot
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformPowerQuery.java')
-          source = path.read_text(encoding='utf-8')
-          old = ('        if (level == null || surface == null || consumer == null) return false;\n'
-                 '        int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};')
-          new = ('        if (level == null || surface == null || consumer == null) return false;\n'
-                 '        // A button or redstone source on the opposite authored face\n'
-                 '        // is physically adjacent, despite sharing the same (u,v) slot.\n'
-                 '        if (sourceAtLogicalSlot(surface, consumer)) return true;\n'
-                 '        int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};')
-          if source.count(old) != 1:
-              raise RuntimeError('Surface power query changed; refusing uncertain patch')
-          path.write_text(source.replace(old, new, 1), encoding='utf-8')
-          PY
-          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformPowerQuery.java
-          git commit -m 'Propagate transformed Surface power across occupied local layers'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformAlarmClientRenderer.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientState.java
+          git commit -m 'Index transformed Alarm render hosts incrementally by logical address'
           git push origin HEAD:master

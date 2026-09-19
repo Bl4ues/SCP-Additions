@@ -782,8 +782,9 @@ public final class TransformConstructionClientRenderer {
             maxY = Math.max(maxY, y);
         }
 
-        int xSteps = attachment.deform() && maxX - minX > 0.20D ? 4 : 1;
-        int ySteps = attachment.deform()
+        int xSteps = TransformSurfaceGeometry.effectiveDeform(attachment)
+                && maxX - minX > 0.20D ? 4 : 1;
+        int ySteps = TransformSurfaceGeometry.effectiveDeform(attachment)
                 && surface.heightCurveOffset().lengthSqr() > 1.0E-8D
                 && maxY - minY > 0.20D ? 2 : 1;
         for (int ix = 0; ix < xSteps; ix++) {
@@ -820,7 +821,7 @@ public final class TransformConstructionClientRenderer {
         double depthOffset = overlay
                 && (normalSign < 0 ? -1 : 1)
                 == TransformSurfaceGeometry.MAIN_SIDE ? 1.0D : 0.0D;
-        VertexFrame frame = attachment.deform()
+        VertexFrame frame = TransformSurfaceGeometry.effectiveDeform(attachment)
                 ? deformedFrame(surface, slot, point.x, point.y, point.z,
                         localNormal, normalSign, depthOffset)
                 : rigidFrame(surface, slot, point.x, point.y, point.z,

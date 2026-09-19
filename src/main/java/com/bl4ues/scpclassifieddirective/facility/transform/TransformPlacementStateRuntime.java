@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.WallMountedSupportEvents;
+import com.bl4ues.scpclassifieddirective.facility.FacilityPipeModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmMountStructure;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -109,6 +110,15 @@ public final class TransformPlacementStateRuntime {
         Vec3 safeHit = hit == null ? group.cellCenter(cell) : hit;
         Vec3 localHit = TransformMath.worldToLocal(group.origin(), safeHit,
                 group.rotationX(), group.rotationY(), group.rotationZ());
+
+        // Pipe models are authored on the local SOUTH edge for FACING NORTH.
+        // The parent-world clicked face must not reverse them on rotated grids.
+        if (item.getBlock() instanceof FacilityPipeModule.PipeBlock
+                && outwardLocal.getAxis().isHorizontal()) {
+            return item.getBlock().defaultBlockState().setValue(
+                    BlockStateProperties.HORIZONTAL_FACING,
+                    outwardLocal.getOpposite());
+        }
 
         // Alarm placement uses the clicked sub-cell position as part of its
         // authored state. Its vanilla getStateForPlacement also validates real
@@ -231,6 +241,13 @@ public final class TransformPlacementStateRuntime {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 safeHit = hit == null ? surface.gridPoint(u, v) : hit;
+
+        // The local Surface wall is at Z=0 and pipe geometry is authored
+        // against its positive Z side when FACING is NORTH, on either face.
+        if (item.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+            return item.getBlock().defaultBlockState().setValue(
+                    BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
+        }
 
         // Surface payloads use a canonical local cell: wall plane at local Z=0,
         // construction extending toward +Z (SOUTH). Wall-mounted blocks must be

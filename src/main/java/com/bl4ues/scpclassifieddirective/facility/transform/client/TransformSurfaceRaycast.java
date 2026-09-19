@@ -258,13 +258,17 @@ public final class TransformSurfaceRaycast {
                 for (int b = 0; b < CELL_SUBDIVISIONS; b++) {
                     double b0 = b / (double) CELL_SUBDIVISIONS;
                     double b1 = (b + 1.0D) / CELL_SUBDIVISIONS;
-                    Vec3 p00 = facePoint(surface, visualSlot, attachment.deform(),
+                    Vec3 p00 = facePoint(surface, visualSlot,
+                            TransformSurfaceGeometry.effectiveDeform(attachment),
                             normalSign, overlay, face, a0, b0);
-                    Vec3 p10 = facePoint(surface, visualSlot, attachment.deform(),
+                    Vec3 p10 = facePoint(surface, visualSlot,
+                            TransformSurfaceGeometry.effectiveDeform(attachment),
                             normalSign, overlay, face, a1, b0);
-                    Vec3 p11 = facePoint(surface, visualSlot, attachment.deform(),
+                    Vec3 p11 = facePoint(surface, visualSlot,
+                            TransformSurfaceGeometry.effectiveDeform(attachment),
                             normalSign, overlay, face, a1, b1);
-                    Vec3 p01 = facePoint(surface, visualSlot, attachment.deform(),
+                    Vec3 p01 = facePoint(surface, visualSlot,
+                            TransformSurfaceGeometry.effectiveDeform(attachment),
                             normalSign, overlay, face, a0, b1);
 
                     double first = triangle(eye, ray, p00, p10, p11);

@@ -399,7 +399,8 @@ public final class TransformConstructionManager {
         ConstructionSurface surface = data.surface(surfaceId);
         if (surface == null || !surface.dimension().equals(
                 level.dimension().location())
-                || !surface.attachments().containsKey(slot)) return false;
+                || slot.column() < 0 || slot.column() >= surface.columns()
+                || slot.row() < 0 || slot.row() >= surface.rows()) return false;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 center = surface.gridPoint(u, v);

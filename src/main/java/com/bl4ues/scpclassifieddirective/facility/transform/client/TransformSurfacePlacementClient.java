@@ -55,21 +55,26 @@ public final class TransformSurfacePlacementClient {
         }
 
         if (!player.isShiftKeyDown() && aimed != null) {
-            ConstructionSurface.SurfaceAttachment overlay =
-                    aimed.surface().overlay(aimed.slot(), aimed.normalSign());
-            if (overlay != null && interactive(overlay.state())) {
-                TransformConstructionNetwork.useSurfaceOverlay(
-                        aimed.surface().id(), aimed.slot(), aimed.normalSign());
-                event.setCanceled(true);
-                return;
-            }
-            ConstructionSurface.SurfaceAttachment attachment =
-                    aimed.surface().attachments().get(aimed.slot());
-            if (attachment != null && interactive(attachment.state())) {
-                TransformConstructionNetwork.useSurfaceSlot(
-                        aimed.surface().id(), aimed.slot());
-                event.setCanceled(true);
-                return;
+            if (aimed.layer().overlay()) {
+                ConstructionSurface.SurfaceAttachment overlay =
+                        aimed.surface().overlay(aimed.slot(),
+                                aimed.normalSign());
+                if (overlay != null && interactive(overlay.state())) {
+                    TransformConstructionNetwork.useSurfaceOverlay(
+                            aimed.surface().id(), aimed.slot(),
+                            aimed.normalSign());
+                    event.setCanceled(true);
+                    return;
+                }
+            } else {
+                ConstructionSurface.SurfaceAttachment attachment =
+                        aimed.surface().attachments().get(aimed.slot());
+                if (attachment != null && interactive(attachment.state())) {
+                    TransformConstructionNetwork.useSurfaceSlot(
+                            aimed.surface().id(), aimed.slot());
+                    event.setCanceled(true);
+                    return;
+                }
             }
         }
 
@@ -77,7 +82,11 @@ public final class TransformSurfacePlacementClient {
             if (!player.isCreative()) return;
             TransformSurfaceRaycast.Target target = aimed;
             if (target == null) return;
-            if (target.surface().attachments().containsKey(target.slot())) {
+            boolean mainOccupied =
+                    target.surface().attachments().containsKey(target.slot());
+            if (target.layer().overlay()
+                    || mainOccupied
+                    || target.normalSign() < 0) {
                 TransformConstructionNetwork.placeSurfaceOverlay(
                         target.surface().id(), target.slot(),
                         target.normalSign(), target.hit());
@@ -99,19 +108,21 @@ public final class TransformSurfacePlacementClient {
         }
         TransformSurfaceRaycast.Target target = aimed;
         if (target == null) return;
-        ConstructionSurface.SurfaceAttachment overlay =
-                target.surface().overlay(target.slot(), target.normalSign());
-        if (overlay != null && interactive(overlay.state())) {
+        if (target.layer().overlay()) {
+            ConstructionSurface.SurfaceAttachment overlay =
+                    target.surface().overlay(target.slot(),
+                            target.normalSign());
+            if (overlay == null || !interactive(overlay.state())) return;
             TransformConstructionNetwork.useSurfaceOverlay(
-                    target.surface().id(), target.slot(), target.normalSign());
-            event.setCanceled(true);
-            return;
+                    target.surface().id(), target.slot(),
+                    target.normalSign());
+        } else {
+            ConstructionSurface.SurfaceAttachment attachment =
+                    target.surface().attachments().get(target.slot());
+            if (attachment == null || !interactive(attachment.state())) return;
+            TransformConstructionNetwork.useSurfaceSlot(
+                    target.surface().id(), target.slot());
         }
-        ConstructionSurface.SurfaceAttachment attachment =
-                target.surface().attachments().get(target.slot());
-        if (attachment == null || !interactive(attachment.state())) return;
-        TransformConstructionNetwork.useSurfaceSlot(target.surface().id(),
-                target.slot());
         event.setCanceled(true);
     }
     private static boolean interactive(BlockState state) {

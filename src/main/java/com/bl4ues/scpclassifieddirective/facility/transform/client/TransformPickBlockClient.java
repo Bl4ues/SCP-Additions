@@ -38,7 +38,11 @@ public final class TransformPickBlockClient {
         BlockState surfaceState = null;
         if (surface != null) {
             ConstructionSurface.SurfaceAttachment attachment =
-                    surface.surface().attachments().get(surface.slot());
+                    surface.layer().overlay()
+                            ? surface.surface().overlay(surface.slot(),
+                                    surface.normalSign())
+                            : surface.surface().attachments().get(
+                                    surface.slot());
             if (attachment != null && !attachment.state().isAir()) {
                 surfaceState = attachment.state();
             } else {

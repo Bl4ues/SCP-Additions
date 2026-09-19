@@ -46,7 +46,11 @@ public final class TransformLogicalBreakClient {
                                 minecraft.level.dimension().location()));
         if (surface != null) {
             ConstructionSurface.SurfaceAttachment attachment =
-                    surface.surface().attachments().get(surface.slot());
+                    surface.layer().overlay()
+                            ? surface.surface().overlay(surface.slot(),
+                                    surface.normalSign())
+                            : surface.surface().attachments().get(
+                                    surface.slot());
             if (attachment == null || attachment.state().isAir()) {
                 surface = null;
             }
@@ -62,6 +66,10 @@ public final class TransformLogicalBreakClient {
         if (groupDistance <= surfaceDistance) {
             TransformConstructionNetwork.breakGroupCell(
                     group.group().id(), group.cell());
+        } else if (surface.layer().overlay()) {
+            TransformConstructionNetwork.breakSurfaceOverlay(
+                    surface.surface().id(), surface.slot(),
+                    surface.normalSign());
         } else {
             TransformConstructionNetwork.breakSurfaceSlot(
                     surface.surface().id(), surface.slot());

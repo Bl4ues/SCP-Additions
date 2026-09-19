@@ -174,7 +174,7 @@ public abstract class Scp079PlayableVisualsV2CursorMixin {
             drawCommand(graphics, minecraft,
                     speakerActive ? "STOP USING SPEAKER" : "USE SPEAKER",
                     speakerKey, right, y, 1.04F,
-                    speakerActive ? 0xFFFFC68A : Scp079UiTheme.TEXT, true);
+                    speakerActive ? Scp079UiTheme.ACTIVE_SKILL : Scp079UiTheme.TEXT, true);
             y += 19;
         }
 

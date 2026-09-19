@@ -591,19 +591,17 @@ public final class Scp079FacilityMapScreen extends Screen {
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
 
-        // Clearance is supplementary information: expose it only once the
-        // operator zooms into the doorway. Its badge stops growing at the
-        // maximum readable camera zoom and never scales with the world line.
+        // Supplementary clearance stays hidden until the operator zooms in.
+        // Once visible it always uses the same maximum size, independent of
+        // zoom or the physical door angle, so it cannot bury other markers.
         if (mapZoom < 1.55D) return;
-        int half = Math.min(9, 4 + (int) Math.round(
-                (mapZoom - 1.55D) * 5.0D));
-        int borderColor = locked ? 0xFF89989D : color;
+        final int half = 9;
+        int segmentColor = locked ? 0xFF89989D : color;
+        // Solid badge and door segment share one visual material/palette.
         graphics.fill(x - half, y - half, x + half + 1, y + half + 1,
-                0xF20A1D27);
-        border(graphics, x - half, y - half, half * 2 + 1, half * 2 + 1,
-                borderColor);
-        drawCenteredMapLabel(graphics, value, x, y, 1.60F,
-                locked ? 0xFF89989D : 0xFFF4FAFD);
+                segmentColor);
+        drawCenteredMapLabel(graphics, value, x, y, 1.85F,
+                0xFF07151C);
     }
 
     private void renderOpenKeycardLevel(GuiGraphics graphics,
@@ -633,7 +631,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         pose.scale(scale, scale, 1.0F);
         float x = -font.width(value) * 0.5F;
         // Font ascent sits above the line box center; compensate for it.
-        float y = -font.lineHeight * 0.5F + 1.8F;
+        float y = -font.lineHeight * 0.5F + 2.8F;
         graphics.drawString(font, value, Math.round(x), Math.round(y),
                 color, false);
         pose.popPose();

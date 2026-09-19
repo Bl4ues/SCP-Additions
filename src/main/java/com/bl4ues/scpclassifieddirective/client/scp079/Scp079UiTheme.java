@@ -17,6 +17,8 @@ public final class Scp079UiTheme {
     public static final int TEXT = 0xFFE8F8FF;
     public static final int MUTED = 0xFF8BAAB6;
     public static final int ACCENT = 0xFFBDEEFF;
+    /** Active abilities and map activity share this amber highlight. */
+    public static final int ACTIVE_SKILL = 0xFFFFC68A;
     public static final int DIM_ACCENT = 0xFF618999;
     public static final int OFFLINE = 0xFFD57D78;
     private static final int FRAME_THICKNESS = 3;

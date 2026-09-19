@@ -397,8 +397,9 @@ public final class TransformConstructionManager {
             double tu = (targetSlot.column() + 0.5D) / surface.columns();
             double tv = (targetSlot.row() + 0.5D) / surface.rows();
             TransformConstructionNetwork.sendBlockedPlacement(player,
-                    BlockPos.containing(surface.gridPoint(tu, tv)
-                            .add(surface.gridNormal(tu, tv).scale(0.5D))));
+                    BlockPos.containing(TransformSurfaceGeometry.cellCenter(
+                            surface, targetSlot,
+                            TransformSurfaceGeometry.MAIN_SIDE, false)));
             player.displayClientMessage(Component.literal(
                     "That surface cell is already occupied."), true);
             return true;

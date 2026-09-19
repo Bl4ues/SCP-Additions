@@ -1,4 +1,4 @@
-name: Apply Surface edit-preview cache correction
+name: Apply Surface render-guide consistency correction
 
 on:
   push:
@@ -15,45 +15,72 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Defer heavy mesh baking until Surface drag is committed
+      - name: Keep nearest Surface hover consistent with placement and avoid per-frame payload scans
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          controls = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java')
-          text = controls.read_text(encoding='utf-8')
-          anchor = '''    private TransformConstructionClientControls() {
+          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java')
+          t = path.read_text(encoding='utf-8')
+          begin = t.index('    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(')
+          end = t.index('    private static void renderLogicalSurfaceSlot(', begin)
+          t = t[:begin] + '''    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(
+                      LocalPlayer player) {
+                  if (player == null) return null;
+                  Minecraft minecraft = Minecraft.getInstance();
+                  if (minecraft.level == null) return null;
+                  // Editor selection changes visible guides, never where a
+                  // construction/use ray actually hits the nearest Surface.
+                  return TransformSurfaceRaycast.target(player,
+                          TransformConstructionClientState.surfaces(
+                                  minecraft.level.dimension().location()));
               }
-          '''.replace('              ', '    ')
-          addition = '''    /** Live handle movement only changes the authoring preview; collision,
-                * lighting and expensive payload meshes are finalized on release. */
-               static boolean previewingSurface(UUID id) {
-                   return id != null && drag != null && drag.remembered()
-                           && drag.selection().type() == SelectionType.SURFACE
-                           && id.equals(drag.selection().id());
-               }
 
-          '''.replace('               ', '    ').replace('                ', '     ')
-          if text.count(anchor) != 1:
-              raise RuntimeError('Surface editor class layout changed')
-          text = text.replace(anchor, anchor + addition, 1)
-          controls.write_text(text, encoding='utf-8')
+          '''.replace('                  ', '        ') + t[end:]
+          old = '''        boolean positivePayload = surface.overlays().keySet().stream()
+                      .anyMatch(key -> key.normalSign() > 0);
+                  boolean negativePayload = !surface.attachments().isEmpty()
+                      || surface.overlays().keySet().stream()
+                              .anyMatch(key -> key.normalSign() < 0);
+          '''.replace('                  ', '        ')
+          if t.count(old) != 1:
+              raise RuntimeError('Surface grid scan code changed; abort')
+          t = t.replace(old, '', 1)
+          old_call = 'camera, positivePayload, negativePayload)'
+          if t.count(old_call) != 2:
+              raise RuntimeError('Surface grid call count changed; abort')
+          t = t.replace(old_call, 'camera)', 2)
+          old_sig = '''            ConstructionSurface surface, double u, double v, Vec3 camera,
+                      boolean positivePayload, boolean negativePayload) {'''.replace('                      ', '            ')
+          if t.count(old_sig) != 1:
+              raise RuntimeError('Surface grid helper signature changed; abort')
+          t = t.replace(old_sig, '            ConstructionSurface surface, double u, double v, Vec3 camera) {', 1)
+          p = '''        } else if (cached.surface() != surface
+            && !TransformConstructionClientControls.previewingSurface(
+                    surface.id())) {'''
+          q = '''        } else if (cached.surface() != surface
+                && !TransformConstructionClientControls.previewingSurface(
+                        surface.id())) {'''
+          if t.count(p) != 1: raise RuntimeError('Preview cache formatting changed')
+          t = t.replace(p, q, 1)
+          path.write_text(t, encoding='utf-8')
+          controls = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java')
+          t = controls.read_text(encoding='utf-8')
+          begin = t.index('    /** Live handle movement only changes the authoring preview; collision,')
+          end = t.index('    @SubscribeEvent(priority = EventPriority.HIGHEST)', begin)
+          t = t[:begin] + '''    /** Live handle movement only changes authoring guides; collision,
+                  * lighting and expensive payload meshes are finalized on release. */
+                 static boolean previewingSurface(UUID id) {
+                     return id != null && drag != null && drag.remembered()
+                             && drag.selection().type() == SelectionType.SURFACE
+                             && id.equals(drag.selection().id());
+                 }
 
-          renderer = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java')
-          text = renderer.read_text(encoding='utf-8')
-          old = '''        } else if (cached.surface() != surface) {
-                      if (!sameSurfaceGeometry(cached.surface(), surface)) {'''.replace('                      ', '            ')
-          new = '''        } else if (cached.surface() != surface
-                      && !TransformConstructionClientControls.previewingSurface(
-                              surface.id())) {
-                      if (!sameSurfaceGeometry(cached.surface(), surface)) {'''.replace('                      ', '            ')
-          if text.count(old) != 1:
-              raise RuntimeError('Surface renderer cache path changed')
-          text = text.replace(old, new, 1)
-          renderer.write_text(text, encoding='utf-8')
+          '''.replace('                 ', '    ') + t[end:]
+          controls.write_text(t, encoding='utf-8')
           PY
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
-          git commit -m 'Defer full Surface payload mesh rebakes until handle release'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java
+          git commit -m 'Keep Surface hover and edit guide independent of stale selection'
           git push origin HEAD:master

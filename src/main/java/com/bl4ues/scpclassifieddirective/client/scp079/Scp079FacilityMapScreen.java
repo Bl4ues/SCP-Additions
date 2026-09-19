@@ -375,67 +375,82 @@ public final class Scp079FacilityMapScreen extends Screen {
             FacilityRoomOutlineGeometry geometry, MapTransform transform,
             int fill, int lineColor) {
         Rectangle2D bounds = geometry.bounds();
-        int minY = Math.max(0, transform.sy(bounds.getMinY()));
-        int maxY = Math.min(graphics.guiHeight() - 1,
-                transform.sy(bounds.getMaxY()));
+        int minY = Math.max(0, (int) Math.floor(
+                transform.fy(bounds.getMinY()) - 1.0D));
+        int maxY = Math.min(graphics.guiHeight() - 1, (int) Math.ceil(
+                transform.fy(bounds.getMaxY()) + 1.0D));
         if (maxY < minY) {
             int swap = minY;
             minY = maxY;
             maxY = swap;
         }
+
+        Map<Long, Double> fillCoverage = new HashMap<>();
         List<Double> intersections = new ArrayList<>();
+        double[] verticalSamples = {0.25D, 0.75D};
         for (int y = minY; y <= maxY; y++) {
-            intersections.clear();
-            double worldZ = (y + 0.5D - transform.originY)
-                    / transform.scale;
-            for (List<FacilityFloorPatch.Vertex> contour
-                    : geometry.contours()) {
-                for (int index = 0; index < contour.size(); index++) {
-                    FacilityFloorPatch.Vertex a = contour.get(index);
-                    FacilityFloorPatch.Vertex b = contour.get(
-                            (index + 1) % contour.size());
-                    if ((a.z() > worldZ) == (b.z() > worldZ)) continue;
-                    double dz = b.z() - a.z();
-                    if (Math.abs(dz) < 1.0E-10D) continue;
-                    double ratio = (worldZ - a.z()) / dz;
-                    intersections.add(a.x() + (b.x() - a.x()) * ratio);
+            for (double sy : verticalSamples) {
+                intersections.clear();
+                double worldZ = (y + sy - transform.originY)
+                        / transform.scale;
+                for (List<FacilityFloorPatch.Vertex> contour
+                        : geometry.contours()) {
+                    for (int index = 0; index < contour.size(); index++) {
+                        FacilityFloorPatch.Vertex a = contour.get(index);
+                        FacilityFloorPatch.Vertex b = contour.get(
+                                (index + 1) % contour.size());
+                        if ((a.z() > worldZ) == (b.z() > worldZ)) continue;
+                        double dz = b.z() - a.z();
+                        if (Math.abs(dz) < 1.0E-10D) continue;
+                        double ratio = (worldZ - a.z()) / dz;
+                        intersections.add(a.x() + (b.x() - a.x()) * ratio);
+                    }
+                }
+                intersections.sort(Double::compare);
+                for (int index = 0; index + 1 < intersections.size();
+                        index += 2) {
+                    double left = Math.min(
+                            transform.fx(intersections.get(index)),
+                            transform.fx(intersections.get(index + 1)));
+                    double right = Math.max(
+                            transform.fx(intersections.get(index)),
+                            transform.fx(intersections.get(index + 1)));
+                    accumulateHorizontalCoverage(fillCoverage, y,
+                            left, right, graphics.guiWidth(),
+                            graphics.guiHeight(), 0.5D);
                 }
             }
-            intersections.sort(Double::compare);
-            int clipLeft = 0;
-            int clipRight = graphics.guiWidth() - 1;
-            for (int index = 0; index + 1 < intersections.size(); index += 2) {
-                double screenX0 = transform.fx(intersections.get(index));
-                double screenX1 = transform.fx(intersections.get(index + 1));
-                double left = Math.min(screenX0, screenX1);
-                double right = Math.max(screenX0, screenX1);
-                if (right < clipLeft || left > clipRight + 1.0D) continue;
-
-                left = Math.max(left, clipLeft);
-                right = Math.min(right, clipRight + 1.0D);
-                if (right <= left + 1.0E-8D) continue;
-
-                int first = (int) Math.floor(left);
-                int last = (int) Math.floor(Math.nextDown(right));
-                if (first == last) {
-                    plotMapPixel(graphics, first, y, fill,
-                            Mth.clamp(right - left, 0.0D, 1.0D));
-                    continue;
-                }
-
-                double firstCoverage = 1.0D - (left - first);
-                plotMapPixel(graphics, first, y, fill, firstCoverage);
-                if (last > first + 1) {
-                    graphics.fill(first + 1, y, last, y + 1, fill);
-                }
-                double lastCoverage = right - last;
-                plotMapPixel(graphics, last, y, fill,
-                        Mth.clamp(lastCoverage, 0.0D, 1.0D));
-            }
+        }
+        for (Map.Entry<Long, Double> pixel : fillCoverage.entrySet()) {
+            int x = (int) (pixel.getKey() >> 32);
+            int y = (int) (long) pixel.getKey();
+            plotMapPixel(graphics, x, y, fill,
+                    Math.min(1.0D, pixel.getValue()));
         }
 
         drawMapContours(graphics, geometry.contours(),
                 transform, lineColor);
+    }
+
+    private static void accumulateHorizontalCoverage(
+            Map<Long, Double> coverage, int y, double left, double right,
+            int width, int height, double verticalWeight) {
+        if (right <= left + 1.0E-8D || y < 0 || y >= height) return;
+        double clippedLeft = Math.max(0.0D, left);
+        double clippedRight = Math.min(width, right);
+        if (clippedRight <= clippedLeft) return;
+
+        int first = Math.max(0, (int) Math.floor(clippedLeft));
+        int last = Math.min(width - 1,
+                (int) Math.floor(Math.nextDown(clippedRight)));
+        for (int x = first; x <= last; x++) {
+            double pixelLeft = Math.max(clippedLeft, x);
+            double pixelRight = Math.min(clippedRight, x + 1.0D);
+            double horizontal = Math.max(0.0D, pixelRight - pixelLeft);
+            if (horizontal <= 0.0D) continue;
+            long key = ((long) x << 32) ^ (y & 0xFFFFFFFFL);
+            coverage.merge(key, horizontal * verticalWeight, Double::sum);
+        }
     }
 
     private void renderDoorMarkers(GuiGraphics graphics, FloorGroup floor,
@@ -1464,10 +1479,9 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static void accumulateMapLine(Map<Long, Double> coverage,
             double x0, double y0, double x1, double y1,
             int width, int height) {
-        // 2x2 subpixel coverage gives diagonals/curves a stable apparent
-        // thickness. Wu's one-dimensional coverage still changed brightness
-        // noticeably with segment angle at this deliberately low-res CRT map.
-        final double radius = 0.72D;
+        // 4x4 subpixel coverage keeps long oblique/curved contours from
+        // alternating between quarter-, half- and full-bright pixels.
+        final double radius = 0.68D;
         final double radiusSqr = radius * radius;
         int minX = Math.max(0, (int) Math.floor(Math.min(x0, x1) - 1.0D));
         int maxX = Math.min(width - 1,
@@ -1477,7 +1491,7 @@ public final class Scp079FacilityMapScreen extends Screen {
                 (int) Math.ceil(Math.max(y0, y1) + 1.0D));
         if (minX > maxX || minY > maxY) return;
 
-        double[] samples = {0.25D, 0.75D};
+        double[] samples = {0.125D, 0.375D, 0.625D, 0.875D};
         for (int y = minY; y <= maxY; y++) {
             for (int x = minX; x <= maxX; x++) {
                 int covered = 0;
@@ -1491,7 +1505,7 @@ public final class Scp079FacilityMapScreen extends Screen {
                 }
                 if (covered > 0) {
                     accumulateCoverage(coverage, x, y,
-                            covered / 4.0D, width, height);
+                            covered / 16.0D, width, height);
                 }
             }
         }

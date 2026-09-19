@@ -82,7 +82,8 @@ public final class TransformAlarmClientRenderer {
                     : surface.attachments().entrySet()) {
                 if (AlarmModule.isController(entry.getValue().state())) {
                     surfaceKeys.add(new SurfaceKey(surface.id(),
-                            entry.getKey(), 1, false));
+                            entry.getKey(),
+                            TransformSurfaceGeometry.MAIN_SIDE, false));
                 }
             }
             for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
@@ -143,7 +144,8 @@ public final class TransformAlarmClientRenderer {
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
             renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
-                    surface, entry.getKey(), 1, false,
+                    surface, entry.getKey(),
+                    TransformSurfaceGeometry.MAIN_SIDE, false,
                     entry.getValue().state());
         }
         for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,

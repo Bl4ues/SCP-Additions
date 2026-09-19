@@ -38,7 +38,7 @@ public final class TransformPowerQuery {
             TransformGroup.GridPos neighbor = consumer.offset(
                     direction.getStepX(), direction.getStepY(),
                     direction.getStepZ());
-            if (sourceAtVisualCell(group, neighbor)) return true;
+            if (source(group.cells().get(neighbor))) return true;
         }
         // Parent-world redstone may feed the local grid at the physical cell,
         // but transformed sources do not use Euclidean "nearby" power here.
@@ -55,7 +55,7 @@ public final class TransformPowerQuery {
                     new ConstructionSurface.SurfaceSlot(
                             consumer.column() + offset[0],
                             consumer.row() + offset[1]);
-            if (sourceAtVisualSlot(surface, neighbor)) return true;
+            if (sourceAtLogicalSlot(surface, neighbor)) return true;
         }
         double u = (consumer.column() + 0.5D) / surface.columns();
         double v = (consumer.row() + 0.5D) / surface.rows();
@@ -165,64 +165,23 @@ public final class TransformPowerQuery {
                 && state.getValue(BlockStateProperties.POWERED);
     }
 
-    private static boolean sourceAtVisualCell(TransformGroup group,
-            TransformGroup.GridPos visualCell) {
-        if (group == null || visualCell == null) return false;
-        BlockState direct = group.cells().get(visualCell);
-        if (source(direct)
-                && TransformWallFixturePlacement.visualCell(
-                        visualCell, direct).equals(visualCell)) {
-            return true;
+    private static boolean sourceAtLogicalSlot(
+            ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot) {
+        if (surface == null || slot == null
+                || slot.column() < 0 || slot.column() >= surface.columns()
+                || slot.row() < 0 || slot.row() >= surface.rows()) {
+            return false;
         }
-        for (net.minecraft.core.Direction direction
-                : net.minecraft.core.Direction.Plane.HORIZONTAL) {
-            TransformGroup.GridPos controller = visualCell.offset(
-                    -direction.getStepX(), 0, -direction.getStepZ());
-            BlockState state = group.cells().get(controller);
-            if (source(state)
-                    && TransformWallFixturePlacement.visualCell(
-                            controller, state).equals(visualCell)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean sourceAtVisualSlot(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot visualSlot) {
-        if (surface == null || visualSlot == null) return false;
-        for (int side : new int[]{1, -1}) {
-            if (sourceAtVisualSlot(surface, visualSlot, side, false)
-                    || sourceAtVisualSlot(surface, visualSlot, side, true)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean sourceAtVisualSlot(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot visualSlot, int side,
-            boolean overlay) {
-        int[][] candidates = {{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-        for (int[] delta : candidates) {
-            ConstructionSurface.SurfaceSlot address =
-                    new ConstructionSurface.SurfaceSlot(
-                            visualSlot.column() + delta[0],
-                            visualSlot.row() + delta[1]);
-            if (address.column() < 0 || address.column() >= surface.columns()
-                    || address.row() < 0 || address.row() >= surface.rows()) {
-                continue;
-            }
-            ConstructionSurface.SurfaceAttachment attachment = overlay
-                    ? surface.overlay(address, side)
-                    : surface.attachments().get(address);
-            if (attachment == null || !source(attachment.state())) continue;
-            ConstructionSurface.SurfaceSlot actual =
-                    TransformWallFixturePlacement.visualSlot(surface,
-                            address, attachment.state(), side);
-            if (visualSlot.equals(actual)) return true;
-        }
-        return false;
+        ConstructionSurface.SurfaceAttachment main =
+                surface.attachments().get(slot);
+        if (main != null && source(main.state())) return true;
+        ConstructionSurface.SurfaceAttachment positive =
+                surface.overlay(slot, 1);
+        if (positive != null && source(positive.state())) return true;
+        ConstructionSurface.SurfaceAttachment negative =
+                surface.overlay(slot, -1);
+        return negative != null && source(negative.state());
     }
 
     private record SourceOwner(ResourceLocation dimension, UUID id,
@@ -264,10 +223,8 @@ public final class TransformPowerQuery {
                 replace(owner, List.of());
                 return;
             }
-            TransformGroup.GridPos visual =
-                    TransformWallFixturePlacement.visualCell(cell, state);
             replace(owner, List.of(new SourcePoint(group.dimension(),
-                    group.cellCenter(visual))));
+                    group.cellCenter(cell))));
         }
 
         private void replaceSurface(ConstructionSurface surface) {
@@ -290,31 +247,22 @@ public final class TransformPowerQuery {
             ConstructionSurface.SurfaceAttachment main =
                     surface.attachments().get(slot);
             if (main != null && source(main.state())) {
-                ConstructionSurface.SurfaceSlot visual =
-                        TransformWallFixturePlacement.visualSlot(surface,
-                                slot, main.state(), 1);
                 points.add(new SourcePoint(surface.dimension(),
-                        TransformSurfaceGeometry.cellCenter(surface, visual,
+                        TransformSurfaceGeometry.cellCenter(surface, slot,
                                 1, false)));
             }
             ConstructionSurface.SurfaceAttachment positive =
                     surface.overlay(slot, 1);
             if (positive != null && source(positive.state())) {
-                ConstructionSurface.SurfaceSlot visual =
-                        TransformWallFixturePlacement.visualSlot(surface,
-                                slot, positive.state(), 1);
                 points.add(new SourcePoint(surface.dimension(),
-                        TransformSurfaceGeometry.cellCenter(surface, visual,
+                        TransformSurfaceGeometry.cellCenter(surface, slot,
                                 1, true)));
             }
             ConstructionSurface.SurfaceAttachment negative =
                     surface.overlay(slot, -1);
             if (negative != null && source(negative.state())) {
-                ConstructionSurface.SurfaceSlot visual =
-                        TransformWallFixturePlacement.visualSlot(surface,
-                                slot, negative.state(), -1);
                 points.add(new SourcePoint(surface.dimension(),
-                        TransformSurfaceGeometry.cellCenter(surface, visual,
+                        TransformSurfaceGeometry.cellCenter(surface, slot,
                                 -1, true)));
             }
             replace(owner, points);

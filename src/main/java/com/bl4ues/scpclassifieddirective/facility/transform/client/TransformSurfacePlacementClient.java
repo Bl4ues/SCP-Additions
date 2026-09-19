@@ -65,10 +65,8 @@ public final class TransformSurfacePlacementClient {
             int side = surface.layer().overlay()
                     ? surface.normalSign()
                     : clickedSide(player, surface.surface(), surface.slot());
-            // The main wall occupies +normal. Building from its opposite side
-            // must author the inner overlay even if the main slot is empty;
-            // otherwise the first inside click unexpectedly puts a block on
-            // the exterior and prevents independent corridor finishing.
+            // An inside click authors an independent inner overlay, even when
+            // the outside main wall has not been constructed yet.
             if (surface.layer().overlay() || occupied
                     || side != TransformSurfaceGeometry.MAIN_SIDE) {
                 TransformConstructionNetwork.placeSurfaceOverlay(
@@ -83,21 +81,22 @@ public final class TransformSurfacePlacementClient {
         }
 
         if (player.isShiftKeyDown()) return;
-        // An empty Surface guide exists for authoring, not for runtime use.
-        // It must not occlude a genuine button, reader or door behind it in an
-        // independent transformed grid. Placement still uses empty guides.
-        if (surface != null && !interactiveSurfaceTarget(surface)) {
+        // Empty authoring guides do not occlude runtime equipment. Real solid
+        // payloads do: a button behind an unrelated authored wall is not a
+        // reachable control merely because the raycast skips non-controls.
+        if (surface != null && !occupiedSurfaceTarget(surface)) {
             surface = null;
         }
         TransformGroupPlacementClient.PayloadTarget group =
-                TransformGroupPlacementClient.findPayloadTarget(player);
+                TransformGroupPlacementClient.findBreakTarget(player);
         if (group != null && nearer(group.distance(), surface)) {
+            if (!interactive(group.state())) return;
             TransformConstructionNetwork.useGroupCell(
                     group.group().id(), group.cell());
             event.setCanceled(true);
             return;
         }
-        if (surface == null) return;
+        if (surface == null || !interactiveSurfaceTarget(surface)) return;
         if (surface.layer().overlay()) {
             TransformConstructionNetwork.useSurfaceOverlay(
                     surface.surface().id(), surface.slot(),
@@ -109,13 +108,24 @@ public final class TransformSurfacePlacementClient {
         event.setCanceled(true);
     }
 
+    private static ConstructionSurface.SurfaceAttachment surfaceAttachment(
+            TransformSurfaceRaycast.Target target) {
+        return target.layer().overlay()
+                ? target.surface().overlay(target.slot(), target.normalSign())
+                : target.surface().attachments().get(target.slot());
+    }
+
+    private static boolean occupiedSurfaceTarget(
+            TransformSurfaceRaycast.Target target) {
+        ConstructionSurface.SurfaceAttachment attachment =
+                surfaceAttachment(target);
+        return attachment != null && !attachment.state().isAir();
+    }
+
     private static boolean interactiveSurfaceTarget(
             TransformSurfaceRaycast.Target target) {
         ConstructionSurface.SurfaceAttachment attachment =
-                target.layer().overlay()
-                        ? target.surface().overlay(target.slot(),
-                                target.normalSign())
-                        : target.surface().attachments().get(target.slot());
+                surfaceAttachment(target);
         return attachment != null && interactive(attachment.state());
     }
 

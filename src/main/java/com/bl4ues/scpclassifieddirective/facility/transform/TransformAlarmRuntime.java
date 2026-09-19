@@ -91,7 +91,9 @@ public final class TransformAlarmRuntime {
 
             double u = (alarm.slot().column() + 0.5D) / surface.columns();
             double v = (alarm.slot().row() + 0.5D) / surface.rows();
-            int side = alarm.normalSign() == 0 ? 1 : alarm.normalSign();
+            int side = alarm.normalSign() == 0
+                    ? TransformSurfaceGeometry.MAIN_SIDE
+                    : alarm.normalSign();
             Vec3 center = TransformSurfaceGeometry.cellCenter(surface,
                     alarm.slot(), side, alarm.normalSign() != 0);
             boolean active = shouldBeActive(level, center,
@@ -383,8 +385,8 @@ public final class TransformAlarmRuntime {
             ConstructionSurface.SurfaceSlot slot) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        return surface.gridPoint(u, v)
-                .add(surface.gridNormal(u, v).scale(0.5D));
+        return TransformSurfaceGeometry.cellCenter(surface, slot,
+                TransformSurfaceGeometry.MAIN_SIDE, false);
     }
 
     private static boolean isAlarm(BlockState state) {

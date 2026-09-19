@@ -1,0 +1,31 @@
+name: Apply physical transformed Alarm projection
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_transform_alarm_projection.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply physical receiver integration
+        run: python3 .github/scripts/temporary_transform_alarm_projection.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile and package the integrated renderer before committing
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit renderer integration on master
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/client/AlarmClient.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformAlarmClientRenderer.java
+          git commit -m 'Project transformed Alarms onto physical Group and Surface receivers'
+          git push origin HEAD:master

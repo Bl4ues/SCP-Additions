@@ -1,4 +1,4 @@
-name: Apply Surface guide-plane correction
+name: Apply SCP-079 map credential correction
 
 on:
   push:
@@ -15,30 +15,44 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Keep the authoring grid on the physical reference plane
+      - name: Align SCP-079 keycard markers with door segments
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java')
-          source = path.read_text(encoding='utf-8')
-          old = '''        double cameraSide = camera.subtract(point).dot(normal);
-                  if (cameraSide >= 0.0D) {
-                      return point.add(normal.scale(positivePayload ? 1.006D : 0.008D));
-                  }
-                  return point.subtract(normal.scale(negativePayload ? 1.006D : 0.008D));'''
-          old = old.replace('                  ', '        ')
-          new = '''        double cameraSide = camera.subtract(point).dot(normal);
-                  // Draw just off the authored guide to avoid line z-fighting.
-                  // A placed block must never move the edit grid a whole cell.
-                  return point.add(normal.scale(cameraSide >= 0.0D
-                          ? 0.008D : -0.008D));'''.replace('                  ', '        ')
-          if source.count(old) != 1:
-              raise RuntimeError('Grid method changed; patch intentionally aborted')
-          path.write_text(source.replace(old, new), encoding='utf-8')
+          p = Path('src/main/java/com/bl4ues/scpclassifieddirective/client/scp079/Scp079FacilityMapScreen.java')
+          text = p.read_text(encoding='utf-8')
+          substitutions = [
+              ('''                    renderClosedKeycardBadge(graphics, marker, transform,
+                                      locked);'''.replace('                                      ', '                            '),
+               '''                    renderClosedKeycardBadge(graphics, marker, transform,
+                                      locked, color);'''.replace('                                      ', '                            ')),
+              ('''            MapDoorMarker marker, MapTransform transform, boolean locked) {''',
+               '''            MapDoorMarker marker, MapTransform transform,
+                      boolean locked, int color) {'''.replace('                      ', '            ')),
+              ('''        int half = 7;
+                  int badge = locked ? 0xFF77868B : 0xFFF1FAFD;'''.replace('                  ', '        '),
+               '''        int half = 8;
+                  int badge = color;'''.replace('                  ', '        ')),
+              ('''        drawFixedCenteredMapLabel(graphics, value, x, y,
+                  locked ? 0xFF172126 : 0xFF071116);'''.replace('                  ', '                '),
+               '''        drawCenteredMapLabel(graphics, value, x, y, 1.30F,
+                  locked ? 0xFF172126 : 0xFF071116);'''.replace('                  ', '                ')),
+              ('''        drawFixedCenteredMapLabel(graphics,
+                  Integer.toString(marker.requiredLevel()),
+                  x, y, 0xFFF1FAFD);'''.replace('                  ', '                '),
+               '''        drawCenteredMapLabel(graphics,
+                  Integer.toString(marker.requiredLevel()),
+                  x, y, 1.30F, 0xFFFFFFFF);'''.replace('                  ', '                ')),
+          ]
+          for old, new in substitutions:
+              if text.count(old) != 1:
+                  raise RuntimeError('Expected one exact map fragment, got %d: %r' % (text.count(old), old[:80]))
+              text = text.replace(old, new, 1)
+          p.write_text(text, encoding='utf-8')
           PY
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
-          git commit -m 'Keep Surface edit grid anchored while flipping placement side'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/client/scp079/Scp079FacilityMapScreen.java
+          git commit -m 'Align SCP-079 keycard labels and door marker colors'
           git push origin HEAD:master

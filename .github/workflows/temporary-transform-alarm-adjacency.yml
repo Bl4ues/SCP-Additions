@@ -1,0 +1,64 @@
+name: Apply transformed Alarm adjacency correction
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary-transform-alarm-adjacency.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Detect physically adjacent doors in every Surface layer
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformAlarmRuntime.java')
+          source = path.read_text(encoding='utf-8')
+          begin = source.index('    private static boolean adjacentOpenDoor(ConstructionSurface surface,')
+          end = source.index('    private static Vec3 surfaceCenter(', begin)
+          replacement = '''    private static boolean adjacentOpenDoor(ConstructionSurface surface,
+                  ConstructionSurface.SurfaceSlot alarmSlot) {
+              // A wall-mounted Alarm can share a parametric slot with a door
+              // attached to the opposite face. Check the physical footprint,
+              // not just the four main-layer neighbors: inner/outer overlays
+              // are independent logical layers of the SAME construction grid.
+              int[][] offsets = {{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+              for (int[] offset : offsets) {
+                  ConstructionSurface.SurfaceSlot slot =
+                          new ConstructionSurface.SurfaceSlot(
+                                  alarmSlot.column() + offset[0],
+                                  alarmSlot.row() + offset[1]);
+                  if (slot.column() < 0 || slot.column() >= surface.columns()
+                          || slot.row() < 0 || slot.row() >= surface.rows()) {
+                      continue;
+                  }
+                  if (openDoor(surface.attachments().get(slot))) return true;
+                  if (openDoor(surface.overlay(slot, 1))) return true;
+                  if (openDoor(surface.overlay(slot, -1))) return true;
+              }
+              return false;
+          }
+
+          private static boolean openDoor(
+                  ConstructionSurface.SurfaceAttachment attachment) {
+              return attachment != null
+                      && FacilityModule.isElectricDoorOpenOrOpening(
+                              attachment.state());
+          }
+
+          '''
+          replacement = '\n'.join(line[6:] if line.startswith('      ') else line for line in replacement.splitlines()) + '\n'
+          if source.count('    private static boolean adjacentOpenDoor(ConstructionSurface surface,') != 1:
+              raise RuntimeError('Alarm Surface adjacency method is ambiguous')
+          path.write_text(source[:begin] + replacement + source[end:], encoding='utf-8')
+          PY
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformAlarmRuntime.java
+          git commit -m 'Detect doors on both layers of transformed Surface Alarm footprint'
+          git push origin HEAD:master

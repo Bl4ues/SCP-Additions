@@ -1,0 +1,44 @@
+name: Apply Surface guide-plane correction
+
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary-surface-grid-fix.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Keep the authoring grid on the physical reference plane
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java')
+          source = path.read_text(encoding='utf-8')
+          old = '''        double cameraSide = camera.subtract(point).dot(normal);
+                  if (cameraSide >= 0.0D) {
+                      return point.add(normal.scale(positivePayload ? 1.006D : 0.008D));
+                  }
+                  return point.subtract(normal.scale(negativePayload ? 1.006D : 0.008D));'''
+          old = old.replace('                  ', '        ')
+          new = '''        double cameraSide = camera.subtract(point).dot(normal);
+                  // Draw just off the authored guide to avoid line z-fighting.
+                  // A placed block must never move the edit grid a whole cell.
+                  return point.add(normal.scale(cameraSide >= 0.0D
+                          ? 0.008D : -0.008D));'''.replace('                  ', '        ')
+          if source.count(old) != 1:
+              raise RuntimeError('Grid method changed; patch intentionally aborted')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+          PY
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Keep Surface edit grid anchored while flipping placement side'
+          git push origin HEAD:master

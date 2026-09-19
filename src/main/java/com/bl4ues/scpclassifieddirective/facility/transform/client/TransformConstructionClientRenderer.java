@@ -1252,10 +1252,10 @@ public final class TransformConstructionClientRenderer {
         Vec3 normal = TransformMath.safeNormalize(surface.gridNormal(u, v),
                 new Vec3(0.0D, 0.0D, 1.0D));
         double cameraSide = camera.subtract(point).dot(normal);
-        if (cameraSide >= 0.0D) {
-            return point.add(normal.scale(positivePayload ? 1.006D : 0.008D));
-        }
-        return point.subtract(normal.scale(negativePayload ? 1.006D : 0.008D));
+        // Draw just off the authored guide to avoid line z-fighting.
+        // A placed block must never move the edit grid a whole cell.
+        return point.add(normal.scale(cameraSide >= 0.0D
+                ? 0.008D : -0.008D));
     }
 
     private static void renderAlignedBoundary(PoseStack pose,

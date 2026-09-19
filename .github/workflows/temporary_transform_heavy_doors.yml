@@ -1,0 +1,33 @@
+name: Apply transformed heavy-door footprint
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_transform_heavy_doors.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply local-grid heavy door patch
+        run: python3 .github/scripts/temporary_transform_heavy_doors.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify patched mod builds before committing
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit isolated power and Alarm changes on master
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformDoorRuntime.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformSurfaceDoorRuntime.java
+          git commit -m 'Power transformed heavy doors through their upper logical footprint'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformAlarmRuntime.java
+          git commit -m 'Restrict elevated transformed Alarm door checks to actual heavy doors'
+          git push origin HEAD:master

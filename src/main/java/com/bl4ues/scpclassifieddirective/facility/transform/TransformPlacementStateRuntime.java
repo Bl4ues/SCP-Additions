@@ -216,7 +216,8 @@ public final class TransformPlacementStateRuntime {
     public static BlockState surfacePlacementState(ServerPlayer player,
             BlockItem item, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, Vec3 hit) {
-        return surfacePlacementState(player, item, surface, slot, hit, 1);
+        return surfacePlacementState(player, item, surface, slot, hit,
+                TransformSurfaceGeometry.MAIN_SIDE);
     }
 
     public static BlockState surfacePlacementState(ServerPlayer player,
@@ -320,8 +321,9 @@ public final class TransformPlacementStateRuntime {
                 ConstructionSurface.SurfaceSlot slot = entry.getKey();
                 double u = (slot.column() + 0.5D) / surface.columns();
                 double v = (slot.row() + 0.5D) / surface.rows();
-                Vec3 center = surface.gridPoint(u, v)
-                        .add(surface.gridNormal(u, v).scale(0.5D));
+                Vec3 center = TransformSurfaceGeometry.cellCenter(
+                        surface, slot, TransformSurfaceGeometry.MAIN_SIDE,
+                        false);
                 double candidate = center.distanceToSqr(world);
                 if (candidate < distance) {
                     distance = candidate;
@@ -353,7 +355,8 @@ public final class TransformPlacementStateRuntime {
 
     private static BlockState localizeForSurface(BlockState state,
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot) {
-        return localizeForSurface(state, surface, slot, 1);
+        return localizeForSurface(state, surface, slot,
+                TransformSurfaceGeometry.MAIN_SIDE);
     }
 
     private static BlockState localizeForSurface(BlockState state,

@@ -183,6 +183,12 @@ public final class TransformDoorRuntime {
                             ref.cell().offset(0, up, 0));
                 }
             }
+            if (!powered
+                    && state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                powered = TransformPowerQuery.doorPanelPowered(level, group,
+                        ref.cell(), state.getValue(HorizontalDirectionalBlock.FACING),
+                        HeavyDoorPowerRelay.isHeavyDoorState(state.getBlock()));
+            }
             if (address.stage() == DoorStage.CLOSED && powered) {
                 start(level, group, ref.cell(), address.family(), true);
             } else if (address.stage() == DoorStage.OPEN && !powered) {

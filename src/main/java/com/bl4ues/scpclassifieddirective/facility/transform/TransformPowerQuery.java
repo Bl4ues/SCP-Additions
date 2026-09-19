@@ -208,8 +208,10 @@ public final class TransformPowerQuery {
                 replace(owner, List.of());
                 return;
             }
+            TransformGroup.GridPos visual =
+                    TransformWallFixturePlacement.visualCell(cell, state);
             replace(owner, List.of(new SourcePoint(group.dimension(),
-                    group.cellCenter(cell))));
+                    group.cellCenter(visual))));
         }
 
         private void replaceSurface(ConstructionSurface surface) {
@@ -232,22 +234,31 @@ public final class TransformPowerQuery {
             ConstructionSurface.SurfaceAttachment main =
                     surface.attachments().get(slot);
             if (main != null && source(main.state())) {
+                ConstructionSurface.SurfaceSlot visual =
+                        TransformWallFixturePlacement.visualSlot(surface,
+                                slot, main.state(), 1);
                 points.add(new SourcePoint(surface.dimension(),
-                        TransformSurfaceGeometry.cellCenter(surface, slot,
+                        TransformSurfaceGeometry.cellCenter(surface, visual,
                                 1, false)));
             }
             ConstructionSurface.SurfaceAttachment positive =
                     surface.overlay(slot, 1);
             if (positive != null && source(positive.state())) {
+                ConstructionSurface.SurfaceSlot visual =
+                        TransformWallFixturePlacement.visualSlot(surface,
+                                slot, positive.state(), 1);
                 points.add(new SourcePoint(surface.dimension(),
-                        TransformSurfaceGeometry.cellCenter(surface, slot,
+                        TransformSurfaceGeometry.cellCenter(surface, visual,
                                 1, true)));
             }
             ConstructionSurface.SurfaceAttachment negative =
                     surface.overlay(slot, -1);
             if (negative != null && source(negative.state())) {
+                ConstructionSurface.SurfaceSlot visual =
+                        TransformWallFixturePlacement.visualSlot(surface,
+                                slot, negative.state(), -1);
                 points.add(new SourcePoint(surface.dimension(),
-                        TransformSurfaceGeometry.cellCenter(surface, slot,
+                        TransformSurfaceGeometry.cellCenter(surface, visual,
                                 -1, true)));
             }
             replace(owner, points);

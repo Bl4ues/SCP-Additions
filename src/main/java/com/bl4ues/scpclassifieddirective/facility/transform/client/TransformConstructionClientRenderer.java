@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Axis;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.EditMode;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;

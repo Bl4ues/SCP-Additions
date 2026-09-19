@@ -214,8 +214,9 @@ public final class TransformControlRuntime {
         }
         data.putSurfaceState(updated);
         TransformPowerQuery.refreshSurfaceSlot(server, updated, key.slot());
-        Vec3 center = surfaceCenter(surface, key.slot(),
-                key.normalSign() == 0 ? 1 : key.normalSign());
+        Vec3 center = key.normalSign() == 0
+                ? surfaceCenter(surface, key.slot())
+                : surfaceCenter(surface, key.slot(), key.normalSign());
         level.playSound(null, center.x, center.y, center.z,
                 SoundEvents.STONE_BUTTON_CLICK_OFF, SoundSource.BLOCKS,
                 0.3F, 0.5F);
@@ -303,16 +304,14 @@ public final class TransformControlRuntime {
 
     private static Vec3 surfaceCenter(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot) {
-        return surfaceCenter(surface, slot, 1);
+        return TransformSurfaceGeometry.cellCenter(surface, slot,
+                TransformSurfaceGeometry.MAIN_SIDE, false);
     }
 
     private static Vec3 surfaceCenter(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, int normalSign) {
-        double u = (slot.column() + 0.5D) / surface.columns();
-        double v = (slot.row() + 0.5D) / surface.rows();
-        boolean overlay = normalSign != 0;
         int side = normalSign < 0 ? -1 : 1;
-        return TransformSurfaceGeometry.cellCenter(surface, slot, side, overlay);
+        return TransformSurfaceGeometry.cellCenter(surface, slot, side, true);
     }
 
     private static ServerLevel level(MinecraftServer server,

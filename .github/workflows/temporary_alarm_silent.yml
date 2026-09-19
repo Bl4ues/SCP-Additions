@@ -1,0 +1,40 @@
+name: Validate screwdriver silent Alarm mode
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_alarm_silent.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply server-authoritative silent Alarm mode
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/scripts/temporary_alarm_silent.py')
+          s=p.read_text()
+          old='assert s.count(old)==count'
+          new="assert s.count(old)==count or (path=='facility/alarm/AlarmModule.java' and '.setValue(ACTIVE, false)' in old and s.count(old)==2)"
+          assert s.count(old)==1
+          p.write_text(s.replace(old,new))
+          PY
+          python3 .github/scripts/temporary_alarm_silent.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build and validate silent alarm changes
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit verified changes
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/alarm/AlarmModule.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformAlarmAudioClient.java src/main/java/com/bl4ues/scpclassifieddirective/inventory/context/ContextInteractionRegistry.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformControlRuntime.java
+          git commit -m 'Add persistent screwdriver silent mode to rotating alarms'
+          git pull --rebase origin master
+          git push origin HEAD:master

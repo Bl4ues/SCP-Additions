@@ -15,72 +15,65 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Keep nearest Surface hover consistent with placement and avoid per-frame payload scans
+      - name: Match Surface hover to nearest placement target and avoid per-frame payload scans
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java')
           t = path.read_text(encoding='utf-8')
-          begin = t.index('    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(')
-          end = t.index('    private static void renderLogicalSurfaceSlot(', begin)
-          t = t[:begin] + '''    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(
-                      LocalPlayer player) {
-                  if (player == null) return null;
-                  Minecraft minecraft = Minecraft.getInstance();
-                  if (minecraft.level == null) return null;
-                  // Editor selection changes visible guides, never where a
-                  // construction/use ray actually hits the nearest Surface.
-                  return TransformSurfaceRaycast.target(player,
-                          TransformConstructionClientState.surfaces(
-                                  minecraft.level.dimension().location()));
-              }
+          start = t.index('    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(')
+          end = t.index('    private static void renderLogicalSurfaceSlot(', start)
+          method = '''    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(
+                  LocalPlayer player) {
+              if (player == null) return null;
+              Minecraft minecraft = Minecraft.getInstance();
+              if (minecraft.level == null) return null;
+              // Selected editor surfaces do not override the closest logical hit.
+              return TransformSurfaceRaycast.target(player,
+                      TransformConstructionClientState.surfaces(
+                              minecraft.level.dimension().location()));
+          }
 
-          '''.replace('                  ', '        ') + t[end:]
-          old = '''        boolean positivePayload = surface.overlays().keySet().stream()
-                      .anyMatch(key -> key.normalSign() > 0);
-                  boolean negativePayload = !surface.attachments().isEmpty()
-                      || surface.overlays().keySet().stream()
-                              .anyMatch(key -> key.normalSign() < 0);
-          '''.replace('                  ', '        ')
-          if t.count(old) != 1:
-              raise RuntimeError('Surface grid scan code changed; abort')
-          t = t.replace(old, '', 1)
-          old_call = 'camera, positivePayload, negativePayload)'
-          if t.count(old_call) != 2:
-              raise RuntimeError('Surface grid call count changed; abort')
-          t = t.replace(old_call, 'camera)', 2)
-          old_sig = '''            ConstructionSurface surface, double u, double v, Vec3 camera,
-                      boolean positivePayload, boolean negativePayload) {'''.replace('                      ', '            ')
-          if t.count(old_sig) != 1:
-              raise RuntimeError('Surface grid helper signature changed; abort')
-          t = t.replace(old_sig, '            ConstructionSurface surface, double u, double v, Vec3 camera) {', 1)
-          p = '''        } else if (cached.surface() != surface
-            && !TransformConstructionClientControls.previewingSurface(
-                    surface.id())) {'''
-          q = '''        } else if (cached.surface() != surface
-                && !TransformConstructionClientControls.previewingSurface(
-                        surface.id())) {'''
-          if t.count(p) != 1: raise RuntimeError('Preview cache formatting changed')
-          t = t.replace(p, q, 1)
+          '''
+          t = t[:start] + method + t[end:]
+          start = t.index('        boolean positivePayload = surface.overlays().keySet().stream()')
+          end = t.index('        for (int column = 0; column <= columns; column++)', start)
+          t = t[:start] + t[end:]
+          old = 'camera, positivePayload, negativePayload)'
+          if t.count(old) != 4: raise RuntimeError('Unexpected Surface guide calls: %d' % t.count(old))
+          t = t.replace(old, 'camera)')
+          old = '''            ConstructionSurface surface, double u, double v, Vec3 camera,
+                      boolean positivePayload, boolean negativePayload) {'''
+          if t.count(old) != 1: raise RuntimeError('Unexpected Surface guide signature: %d' % t.count(old))
+          t = t.replace(old, '            ConstructionSurface surface, double u, double v, Vec3 camera) {', 1)
+          old = '''        } else if (cached.surface() != surface
+              && !TransformConstructionClientControls.previewingSurface(
+                      surface.id())) {'''
+          new = '''        } else if (cached.surface() != surface
+                  && !TransformConstructionClientControls.previewingSurface(
+                          surface.id())) {'''
+          if t.count(old) != 1: raise RuntimeError('Unexpected deferred rebake guard: %d' % t.count(old))
+          t = t.replace(old, new, 1)
           path.write_text(t, encoding='utf-8')
-          controls = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java')
-          t = controls.read_text(encoding='utf-8')
-          begin = t.index('    /** Live handle movement only changes the authoring preview; collision,')
-          end = t.index('    @SubscribeEvent(priority = EventPriority.HIGHEST)', begin)
-          t = t[:begin] + '''    /** Live handle movement only changes authoring guides; collision,
-                  * lighting and expensive payload meshes are finalized on release. */
-                 static boolean previewingSurface(UUID id) {
-                     return id != null && drag != null && drag.remembered()
-                             && drag.selection().type() == SelectionType.SURFACE
-                             && id.equals(drag.selection().id());
-                 }
+          path = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java')
+          t = path.read_text(encoding='utf-8')
+          start = t.index('    /** Live handle movement only changes the authoring preview; collision,')
+          end = t.index('    @SubscribeEvent(priority = EventPriority.HIGHEST)', start)
+          clean = '''    /** Live handle movement only changes the authoring preview; collision,
+              * lighting and expensive payload meshes are finalized on release. */
+             static boolean previewingSurface(UUID id) {
+                 return id != null && drag != null && drag.remembered()
+                         && drag.selection().type() == SelectionType.SURFACE
+                         && id.equals(drag.selection().id());
+             }
 
-          '''.replace('                 ', '    ') + t[end:]
-          controls.write_text(t, encoding='utf-8')
+          '''
+          t = t[:start] + clean + t[end:]
+          path.write_text(t, encoding='utf-8')
           PY
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java
-          git commit -m 'Keep Surface hover and edit guide independent of stale selection'
+          git commit -m 'Unify Surface hovered target and skip redundant grid payload scans'
           git push origin HEAD:master

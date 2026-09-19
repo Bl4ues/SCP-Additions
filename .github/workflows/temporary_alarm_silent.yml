@@ -24,6 +24,7 @@ jobs:
           p.write_text(s)
           PY
           python3 .github/scripts/temporary_alarm_silent.py
+          git restore .github/scripts/temporary_alarm_silent.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

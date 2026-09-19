@@ -122,6 +122,7 @@ public final class TransformConstructionClientState {
         dimension = nextDimension;
         groups = nextGroups == null ? List.of() : List.copyOf(nextGroups);
         surfaces = nextSurfaces == null ? List.of() : List.copyOf(nextSurfaces);
+        TransformAlarmClientRenderer.resetIndices();
         rebuildProxyCells();
         TransformAlarmAudioClient.sync(groups, surfaces);
         if (selection != null && !selectionStillExists()) selection = null;
@@ -147,6 +148,7 @@ public final class TransformConstructionClientState {
         blockedPlacement = null;
         blockedPlacementUntil = 0L;
         TransformAlarmAudioClient.clear();
+        TransformAlarmClientRenderer.resetIndices();
     }
 
     public static ResourceLocation dimension() {
@@ -288,6 +290,7 @@ public final class TransformConstructionClientState {
             BlockState previous = current.cells().get(cell);
             next.set(index, current.withCell(cell, state));
             groups = List.copyOf(next);
+            TransformAlarmClientRenderer.groupCellChanged(groupId, cell, state);
             TransformConstructionClientRenderer.markGroupCellDirty(
                     groupId, cell);
             if (physicsChanged(previous, state)) {
@@ -310,6 +313,8 @@ public final class TransformConstructionClientState {
                     current.attachments().get(slot);
             next.set(index, current.withAttachment(slot, state, deform));
             surfaces = List.copyOf(next);
+            TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                    next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
                     surfaceId, slot);
             if (previous == null || previous.deform() != deform
@@ -334,6 +339,8 @@ public final class TransformConstructionClientState {
             next.set(index, current.withOverlay(slot, normalSign,
                     state, deform));
             surfaces = List.copyOf(next);
+            TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                    next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
                     surfaceId, slot);
             if (previous == null || previous.deform() != deform
@@ -355,6 +362,8 @@ public final class TransformConstructionClientState {
             if (!surfaceId.equals(current.id())) continue;
             next.set(index, current.withoutOverlay(slot, normalSign));
             surfaces = List.copyOf(next);
+            TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                    next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
                     surfaceId, slot);
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
@@ -373,6 +382,7 @@ public final class TransformConstructionClientState {
             if (!groupId.equals(current.id())) continue;
             next.set(index, current.withoutCell(cell));
             groups = List.copyOf(next);
+            TransformAlarmClientRenderer.groupCellChanged(groupId, cell, null);
             TransformConstructionClientRenderer.markGroupCellDirty(
                     groupId, cell);
             rebuildGroupCellProxyCells(groupId, cell);
@@ -390,6 +400,8 @@ public final class TransformConstructionClientState {
             if (!surfaceId.equals(current.id())) continue;
             next.set(index, current.withoutAttachment(slot));
             surfaces = List.copyOf(next);
+            TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
+                    next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
                     surfaceId, slot);
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
@@ -425,6 +437,7 @@ public final class TransformConstructionClientState {
     public static void upsertGroup(TransformGroup replacement) {
         if (replacement == null || dimension == null
                 || !dimension.equals(replacement.dimension())) return;
+        TransformAlarmClientRenderer.invalidateGroup(replacement.id());
         ArrayList<TransformGroup> next = new ArrayList<>(groups);
         for (int index = 0; index < next.size(); index++) {
             if (next.get(index).id().equals(replacement.id())) {
@@ -442,6 +455,7 @@ public final class TransformConstructionClientState {
     public static void upsertSurface(ConstructionSurface replacement) {
         if (replacement == null || dimension == null
                 || !dimension.equals(replacement.dimension())) return;
+        TransformAlarmClientRenderer.invalidateSurface(replacement.id());
         ArrayList<ConstructionSurface> next = new ArrayList<>(surfaces);
         for (int index = 0; index < next.size(); index++) {
             if (next.get(index).id().equals(replacement.id())) {

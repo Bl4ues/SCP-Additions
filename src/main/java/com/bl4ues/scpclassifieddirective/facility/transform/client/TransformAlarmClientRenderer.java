@@ -19,6 +19,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -39,7 +40,65 @@ public final class TransformAlarmClientRenderer {
     private static final Map<SurfaceKey, AlarmModule.AlarmBlockEntity>
             SURFACE_HOSTS = new HashMap<>();
 
+    private static final Map<UUID, Set<TransformGroup.GridPos>> GROUP_ALARMS =
+            new HashMap<>();
+    private static final Map<UUID, Set<SurfaceKey>> SURFACE_ALARMS =
+            new HashMap<>();
+
     private TransformAlarmClientRenderer() {
+    }
+
+    /** A full snapshot changes logical owners; discard their address caches. */
+    static void resetIndices() {
+        GROUP_ALARMS.clear();
+        SURFACE_ALARMS.clear();
+        GROUP_HOSTS.clear();
+        SURFACE_HOSTS.clear();
+    }
+
+    static void invalidateGroup(UUID id) {
+        GROUP_ALARMS.remove(id);
+        GROUP_HOSTS.keySet().removeIf(key -> key.groupId().equals(id));
+    }
+
+    static void invalidateSurface(UUID id) {
+        SURFACE_ALARMS.remove(id);
+        SURFACE_HOSTS.keySet().removeIf(key -> key.surfaceId().equals(id));
+    }
+
+    /** A runtime cell delta must never rescan the entire authored room. */
+    static void groupCellChanged(UUID id, TransformGroup.GridPos cell,
+            BlockState state) {
+        Set<TransformGroup.GridPos> refs = GROUP_ALARMS.get(id);
+        boolean alarm = state != null && AlarmModule.isController(state);
+        if (refs != null) {
+            if (alarm) refs.add(cell);
+            else refs.remove(cell);
+        }
+        if (!alarm) GROUP_HOSTS.remove(new CellKey(id, cell));
+    }
+
+    static void surfaceSlotChanged(UUID id,
+            ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface surface) {
+        Set<SurfaceKey> refs = SURFACE_ALARMS.get(id);
+        if (refs == null) return;
+        refs.removeIf(key -> key.slot().equals(slot));
+        ConstructionSurface.SurfaceAttachment main =
+                surface.attachments().get(slot);
+        if (main != null && AlarmModule.isController(main.state())) {
+            refs.add(new SurfaceKey(id, slot,
+                    TransformSurfaceGeometry.MAIN_SIDE, false));
+        }
+        for (int side : new int[]{-1, 1}) {
+            ConstructionSurface.SurfaceAttachment overlay =
+                    surface.overlay(slot, side);
+            if (overlay != null && AlarmModule.isController(overlay.state())) {
+                refs.add(new SurfaceKey(id, slot, side, true));
+            }
+        }
+        SURFACE_HOSTS.keySet().removeIf(key -> key.surfaceId().equals(id)
+                && key.slot().equals(slot) && !refs.contains(key));
     }
 
     @SubscribeEvent
@@ -49,8 +108,7 @@ public final class TransformAlarmClientRenderer {
         }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) {
-            GROUP_HOSTS.clear();
-            SURFACE_HOSTS.clear();
+            resetIndices();
             return;
         }
         Vec3 camera = event.getCamera().getPosition();
@@ -68,46 +126,58 @@ public final class TransformAlarmClientRenderer {
             renderSurface(minecraft, event, pose, buffers, camera, surface);
         }
 
-        Set<CellKey> groupKeys = groups.stream().flatMap(group ->
-                group.cells().entrySet().stream()
-                        .filter(entry -> AlarmModule.isController(entry.getValue()))
-                        .map(entry -> new CellKey(group.id(), entry.getKey())))
+        // Rendering examines only Alarm addresses; updating an animated door
+        // elsewhere in the grid does not require a full membership scan.
+        Set<UUID> groupIds = groups.stream().map(TransformGroup::id)
                 .collect(Collectors.toSet());
-        GROUP_HOSTS.keySet().removeIf(key -> !groupKeys.contains(key));
+        Set<UUID> surfaceIds = surfaces.stream().map(ConstructionSurface::id)
+                .collect(Collectors.toSet());
+        GROUP_ALARMS.keySet().retainAll(groupIds);
+        SURFACE_ALARMS.keySet().retainAll(surfaceIds);
+        GROUP_HOSTS.keySet().removeIf(key -> !groupIds.contains(key.groupId())
+                || !GROUP_ALARMS.getOrDefault(key.groupId(), Set.of())
+                        .contains(key.cell()));
+        SURFACE_HOSTS.keySet().removeIf(key -> !surfaceIds.contains(key.surfaceId())
+                || !SURFACE_ALARMS.getOrDefault(key.surfaceId(), Set.of())
+                        .contains(key));
+    }
 
-        Set<SurfaceKey> surfaceKeys = new java.util.HashSet<>();
-        for (ConstructionSurface surface : surfaces) {
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                if (AlarmModule.isController(entry.getValue().state())) {
-                    surfaceKeys.add(new SurfaceKey(surface.id(),
-                            entry.getKey(),
+    private static Set<TransformGroup.GridPos> groupAlarms(TransformGroup group) {
+        return GROUP_ALARMS.computeIfAbsent(group.id(), ignored -> {
+            Set<TransformGroup.GridPos> cells = new HashSet<>();
+            group.cells().forEach((cell, state) -> {
+                if (AlarmModule.isController(state)) cells.add(cell);
+            });
+            return cells;
+        });
+    }
+
+    private static Set<SurfaceKey> surfaceAlarms(ConstructionSurface surface) {
+        return SURFACE_ALARMS.computeIfAbsent(surface.id(), ignored -> {
+            Set<SurfaceKey> keys = new HashSet<>();
+            surface.attachments().forEach((slot, attachment) -> {
+                if (AlarmModule.isController(attachment.state())) {
+                    keys.add(new SurfaceKey(surface.id(), slot,
                             TransformSurfaceGeometry.MAIN_SIDE, false));
                 }
-            }
-            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.overlays().entrySet()) {
-                if (AlarmModule.isController(entry.getValue().state())) {
-                    surfaceKeys.add(new SurfaceKey(surface.id(),
-                            entry.getKey().slot(),
-                            entry.getKey().normalSign() < 0 ? -1 : 1, true));
+            });
+            surface.overlays().forEach((slot, attachment) -> {
+                if (AlarmModule.isController(attachment.state())) {
+                    keys.add(new SurfaceKey(surface.id(), slot.slot(),
+                            slot.normalSign() < 0 ? -1 : 1, true));
                 }
-            }
-        }
-        SURFACE_HOSTS.keySet().removeIf(key -> !surfaceKeys.contains(key));
+            });
+            return keys;
+        });
     }
 
     private static void renderGroup(Minecraft minecraft,
             RenderLevelStageEvent event, PoseStack pose,
             MultiBufferSource.BufferSource buffers, Vec3 camera,
             TransformGroup group) {
-        for (Map.Entry<TransformGroup.GridPos, BlockState> entry
-                : group.cells().entrySet()) {
-            BlockState state = entry.getValue();
+        for (TransformGroup.GridPos cell : groupAlarms(group)) {
+            BlockState state = group.cells().get(cell);
             if (state == null || !AlarmModule.isController(state)) continue;
-            TransformGroup.GridPos cell = entry.getKey();
             Vec3 center = group.cellCenter(cell);
             if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) continue;
 
@@ -147,21 +217,14 @@ public final class TransformAlarmClientRenderer {
             RenderLevelStageEvent event, PoseStack pose,
             MultiBufferSource.BufferSource buffers, Vec3 camera,
             ConstructionSurface surface) {
-        for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                ConstructionSurface.SurfaceAttachment> entry
-                : surface.attachments().entrySet()) {
+        for (SurfaceKey key : surfaceAlarms(surface)) {
+            ConstructionSurface.SurfaceAttachment attachment = key.overlay()
+                    ? surface.overlay(key.slot(), key.normalSign())
+                    : surface.attachments().get(key.slot());
+            if (attachment == null) continue;
             renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
-                    surface, entry.getKey(),
-                    TransformSurfaceGeometry.MAIN_SIDE, false,
-                    entry.getValue().state());
-        }
-        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
-                ConstructionSurface.SurfaceAttachment> entry
-                : surface.overlays().entrySet()) {
-            renderSurfaceAlarm(minecraft, event, pose, buffers, camera,
-                    surface, entry.getKey().slot(),
-                    entry.getKey().normalSign(), true,
-                    entry.getValue().state());
+                    surface, key.slot(), key.normalSign(), key.overlay(),
+                    attachment.state());
         }
     }
 

@@ -156,7 +156,7 @@ public final class TransformGroupPlacementClient {
         // payload effectively impossible to click.
         GridTarget target = trace(player, false, state ->
                 state != null && !state.isAir()
-                        && (!interactiveOnly || interactive(state)));
+                        && (!interactiveOnly || interactive(state)), true);
         if (target == null) return null;
         return new PayloadTarget(target.group(), target.cell(),
                 target.visualCell(), target.state(), target.hit().face(),

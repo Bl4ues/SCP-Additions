@@ -14,6 +14,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -21,9 +22,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Lets empty authored surfaces remain virtual while still accepting block
- * placement. The ray is tested against each local surface cell instead of
- * relying on a vanilla proxy BlockPos.
+ * Physical Surface input uses the parametric grid and distinguishes a wall's
+ * structural payload from extra blocks mounted onto its visible faces.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -41,13 +41,12 @@ public final class TransformSurfacePlacementClient {
             return;
         }
 
-        TransformSurfaceRaycast.Target aimed = null;
+        TransformSurfaceRaycast.Target aimed;
         if (selection != null && selection.type() == SelectionType.SURFACE) {
             ConstructionSurface selectedSurface =
                     TransformConstructionClientState.surface(selection.id());
-            if (selectedSurface != null) {
-                aimed = TransformSurfaceRaycast.target(player, selectedSurface);
-            }
+            aimed = selectedSurface == null ? null
+                    : TransformSurfaceRaycast.target(player, selectedSurface);
         } else {
             aimed = TransformSurfaceRaycast.target(player,
                     TransformConstructionClientState.surfaces(
@@ -79,58 +78,68 @@ public final class TransformSurfacePlacementClient {
         }
 
         if (player.getMainHandItem().getItem() instanceof BlockItem) {
-            if (!player.isCreative()) return;
-            TransformSurfaceRaycast.Target target = aimed;
-            if (target == null) return;
+            if (!player.isCreative() || aimed == null) return;
             boolean mainOccupied =
-                    target.surface().attachments().containsKey(target.slot());
-            if (target.layer().overlay() || mainOccupied) {
+                    aimed.surface().attachments().containsKey(aimed.slot());
+            if (aimed.layer().overlay() || mainOccupied) {
+                // The main wall has a fixed authored location. Only an EXTRA
+                // block chooses a side. Main-cell ray hits describe the wall's
+                // stored +normal frame, not the side from which the builder
+                // approached it. Resolve that side from the actual eye/plane
+                // relationship so clicking inside the corridor places the
+                // fixture inward, without shifting the structural wall.
+                int side = aimed.layer().overlay()
+                        ? aimed.normalSign()
+                        : clickedSide(player, aimed.surface(), aimed.slot());
                 TransformConstructionNetwork.placeSurfaceOverlay(
-                        target.surface().id(), target.slot(),
-                        target.normalSign(), target.hit());
+                        aimed.surface().id(), aimed.slot(), side, aimed.hit());
             } else {
-                // Empty guide cells always create the physical wall toward the
-                // mapped corridor. Which side the builder stands on must not
-                // invert the authored room/interior convention.
                 TransformConstructionNetwork.placeSurfaceBlock(
-                        target.surface().id(), target.slot(), target.hit());
+                        aimed.surface().id(), aimed.slot(), aimed.hit());
             }
             event.setCanceled(true);
             return;
         }
 
-        // Runtime use resolves the authored parametric slot directly. The
-        // proxy/VoxelShape behind a curved wall is only a collision bridge and
-        // must not decide which button, lever or door the player meant to use.
         if (player.getMainHandItem().is(TransformConstructionModule.getSurfaceTool())
                 || player.getMainHandItem().is(
                         TransformConstructionModule.getOffGridTool())) {
             return;
         }
-        TransformSurfaceRaycast.Target target = aimed;
-        if (target == null) return;
-        if (target.layer().overlay()) {
+        if (aimed == null) return;
+        if (aimed.layer().overlay()) {
             ConstructionSurface.SurfaceAttachment overlay =
-                    target.surface().overlay(target.slot(),
-                            target.normalSign());
+                    aimed.surface().overlay(aimed.slot(),
+                            aimed.normalSign());
             if (overlay == null || !interactive(overlay.state())) return;
             TransformConstructionNetwork.useSurfaceOverlay(
-                    target.surface().id(), target.slot(),
-                    target.normalSign());
+                    aimed.surface().id(), aimed.slot(),
+                    aimed.normalSign());
         } else {
             ConstructionSurface.SurfaceAttachment attachment =
-                    target.surface().attachments().get(target.slot());
+                    aimed.surface().attachments().get(aimed.slot());
             if (attachment == null || !interactive(attachment.state())) return;
             TransformConstructionNetwork.useSurfaceSlot(
-                    target.surface().id(), target.slot());
+                    aimed.surface().id(), aimed.slot());
         }
         event.setCanceled(true);
     }
+
+    private static int clickedSide(LocalPlayer player,
+            ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot) {
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 plane = surface.gridPoint(u, v);
+        Vec3 normal = surface.gridNormal(u, v);
+        return player.getEyePosition().subtract(plane).dot(normal) < 0.0D
+                ? -1 : 1;
+    }
+
     private static boolean interactive(BlockState state) {
         return state != null && (state.getBlock() instanceof ButtonBlock
                 || state.getBlock() instanceof LeverBlock
                 || TransformWallFixturePlacement.isDoorButton(state)
                 || FacilityModule.isFacilityDoor(state));
     }
-
 }

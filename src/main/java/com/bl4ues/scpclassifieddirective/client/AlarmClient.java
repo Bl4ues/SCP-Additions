@@ -317,7 +317,7 @@ public final class AlarmClient {
                 MultiBufferSource bufferSource, int packedLight,
                 int packedOverlay) {
             renderInternal(alarm, partialTick, poseStack, bufferSource,
-                    packedLight, packedOverlay, true);
+                    packedLight, packedOverlay, true, null);
         }
 
         /**
@@ -331,8 +331,16 @@ public final class AlarmClient {
                 float partialTick, PoseStack poseStack,
                 MultiBufferSource bufferSource, int packedLight,
                 int packedOverlay) {
+            renderTransformed(alarm, partialTick, poseStack, bufferSource,
+                    packedLight, packedOverlay, null);
+        }
+
+        public void renderTransformed(AlarmModule.AlarmBlockEntity alarm,
+                float partialTick, PoseStack poseStack,
+                MultiBufferSource bufferSource, int packedLight,
+                int packedOverlay, Vec3 cameraInBlock) {
             renderInternal(alarm, partialTick, poseStack, bufferSource,
-                    packedLight, packedOverlay, false);
+                    packedLight, packedOverlay, false, cameraInBlock);
             if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
                 renderTransformedLocalProjection(alarm, partialTick,
                         poseStack, bufferSource);
@@ -342,7 +350,8 @@ public final class AlarmClient {
         private void renderInternal(AlarmModule.AlarmBlockEntity alarm,
                 float partialTick, PoseStack poseStack,
                 MultiBufferSource bufferSource, int packedLight,
-                int packedOverlay, boolean projectIntoWorld) {
+                int packedOverlay, boolean projectIntoWorld,
+                Vec3 transformedCameraInBlock) {
             Vec3 mountOffset = AlarmMountStructure.visualOffset(
                     alarm.getBlockState());
             boolean active = alarm.getBlockState()
@@ -362,7 +371,7 @@ public final class AlarmClient {
                 // between block entities, so a single Alarm behaves identically
                 // to two Alarms facing opposite sides of the same wall.
                 renderLitLamp(alarm, poseStack, bufferSource,
-                        angle, mountOffset);
+                        angle, mountOffset, transformedCameraInBlock);
             }
 
             poseStack.pushPose();
@@ -400,7 +409,7 @@ public final class AlarmClient {
     private static void renderLitLamp(
             AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
             MultiBufferSource buffers, float rotorAngle,
-            Vec3 mountOffset) {
+            Vec3 mountOffset, Vec3 transformedCameraInBlock) {
         /*
          * The orange shell is slightly larger than the pale lit cube, but only
          * the current camera-facing SILHOUETTE is submitted. Shared fold edges
@@ -411,14 +420,14 @@ public final class AlarmClient {
         RenderType outlineType = RenderType.entityCutoutNoCull(LAMP_OUTLINE);
         VertexConsumer outline = buffers.getBuffer(outlineType);
         emitLampOutline(alarm, poseStack, outline, rotorAngle,
-                mountOffset);
+                mountOffset, transformedCameraInBlock);
         flush(buffers, outlineType);
 
         RenderType outlineGlowType = RenderType.eyes(
                 LAMP_OUTLINE_EMISSIVE);
         VertexConsumer outlineGlow = buffers.getBuffer(outlineGlowType);
         emitLampOutline(alarm, poseStack, outlineGlow, rotorAngle,
-                mountOffset);
+                mountOffset, transformedCameraInBlock);
         flush(buffers, outlineGlowType);
 
         RenderType lampType = RenderType.entityCutoutNoCull(TEXTURE);
@@ -495,11 +504,14 @@ public final class AlarmClient {
 
     private static void emitLampOutline(
             AlarmModule.AlarmBlockEntity alarm, PoseStack poseStack,
-            VertexConsumer consumer, float angle, Vec3 mountOffset) {
+            VertexConsumer consumer, float angle, Vec3 mountOffset,
+            Vec3 transformedCameraInBlock) {
         Direction facing = alarm.getBlockState().getValue(AlarmModule.FACING);
         BlockPos origin = alarm.getBlockPos();
-        Vec3 cameraPosition = Minecraft.getInstance().gameRenderer
-                .getMainCamera().getPosition();
+        boolean localCamera = transformedCameraInBlock != null;
+        Vec3 cameraPosition = localCamera ? transformedCameraInBlock
+                : Minecraft.getInstance().gameRenderer
+                        .getMainCamera().getPosition();
 
         // Original lit cube:
         // X [-0.70, 0.70], Y [7.30, 8.70], Z [6.25, 7.75].
@@ -518,66 +530,66 @@ public final class AlarmClient {
 
         // X-axis edges: adjacent +/-Y and +/-Z faces.
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, oy0, oz0, ox1, iy0, iz0,
                 new Vec3(0.0D, -1.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, -1.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, iy1, oz0, ox1, oy1, iz0,
                 new Vec3(0.0D, 1.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, -1.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, oy0, iz1, ox1, iy0, oz1,
                 new Vec3(0.0D, -1.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, 1.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, iy1, iz1, ox1, oy1, oz1,
                 new Vec3(0.0D, 1.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, 1.0D));
 
         // Y-axis edges: adjacent +/-X and +/-Z faces.
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, iy0, oz0, ix0, iy1, iz0,
                 new Vec3(-1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, -1.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ix1, iy0, oz0, ox1, iy1, iz0,
                 new Vec3(1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, -1.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, iy0, iz1, ix0, iy1, oz1,
                 new Vec3(-1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, 1.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ix1, iy0, iz1, ox1, iy1, oz1,
                 new Vec3(1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, 0.0D, 1.0D));
 
         // Z-axis edges: adjacent +/-X and +/-Y faces.
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, oy0, iz0, ix0, iy0, iz1,
                 new Vec3(-1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, -1.0D, 0.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ix1, oy0, iz0, ox1, iy0, iz1,
                 new Vec3(1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, -1.0D, 0.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ox0, iy1, iz0, ix0, oy1, iz1,
                 new Vec3(-1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, 1.0D, 0.0D));
         silhouetteLampEdge(consumer, poseStack, alarm, facing, origin,
-                cameraPosition, angle, mountOffset,
+                cameraPosition, localCamera, angle, mountOffset,
                 ix1, iy1, iz0, ox1, oy1, iz1,
                 new Vec3(1.0D, 0.0D, 0.0D),
                 new Vec3(0.0D, 1.0D, 0.0D));
@@ -586,17 +598,18 @@ public final class AlarmClient {
     private static void silhouetteLampEdge(VertexConsumer consumer,
             PoseStack poseStack, AlarmModule.AlarmBlockEntity alarm,
             Direction facing, BlockPos origin, Vec3 cameraPosition,
-            float angle, Vec3 mountOffset,
+            boolean localCamera, float angle, Vec3 mountOffset,
             double x0, double y0, double z0,
             double x1, double y1, double z1,
             Vec3 adjacentNormalA, Vec3 adjacentNormalB) {
         Vec3 midpoint = new Vec3((x0 + x1) * 0.5D,
                 (y0 + y1) * 0.5D, (z0 + z1) * 0.5D);
         Vec3 rotatedMidpoint = rotateModelPoint(midpoint, angle);
-        Vec3 worldMidpoint = modelPointToWorld(origin, facing,
+        Vec3 visibleMidpoint = modelPointToWorld(
+                localCamera ? BlockPos.ZERO : origin, facing,
                 rotatedMidpoint.x, rotatedMidpoint.y, rotatedMidpoint.z,
                 mountOffset);
-        Vec3 toCamera = cameraPosition.subtract(worldMidpoint);
+        Vec3 toCamera = cameraPosition.subtract(visibleMidpoint);
 
         boolean faceAVisible = rotateModelVector(adjacentNormalA,
                 angle, facing).dot(toCamera) >= 0.0D;

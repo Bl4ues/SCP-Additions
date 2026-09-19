@@ -4,8 +4,10 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
+import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.BlockItem;
@@ -28,9 +30,6 @@ public final class TransformSurfacePlacementClient {
     private TransformSurfacePlacementClient() {
     }
 
-    // Group authoring has first refusal at HIGHEST. Only handle an event once:
-    // forwarding the same use to both grids can toggle two controls or create
-    // duplicate attachments from one physical mouse press.
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
         if (!event.isUseItem() || event.isCanceled()) return;
@@ -45,10 +44,9 @@ public final class TransformSurfacePlacementClient {
         boolean placing = player.isCreative()
                 && player.getMainHandItem().getItem() instanceof BlockItem;
 
-        // Check the target relevant to the current action. A shifted button
-        // should not steal a block-placement click, while an empty construction
-        // cell must not steal a button-use click. Neither comparison depends on
-        // the last selected Surface or on the parent world's proxy AABB.
+        // Only the nearest target for the current action receives this click.
+        // Neither the previous editor selection nor a vanilla proxy AABB owns
+        // placement or interaction in an authored local grid.
         if (placing) {
             TransformGroupPlacementClient.Target group =
                     TransformGroupPlacementClient.findTarget(player);
@@ -64,10 +62,15 @@ public final class TransformSurfacePlacementClient {
             if (surface == null) return;
             boolean occupied = surface.surface().attachments()
                     .containsKey(surface.slot());
-            if (surface.layer().overlay() || occupied) {
-                int side = surface.layer().overlay()
-                        ? surface.normalSign()
-                        : clickedSide(player, surface.surface(), surface.slot());
+            int side = surface.layer().overlay()
+                    ? surface.normalSign()
+                    : clickedSide(player, surface.surface(), surface.slot());
+            // The main wall occupies +normal. Building from its opposite side
+            // must author the inner overlay even if the main slot is empty;
+            // otherwise the first inside click unexpectedly puts a block on
+            // the exterior and prevents independent corridor finishing.
+            if (surface.layer().overlay() || occupied
+                    || side != TransformSurfaceGeometry.MAIN_SIDE) {
                 TransformConstructionNetwork.placeSurfaceOverlay(
                         surface.surface().id(), surface.slot(), side,
                         surface.hit());
@@ -135,6 +138,7 @@ public final class TransformSurfacePlacementClient {
         return state != null && (state.getBlock() instanceof ButtonBlock
                 || state.getBlock() instanceof LeverBlock
                 || TransformWallFixturePlacement.isDoorButton(state)
+                || KeycardReaderLevels.describe(state) != null
                 || FacilityModule.isFacilityDoor(state));
     }
 }

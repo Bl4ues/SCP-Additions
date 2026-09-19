@@ -948,6 +948,37 @@ public final class TransformConstructionClientControls {
                 && !(independentEdgeHandles && edgeHandle(handle))) {
             ConstructionSurface moved = surface.withGeometry(bs, be, ts, te,
                     curve, heightCurve);
+            // When the entire edge is close to another Surface boundary,
+            // match both endpoints and its Bezier bend. Matching only the
+            // midpoint would leave holes away from the handle.
+            TransformSurfaceSnapClient.EdgeJoin join = edgeHandle(handle)
+                    ? TransformSurfaceSnapClient.matchEdge(moved, handle,
+                            surface.id()) : null;
+            if (join != null) {
+                switch (handle) {
+                    case BOTTOM_EDGE -> {
+                        bs = join.start();
+                        be = join.end();
+                        curve = join.bend();
+                    }
+                    case TOP_EDGE -> {
+                        ts = join.start();
+                        te = join.end();
+                        curve = join.bend();
+                    }
+                    case START_EDGE -> {
+                        bs = join.start();
+                        ts = join.end();
+                        heightCurve = join.bend();
+                    }
+                    case END_EDGE -> {
+                        be = join.start();
+                        te = join.end();
+                        heightCurve = join.bend();
+                    }
+                    default -> { }
+                }
+            } else {
             Vec3 handlePoint = handlePosition(moved, handle);
             Vec3 adjustment = TransformSurfaceSnapClient.snap(handlePoint,
                     surface.id()).subtract(handlePoint);
@@ -975,6 +1006,7 @@ public final class TransformConstructionClientControls {
                     }
                     case CENTER -> { }
                 }
+            }
             }
         }
 

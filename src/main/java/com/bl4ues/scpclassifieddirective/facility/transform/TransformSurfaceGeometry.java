@@ -19,6 +19,11 @@ import java.util.List;
 
 /** Shared world-space geometry for rigid and curve-deformed surface payloads. */
 public final class TransformSurfaceGeometry {
+    /** The main wall payload occupies the mapped/corridor side of the guide. */
+    public static final int MAIN_SIDE = -1;
+    /** +normal is the exterior side used by Facility Mapping. */
+    public static final int OUTER_SIDE = 1;
+
     private static final int CURVE_U_SUBDIVISIONS = 4;
     private static final int CURVE_V_SUBDIVISIONS = 3;
     private static final int RIGID_SUBDIVISIONS = 2;
@@ -53,7 +58,7 @@ public final class TransformSurfaceGeometry {
     public static List<AABB> collisionBoxes(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment) {
-        return collisionBoxes(surface, slot, attachment, 1, false);
+        return collisionBoxes(surface, slot, attachment, MAIN_SIDE, false);
     }
 
     public static List<AABB> collisionBoxes(ConstructionSurface surface,

@@ -17,9 +17,11 @@ jobs:
           p=Path('.github/scripts/temporary_alarm_silent.py')
           s=p.read_text()
           old='assert s.count(old)==count'
-          new="assert s.count(old)==count or (path=='facility/alarm/AlarmModule.java' and '.setValue(ACTIVE, false)' in old and s.count(old)==2)"
+          new="assert s.count(old)==count or (path=='facility/alarm/AlarmModule.java' and '.setValue(ACTIVE, false)' in old and s.count(old)==2) or (path=='facility/transform/client/TransformAlarmAudioClient.java' and old.strip()=='&& state.getValue(AlarmModule.ACTIVE);' and s.count(old)==2)"
           assert s.count(old)==1
-          p.write_text(s.replace(old,new))
+          s=s.replace(old,new)
+          s='\n'.join(line for line in s.split('\n') if not line.startswith("patch(path,'            boolean active = state.hasProperty(AlarmModule.ACTIVE)"))
+          p.write_text(s)
           PY
           python3 .github/scripts/temporary_alarm_silent.py
       - uses: actions/setup-java@v4

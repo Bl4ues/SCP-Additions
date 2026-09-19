@@ -531,7 +531,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             MapTransform transform, double mouseX, double mouseY) {
         if (leaveConfirmation || floorMenuOpen) return null;
         MapDoorMarker best = null;
-        double bestDistance = 9.0D * 9.0D;
+        double bestDistance = 12.0D * 12.0D;
         for (MapDoorMarker marker : markers) {
             if (!marker.controllable()) continue;
             List<Vec3> path = doorPath(marker);
@@ -574,18 +574,34 @@ public final class Scp079FacilityMapScreen extends Screen {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
-        int badge = locked ? 0xFF66747A : 0xFFF1FAFD;
-        graphics.fill(x - 4, y - 4, x + 5, y + 5, badge);
-        drawCenteredMapLabel(graphics, value, x, y, 0.70F, 0xFF071116);
+
+        // Credential badges are screen-space UI, not world geometry. Keep the
+        // square and glyph readable at every map zoom and cover the closed-door
+        // bar cleanly at its center.
+        int half = 7;
+        int badge = locked ? 0xFF77868B : 0xFFF1FAFD;
+        graphics.fill(x - half, y - half, x + half + 1, y + half + 1, badge);
+        border(graphics, x - half, y - half, half * 2 + 1, half * 2 + 1,
+                locked ? 0xFF89989D : 0xFFFFFFFF);
+        drawFixedCenteredMapLabel(graphics, value, x, y,
+                locked ? 0xFF172126 : 0xFF071116);
     }
 
     private void renderOpenKeycardLevel(GuiGraphics graphics,
             MapDoorMarker marker, MapTransform transform, int color) {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
-        drawCenteredMapLabel(graphics,
+        drawFixedCenteredMapLabel(graphics,
                 Integer.toString(marker.requiredLevel()),
-                x, y, 0.78F, 0xFFF1FAFD);
+                x, y, 0xFFF1FAFD);
+    }
+
+    private void drawFixedCenteredMapLabel(GuiGraphics graphics, String value,
+            int centerX, int centerY, int color) {
+        if (value == null || value.isEmpty()) return;
+        int x = centerX - font.width(value) / 2;
+        int y = centerY - font.lineHeight / 2;
+        graphics.drawString(font, value, x, y, color, false);
     }
 
     private void drawCenteredMapLabel(GuiGraphics graphics, String value,
@@ -697,15 +713,19 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private static void drawDoorLine(GuiGraphics graphics,
             double x0, double y0, double x1, double y1, int color) {
-        drawMapLine(graphics, x0, y0, x1, y1, color);
-        double dx = Math.abs(x1 - x0);
-        double dy = Math.abs(y1 - y0);
-        if (dx >= dy) {
-            drawMapLine(graphics, x0, y0 + 1.0D,
-                    x1, y1 + 1.0D, color);
-        } else {
-            drawMapLine(graphics, x0 + 1.0D, y0,
-                    x1 + 1.0D, y1, color);
+        double dx = x1 - x0;
+        double dy = y1 - y0;
+        double length = Math.hypot(dx, dy);
+        if (length < 1.0E-7D) return;
+
+        // Three symmetric samples keep the visual center on the physical door.
+        // The old +1px-only copy shifted every marker at low zoom.
+        double nx = -dy / length;
+        double ny = dx / length;
+        for (double offset : new double[]{-0.85D, 0.0D, 0.85D}) {
+            drawMapLine(graphics,
+                    x0 + nx * offset, y0 + ny * offset,
+                    x1 + nx * offset, y1 + ny * offset, color);
         }
     }
 

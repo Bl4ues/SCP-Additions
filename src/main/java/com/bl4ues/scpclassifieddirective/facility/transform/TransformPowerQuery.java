@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
+import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;

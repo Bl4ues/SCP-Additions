@@ -69,6 +69,14 @@ public final class Scp079ActivityPingManager {
         emit(level, pos, SAME_DEVICE_DEBOUNCE_TICKS);
     }
 
+    /** One activity marker for a transformed door transition. */
+    public static void emitDoorAt(ServerLevel level, Vec3 center) {
+        if (level == null || center == null) return;
+        BlockPos probe = BlockPos.containing(center);
+        emitAt(level, probe, probe, center.x, center.z,
+                DOOR_DEBOUNCE_TICKS);
+    }
+
     private static void emit(ServerLevel level, BlockPos pos,
             long debounceTicks) {
         if (level == null || pos == null) return;

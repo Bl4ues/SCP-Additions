@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
+import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.Direction;
@@ -249,6 +250,7 @@ public final class TransformDoorRuntime {
         BlockState current = group.cells().get(cell);
         BlockState first = copyFacing(current, frames.get(0).get());
         Vec3 center = group.cellCenter(cell);
+        Scp079ActivityPingManager.emitDoorAt(level, center);
         level.playSound(null, center.x, center.y, center.z,
                 (opening ? family.openingSound() : family.closingSound()).get(),
                 SoundSource.BLOCKS, 1.0F, 1.0F);

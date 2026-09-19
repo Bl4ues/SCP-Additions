@@ -1,4 +1,4 @@
-name: Apply Surface render-guide consistency correction
+name: Format transformed-grid fixes
 
 on:
   push:
@@ -15,56 +15,58 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Align hover and placement targets and reduce per-frame scans
+      - name: Format modified Surface methods without changing behavior
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java')
-          t = p.read_text(encoding='utf-8')
+          base = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client')
+          renderer = base / 'TransformConstructionClientRenderer.java'
+          t = renderer.read_text(encoding='utf-8')
           begin = t.index('    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(')
           end = t.index('    private static void renderLogicalSurfaceSlot(', begin)
-          t = t[:begin] + '''    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(
-                  LocalPlayer player) {
-              if (player == null) return null;
-              Minecraft minecraft = Minecraft.getInstance();
-              if (minecraft.level == null) return null;
-              // The selected editor surface must not override the nearest hit.
-              return TransformSurfaceRaycast.target(player,
-                      TransformConstructionClientState.surfaces(
-                              minecraft.level.dimension().location()));
-          }
-
-          ''' + t[end:]
-          begin = t.index('        boolean positivePayload = surface.overlays().keySet().stream()')
-          end = t.index('        for (int column = 0; column <= columns; column++)', begin)
-          t = t[:begin] + t[end:]
-          old = 'camera, positivePayload, negativePayload)'
-          assert t.count(old) == 4, t.count(old)
-          t = t.replace(old, 'camera)')
+          correct = ('    private static TransformSurfaceRaycast.Target aimedSurfaceTarget(\n'
+                     '            LocalPlayer player) {\n'
+                     '        if (player == null) return null;\n'
+                     '        Minecraft minecraft = Minecraft.getInstance();\n'
+                     '        if (minecraft.level == null) return null;\n'
+                     '        // Editor selection must not override the closest logical hit.\n'
+                     '        return TransformSurfaceRaycast.target(player,\n'
+                     '                TransformConstructionClientState.surfaces(\n'
+                     '                        minecraft.level.dimension().location()));\n'
+                     '    }\n\n')
+          t = t[:begin] + correct + t[end:]
           begin = t.index('    private static Vec3 visibleSurfaceGridPoint(')
           end = t.index('        Vec3 point = surface.gridPoint(u, v);', begin)
-          t = t[:begin] + '''    private static Vec3 visibleSurfaceGridPoint(
-                  ConstructionSurface surface, double u, double v, Vec3 camera) {
-          ''' + t[end:]
-          p.write_text(t, encoding='utf-8')
-          controls = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java')
+          t = t[:begin] + ('    private static Vec3 visibleSurfaceGridPoint(\n'
+                          '            ConstructionSurface surface, double u, double v,\n'
+                          '            Vec3 camera) {\n') + t[end:]
+          old = ('        } else if (cached.surface() != surface\n'
+                 '            && !TransformConstructionClientControls.previewingSurface(\n'
+                 '                    surface.id())) {')
+          new = ('        } else if (cached.surface() != surface\n'
+                 '                && !TransformConstructionClientControls.previewingSurface(\n'
+                 '                        surface.id())) {')
+          if t.count(old) == 1: t = t.replace(old, new, 1)
+          renderer.write_text(t, encoding='utf-8')
+          controls = base / 'TransformConstructionClientControls.java'
           t = controls.read_text(encoding='utf-8')
-          begin = t.index('    /** Live handle movement only changes the authoring preview; collision,')
+          begin = t.index('    /** Live handle movement only changes authoring guides; physical')
           end = t.index('    @SubscribeEvent(priority = EventPriority.HIGHEST)', begin)
-          t = t[:begin] + '''    /** Live handle movement only changes authoring guides; physical
-              * collision and the cached payload mesh are updated on release. */
-             static boolean previewingSurface(UUID id) {
-                 return id != null && drag != null && drag.remembered()
-                         && drag.selection().type() == SelectionType.SURFACE
-                         && id.equals(drag.selection().id());
-             }
-
-          ''' + t[end:]
+          correct = ('    /**\n'
+                     '     * During handle dragging only the edit guides change. The payload mesh\n'
+                     '     * and collision are updated once the gesture is committed.\n'
+                     '     */\n'
+                     '    static boolean previewingSurface(UUID id) {\n'
+                     '        return id != null && drag != null && drag.remembered()\n'
+                     '                && drag.selection().type() == SelectionType.SURFACE\n'
+                     '                && id.equals(drag.selection().id());\n'
+                     '    }\n\n')
+          t = t[:begin] + correct + t[end:]
           controls.write_text(t, encoding='utf-8')
           PY
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java
-          git commit -m 'Match Surface hover to placement ray and remove grid payload scans'
+          git commit -m 'Normalize formatting of Surface preview and hover handlers'
           git push origin HEAD:master

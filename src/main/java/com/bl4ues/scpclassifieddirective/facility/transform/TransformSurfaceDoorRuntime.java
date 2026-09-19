@@ -361,8 +361,8 @@ public final class TransformSurfaceDoorRuntime {
             ConstructionSurface.SurfaceSlot slot) {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        return surface.gridPoint(u, v)
-                .add(surface.gridNormal(u, v).scale(0.5D));
+        return TransformSurfaceGeometry.cellCenter(surface, slot,
+                TransformSurfaceGeometry.MAIN_SIDE, false);
     }
 
     private static DoorAddress address(BlockState state) {

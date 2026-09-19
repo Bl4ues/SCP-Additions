@@ -1,0 +1,30 @@
+name: Validate complete curved Surface edge joining
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_surface_edge_join.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Match full parametric edge on snap
+        run: python3 .github/scripts/temporary_surface_edge_join.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build before commit
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit validated edge joining
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformSurfaceSnapClient.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java
+          git commit -m 'Snap entire curved Surface boundaries using shared quadratic controls'
+          git pull --rebase origin master
+          git push origin HEAD:master

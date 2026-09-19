@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
+import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -172,6 +173,16 @@ public final class TransformDoorRuntime {
             }
             boolean powered = TransformPowerQuery.powered(level,
                     group, ref.cell());
+            // Heavy door controllers are stored in their lower cell. Their
+            // upper frame and button positions are real adjacent local cells,
+            // not vanilla-world relays when this door is transformed.
+            if (!powered && HeavyDoorPowerRelay.isHeavyDoorState(
+                    state.getBlock())) {
+                for (int up = 1; up <= 2 && !powered; up++) {
+                    powered = TransformPowerQuery.powered(level, group,
+                            ref.cell().offset(0, up, 0));
+                }
+            }
             if (address.stage() == DoorStage.CLOSED && powered) {
                 start(level, group, ref.cell(), address.family(), true);
             } else if (address.stage() == DoorStage.OPEN && !powered) {

@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
+import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.core.Direction;
@@ -177,6 +178,18 @@ public final class TransformSurfaceDoorRuntime {
             }
             boolean powered = TransformPowerQuery.powered(level,
                     surface, ref.slot());
+            // A heavy door occupies the cells above its logical controller.
+            // Apply the same local adjacency semantics to every Surface layer.
+            if (!powered && HeavyDoorPowerRelay.isHeavyDoorState(
+                    attachment.state().getBlock())) {
+                for (int up = 1; up <= 2 && !powered; up++) {
+                    int row = ref.slot().row() + up;
+                    if (row >= surface.rows()) break;
+                    powered = TransformPowerQuery.powered(level, surface,
+                            new ConstructionSurface.SurfaceSlot(
+                                    ref.slot().column(), row));
+                }
+            }
             if (address.stage() == DoorStage.CLOSED && powered) {
                 start(level, surface, ref.slot(), ref.normalSign(),
                         address.family(), true);

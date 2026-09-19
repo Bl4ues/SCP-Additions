@@ -93,7 +93,9 @@ public final class TransformContextTargetClient {
         return TransformSurfaceGeometry.logicalPoint(surface,
                 target.surfaceSlot(),
                 TransformSurfaceGeometry.effectiveDeform(attachment),
-                target.normalSign() == 0 ? 1 : target.normalSign(),
+                target.normalSign() == 0
+                        ? TransformSurfaceGeometry.MAIN_SIDE
+                        : target.normalSign(),
                 target.kind() == Kind.SURFACE_OVERLAY,
                 vanillaLocal.x, vanillaLocal.y, vanillaLocal.z);
     }

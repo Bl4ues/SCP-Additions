@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.FacilityPipeModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface.SurfaceAttachment;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface.SurfaceSlot;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -333,6 +334,9 @@ public final class TransformConstructionManager {
         refreshGroupCell(level.getServer(), groupId, target);
         TransformConstructionNetwork.broadcastGroupCell(level, groupId,
                 target, payload);
+        if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+            FacilityPipeModule.refreshGroup(level, groupId);
+        }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
@@ -416,6 +420,9 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceSlot(level, surfaceId,
                 targetSlot, payload, deform);
+        if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+            FacilityPipeModule.refreshSurface(level, surfaceId);
+        }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
@@ -482,6 +489,9 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceOverlay(level, surfaceId,
                 targetSlot, side, payload, deform);
+        if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+            FacilityPipeModule.refreshSurface(level, surfaceId);
+        }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
@@ -504,6 +514,10 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), id, slot);
         TransformConstructionNetwork.broadcastSurfaceOverlayRemoved(level, id,
                 slot, side);
+        if (surface.overlay(slot, side).state().getBlock()
+                instanceof FacilityPipeModule.PipeBlock) {
+            FacilityPipeModule.refreshSurface(level, id);
+        }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
@@ -532,6 +546,9 @@ public final class TransformConstructionManager {
         data.putGroup(next);
         refreshGroupCell(level.getServer(), id, cell);
         TransformConstructionNetwork.broadcastGroupCellRemoved(level, id, cell);
+        if (state.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+            FacilityPipeModule.refreshGroup(level, id);
+        }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
@@ -556,6 +573,10 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), id, slot);
         TransformConstructionNetwork.broadcastSurfaceSlotRemoved(
                 level, id, slot);
+        if (attachment.state().getBlock()
+                instanceof FacilityPipeModule.PipeBlock) {
+            FacilityPipeModule.refreshSurface(level, id);
+        }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }

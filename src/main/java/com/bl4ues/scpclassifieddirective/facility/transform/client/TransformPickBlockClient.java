@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.FacilityPipeModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -57,7 +58,10 @@ public final class TransformPickBlockClient {
         BlockState state = groupDistance <= surfaceDistance
                 ? groupState : surfaceState;
         if (state == null || state.isAir()) return;
-        ItemStack picked = state.getBlock().asItem().getDefaultInstance();
+        ItemStack picked = FacilityPipeModule.pick(state);
+        if (picked.isEmpty()) {
+            picked = state.getBlock().asItem().getDefaultInstance();
+        }
         if (picked.isEmpty()) return;
 
         player.getInventory().setPickedItem(picked);

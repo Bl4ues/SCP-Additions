@@ -375,7 +375,8 @@ public final class Scp079PlayableManager {
         // Blast Doors bypass the ordinary heavy-door control panels, so they
         // do not naturally emit the activity pulse used by the surveillance
         // map. Emit one at the controller when the remote action is accepted.
-        Scp079ActivityPingManager.emitDoorAt(level, door);
+        Scp079ActivityPingManager.emitDoorAt(level,
+                Vec3.atCenterOf(door));
         Scp079DecisionLog.record(level,
                 open ? Scp079DecisionLog.DecisionType.OPEN_DOOR
                         : Scp079DecisionLog.DecisionType.CLOSE_DOOR,

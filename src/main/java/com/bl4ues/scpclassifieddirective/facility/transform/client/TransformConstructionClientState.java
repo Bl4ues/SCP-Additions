@@ -196,23 +196,12 @@ public final class TransformConstructionClientState {
                         TransformConstructionModule.getSurfaceTool());
         if (editor) return cell.selection();
 
-        boolean placing = minecraft.player.getMainHandItem().getItem()
-                instanceof BlockItem;
-        if (placing && selection != null) {
-            if (selection.type() == SelectionType.GROUP
-                    && cell.groupIds().contains(selection.id())) {
-                return cell.selection();
-            }
-            if (selection.type() == SelectionType.SURFACE
-                    && cell.surfaceIds().contains(selection.id())) {
-                return cell.selection();
-            }
-        }
-
-        // Empty authoring layouts must not steal the crosshair from normal
-        // building. Once an actual payload has collision, its selectable shape
-        // behaves like the physical block it represents.
-        return cell.collision().isEmpty() ? Shapes.empty() : cell.selection();
+        // Placement, break, pick-block and runtime use all resolve against
+        // the authored local grid directly. Outside the dedicated construction
+        // tools a proxy is therefore never a selectable Minecraft block: it is
+        // only a collision/light bridge. This prevents a tiny transformed
+        // fixture from exposing a giant axis-aligned technical outline.
+        return Shapes.empty();
     }
 
     public static VoxelShape proxyCollisionShape(BlockPos pos) {

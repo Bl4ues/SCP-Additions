@@ -134,8 +134,8 @@ public final class TransformAlarmAudioClient {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
-        if (!(minecraft.level instanceof ClientLevel level)
-                || minecraft.player == null) {
+        ClientLevel level = minecraft.level;
+        if (level == null || minecraft.player == null) {
             clear();
             return;
         }

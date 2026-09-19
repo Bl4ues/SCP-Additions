@@ -48,13 +48,15 @@ public final class TransformConstructionClientControls {
 
     private TransformConstructionClientControls() {
     }
-    /** Live handle movement only changes authoring guides; physical
-    * collision and the cached payload mesh are updated on release. */
-   static boolean previewingSurface(UUID id) {
-       return id != null && drag != null && drag.remembered()
-               && drag.selection().type() == SelectionType.SURFACE
-               && id.equals(drag.selection().id());
-   }
+    /**
+     * During handle dragging only the edit guides change. The payload mesh
+     * and collision are updated once the gesture is committed.
+     */
+    static boolean previewingSurface(UUID id) {
+        return id != null && drag != null && drag.remembered()
+                && drag.selection().type() == SelectionType.SURFACE
+                && id.equals(drag.selection().id());
+    }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLeftClick(PlayerInteractEvent.LeftClickBlock event) {

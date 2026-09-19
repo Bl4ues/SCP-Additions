@@ -545,8 +545,8 @@ public final class TransformConstructionClientRenderer {
             cached = buildSurfaceMesh(minecraft, surface);
             SURFACE_MESHES.put(surface.id(), cached);
         } else if (cached.surface() != surface
-            && !TransformConstructionClientControls.previewingSurface(
-                    surface.id())) {
+                && !TransformConstructionClientControls.previewingSurface(
+                        surface.id())) {
             if (!sameSurfaceGeometry(cached.surface(), surface)) {
                 cached = buildSurfaceMesh(minecraft, surface);
             } else {
@@ -886,15 +886,15 @@ public final class TransformConstructionClientRenderer {
     }
 
     private static TransformSurfaceRaycast.Target aimedSurfaceTarget(
-        LocalPlayer player) {
-    if (player == null) return null;
-    Minecraft minecraft = Minecraft.getInstance();
-    if (minecraft.level == null) return null;
-    // The selected editor surface must not override the nearest hit.
-    return TransformSurfaceRaycast.target(player,
-            TransformConstructionClientState.surfaces(
-                    minecraft.level.dimension().location()));
-}
+            LocalPlayer player) {
+        if (player == null) return null;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return null;
+        // Editor selection must not override the closest logical hit.
+        return TransformSurfaceRaycast.target(player,
+                TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location()));
+    }
 
     private static void renderLogicalSurfaceSlot(PoseStack pose,
             VertexConsumer lines, ConstructionSurface surface,
@@ -1236,7 +1236,8 @@ public final class TransformConstructionClientRenderer {
     }
 
     private static Vec3 visibleSurfaceGridPoint(
-        ConstructionSurface surface, double u, double v, Vec3 camera) {
+            ConstructionSurface surface, double u, double v,
+            Vec3 camera) {
         Vec3 point = surface.gridPoint(u, v);
         Vec3 normal = TransformMath.safeNormalize(surface.gridNormal(u, v),
                 new Vec3(0.0D, 0.0D, 1.0D));

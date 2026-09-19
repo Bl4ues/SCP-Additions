@@ -700,9 +700,13 @@ public final class TransformConstructionNetwork {
                         && !TransformFacilityButtonRuntime.useSurfaceOverlay(
                                 sender, message.surfaceId, message.slot,
                                 message.normalSign)) {
-                    TransformKeycardReaderRuntime.useSurfaceOverlay(sender,
+                    if (!TransformKeycardReaderRuntime.useSurfaceOverlay(sender,
                             message.surfaceId, message.slot,
-                            message.normalSign);
+                            message.normalSign)) {
+                        TransformSurfaceDoorRuntime.useSurfaceOverlay(sender,
+                                message.surfaceId, message.slot,
+                                message.normalSign);
+                    }
                 }
             });
             context.setPacketHandled(true);

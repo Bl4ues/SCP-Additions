@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.AlarmClient;
+import com.bl4ues.scpclassifieddirective.client.TransformedAlarmAudioClient;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
@@ -184,6 +185,10 @@ public final class TransformAlarmClientRenderer {
             if (state == null || !AlarmModule.isController(state)) continue;
             Vec3 center = group.cellCenter(cell);
             if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) continue;
+            TransformedAlarmAudioClient.group(
+                    (net.minecraft.client.multiplayer.ClientLevel) minecraft.level,
+                    group.id(), cell.x(), cell.y(), cell.z(), center,
+                    state.getValue(AlarmModule.ACTIVE));
 
             CellKey key = new CellKey(group.id(), cell);
             AlarmModule.AlarmBlockEntity alarm = host(minecraft,
@@ -250,6 +255,10 @@ public final class TransformAlarmClientRenderer {
         Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot,
                 side, overlay);
         if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) return;
+        TransformedAlarmAudioClient.surface(
+                (net.minecraft.client.multiplayer.ClientLevel) minecraft.level,
+                surface.id(), slot.column(), slot.row(), side, overlay,
+                center, state.getValue(AlarmModule.ACTIVE));
 
         SurfaceKey key = new SurfaceKey(surface.id(), slot, side, overlay);
         AlarmModule.AlarmBlockEntity alarm = host(minecraft,

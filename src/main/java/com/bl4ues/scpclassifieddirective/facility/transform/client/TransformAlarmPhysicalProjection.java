@@ -31,12 +31,17 @@ import java.util.List;
  * scene projector continues to handle ordinary untransformed world geometry.
  */
 final class TransformAlarmPhysicalProjection {
-    private static final RenderType WASH = RenderType.entityTranslucentEmissive(
+    // The broad, feathered wash is the visible cone. Emissive is only a
+    // secondary, low-alpha pass, matching the vanilla Alarm projector.
+    private static final RenderType WASH = RenderType.entityTranslucent(
+            new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
+                    "textures/effect/alarm_light_splash.png"), true);
+    private static final RenderType GLOW = RenderType.entityTranslucentEmissive(
             new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
                     "textures/effect/alarm_light_emissive.png"));
     private static final double FACE_OFFSET = 0.0025D;
-    private static final double HALF_WIDTH = 0.78D;
-    private static final double HALF_HEIGHT = 1.55D;
+    private static final double HALF_WIDTH = 1.72D;
+    private static final double HALF_HEIGHT = 3.58D;
     private static final double MAX_DISTANCE_SQR = 24.0D * 24.0D;
 
     private TransformAlarmPhysicalProjection() {
@@ -63,10 +68,12 @@ final class TransformAlarmPhysicalProjection {
                 alarm.projectionPhase(partialTick));
         pose.pushPose();
         pose.translate(-camera.x, -camera.y, -camera.z);
-        VertexConsumer consumer = buffers.getBuffer(WASH);
-        boolean emitted = false;
-        for (int horizontal = -2; horizontal <= 2; horizontal++) {
-            for (int vertical = -2; vertical <= 2; vertical++) {
+        for (int pass = 0; pass < 2; pass++) {
+            RenderType layer = pass == 0 ? WASH : GLOW;
+            VertexConsumer consumer = buffers.getBuffer(layer);
+            boolean emitted = false;
+            for (int horizontal = -3; horizontal <= 3; horizontal++) {
+                for (int vertical = -4; vertical <= 4; vertical++) {
                 TransformGroup.GridPos support = cell.offset(
                         -facing.getStepX() + localRight.getStepX() * horizontal,
                         vertical,
@@ -82,10 +89,12 @@ final class TransformAlarmPhysicalProjection {
                         .add(up.scale(0.5D));
                 Vec3 d = center.subtract(right.scale(0.5D))
                         .add(up.scale(0.5D));
-                emitted |= emit(consumer, pose, projector, outward, a, b, c, d);
+                emitted |= emit(consumer, pose, projector, outward, a, b, c, d,
+                        pass == 0 ? 255 : 87);
             }
         }
-        if (emitted) buffers.endBatch(WASH);
+            if (emitted) buffers.endBatch(layer);
+        }
         pose.popPose();
     }
 
@@ -121,10 +130,12 @@ final class TransformAlarmPhysicalProjection {
                 alarm.projectionPhase(partialTick));
         pose.pushPose();
         pose.translate(-camera.x, -camera.y, -camera.z);
-        VertexConsumer consumer = buffers.getBuffer(WASH);
-        boolean emitted = false;
-        for (int dc = -2; dc <= 2; dc++) {
-            for (int dr = -2; dr <= 2; dr++) {
+        for (int pass = 0; pass < 2; pass++) {
+            RenderType layer = pass == 0 ? WASH : GLOW;
+            VertexConsumer consumer = buffers.getBuffer(layer);
+            boolean emitted = false;
+            for (int dc = -3; dc <= 3; dc++) {
+                for (int dr = -4; dr <= 4; dr++) {
                 ConstructionSurface.SurfaceSlot receiver =
                         new ConstructionSurface.SurfaceSlot(
                                 slot.column() + dc, slot.row() + dr);
@@ -152,12 +163,13 @@ final class TransformAlarmPhysicalProjection {
                         Vec3 d = receiverPoint(surface, receiver, deform,
                                 backingSign, backingOverlay, z, alarmSide, x0, y1);
                         emitted |= emit(consumer, pose, projector, normal,
-                                a, b, c, d);
+                                a, b, c, d, pass == 0 ? 255 : 87);
                     }
                 }
             }
         }
-        if (emitted) buffers.endBatch(WASH);
+            if (emitted) buffers.endBatch(layer);
+        }
         pose.popPose();
     }
 
@@ -197,7 +209,7 @@ final class TransformAlarmPhysicalProjection {
 
     private static boolean emit(VertexConsumer output, PoseStack pose,
             Projector projector, Vec3 normal,
-            Vec3 a, Vec3 b, Vec3 c, Vec3 d) {
+            Vec3 a, Vec3 b, Vec3 c, Vec3 d, int alpha) {
         // Match the vertex winding to the visible side before UV clipping.
         if (b.subtract(a).cross(d.subtract(a)).dot(normal) < 0.0D) {
             Vec3 swap = b;
@@ -217,10 +229,10 @@ final class TransformAlarmPhysicalProjection {
             Sample next = polygon.get(i + 1);
             // The RenderType consumes QUADS, so emit a clipped triangle as a
             // degenerate quad without a second translucent coplanar layer.
-            vertex(output, pose, first, normal);
-            vertex(output, pose, previous, normal);
-            vertex(output, pose, next, normal);
-            vertex(output, pose, next, normal);
+            vertex(output, pose, first, normal, alpha);
+            vertex(output, pose, previous, normal, alpha);
+            vertex(output, pose, next, normal, alpha);
+            vertex(output, pose, next, normal, alpha);
         }
         return true;
     }
@@ -258,10 +270,10 @@ final class TransformAlarmPhysicalProjection {
     }
 
     private static void vertex(VertexConsumer consumer, PoseStack pose,
-            Sample sample, Vec3 normal) {
+            Sample sample, Vec3 normal, int alpha) {
         consumer.vertex(pose.last().pose(), (float) sample.world().x,
                         (float) sample.world().y, (float) sample.world().z)
-                .color(255, 255, 255, 87)
+                .color(255, 255, 255, alpha)
                 .uv(sample.u(), sample.v())
                 .overlayCoords(OverlayTexture.NO_OVERLAY)
                 .uv2(LightTexture.FULL_BRIGHT)

@@ -186,11 +186,13 @@ public final class TransformSurfaceRaycast {
         }
 
         VisualAttachment main =
-                visualAttachment(surface, slot, 1, false);
+                visualAttachment(surface, slot,
+                        TransformSurfaceGeometry.MAIN_SIDE, false);
         if (main != null && !main.attachment().state().isAir()) {
             best = nearer(best, targetLogicalCell(surface, slot,
                     main.anchor(), main.attachment(),
-                    1, false, Layer.MAIN, eye, ray,
+                    TransformSurfaceGeometry.MAIN_SIDE, false,
+                    Layer.MAIN, eye, ray,
                     Math.min(limit, bestDistance)));
             if (best != null) bestDistance = best.distance();
         }

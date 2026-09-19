@@ -49,7 +49,9 @@ public final class TransformFacilityButtonRuntime {
                 level.dimension().location())) return false;
         BlockState state = group.cells().get(cell);
         if (!TransformWallFixturePlacement.isDoorButton(state)) return false;
-        Vec3 center = group.cellCenter(cell);
+        TransformGroup.GridPos visual =
+                TransformWallFixturePlacement.visualCell(cell, state);
+        Vec3 center = group.cellCenter(visual);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
         return activate(level, ButtonTarget.group(group, cell, state));
     }

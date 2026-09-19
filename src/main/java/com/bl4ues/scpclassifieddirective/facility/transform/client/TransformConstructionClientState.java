@@ -336,12 +336,17 @@ public final class TransformConstructionClientState {
         for (int index = 0; index < next.size(); index++) {
             ConstructionSurface current = next.get(index);
             if (!surfaceId.equals(current.id())) continue;
+            ConstructionSurface.SurfaceAttachment previous =
+                    current.overlay(slot, normalSign);
             next.set(index, current.withOverlay(slot, normalSign,
                     state, deform));
             surfaces = List.copyOf(next);
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
                     surfaceId, slot);
-            rebuildSurfaceSlotProxyCells(surfaceId, slot);
+            if (previous == null || previous.deform() != deform
+                    || physicsChanged(previous.state(), state)) {
+                rebuildSurfaceSlotProxyCells(surfaceId, slot);
+            }
             return;
         }
     }

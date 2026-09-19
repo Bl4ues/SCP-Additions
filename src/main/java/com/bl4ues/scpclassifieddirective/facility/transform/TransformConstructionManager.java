@@ -366,23 +366,51 @@ public final class TransformConstructionManager {
         Vec3 center = surface.gridPoint(u, v);
         if (center.distanceToSqr(hit) > 2.25D) return false;
 
-        if (surface.attachments().containsKey(slot)) {
+        SurfaceSlot targetSlot = slot;
+        Vec3 tangent = surface.gridFrameTangent(u, v).normalize();
+        Vec3 normal = surface.gridNormal(u, v).normalize();
+        Vec3 delta = hit.subtract(center);
+        double localX = delta.dot(tangent);
+        double localZ = delta.dot(normal);
+        TransformWallFixturePlacement.Placement special =
+                TransformWallFixturePlacement.resolve(blockItem,
+                        Direction.SOUTH, localX, localZ);
+        BlockState payload;
+        if (special != null) {
+            int frameSign = surface.flipped() ? -1 : 1;
+            int column = slot.column()
+                    + special.logicalShift().getStepX() * frameSign;
+            int row = slot.row()
+                    + special.logicalShift().getStepY();
+            if (column < 0 || column >= surface.columns()
+                    || row < 0 || row >= surface.rows()) {
+                return false;
+            }
+            targetSlot = new SurfaceSlot(column, row);
+            payload = special.state();
+        } else {
+            payload = TransformPlacementStateRuntime.surfacePlacementState(
+                    player, blockItem, surface, slot, hit);
+        }
+
+        if (surface.attachments().containsKey(targetSlot)) {
+            double tu = (targetSlot.column() + 0.5D) / surface.columns();
+            double tv = (targetSlot.row() + 0.5D) / surface.rows();
             TransformConstructionNetwork.sendBlockedPlacement(player,
-                    BlockPos.containing(center.add(
-                            surface.gridNormal(u, v).scale(0.5D))));
+                    BlockPos.containing(surface.gridPoint(tu, tv)
+                            .add(surface.gridNormal(tu, tv).scale(0.5D))));
             player.displayClientMessage(Component.literal(
                     "That surface cell is already occupied."), true);
             return true;
         }
 
-        BlockState payload = TransformPlacementStateRuntime.surfacePlacementState(
-                player, blockItem, surface, slot, hit);
         boolean deform = !payload.hasBlockEntity();
-        ConstructionSurface next = surface.withAttachment(slot, payload, deform);
+        ConstructionSurface next = surface.withAttachment(
+                targetSlot, payload, deform);
         data.putSurface(next);
-        refreshSurfaceSlot(level.getServer(), surfaceId, slot);
+        refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceSlot(level, surfaceId,
-                slot, payload, deform);
+                targetSlot, payload, deform);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }

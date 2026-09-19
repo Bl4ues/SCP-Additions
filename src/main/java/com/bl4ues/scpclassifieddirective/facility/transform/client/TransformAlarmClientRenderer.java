@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -101,7 +102,10 @@ public final class TransformAlarmClientRenderer {
                 && key.slot().equals(slot) && !refs.contains(key));
     }
 
-    @SubscribeEvent
+    // Construction meshes flush their depth at the default event priority.
+    // Draw the translucent projection afterwards so both vanilla and
+    // shader pipelines test it against the physical backing wall.
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void render(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
             return;

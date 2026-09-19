@@ -28,12 +28,14 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class TransformSurfacePlacementClient {
+    private static final double HIT_EPSILON = 0.025D;
+
     private TransformSurfacePlacementClient() {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
-        if (!event.isUseItem()) return;
+        if (!event.isUseItem() || event.isCanceled()) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         Selection selection = TransformConstructionClientState.selection();
@@ -53,18 +55,30 @@ public final class TransformSurfacePlacementClient {
                             minecraft.level.dimension().location()));
         }
 
-        // An old Surface selection must never steal a right-click on a nearer
-        // Off-Grid cell after switching to a block in the hotbar. Resolve both
-        // logical grids along the same eye ray; do not compare vanilla proxy
-        // BlockPos or the misleading axis-aligned technical selection box.
+        // A stale Surface editor selection must not capture interactions with
+        // a nearer Off-Grid fixture. Both targets come from their own logical
+        // grids and are compared along the same eye ray, never through vanilla
+        // proxy bounding boxes. This applies to USE as well as block placement.
+        if (selection != null && selection.type() == SelectionType.SURFACE
+                && !player.isShiftKeyDown() && !holdingConstructionTool(player)) {
+            TransformGroupPlacementClient.PayloadTarget groupUse =
+                    TransformGroupPlacementClient.findPayloadTarget(player);
+            if (groupUse != null && nearer(groupUse.distance(), aimed)) {
+                TransformConstructionNetwork.useGroupCell(
+                        groupUse.group().id(), groupUse.cell());
+                event.setCanceled(true);
+                return;
+            }
+        }
+
         if (selection != null && selection.type() == SelectionType.SURFACE
                 && player.isCreative()
                 && player.getMainHandItem().getItem() instanceof BlockItem) {
             TransformGroupPlacementClient.Target groupTarget =
                     TransformGroupPlacementClient.findTarget(player);
-            if (groupTarget != null && (aimed == null
-                    || player.getEyePosition().distanceTo(groupTarget.worldHit())
-                            + 0.025D < aimed.distance())) {
+            if (groupTarget != null && nearer(
+                    player.getEyePosition().distanceTo(groupTarget.worldHit()),
+                    aimed)) {
                 TransformConstructionNetwork.placeGroupBlock(
                         groupTarget.group().id(), groupTarget.source(),
                         groupTarget.adjacentCell(), groupTarget.face(),
@@ -103,8 +117,6 @@ public final class TransformSurfacePlacementClient {
             boolean mainOccupied =
                     aimed.surface().attachments().containsKey(aimed.slot());
             if (aimed.layer().overlay() || mainOccupied) {
-                // Structural blocks stay on the authored surface. Only an
-                // EXTRA block chooses the side physically clicked by the user.
                 int side = aimed.layer().overlay()
                         ? aimed.normalSign()
                         : clickedSide(player, aimed.surface(), aimed.slot());
@@ -118,12 +130,7 @@ public final class TransformSurfacePlacementClient {
             return;
         }
 
-        if (player.getMainHandItem().is(TransformConstructionModule.getSurfaceTool())
-                || player.getMainHandItem().is(
-                        TransformConstructionModule.getOffGridTool())) {
-            return;
-        }
-        if (aimed == null) return;
+        if (holdingConstructionTool(player) || aimed == null) return;
         if (aimed.layer().overlay()) {
             ConstructionSurface.SurfaceAttachment overlay =
                     aimed.surface().overlay(aimed.slot(),
@@ -140,6 +147,19 @@ public final class TransformSurfacePlacementClient {
                     aimed.surface().id(), aimed.slot());
         }
         event.setCanceled(true);
+    }
+
+    private static boolean nearer(double groupDistance,
+            TransformSurfaceRaycast.Target surfaceTarget) {
+        return surfaceTarget == null
+                || groupDistance + HIT_EPSILON < surfaceTarget.distance();
+    }
+
+    private static boolean holdingConstructionTool(LocalPlayer player) {
+        return player.getMainHandItem().is(
+                        TransformConstructionModule.getSurfaceTool())
+                || player.getMainHandItem().is(
+                        TransformConstructionModule.getOffGridTool());
     }
 
     private static int clickedSide(LocalPlayer player,

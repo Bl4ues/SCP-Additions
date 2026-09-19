@@ -185,9 +185,9 @@ public final class TransformConstructionClientRenderer {
                 placingBlock ? TransformGroupPlacementClient.findTarget(
                         minecraft.player) : null;
         TransformGroupPlacementClient.PayloadTarget interactionTarget =
-                placingBlock ? null
-                        : TransformGroupPlacementClient.findPayloadTarget(
-                                minecraft.player);
+                offGridTool && !placingBlock
+                        ? TransformGroupPlacementClient.findPayloadTarget(
+                                minecraft.player) : null;
         TransformSurfaceRaycast.Target surfaceTarget =
                 placingBlock ? aimedSurfaceTarget(minecraft.player) : null;
         if (offGridTool || surfaceTool || mappingTool || showSelectedGroup

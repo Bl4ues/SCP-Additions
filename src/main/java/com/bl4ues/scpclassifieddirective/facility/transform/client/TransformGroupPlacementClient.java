@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixture
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SelectionType;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
+import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
@@ -136,6 +137,17 @@ public final class TransformGroupPlacementClient {
         return findPayloadTarget(player, false);
     }
 
+    static PayloadTarget findContextTarget(LocalPlayer player) {
+        GridTarget target = trace(player, false, state ->
+                state != null && !state.isAir()
+                        && !ContextInteractionRegistry.getBlockRules(
+                                state.getBlock()).isEmpty(), true);
+        if (target == null) return null;
+        return new PayloadTarget(target.group(), target.cell(),
+                target.visualCell(), target.state(), target.hit().face(),
+                target.worldHit(), target.hit().distance());
+    }
+
     private static PayloadTarget findPayloadTarget(LocalPlayer player,
             boolean interactiveOnly) {
         // Interaction follows the authored local 1x1 cell, exactly like the
@@ -168,6 +180,12 @@ public final class TransformGroupPlacementClient {
      */
     private static GridTarget trace(LocalPlayer player, boolean payloadShape,
             java.util.function.Predicate<BlockState> accepted) {
+        return trace(player, payloadShape, accepted, false);
+    }
+
+    private static GridTarget trace(LocalPlayer player, boolean payloadShape,
+            java.util.function.Predicate<BlockState> accepted,
+            boolean preferShiftedFixtures) {
         Minecraft minecraft = Minecraft.getInstance();
         if (player == null || minecraft.level == null) return null;
         Vec3 eye = player.getEyePosition();
@@ -197,7 +215,7 @@ public final class TransformGroupPlacementClient {
                     .normalize();
             GridTarget candidate = traceGroup(group, localEye, localRay,
                     Math.min(limit, bestDistance), payloadShape, accepted, eye,
-                    worldRay);
+                    worldRay, preferShiftedFixtures);
             if (candidate == null) continue;
 
             // Main-level geometry occludes unrelated transformed grids, but a
@@ -223,7 +241,7 @@ public final class TransformGroupPlacementClient {
     private static GridTarget traceGroup(TransformGroup group, Vec3 localEye,
             Vec3 localRay, double limit, boolean payloadShape,
             java.util.function.Predicate<BlockState> accepted,
-            Vec3 worldEye, Vec3 worldRay) {
+            Vec3 worldEye, Vec3 worldRay, boolean preferShiftedFixtures) {
         TransformGroup.GridPos cell = nearestCell(localEye);
         double travelled = 0.0D;
 
@@ -231,7 +249,7 @@ public final class TransformGroupPlacementClient {
         // 128 leaves plenty of numerical headroom without an unbounded walk.
         for (int step = 0; step < 128 && travelled <= limit + EPSILON; step++) {
             VisualPayload visual = payloadAtVisualCell(group, cell,
-                    accepted);
+                    accepted, preferShiftedFixtures);
             if (visual != null) {
                 Hit hit = payloadShape
                         ? intersectState(localEye, localRay, cell,
@@ -267,21 +285,34 @@ public final class TransformGroupPlacementClient {
 
     private static VisualPayload payloadAtVisualCell(
             TransformGroup group, TransformGroup.GridPos visualCell,
-            java.util.function.Predicate<BlockState> accepted) {
+            java.util.function.Predicate<BlockState> accepted,
+            boolean preferShiftedFixtures) {
+        if (preferShiftedFixtures) {
+            VisualPayload shifted = shiftedPayloadAtVisualCell(
+                    group, visualCell, accepted);
+            if (shifted != null) return shifted;
+        }
+
         BlockState direct = group.cells().get(visualCell);
         if (direct != null && accepted.test(direct)
                 && TransformWallFixturePlacement.visualShift(direct) == null) {
             return new VisualPayload(visualCell, direct);
         }
 
+        return preferShiftedFixtures ? null
+                : shiftedPayloadAtVisualCell(group, visualCell, accepted);
+    }
+
+    private static VisualPayload shiftedPayloadAtVisualCell(
+            TransformGroup group, TransformGroup.GridPos visualCell,
+            java.util.function.Predicate<BlockState> accepted) {
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             TransformGroup.GridPos anchor = visualCell.offset(
                     -direction.getStepX(), 0, -direction.getStepZ());
             BlockState state = group.cells().get(anchor);
             if (state == null || !accepted.test(state)) continue;
-            Direction visualShift =
-                    TransformWallFixturePlacement.visualShift(state);
-            if (visualShift == direction) {
+            if (TransformWallFixturePlacement.visualCell(anchor, state)
+                    .equals(visualCell)) {
                 return new VisualPayload(anchor, state);
             }
         }

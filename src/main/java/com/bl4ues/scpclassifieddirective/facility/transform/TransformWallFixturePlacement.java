@@ -65,6 +65,28 @@ public final class TransformWallFixturePlacement {
      * Returns the local offset from controller/anchor cell to the cell the
      * player visually perceives as containing this fixture.
      */
+    public static TransformGroup.GridPos visualCell(
+            TransformGroup.GridPos address, BlockState state) {
+        if (address == null) return null;
+        Direction shift = visualShift(state);
+        return shift == null ? address : address.offset(
+                shift.getStepX(), shift.getStepY(), shift.getStepZ());
+    }
+
+    public static ConstructionSurface.SurfaceSlot visualSlot(
+            ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot address, BlockState state,
+            int normalSign) {
+        if (surface == null || address == null) return address;
+        Direction shift = visualShift(state);
+        if (shift == null) return address;
+        int side = normalSign < 0 ? -1 : 1;
+        int frameSign = (surface.flipped() ? -1 : 1) * side;
+        return new ConstructionSurface.SurfaceSlot(
+                address.column() + shift.getStepX() * frameSign,
+                address.row() + shift.getStepY());
+    }
+
     public static Direction visualShift(BlockState state) {
         if (state == null
                 || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {

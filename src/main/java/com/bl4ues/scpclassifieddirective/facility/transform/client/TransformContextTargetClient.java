@@ -36,7 +36,7 @@ public final class TransformContextTargetClient {
 
     private static Target groupTarget(LocalPlayer player) {
         TransformGroupPlacementClient.PayloadTarget hit =
-                TransformGroupPlacementClient.findBreakTarget(player);
+                TransformGroupPlacementClient.findContextTarget(player);
         if (hit == null || ContextInteractionRegistry.getBlockRules(
                 hit.state().getBlock()).isEmpty()) return null;
         return new Target(Kind.GROUP, hit.state(), hit.distance(),

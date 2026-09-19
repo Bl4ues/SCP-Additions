@@ -485,7 +485,7 @@ public final class Scp079FacilityMapScreen extends Screen {
                     renderOpenKeycardLevel(graphics, marker, transform, color);
                 } else {
                     renderClosedKeycardBadge(graphics, marker, transform,
-                            locked);
+                            locked, color);
                 }
             }
         }
@@ -585,7 +585,8 @@ public final class Scp079FacilityMapScreen extends Screen {
     }
 
     private void renderClosedKeycardBadge(GuiGraphics graphics,
-            MapDoorMarker marker, MapTransform transform, boolean locked) {
+            MapDoorMarker marker, MapTransform transform,
+            boolean locked, int color) {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
@@ -593,12 +594,12 @@ public final class Scp079FacilityMapScreen extends Screen {
         // Credential badges are screen-space UI, not world geometry. Keep the
         // square and glyph readable at every map zoom and cover the closed-door
         // bar cleanly at its center.
-        int half = 7;
-        int badge = locked ? 0xFF77868B : 0xFFF1FAFD;
+        int half = 8;
+        int badge = color;
         graphics.fill(x - half, y - half, x + half + 1, y + half + 1, badge);
         border(graphics, x - half, y - half, half * 2 + 1, half * 2 + 1,
                 locked ? 0xFF89989D : 0xFFFFFFFF);
-        drawFixedCenteredMapLabel(graphics, value, x, y,
+        drawCenteredMapLabel(graphics, value, x, y, 1.30F,
                 locked ? 0xFF172126 : 0xFF071116);
     }
 
@@ -606,9 +607,9 @@ public final class Scp079FacilityMapScreen extends Screen {
             MapDoorMarker marker, MapTransform transform, int color) {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
-        drawFixedCenteredMapLabel(graphics,
+        drawCenteredMapLabel(graphics,
                 Integer.toString(marker.requiredLevel()),
-                x, y, 0xFFF1FAFD);
+                x, y, 1.30F, 0xFFFFFFFF);
     }
 
     private void drawFixedCenteredMapLabel(GuiGraphics graphics, String value,

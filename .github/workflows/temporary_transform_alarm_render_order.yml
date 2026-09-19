@@ -1,0 +1,51 @@
+name: Order transformed Alarm projection after construction
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_transform_alarm_render_order.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Order world-space receiver projection after construction geometry
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformAlarmClientRenderer.java')
+          s = p.read_text(encoding='utf-8')
+          old = 'import net.minecraftforge.eventbus.api.SubscribeEvent;\n'
+          new = 'import net.minecraftforge.eventbus.api.EventPriority;\nimport net.minecraftforge.eventbus.api.SubscribeEvent;\n'
+          assert s.count(old) == 1
+          s = s.replace(old, new, 1)
+          old = '    @SubscribeEvent\n    public static void render(RenderLevelStageEvent event) {'
+          new = '''    // Construction meshes flush their depth at the default event priority.
+              // Draw the translucent projection afterwards so both vanilla and
+              // shader pipelines test it against the physical backing wall.
+              @SubscribeEvent(priority = EventPriority.LOWEST)
+              public static void render(RenderLevelStageEvent event) {'''
+          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines())
+          assert s.count(old) == 1
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build final render order
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit validated render ordering
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformAlarmClientRenderer.java
+          git commit -m 'Render physical transformed Alarm wash after opaque construction'
+          git push origin HEAD:master

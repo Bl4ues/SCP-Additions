@@ -80,7 +80,7 @@ public final class Scp079FacilityMapNetworkOverlay {
         int alpha = Math.max(0, Math.min(220,
                 (int) Math.round((1.0D - progress) * 220.0D)));
         if (alpha <= 2) return;
-        int color = (alpha << 24) | 0x00BDEEFF;
+        int color = (alpha << 24) | 0x00FFC68A;
         int points = Math.max(20, radius * 3);
         for (int index = 0; index < points; index++) {
             double angle = Math.PI * 2.0D * index / points;

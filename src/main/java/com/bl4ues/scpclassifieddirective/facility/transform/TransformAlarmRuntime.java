@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.block.DecontaminationStructure;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -346,13 +347,13 @@ public final class TransformAlarmRuntime {
         // Search only that vertical footprint, never a room-wide radius.
         for (int down = 1; down <= 2; down++) {
             TransformGroup.GridPos base = support.offset(0, -down, 0);
-            if (electricOpenDoor(group.cells().get(base))) return true;
+            if (heavyDoorOpen(group.cells().get(base))) return true;
             for (Direction direction : new Direction[]{
                     Direction.NORTH, Direction.SOUTH,
                     Direction.EAST, Direction.WEST}) {
                 TransformGroup.GridPos neighbor = base.offset(
                         direction.getStepX(), 0, direction.getStepZ());
-                if (electricOpenDoor(group.cells().get(neighbor))) return true;
+                if (heavyDoorOpen(group.cells().get(neighbor))) return true;
             }
         }
         return false;
@@ -361,6 +362,11 @@ public final class TransformAlarmRuntime {
     private static boolean electricOpenDoor(BlockState state) {
         return state != null
                 && FacilityModule.isElectricDoorOpenOrOpening(state);
+    }
+
+    private static boolean heavyDoorOpen(BlockState state) {
+        return electricOpenDoor(state)
+                && HeavyDoorPowerRelay.isHeavyDoorState(state.getBlock());
     }
 
     private static boolean adjacentOpenDoor(ConstructionSurface surface,

@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
@@ -51,6 +53,21 @@ public final class FacilityPipeModule {
                 "wall_pipe_" + finish + "_" + supports);
     }
 
+    private static String displayName(String finish, String supports) {
+        String pipe = switch (finish) {
+            case "caution" -> "Caution-Marked Wall Pipe";
+            case "blue" -> "Blue Utility Pipe";
+            default -> "Steel Wall Pipe";
+        };
+        String fittings = switch (supports) {
+            case "both" -> "Dual Brackets";
+            case "right" -> "Right Bracket";
+            case "left" -> "Left Bracket";
+            default -> "No Brackets";
+        };
+        return pipe + " (" + fittings + ")";
+    }
+
     @SubscribeEvent
     public static void register(RegisterEvent event) {
         for (String finish : FINISHES) {
@@ -58,9 +75,23 @@ public final class FacilityPipeModule {
                 ResourceLocation id = id(finish, supports);
                 event.register(ForgeRegistries.Keys.BLOCKS, id, PipeBlock::new);
                 event.register(ForgeRegistries.Keys.ITEMS, id, () ->
-                        new BlockItem(ForgeRegistries.BLOCKS.getValue(id),
-                                new Item.Properties()));
+                        new PipeItem(ForgeRegistries.BLOCKS.getValue(id),
+                                displayName(finish, supports)));
             }
+        }
+    }
+
+    private static final class PipeItem extends BlockItem {
+        private final Component name;
+
+        private PipeItem(Block block, String name) {
+            super(block, new Item.Properties());
+            this.name = Component.literal(name);
+        }
+
+        @Override
+        public Component getName(ItemStack stack) {
+            return name;
         }
     }
 
@@ -86,8 +117,8 @@ public final class FacilityPipeModule {
         @Override
         public BlockState getStateForPlacement(BlockPlaceContext context) {
             Direction face = context.getClickedFace();
-            // No mandatory full-cube backing: curved Surface Tool walls are
-            // represented by transformed geometry, not a vanilla sturdy face.
+            // Do not require a vanilla sturdy wall: curved Surface Tool walls
+            // are represented by transformed geometry instead of a full cube.
             return defaultBlockState().setValue(FACING,
                     face.getAxis().isHorizontal() ? face
                             : context.getHorizontalDirection().getOpposite());

@@ -19,7 +19,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** Physical use and placement are resolved against the nearest logical grid. */
+/** Physical use and placement resolve against the nearest authored grid. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class TransformSurfacePlacementClient {
@@ -28,10 +28,9 @@ public final class TransformSurfacePlacementClient {
     private TransformSurfacePlacementClient() {
     }
 
-    // The Off-Grid handler runs at HIGHEST and currently does not inspect the
-    // canceled flag. Running this handler one priority later means a click
-    // already claimed by that handler cannot be sent a second time. When a
-    // Surface is selected the group handler explicitly defers to this one.
+    // Group authoring has first refusal at HIGHEST. Only handle an event once:
+    // forwarding the same use to both grids can toggle two controls or create
+    // duplicate attachments from one physical mouse press.
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
         if (!event.isUseItem() || event.isCanceled()) return;
@@ -40,101 +39,70 @@ public final class TransformSurfacePlacementClient {
         if (player == null || minecraft.level == null || minecraft.screen != null
                 || holdingConstructionTool(player)) return;
 
-        // Never privilege the previous editing selection over the surface the
-        // player is actually looking at, or a nearer Off-Grid cell. The two
-        // targets are resolved in their respective logical grids, not from a
-        // vanilla proxy AABB.
-        TransformSurfaceRaycast.Target aimed = TransformSurfaceRaycast.target(
+        TransformSurfaceRaycast.Target surface = TransformSurfaceRaycast.target(
                 player, TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location()));
         boolean placing = player.isCreative()
                 && player.getMainHandItem().getItem() instanceof BlockItem;
-        if (!player.isShiftKeyDown()) {
-            TransformGroupPlacementClient.PayloadTarget groupUse =
-                    TransformGroupPlacementClient.findPayloadTarget(player);
-            if (groupUse != null && nearer(groupUse.distance(), aimed)) {
-                // Placing a block against a group must use the placement path,
-                // not activate an existing fixture on the group.
-                if (!placing) {
-                    TransformConstructionNetwork.useGroupCell(
-                            groupUse.group().id(), groupUse.cell());
-                    event.setCanceled(true);
-                    return;
-                }
-            }
-        }
 
+        // Check the target relevant to the current action. A shifted button
+        // should not steal a block-placement click, while an empty construction
+        // cell must not steal a button-use click. Neither comparison depends on
+        // the last selected Surface or on the parent world's proxy AABB.
         if (placing) {
-            TransformGroupPlacementClient.Target groupTarget =
+            TransformGroupPlacementClient.Target group =
                     TransformGroupPlacementClient.findTarget(player);
-            if (groupTarget != null && nearer(
-                    player.getEyePosition().distanceTo(groupTarget.worldHit()),
-                    aimed)) {
+            if (group != null && nearer(
+                    player.getEyePosition().distanceTo(group.worldHit()),
+                    surface)) {
                 TransformConstructionNetwork.placeGroupBlock(
-                        groupTarget.group().id(), groupTarget.source(),
-                        groupTarget.adjacentCell(), groupTarget.face(),
-                        groupTarget.worldHit());
+                        group.group().id(), group.source(),
+                        group.adjacentCell(), group.face(), group.worldHit());
                 event.setCanceled(true);
                 return;
             }
-        }
-
-        if (!player.isShiftKeyDown() && aimed != null) {
-            if (aimed.layer().overlay()) {
-                ConstructionSurface.SurfaceAttachment overlay =
-                        aimed.surface().overlay(aimed.slot(),
-                                aimed.normalSign());
-                if (overlay != null && interactive(overlay.state())) {
-                    TransformConstructionNetwork.useSurfaceOverlay(
-                            aimed.surface().id(), aimed.slot(),
-                            aimed.normalSign());
-                    event.setCanceled(true);
-                    return;
-                }
-            } else {
-                ConstructionSurface.SurfaceAttachment attachment =
-                        aimed.surface().attachments().get(aimed.slot());
-                if (attachment != null && interactive(attachment.state())) {
-                    TransformConstructionNetwork.useSurfaceSlot(
-                            aimed.surface().id(), aimed.slot());
-                    event.setCanceled(true);
-                    return;
-                }
-            }
-        }
-
-        if (player.getMainHandItem().getItem() instanceof BlockItem) {
-            if (!player.isCreative() || aimed == null) return;
-            boolean mainOccupied =
-                    aimed.surface().attachments().containsKey(aimed.slot());
-            if (aimed.layer().overlay() || mainOccupied) {
-                int side = aimed.layer().overlay()
-                        ? aimed.normalSign()
-                        : clickedSide(player, aimed.surface(), aimed.slot());
+            if (surface == null) return;
+            boolean occupied = surface.surface().attachments()
+                    .containsKey(surface.slot());
+            if (surface.layer().overlay() || occupied) {
+                int side = surface.layer().overlay()
+                        ? surface.normalSign()
+                        : clickedSide(player, surface.surface(), surface.slot());
                 TransformConstructionNetwork.placeSurfaceOverlay(
-                        aimed.surface().id(), aimed.slot(), side, aimed.hit());
+                        surface.surface().id(), surface.slot(), side,
+                        surface.hit());
             } else {
                 TransformConstructionNetwork.placeSurfaceBlock(
-                        aimed.surface().id(), aimed.slot(), aimed.hit());
+                        surface.surface().id(), surface.slot(), surface.hit());
             }
             event.setCanceled(true);
             return;
         }
 
-        if (aimed == null) return;
-        if (aimed.layer().overlay()) {
+        if (player.isShiftKeyDown()) return;
+        TransformGroupPlacementClient.PayloadTarget group =
+                TransformGroupPlacementClient.findPayloadTarget(player);
+        if (group != null && nearer(group.distance(), surface)) {
+            TransformConstructionNetwork.useGroupCell(
+                    group.group().id(), group.cell());
+            event.setCanceled(true);
+            return;
+        }
+        if (surface == null) return;
+        if (surface.layer().overlay()) {
             ConstructionSurface.SurfaceAttachment overlay =
-                    aimed.surface().overlay(aimed.slot(),
-                            aimed.normalSign());
+                    surface.surface().overlay(surface.slot(),
+                            surface.normalSign());
             if (overlay == null || !interactive(overlay.state())) return;
             TransformConstructionNetwork.useSurfaceOverlay(
-                    aimed.surface().id(), aimed.slot(), aimed.normalSign());
+                    surface.surface().id(), surface.slot(),
+                    surface.normalSign());
         } else {
             ConstructionSurface.SurfaceAttachment attachment =
-                    aimed.surface().attachments().get(aimed.slot());
+                    surface.surface().attachments().get(surface.slot());
             if (attachment == null || !interactive(attachment.state())) return;
             TransformConstructionNetwork.useSurfaceSlot(
-                    aimed.surface().id(), aimed.slot());
+                    surface.surface().id(), surface.slot());
         }
         event.setCanceled(true);
     }

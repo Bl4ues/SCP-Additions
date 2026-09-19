@@ -40,7 +40,7 @@ public final class TransformPowerQuery {
             TransformGroup.GridPos neighbor = consumer.offset(
                     direction.getStepX(), direction.getStepY(),
                     direction.getStepZ());
-            if (source(group.cells().get(neighbor))) return true;
+            if (sourceAtVisualCell(group, neighbor)) return true;
         }
         // Parent-world redstone may feed the local grid at the physical cell,
         // but transformed sources do not use Euclidean "nearby" power here.
@@ -173,6 +173,30 @@ public final class TransformPowerQuery {
                 && state.getValue(BlockStateProperties.POWERED);
     }
 
+    /**
+     * Power follows the cell the player actually sees, not the hidden authored
+     * controller address used by offset door buttons/readers.
+     */
+    private static boolean sourceAtVisualCell(TransformGroup group,
+            TransformGroup.GridPos visualCell) {
+        if (group == null || visualCell == null) return false;
+        TransformGroup.GridPos[] candidates = {
+                visualCell,
+                visualCell.offset(1, 0, 0),
+                visualCell.offset(-1, 0, 0),
+                visualCell.offset(0, 0, 1),
+                visualCell.offset(0, 0, -1)
+        };
+        for (TransformGroup.GridPos candidate : candidates) {
+            BlockState state = group.cells().get(candidate);
+            if (!source(state)) continue;
+            TransformGroup.GridPos visual =
+                    TransformWallFixturePlacement.visualCell(candidate, state);
+            if (visualCell.equals(visual)) return true;
+        }
+        return false;
+    }
+
     private static boolean sourceAtLogicalSlot(
             ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot) {
@@ -181,15 +205,34 @@ public final class TransformPowerQuery {
                 || slot.row() < 0 || slot.row() >= surface.rows()) {
             return false;
         }
-        ConstructionSurface.SurfaceAttachment main =
-                surface.attachments().get(slot);
-        if (main != null && source(main.state())) return true;
-        ConstructionSurface.SurfaceAttachment positive =
-                surface.overlay(slot, 1);
-        if (positive != null && source(positive.state())) return true;
-        ConstructionSurface.SurfaceAttachment negative =
-                surface.overlay(slot, -1);
-        return negative != null && source(negative.state());
+        for (int columnOffset = -1; columnOffset <= 1;
+                columnOffset++) {
+            ConstructionSurface.SurfaceSlot candidate =
+                    new ConstructionSurface.SurfaceSlot(
+                            slot.column() + columnOffset, slot.row());
+            if (candidate.column() < 0
+                    || candidate.column() >= surface.columns()) continue;
+
+            ConstructionSurface.SurfaceAttachment main =
+                    surface.attachments().get(candidate);
+            if (main != null && source(main.state())) {
+                ConstructionSurface.SurfaceSlot visual =
+                        TransformWallFixturePlacement.visualSlot(surface,
+                                candidate, main.state(),
+                                TransformSurfaceGeometry.MAIN_SIDE);
+                if (slot.equals(visual)) return true;
+            }
+            for (int side : new int[]{-1, 1}) {
+                ConstructionSurface.SurfaceAttachment overlay =
+                        surface.overlay(candidate, side);
+                if (overlay == null || !source(overlay.state())) continue;
+                ConstructionSurface.SurfaceSlot visual =
+                        TransformWallFixturePlacement.visualSlot(surface,
+                                candidate, overlay.state(), side);
+                if (slot.equals(visual)) return true;
+            }
+        }
+        return false;
     }
 
     private record SourceOwner(ResourceLocation dimension, UUID id,

@@ -72,7 +72,10 @@ public final class TransformFacilityButtonRuntime {
         if (attachment == null
                 || !TransformWallFixturePlacement.isDoorButton(
                         attachment.state())) return false;
-        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot, 1,
+        ConstructionSurface.SurfaceSlot visual =
+                TransformWallFixturePlacement.visualSlot(surface, slot,
+                        attachment.state(), 1);
+        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, visual, 1,
                 false);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
         return activate(level, ButtonTarget.surface(surface, slot, 0,
@@ -96,7 +99,10 @@ public final class TransformFacilityButtonRuntime {
         if (attachment == null
                 || !TransformWallFixturePlacement.isDoorButton(
                         attachment.state())) return false;
-        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot, side,
+        ConstructionSurface.SurfaceSlot visual =
+                TransformWallFixturePlacement.visualSlot(surface, slot,
+                        attachment.state(), side);
+        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, visual, side,
                 true);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
         return activate(level, ButtonTarget.surface(surface, slot, side,

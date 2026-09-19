@@ -2,6 +2,8 @@ package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.bl4ues.scpclassifieddirective.item.ScrewdriverItem;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
@@ -81,6 +83,9 @@ public final class TransformSurfacePlacementClient {
         }
 
         if (player.isShiftKeyDown()) return;
+        boolean configuringAlarm = player.getMainHandItem().getItem()
+                instanceof ScrewdriverItem
+                || player.getOffhandItem().getItem() instanceof ScrewdriverItem;
         // Empty authoring guides do not occlude runtime equipment. Real solid
         // payloads do: a button behind an unrelated authored wall is not a
         // reachable control merely because the raycast skips non-controls.
@@ -90,13 +95,15 @@ public final class TransformSurfacePlacementClient {
         TransformGroupPlacementClient.PayloadTarget group =
                 TransformGroupPlacementClient.findBreakTarget(player);
         if (group != null && nearer(group.distance(), surface)) {
-            if (!interactive(group.state())) return;
+            if (!interactive(group.state()) && !(configuringAlarm
+                    && AlarmModule.isController(group.state()))) return;
             TransformConstructionNetwork.useGroupCell(
                     group.group().id(), group.cell());
             event.setCanceled(true);
             return;
         }
-        if (surface == null || !interactiveSurfaceTarget(surface)) return;
+        if (surface == null
+                || !interactiveSurfaceTarget(surface, configuringAlarm)) return;
         if (surface.layer().overlay()) {
             TransformConstructionNetwork.useSurfaceOverlay(
                     surface.surface().id(), surface.slot(),
@@ -123,10 +130,12 @@ public final class TransformSurfacePlacementClient {
     }
 
     private static boolean interactiveSurfaceTarget(
-            TransformSurfaceRaycast.Target target) {
+            TransformSurfaceRaycast.Target target, boolean configuringAlarm) {
         ConstructionSurface.SurfaceAttachment attachment =
                 surfaceAttachment(target);
-        return attachment != null && interactive(attachment.state());
+        return attachment != null && (interactive(attachment.state())
+                || configuringAlarm
+                && AlarmModule.isController(attachment.state()));
     }
 
     private static boolean nearer(double groupDistance,

@@ -242,11 +242,13 @@ public final class TransformPlacementStateRuntime {
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 safeHit = hit == null ? surface.gridPoint(u, v) : hit;
 
-        // The local Surface wall is at Z=0 and pipe geometry is authored
-        // against its positive Z side when FACING is NORTH, on either face.
+        // The pipe mesh is authored at the +Z edge with NORTH facing.
+        // A Surface wall starts at local Z=0, so reverse the pipe model into
+        // the outward-facing half-cell instead of projecting it a full block
+        // behind the guide. The Surface normal handles front/back globally.
         if (item.getBlock() instanceof FacilityPipeModule.PipeBlock) {
             return item.getBlock().defaultBlockState().setValue(
-                    BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
+                    BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH);
         }
 
         // Surface payloads use a canonical local cell: wall plane at local Z=0,

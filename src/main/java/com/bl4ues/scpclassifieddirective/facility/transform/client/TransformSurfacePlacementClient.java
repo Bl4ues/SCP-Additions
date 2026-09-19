@@ -83,6 +83,12 @@ public final class TransformSurfacePlacementClient {
         }
 
         if (player.isShiftKeyDown()) return;
+        // An empty Surface guide exists for authoring, not for runtime use.
+        // It must not occlude a genuine button, reader or door behind it in an
+        // independent transformed grid. Placement still uses empty guides.
+        if (surface != null && !interactiveSurfaceTarget(surface)) {
+            surface = null;
+        }
         TransformGroupPlacementClient.PayloadTarget group =
                 TransformGroupPlacementClient.findPayloadTarget(player);
         if (group != null && nearer(group.distance(), surface)) {
@@ -93,21 +99,24 @@ public final class TransformSurfacePlacementClient {
         }
         if (surface == null) return;
         if (surface.layer().overlay()) {
-            ConstructionSurface.SurfaceAttachment overlay =
-                    surface.surface().overlay(surface.slot(),
-                            surface.normalSign());
-            if (overlay == null || !interactive(overlay.state())) return;
             TransformConstructionNetwork.useSurfaceOverlay(
                     surface.surface().id(), surface.slot(),
                     surface.normalSign());
         } else {
-            ConstructionSurface.SurfaceAttachment attachment =
-                    surface.surface().attachments().get(surface.slot());
-            if (attachment == null || !interactive(attachment.state())) return;
             TransformConstructionNetwork.useSurfaceSlot(
                     surface.surface().id(), surface.slot());
         }
         event.setCanceled(true);
+    }
+
+    private static boolean interactiveSurfaceTarget(
+            TransformSurfaceRaycast.Target target) {
+        ConstructionSurface.SurfaceAttachment attachment =
+                target.layer().overlay()
+                        ? target.surface().overlay(target.slot(),
+                                target.normalSign())
+                        : target.surface().attachments().get(target.slot());
+        return attachment != null && interactive(attachment.state());
     }
 
     private static boolean nearer(double groupDistance,

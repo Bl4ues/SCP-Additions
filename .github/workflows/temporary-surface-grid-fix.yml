@@ -22,32 +22,22 @@ jobs:
           from pathlib import Path
           p = Path('src/main/java/com/bl4ues/scpclassifieddirective/client/scp079/Scp079FacilityMapScreen.java')
           text = p.read_text(encoding='utf-8')
-          substitutions = [
-              ('''                    renderClosedKeycardBadge(graphics, marker, transform,
-                                      locked);'''.replace('                                      ', '                            '),
-               '''                    renderClosedKeycardBadge(graphics, marker, transform,
-                                      locked, color);'''.replace('                                      ', '                            ')),
-              ('''            MapDoorMarker marker, MapTransform transform, boolean locked) {''',
-               '''            MapDoorMarker marker, MapTransform transform,
-                      boolean locked, int color) {'''.replace('                      ', '            ')),
-              ('''        int half = 7;
-                  int badge = locked ? 0xFF77868B : 0xFFF1FAFD;'''.replace('                  ', '        '),
-               '''        int half = 8;
-                  int badge = color;'''.replace('                  ', '        ')),
-              ('''        drawFixedCenteredMapLabel(graphics, value, x, y,
-                  locked ? 0xFF172126 : 0xFF071116);'''.replace('                  ', '                '),
-               '''        drawCenteredMapLabel(graphics, value, x, y, 1.30F,
-                  locked ? 0xFF172126 : 0xFF071116);'''.replace('                  ', '                ')),
-              ('''        drawFixedCenteredMapLabel(graphics,
-                  Integer.toString(marker.requiredLevel()),
-                  x, y, 0xFFF1FAFD);'''.replace('                  ', '                '),
-               '''        drawCenteredMapLabel(graphics,
-                  Integer.toString(marker.requiredLevel()),
-                  x, y, 1.30F, 0xFFFFFFFF);'''.replace('                  ', '                ')),
+          edits = [
+              ('renderClosedKeycardBadge(graphics, marker, transform,\n                            locked);',
+               'renderClosedKeycardBadge(graphics, marker, transform,\n                            locked, color);'),
+              ('MapDoorMarker marker, MapTransform transform, boolean locked) {',
+               'MapDoorMarker marker, MapTransform transform,\n            boolean locked, int color) {'),
+              ('int half = 7;', 'int half = 8;'),
+              ('int badge = locked ? 0xFF77868B : 0xFFF1FAFD;', 'int badge = color;'),
+              ('drawFixedCenteredMapLabel(graphics, value, x, y,',
+               'drawCenteredMapLabel(graphics, value, x, y, 1.30F,'),
+              ('drawFixedCenteredMapLabel(graphics,\n                Integer.toString(marker.requiredLevel()),',
+               'drawCenteredMapLabel(graphics,\n                Integer.toString(marker.requiredLevel()),'),
+              ('x, y, 0xFFF1FAFD);', 'x, y, 1.30F, 0xFFFFFFFF);'),
           ]
-          for old, new in substitutions:
+          for old, new in edits:
               if text.count(old) != 1:
-                  raise RuntimeError('Expected one exact map fragment, got %d: %r' % (text.count(old), old[:80]))
+                  raise RuntimeError('Expected exactly one map fragment, got %d: %r' % (text.count(old), old))
               text = text.replace(old, new, 1)
           p.write_text(text, encoding='utf-8')
           PY

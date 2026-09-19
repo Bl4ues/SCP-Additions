@@ -38,9 +38,12 @@ public final class TransformPowerQuery {
             TransformGroup.GridPos neighbor = consumer.offset(
                     direction.getStepX(), direction.getStepY(),
                     direction.getStepZ());
-            if (source(group.cells().get(neighbor))) return true;
+            if (sourceAtVisualCell(group, neighbor)) return true;
         }
-        return powered(level, group.cellCenter(consumer));
+        // Parent-world redstone may feed the local grid at the physical cell,
+        // but transformed sources do not use Euclidean "nearby" power here.
+        // Inside one authored grid, adjacency is discrete just like vanilla.
+        return vanillaPowered(level, group.cellCenter(consumer));
     }
 
     public static boolean powered(ServerLevel level, ConstructionSurface surface,
@@ -52,15 +55,22 @@ public final class TransformPowerQuery {
                     new ConstructionSurface.SurfaceSlot(
                             consumer.column() + offset[0],
                             consumer.row() + offset[1]);
-            if (sourceAt(surface, neighbor)) return true;
+            if (sourceAtVisualSlot(surface, neighbor)) return true;
         }
         double u = (consumer.column() + 0.5D) / surface.columns();
         double v = (consumer.row() + 0.5D) / surface.rows();
-        return powered(level, surface.gridPoint(u, v)
+        return vanillaPowered(level, surface.gridPoint(u, v)
                 .add(surface.gridNormal(u, v).scale(0.5D)));
     }
 
     public static boolean powered(ServerLevel level, Vec3 center) {
+        if (level == null || center == null) return false;
+        return vanillaPowered(level, center)
+                || index(level.getServer()).hasSourceNear(
+                        level.dimension().location(), center, 1.05D);
+    }
+
+    private static boolean vanillaPowered(ServerLevel level, Vec3 center) {
         if (level == null || center == null) return false;
         BlockPos base = BlockPos.containing(center);
         if (level.hasNeighborSignal(base) || level.hasNeighborSignal(base.above())) {
@@ -70,8 +80,7 @@ public final class TransformPowerQuery {
                 : net.minecraft.core.Direction.values()) {
             if (level.hasNeighborSignal(base.relative(direction))) return true;
         }
-        return index(level.getServer()).hasSourceNear(
-                level.dimension().location(), center, 1.35D);
+        return false;
     }
 
     /**
@@ -156,17 +165,64 @@ public final class TransformPowerQuery {
                 && state.getValue(BlockStateProperties.POWERED);
     }
 
-    private static boolean sourceAt(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot) {
-        ConstructionSurface.SurfaceAttachment main =
-                surface.attachments().get(slot);
-        if (main != null && source(main.state())) return true;
-        ConstructionSurface.SurfaceAttachment positive =
-                surface.overlay(slot, 1);
-        if (positive != null && source(positive.state())) return true;
-        ConstructionSurface.SurfaceAttachment negative =
-                surface.overlay(slot, -1);
-        return negative != null && source(negative.state());
+    private static boolean sourceAtVisualCell(TransformGroup group,
+            TransformGroup.GridPos visualCell) {
+        if (group == null || visualCell == null) return false;
+        BlockState direct = group.cells().get(visualCell);
+        if (source(direct)
+                && TransformWallFixturePlacement.visualCell(
+                        visualCell, direct).equals(visualCell)) {
+            return true;
+        }
+        for (net.minecraft.core.Direction direction
+                : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+            TransformGroup.GridPos controller = visualCell.offset(
+                    -direction.getStepX(), 0, -direction.getStepZ());
+            BlockState state = group.cells().get(controller);
+            if (source(state)
+                    && TransformWallFixturePlacement.visualCell(
+                            controller, state).equals(visualCell)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sourceAtVisualSlot(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot visualSlot) {
+        if (surface == null || visualSlot == null) return false;
+        for (int side : new int[]{1, -1}) {
+            if (sourceAtVisualSlot(surface, visualSlot, side, false)
+                    || sourceAtVisualSlot(surface, visualSlot, side, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sourceAtVisualSlot(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot visualSlot, int side,
+            boolean overlay) {
+        int[][] candidates = {{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        for (int[] delta : candidates) {
+            ConstructionSurface.SurfaceSlot address =
+                    new ConstructionSurface.SurfaceSlot(
+                            visualSlot.column() + delta[0],
+                            visualSlot.row() + delta[1]);
+            if (address.column() < 0 || address.column() >= surface.columns()
+                    || address.row() < 0 || address.row() >= surface.rows()) {
+                continue;
+            }
+            ConstructionSurface.SurfaceAttachment attachment = overlay
+                    ? surface.overlay(address, side)
+                    : surface.attachments().get(address);
+            if (attachment == null || !source(attachment.state())) continue;
+            ConstructionSurface.SurfaceSlot actual =
+                    TransformWallFixturePlacement.visualSlot(surface,
+                            address, attachment.state(), side);
+            if (visualSlot.equals(actual)) return true;
+        }
+        return false;
     }
 
     private record SourceOwner(ResourceLocation dimension, UUID id,

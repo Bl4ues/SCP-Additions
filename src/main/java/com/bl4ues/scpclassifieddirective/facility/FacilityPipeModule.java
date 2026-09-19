@@ -119,7 +119,7 @@ public final class FacilityPipeModule {
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
             super.appendHoverText(stack, level, tooltip, flag);
-            tooltip.add(Component.literal("Decorative only")
+            tooltip.add(Component.literal("Decorative Only")
                     .withStyle(ChatFormatting.GRAY));
         }
     }

@@ -591,16 +591,14 @@ public final class Scp079FacilityMapScreen extends Screen {
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
 
-        // Supplementary clearance stays hidden until the operator zooms in.
-        // Once visible it always uses the same maximum size, independent of
-        // zoom or the physical door angle, so it cannot bury other markers.
-        if (mapZoom < 1.55D) return;
+        // Clearance is attached to the door's midpoint in screen space.
+        // It is readable at every zoom, never scaled by the map/camera.
         final int half = 9;
         int segmentColor = locked ? 0xFF89989D : color;
         // Solid badge and door segment share one visual material/palette.
         graphics.fill(x - half, y - half, x + half + 1, y + half + 1,
                 segmentColor);
-        drawCenteredMapLabel(graphics, value, x, y, 1.85F,
+        drawCenteredMapLabel(graphics, value, x, y + 1, 1.85F,
                 0xFF07151C);
     }
 
@@ -608,10 +606,9 @@ public final class Scp079FacilityMapScreen extends Screen {
             MapDoorMarker marker, MapTransform transform, int color) {
         int x = transform.sx(marker.x());
         int y = transform.sy(marker.z());
-        if (mapZoom < 1.55D) return;
         drawCenteredMapLabel(graphics,
                 Integer.toString(marker.requiredLevel()),
-                x, y, 1.60F, 0xFFFFFFFF);
+                x, y + 1, 1.60F, 0xFFFFFFFF);
     }
 
     private void drawFixedCenteredMapLabel(GuiGraphics graphics, String value,

@@ -161,6 +161,13 @@ public final class TransformPowerQuery {
                 || buttonPhase == TransformWallFixturePlacement.DoorButtonPhase.OPEN) {
             return true;
         }
+        KeycardReaderLevels.ReaderDescriptor reader =
+                KeycardReaderLevels.describe(state);
+        if (reader != null && state.getBlock()
+                == KeycardReaderLevels.acceptedBlock(
+                        reader.level(), reader.side())) {
+            return true;
+        }
         return state.hasProperty(BlockStateProperties.POWERED)
                 && state.getValue(BlockStateProperties.POWERED);
     }

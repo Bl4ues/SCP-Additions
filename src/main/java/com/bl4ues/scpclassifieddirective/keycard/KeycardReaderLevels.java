@@ -182,6 +182,30 @@ public final class KeycardReaderLevels {
         };
     }
 
+    public static Block deniedBlock(int level, Side side) {
+        return switch (level) {
+            case 1 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LEFT_READER_WRONG.get()
+                    : ScpClassifiedDirectiveModBlocks.RIGHT_READER_WRONG.get();
+            case 2 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_2_LEFT_READER_WRONG.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_2_RIGHT_READER_WRONG.get();
+            case 3 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_3_LEFT_READER_WRONG.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_3_RIGHT_READER_WRONG.get();
+            case 4 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_4_LEFT_READER_WRONG.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_4_RIGHT_READER_WRONG.get();
+            case 5 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_5_LEFT_READER_WRONG.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_5_RIGHT_READER_WRONG.get();
+            case 6 -> side == Side.LEFT
+                    ? ScpClassifiedDirectiveModBlocks.LV_6_LEFT_READER_WRONG.get()
+                    : ScpClassifiedDirectiveModBlocks.LV_6_RIGHT_READER_WRONG.get();
+            default -> throw new IllegalArgumentException("Reader level must be between 1 and 6");
+        };
+    }
+
     private static boolean replacePreservingState(Level level, BlockPos pos,
             BlockState current, BlockState replacement) {
         if (current.hasProperty(HorizontalDirectionalBlock.FACING)

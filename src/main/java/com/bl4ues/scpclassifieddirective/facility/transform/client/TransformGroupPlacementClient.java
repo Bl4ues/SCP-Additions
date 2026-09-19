@@ -9,6 +9,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformCons
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SelectionType;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
+import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Direction;
@@ -334,6 +335,7 @@ public final class TransformGroupPlacementClient {
         return state != null && (state.getBlock() instanceof ButtonBlock
                 || state.getBlock() instanceof LeverBlock
                 || TransformWallFixturePlacement.isDoorButton(state)
+                || KeycardReaderLevels.describe(state) != null
                 || FacilityModule.isFacilityDoor(state));
     }
 

@@ -28,7 +28,11 @@ public final class TransformSurfacePlacementClient {
     private TransformSurfacePlacementClient() {
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    // The Off-Grid handler runs at HIGHEST and currently does not inspect the
+    // canceled flag. Running this handler one priority later means a click
+    // already claimed by that handler cannot be sent a second time. When a
+    // Surface is selected the group handler explicitly defers to this one.
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
         if (!event.isUseItem() || event.isCanceled()) return;
         Minecraft minecraft = Minecraft.getInstance();

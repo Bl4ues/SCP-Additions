@@ -69,7 +69,7 @@ public final class TransformSurfaceDoorRuntime {
         DoorAddress address = hit.address();
         if (address.stage() != DoorStage.CLOSED
                 && address.stage() != DoorStage.OPEN) return;
-        start(level, hit.surface(), hit.slot(), address.family(),
+        start(level, hit.surface(), hit.slot(), hit.normalSign(), address.family(),
                 address.stage() == DoorStage.CLOSED);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
@@ -81,6 +81,17 @@ public final class TransformSurfaceDoorRuntime {
      */
     public static boolean useSurfaceSlot(ServerPlayer player, UUID surfaceId,
             ConstructionSurface.SurfaceSlot slot) {
+        return useSurfaceDoor(player, surfaceId, slot, 0);
+    }
+
+    public static boolean useSurfaceOverlay(ServerPlayer player, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
+        return useSurfaceDoor(player, surfaceId, slot,
+                normalSign < 0 ? -1 : 1);
+    }
+
+    private static boolean useSurfaceDoor(ServerPlayer player, UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
         if (player == null || surfaceId == null || slot == null
                 || !(player.level() instanceof ServerLevel level)) return false;
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
@@ -89,21 +100,25 @@ public final class TransformSurfaceDoorRuntime {
         if (surface == null || !surface.dimension().equals(
                 level.dimension().location())) return false;
         ConstructionSurface.SurfaceAttachment attachment =
-                surface.attachments().get(slot);
+                attachment(surface, slot, normalSign);
         if (attachment == null) return false;
         DoorAddress address = address(attachment.state());
         if (address == null || !address.family().directUse()) return false;
-        Vec3 center = center(surface, slot);
-        if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
-        if (address.stage() == DoorStage.CLOSED) {
-            start(level, surface, slot, address.family(), true);
-            return true;
-        }
-        if (address.stage() == DoorStage.OPEN) {
-            start(level, surface, slot, address.family(), false);
-            return true;
+        if (player.getEyePosition().distanceToSqr(
+                center(surface, slot, normalSign)) > 36.0D) return false;
+        if (address.stage() == DoorStage.CLOSED
+                || address.stage() == DoorStage.OPEN) {
+            start(level, surface, slot, normalSign, address.family(),
+                    address.stage() == DoorStage.CLOSED);
         }
         return true;
+    }
+
+    private static ConstructionSurface.SurfaceAttachment attachment(
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
+            int normalSign) {
+        return normalSign == 0 ? surface.attachments().get(slot)
+                : surface.overlay(slot, normalSign);
     }
 
     @SubscribeEvent
@@ -140,14 +155,14 @@ public final class TransformSurfaceDoorRuntime {
             ConstructionSurface surface = data.surface(ref.surfaceId());
             if (surface == null) continue;
             ConstructionSurface.SurfaceAttachment attachment =
-                    surface.attachments().get(ref.slot());
+                    attachment(surface, ref.slot(), ref.normalSign());
             if (attachment == null) continue;
             DoorAddress address = address(attachment.state());
             if (address == null) continue;
             ServerLevel level = levelById(server, surface.dimension());
             if (level == null) continue;
 
-            CellKey key = new CellKey(surface.id(), ref.slot());
+            CellKey key = new CellKey(surface.id(), ref.slot(), ref.normalSign());
             if ((address.stage() == DoorStage.OPENING
                     || address.stage() == DoorStage.CLOSING)
                     && !pending.containsKey(key)) {
@@ -163,9 +178,11 @@ public final class TransformSurfaceDoorRuntime {
             boolean powered = TransformPowerQuery.powered(level,
                     surface, ref.slot());
             if (address.stage() == DoorStage.CLOSED && powered) {
-                start(level, surface, ref.slot(), address.family(), true);
+                start(level, surface, ref.slot(), ref.normalSign(),
+                        address.family(), true);
             } else if (address.stage() == DoorStage.OPEN && !powered) {
-                start(level, surface, ref.slot(), address.family(), false);
+                start(level, surface, ref.slot(), ref.normalSign(),
+                        address.family(), false);
             }
         }
     }
@@ -179,17 +196,41 @@ public final class TransformSurfaceDoorRuntime {
         }
         java.util.ArrayList<DoorRef> refs = new java.util.ArrayList<>();
         for (ConstructionSurface surface : data.surfaces()) {
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                if (address(entry.getValue().state()) != null) {
-                    refs.add(new DoorRef(surface.id(), entry.getKey()));
-                }
-            }
+            collectDoorRefs(refs, surface);
         }
         List<DoorRef> immutable = List.copyOf(refs);
         DOOR_INDEX.put(server, new DoorIndex(revision, immutable));
         return immutable;
+    }
+
+    private static void collectDoorRefs(List<DoorRef> refs,
+            ConstructionSurface surface) {
+        for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.attachments().entrySet()) {
+            if (address(entry.getValue().state()) != null) {
+                refs.add(new DoorRef(surface.id(), entry.getKey(), 0));
+            }
+        }
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.overlays().entrySet()) {
+            if (address(entry.getValue().state()) != null) {
+                refs.add(new DoorRef(surface.id(), entry.getKey().slot(),
+                        entry.getKey().normalSign() < 0 ? -1 : 1));
+            }
+        }
+    }
+
+    private static void collectSlotDoorRefs(List<DoorRef> refs,
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot) {
+        for (int sign : new int[]{0, -1, 1}) {
+            ConstructionSurface.SurfaceAttachment current =
+                    attachment(surface, slot, sign);
+            if (current != null && address(current.state()) != null) {
+                refs.add(new DoorRef(surface.id(), slot, sign));
+            }
+        }
     }
 
     private static boolean advance(ServerLevel level, CellKey key,
@@ -200,7 +241,7 @@ public final class TransformSurfaceDoorRuntime {
         if (surface == null || !surface.dimension().equals(
                 level.dimension().location())) return false;
         ConstructionSurface.SurfaceAttachment attachment =
-                surface.attachments().get(key.slot());
+                attachment(surface, key.slot(), key.normalSign());
         if (attachment == null) return false;
         BlockState current = attachment.state();
         DoorAddress address = address(current);
@@ -214,8 +255,8 @@ public final class TransformSurfaceDoorRuntime {
             Block next = nextIndex < family.opening().size()
                     ? family.opening().get(nextIndex).get()
                     : family.open().get();
-            setState(level, surface, key.slot(), attachment,
-                    copyFacing(current, next), false);
+            setState(level, surface, key.slot(), key.normalSign(),
+                    attachment, copyFacing(current, next), false);
             if (nextIndex >= family.opening().size()) return false;
         } else {
             if (address.stage() != DoorStage.CLOSING) return false;
@@ -224,8 +265,8 @@ public final class TransformSurfaceDoorRuntime {
                     ? family.closing().get(nextIndex).get()
                     : family.closed().get();
             boolean becameClosed = nextIndex >= family.closing().size();
-            setState(level, surface, key.slot(), attachment,
-                    copyFacing(current, next), becameClosed);
+            setState(level, surface, key.slot(), key.normalSign(),
+                    attachment, copyFacing(current, next), becameClosed);
             if (becameClosed) return false;
         }
         Map<CellKey, PendingDoor> map = PENDING.get(level.getServer());
@@ -237,23 +278,23 @@ public final class TransformSurfaceDoorRuntime {
     }
 
     private static void start(ServerLevel level, ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, DoorFamily family,
-            boolean opening) {
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            DoorFamily family, boolean opening) {
         List<net.minecraftforge.registries.RegistryObject<Block>> frames = opening
                 ? family.opening() : family.closing();
         if (frames.isEmpty()) return;
         ConstructionSurface.SurfaceAttachment attachment =
-                surface.attachments().get(slot);
+                attachment(surface, slot, normalSign);
         if (attachment == null) return;
         BlockState current = attachment.state();
         BlockState first = copyFacing(current, frames.get(0).get());
-        Vec3 center = center(surface, slot);
+        Vec3 center = center(surface, slot, normalSign);
         Scp079ActivityPingManager.emitDoorAt(level, center);
         level.playSound(null, center.x, center.y, center.z,
                 (opening ? family.openingSound() : family.closingSound()).get(),
                 SoundSource.BLOCKS, 1.0F, 1.0F);
-        setState(level, surface, slot, attachment, first, true);
-        CellKey key = new CellKey(surface.id(), slot);
+        setState(level, surface, slot, normalSign, attachment, first, true);
+        CellKey key = new CellKey(surface.id(), slot, normalSign);
         PENDING.computeIfAbsent(level.getServer(), ignored -> new HashMap<>())
                 .put(key, new PendingDoor(level.dimension().location(), family.id(),
                         opening, level.getServer().getTickCount()
@@ -261,14 +302,21 @@ public final class TransformSurfaceDoorRuntime {
     }
 
     private static void setState(ServerLevel level, ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
             ConstructionSurface.SurfaceAttachment previous, BlockState state,
             boolean refreshCollision) {
-        ConstructionSurface next = surface.withAttachment(slot, state,
-                previous.deform());
+        ConstructionSurface next;
+        if (normalSign == 0) {
+            next = surface.withAttachment(slot, state, previous.deform());
+            TransformConstructionNetwork.broadcastSurfaceSlot(level, surface.id(),
+                    slot, state, previous.deform());
+        } else {
+            next = surface.withOverlay(slot, normalSign, state,
+                    previous.deform());
+            TransformConstructionNetwork.broadcastSurfaceOverlay(level,
+                    surface.id(), slot, normalSign, state, previous.deform());
+        }
         TransformConstructionSavedData.get(level.getServer()).putSurfaceState(next);
-        TransformConstructionNetwork.broadcastSurfaceSlot(level, surface.id(), slot,
-                state, previous.deform());
         boolean passabilityChanged = FacilityModule.isFacilityDoor(state)
                 && FacilityModule.isFacilityDoor(previous.state())
                 && FacilityModule.isDoorPassable(state)
@@ -292,15 +340,8 @@ public final class TransformSurfaceDoorRuntime {
         refs.removeIf(ref -> ref.surfaceId().equals(surfaceId)
                 && ref.slot().equals(slot));
         ConstructionSurface surface = data.surface(surfaceId);
-        if (surface != null) {
-            ConstructionSurface.SurfaceAttachment attachment =
-                    surface.attachments().get(slot);
-            if (attachment != null && address(attachment.state()) != null) {
-                refs.add(new DoorRef(surfaceId, slot));
-            }
-        }
-        DOOR_INDEX.put(server, new DoorIndex(data.revision(),
-                List.copyOf(refs)));
+        if (surface != null) collectSlotDoorRefs(refs, surface, slot);
+        DOOR_INDEX.put(server, new DoorIndex(data.revision(), List.copyOf(refs)));
     }
 
     public static synchronized void structuralSurfaceChanged(
@@ -312,17 +353,8 @@ public final class TransformSurfaceDoorRuntime {
         List<DoorRef> refs = new java.util.ArrayList<>(index.refs());
         refs.removeIf(ref -> ref.surfaceId().equals(surfaceId));
         ConstructionSurface surface = data.surface(surfaceId);
-        if (surface != null) {
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                if (address(entry.getValue().state()) != null) {
-                    refs.add(new DoorRef(surfaceId, entry.getKey()));
-                }
-            }
-        }
-        DOOR_INDEX.put(server, new DoorIndex(data.revision(),
-                List.copyOf(refs)));
+        if (surface != null) collectDoorRefs(refs, surface);
+        DOOR_INDEX.put(server, new DoorIndex(data.revision(), List.copyOf(refs)));
     }
 
     public static synchronized void acknowledgeStructuralRevision(
@@ -346,11 +378,25 @@ public final class TransformSurfaceDoorRuntime {
                     : surface.attachments().entrySet()) {
                 DoorAddress address = address(entry.getValue().state());
                 if (address == null) continue;
-                Vec3 center = center(surface, entry.getKey());
+                Vec3 center = center(surface, entry.getKey(), 0);
                 double distance = center.distanceToSqr(world);
                 if (distance < bestDistance) {
                     bestDistance = distance;
-                    best = new DoorHit(surface, entry.getKey(), address);
+                    best = new DoorHit(surface, entry.getKey(), 0, address);
+                }
+            }
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.overlays().entrySet()) {
+                DoorAddress address = address(entry.getValue().state());
+                if (address == null) continue;
+                int sign = entry.getKey().normalSign() < 0 ? -1 : 1;
+                Vec3 center = center(surface, entry.getKey().slot(), sign);
+                double distance = center.distanceToSqr(world);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = new DoorHit(surface, entry.getKey().slot(),
+                            sign, address);
                 }
             }
         }
@@ -358,11 +404,10 @@ public final class TransformSurfaceDoorRuntime {
     }
 
     private static Vec3 center(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot) {
-        double u = (slot.column() + 0.5D) / surface.columns();
-        double v = (slot.row() + 0.5D) / surface.rows();
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
         return TransformSurfaceGeometry.cellCenter(surface, slot,
-                TransformSurfaceGeometry.MAIN_SIDE, false);
+                normalSign == 0 ? TransformSurfaceGeometry.MAIN_SIDE
+                        : normalSign, normalSign != 0);
     }
 
     private static DoorAddress address(BlockState state) {
@@ -408,14 +453,14 @@ public final class TransformSurfaceDoorRuntime {
     }
 
     private record DoorRef(UUID surfaceId,
-            ConstructionSurface.SurfaceSlot slot) {
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
     }
 
     private record DoorIndex(long revision, List<DoorRef> refs) {
     }
 
     private record CellKey(UUID surfaceId,
-            ConstructionSurface.SurfaceSlot slot) {
+            ConstructionSurface.SurfaceSlot slot, int normalSign) {
     }
 
     private record PendingDoor(ResourceLocation dimension, String familyId,
@@ -426,6 +471,7 @@ public final class TransformSurfaceDoorRuntime {
     }
 
     private record DoorHit(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, DoorAddress address) {
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            DoorAddress address) {
     }
 }

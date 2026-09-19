@@ -210,6 +210,10 @@ public final class TransformAlarmClientRenderer {
                         localCamera);
             }
             pose.popPose();
+            if (state.getValue(AlarmModule.ACTIVE)) {
+                TransformAlarmPhysicalProjection.renderGroup(group, cell,
+                        alarm, event.getPartialTick(), pose, buffers, camera);
+            }
         }
     }
 
@@ -272,6 +276,11 @@ public final class TransformAlarmClientRenderer {
                             .NO_OVERLAY, localCamera);
         }
         pose.popPose();
+        if (state.getValue(AlarmModule.ACTIVE)) {
+            TransformAlarmPhysicalProjection.renderSurface(surface, slot,
+                    normalSign, overlay, alarm, event.getPartialTick(),
+                    pose, buffers, camera);
+        }
     }
 
     private static AlarmModule.AlarmBlockEntity host(Minecraft minecraft,

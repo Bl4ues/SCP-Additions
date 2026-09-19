@@ -339,12 +339,11 @@ public final class AlarmClient {
                 float partialTick, PoseStack poseStack,
                 MultiBufferSource bufferSource, int packedLight,
                 int packedOverlay, Vec3 cameraInBlock) {
+            // The transformed host only owns the physical lamp. Its light is
+            // now rendered against actual construction receiver faces by
+            // TransformAlarmPhysicalProjection, not on a free-floating plane.
             renderInternal(alarm, partialTick, poseStack, bufferSource,
                     packedLight, packedOverlay, false, cameraInBlock);
-            if (alarm.getBlockState().getValue(AlarmModule.ACTIVE)) {
-                renderTransformedLocalProjection(alarm, partialTick,
-                        poseStack, bufferSource);
-            }
         }
 
         private void renderInternal(AlarmModule.AlarmBlockEntity alarm,
@@ -766,87 +765,6 @@ public final class AlarmClient {
                 .add(0.0D, ry, 0.0D)
                 .add(back.scale(vector.z))
                 .normalize();
-    }
-
-    /**
-     * Cheap projection for transformed construction. The outer Off-Grid or
-     * Surface renderer has already supplied the correct local frame, so this
-     * decal lives on the Alarm's own mounting plane and never raycasts the
-     * vanilla world. It keeps the rotating-light feedback without turning one
-     * transformed Alarm into dozens of world collision queries per frame.
-     */
-    private static void renderTransformedLocalProjection(
-            AlarmModule.AlarmBlockEntity alarm, float partialTick,
-            PoseStack poseStack, MultiBufferSource buffers) {
-        BlockState state = alarm.getBlockState();
-        if (!state.hasProperty(AlarmModule.FACING)) return;
-        Direction facing = state.getValue(AlarmModule.FACING);
-        Vec3 outward = direction(facing);
-        Vec3 right = direction(facing.getClockWise());
-        Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
-        Vec3 mount = AlarmMountStructure.visualOffset(state);
-
-        // FACING is the wall's outward normal. The Alarm occupies the air
-        // cell in front of that wall, so its support plane is the OPPOSITE face
-        // of the Alarm cell. The old code used the outward face and projected
-        // the transformed cone into empty space.
-        Vec3 center = switch (facing) {
-            case NORTH -> new Vec3(0.5D, 0.5D, 0.9975D);
-            case SOUTH -> new Vec3(0.5D, 0.5D, 0.0025D);
-            case WEST -> new Vec3(0.9975D, 0.5D, 0.5D);
-            case EAST -> new Vec3(0.0025D, 0.5D, 0.5D);
-            default -> new Vec3(0.5D, 0.5D, 0.5D);
-        };
-        center = center.add(right.scale(mount.dot(right)))
-                .add(up.scale(mount.y));
-
-        double angle = rotorAngle(alarm, partialTick);
-        double cos = Math.cos(angle);
-        double sin = Math.sin(angle);
-        Vec3 rotatedRight = right.scale(cos).add(up.scale(sin));
-        Vec3 rotatedUp = up.scale(cos).subtract(right.scale(sin));
-
-        // The splash texture already contains the soft cone falloff. Rotating
-        // one quad on the authored support plane is enough for the local-grid
-        // version and costs no geometry discovery.
-        double halfWidth = 0.78D;
-        double halfHeight = 1.55D;
-        Vec3 p0 = center.subtract(rotatedRight.scale(halfWidth))
-                .subtract(rotatedUp.scale(halfHeight));
-        Vec3 p1 = center.add(rotatedRight.scale(halfWidth))
-                .subtract(rotatedUp.scale(halfHeight));
-        Vec3 p2 = center.add(rotatedRight.scale(halfWidth))
-                .add(rotatedUp.scale(halfHeight));
-        Vec3 p3 = center.subtract(rotatedRight.scale(halfWidth))
-                .add(rotatedUp.scale(halfHeight));
-
-        RenderType type = RenderType.entityTranslucentEmissive(
-                SPLASH_EMISSIVE);
-        VertexConsumer consumer = buffers.getBuffer(type);
-        transformedProjectionVertex(consumer, poseStack, p0, outward,
-                0.0F, 1.0F);
-        transformedProjectionVertex(consumer, poseStack, p1, outward,
-                1.0F, 1.0F);
-        transformedProjectionVertex(consumer, poseStack, p2, outward,
-                1.0F, 0.0F);
-        transformedProjectionVertex(consumer, poseStack, p3, outward,
-                0.0F, 0.0F);
-        flush(buffers, type);
-    }
-
-    private static void transformedProjectionVertex(VertexConsumer consumer,
-            PoseStack poseStack, Vec3 point, Vec3 normal, float u, float v) {
-        consumer.vertex(poseStack.last().pose(),
-                        (float) point.x, (float) point.y, (float) point.z)
-                .color(255, 255, 255,
-                        Math.round(PROJECTION_EMISSIVE_ALPHA * 255.0F))
-                .uv(u, v)
-                .overlayCoords(OverlayTexture.NO_OVERLAY)
-                .uv2(FULL_BRIGHT)
-                .normal(poseStack.last().normal(),
-                        (float) normal.x, (float) normal.y,
-                        (float) normal.z)
-                .endVertex();
     }
 
     private static void renderProjection(AlarmModule.AlarmBlockEntity alarm,

@@ -128,9 +128,16 @@ public final class TransformAlarmClientRenderer {
             var renderer = minecraft.getBlockEntityRenderDispatcher()
                     .getRenderer(alarm);
             if (renderer instanceof AlarmClient.BlockRenderer alarmRenderer) {
+                Vec3 localCamera = TransformMath.worldToLocal(group.origin(),
+                        camera, group.rotationX(), group.rotationY(),
+                        group.rotationZ()).subtract(
+                                cell.x() - 0.5D, cell.y() - 0.5D,
+                                cell.z() - 0.5D);
                 alarmRenderer.renderTransformed(alarm, event.getPartialTick(),
-                        pose, buffers, net.minecraft.client.renderer.LightTexture.FULL_BRIGHT,
-                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+                        pose, buffers,
+                        net.minecraft.client.renderer.LightTexture.FULL_BRIGHT,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
+                        localCamera);
             }
             pose.popPose();
         }
@@ -190,11 +197,16 @@ public final class TransformAlarmClientRenderer {
         var renderer = minecraft.getBlockEntityRenderDispatcher()
                 .getRenderer(alarm);
         if (renderer instanceof AlarmClient.BlockRenderer alarmRenderer) {
+            Vec3 delta = camera.subtract(center);
+            Vec3 localCamera = new Vec3(
+                    delta.dot(tangent) + 0.5D,
+                    delta.dot(vertical) + 0.5D,
+                    delta.dot(normal) + 0.5D);
             alarmRenderer.renderTransformed(alarm, event.getPartialTick(),
                     pose, buffers,
                     net.minecraft.client.renderer.LightTexture.FULL_BRIGHT,
                     net.minecraft.client.renderer.texture.OverlayTexture
-                            .NO_OVERLAY);
+                            .NO_OVERLAY, localCamera);
         }
         pose.popPose();
     }

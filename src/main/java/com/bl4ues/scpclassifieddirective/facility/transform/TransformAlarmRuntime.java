@@ -364,34 +364,36 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean adjacentOpenDoor(ConstructionSurface surface,
-  ConstructionSurface.SurfaceSlot alarmSlot) {
-    // A wall-mounted Alarm can share a parametric slot with a door
-    // attached to the opposite face. Check the physical footprint,
-    // not just the four main-layer neighbors: inner/outer overlays
-    // are independent logical layers of the SAME construction grid.
-    int[][] offsets = {{0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-    for (int[] offset : offsets) {
-  ConstructionSurface.SurfaceSlot slot =
-          new ConstructionSurface.SurfaceSlot(
-                  alarmSlot.column() + offset[0],
-                  alarmSlot.row() + offset[1]);
-  if (slot.column() < 0 || slot.column() >= surface.columns()
-          || slot.row() < 0 || slot.row() >= surface.rows()) {
-      continue;
-  }
-  if (openDoor(surface.attachments().get(slot))) return true;
-  if (openDoor(surface.overlay(slot, 1))) return true;
-  if (openDoor(surface.overlay(slot, -1))) return true;
+            ConstructionSurface.SurfaceSlot alarmSlot) {
+        // An Alarm can share a parametric slot with a door on another
+        // layer. Check the same slot and only its immediate neighbors,
+        // including both independently authored wall faces.
+        int[][] offsets = {{0, 0}, {-1, 0}, {1, 0},
+                {0, -1}, {0, 1}};
+        for (int[] offset : offsets) {
+            ConstructionSurface.SurfaceSlot slot =
+                    new ConstructionSurface.SurfaceSlot(
+                            alarmSlot.column() + offset[0],
+                            alarmSlot.row() + offset[1]);
+            if (slot.column() < 0 || slot.column() >= surface.columns()
+                    || slot.row() < 0 || slot.row() >= surface.rows()) {
+                continue;
+            }
+            if (openDoor(surface.attachments().get(slot))
+                    || openDoor(surface.overlay(slot, 1))
+                    || openDoor(surface.overlay(slot, -1))) {
+                return true;
+            }
+        }
+        return false;
     }
-    return false;
-}
 
-private static boolean openDoor(
-  ConstructionSurface.SurfaceAttachment attachment) {
-    return attachment != null
-      && FacilityModule.isElectricDoorOpenOrOpening(
-              attachment.state());
-}
+    private static boolean openDoor(
+            ConstructionSurface.SurfaceAttachment attachment) {
+        return attachment != null
+                && FacilityModule.isElectricDoorOpenOrOpening(
+                        attachment.state());
+    }
 
     private static Vec3 surfaceCenter(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot) {

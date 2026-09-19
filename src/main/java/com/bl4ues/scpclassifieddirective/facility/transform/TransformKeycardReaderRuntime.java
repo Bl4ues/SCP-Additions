@@ -86,9 +86,10 @@ public final class TransformKeycardReaderRuntime {
         if (reader == null) return false;
 
         SurfaceSlot visual = TransformWallFixturePlacement.visualSlot(
-                surface, slot, attachment.state(), 1);
+                surface, slot, attachment.state(),
+                TransformSurfaceGeometry.MAIN_SIDE);
         Vec3 center = TransformSurfaceGeometry.cellCenter(
-                surface, visual, 1, false);
+                surface, visual, TransformSurfaceGeometry.MAIN_SIDE, false);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
         return authorize(level, player, ReaderTarget.surface(
                 surface, slot, 0, attachment.state()), reader, center);

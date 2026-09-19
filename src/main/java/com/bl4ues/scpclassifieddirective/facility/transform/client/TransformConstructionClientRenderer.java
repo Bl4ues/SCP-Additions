@@ -162,20 +162,24 @@ public final class TransformConstructionClientRenderer {
             renderSurfacePayloads(minecraft, pose, buffers, surface, camera);
         }
 
-        boolean offGridTool = minecraft.player.getMainHandItem().is(
-                TransformConstructionModule.getOffGridTool())
+        boolean creativeAuthoring = minecraft.player.isCreative();
+        boolean offGridTool = creativeAuthoring
+                && (minecraft.player.getMainHandItem().is(
+                        TransformConstructionModule.getOffGridTool())
                 || minecraft.player.getOffhandItem().is(
-                        TransformConstructionModule.getOffGridTool());
-        boolean surfaceTool = minecraft.player.getMainHandItem().is(
-                TransformConstructionModule.getSurfaceTool())
+                        TransformConstructionModule.getOffGridTool()));
+        boolean surfaceTool = creativeAuthoring
+                && (minecraft.player.getMainHandItem().is(
+                        TransformConstructionModule.getSurfaceTool())
                 || minecraft.player.getOffhandItem().is(
-                        TransformConstructionModule.getSurfaceTool());
+                        TransformConstructionModule.getSurfaceTool()));
         boolean mappingTool = minecraft.player.getMainHandItem().is(
                 FacilityMappingItems.getTool())
                 || minecraft.player.getOffhandItem().is(
                         FacilityMappingItems.getTool());
         Selection selection = TransformConstructionClientState.selection();
-        boolean placingBlock = minecraft.player.getMainHandItem().getItem()
+        boolean placingBlock = creativeAuthoring
+                && minecraft.player.getMainHandItem().getItem()
                 instanceof BlockItem;
         boolean showSelectedGroup = placingBlock && selection != null
                 && selection.type() == SelectionType.GROUP;
@@ -646,7 +650,8 @@ public final class TransformConstructionClientRenderer {
                 slots.remove(slot);
             } else {
                 CachedSurfaceSlot rebuilt = buildSurfaceSlot(minecraft, surface,
-                        slot, attachment, 1, false);
+                        slot, attachment,
+                        TransformSurfaceGeometry.MAIN_SIDE, false);
                 if (rebuilt == null) slots.remove(slot);
                 else slots.put(slot, rebuilt);
             }
@@ -676,7 +681,8 @@ public final class TransformConstructionClientRenderer {
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
             CachedSurfaceSlot slot = buildSurfaceSlot(minecraft, surface,
-                    entry.getKey(), entry.getValue(), 1, false);
+                    entry.getKey(), entry.getValue(),
+                    TransformSurfaceGeometry.MAIN_SIDE, false);
             if (slot != null) slots.put(entry.getKey(), slot);
         }
         Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot> overlays =
@@ -808,7 +814,9 @@ public final class TransformConstructionClientRenderer {
             ConstructionSurface.SurfaceAttachment attachment, int normalSign,
             boolean overlay, Vec3 point, Vec3 localNormal, float u, float v,
             int red, int green, int blue, int light) {
-        double depthOffset = overlay && normalSign >= 0 ? 1.0D : 0.0D;
+        double depthOffset = overlay
+                && (normalSign < 0 ? -1 : 1)
+                == TransformSurfaceGeometry.MAIN_SIDE ? 1.0D : 0.0D;
         VertexFrame frame = attachment.deform()
                 ? deformedFrame(surface, slot, point.x, point.y, point.z,
                         localNormal, normalSign, depthOffset)

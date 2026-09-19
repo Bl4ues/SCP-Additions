@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextBlockTargetResolver;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import com.bl4ues.scpclassifieddirective.inventory.network.ContextInteractPacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -83,10 +84,14 @@ public final class ContextPromptClient {
 
         if (target != null && cooldownTicks <= 0
                 && rightClickPressed && target.allowRightClick()) {
-            ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(
-                    target.pos(), target.entityId(), target.entity(),
-                    Screen.hasShiftDown(), Screen.hasControlDown(),
-                    target.interactionKey()));
+            if (target.transformed() != null) {
+                TransformContextTargetClient.use(target.transformed());
+            } else {
+                ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(
+                        target.pos(), target.entityId(), target.entity(),
+                        Screen.hasShiftDown(), Screen.hasControlDown(),
+                        target.interactionKey()));
+            }
             cooldownTicks = CLICK_COOLDOWN_TICKS;
             clear();
         }
@@ -182,9 +187,64 @@ public final class ContextPromptClient {
             LocalPlayer player) {
         ContextTarget block = findBlockTarget(minecraft, player);
         ContextTarget entity = findEntityTarget(minecraft, player);
-        if (block == null) return entity;
-        if (entity == null) return block;
-        return entity.score() < block.score() ? entity : block;
+        ContextTarget transformed = findTransformedTarget(minecraft, player);
+        ContextTarget best = block;
+        if (best == null || entity != null && entity.score() < best.score()) {
+            best = entity;
+        }
+        if (best == null || transformed != null
+                && transformed.score() < best.score()) {
+            best = transformed;
+        }
+        return best;
+    }
+
+    private static ContextTarget findTransformedTarget(Minecraft minecraft,
+            LocalPlayer player) {
+        TransformContextTargetClient.Target transformed =
+                TransformContextTargetClient.find(player);
+        if (transformed == null) return null;
+
+        ContextTarget best = null;
+        double bestScore = Double.MAX_VALUE;
+        Vec3 eye = player.getEyePosition(1.0F);
+        Vec3 look = player.getViewVector(1.0F).normalize();
+        BlockState state = transformed.state();
+        for (ContextInteractionRegistry.Rule rule
+                : ContextInteractionRegistry.getBlockRules(state.getBlock())) {
+            if (!rule.isHeldItemSatisfied(player)) continue;
+            Vec3 anchor = TransformContextTargetClient.anchor(
+                    transformed, rule);
+            if (anchor == null || !Double.isFinite(anchor.x)
+                    || !Double.isFinite(anchor.y)
+                    || !Double.isFinite(anchor.z)) continue;
+
+            // A transformed fixture has no meaningful parent-world BlockPos.
+            // Rules that are ordinary stateless controls remain available; BE
+            // specific rules are naturally excluded by their block families.
+            double aimRadius = Math.min(0.34D,
+                    Math.max(0.16D, rule.range() * 0.13D));
+            double score = scorePoint(anchor, eye, look, rule.range(),
+                    false, rule.priority(), true,
+                    aimRadius * aimRadius, rule.allowOffscreen());
+            if (rule.hasRequiredItem()) score -= 0.12D;
+            if (score >= bestScore) continue;
+
+            String name = rule.showName() ? rule.blockName(state) : "";
+            boolean showName = rule.showName() && !name.isEmpty();
+            boolean showAction = rule.showAction()
+                    && rule.action() != null && !rule.action().isBlank();
+            ResourceLocation icon = ContextPromptIcons.resolve(
+                    rule.icon(), rule.id());
+            boolean allowUse = rule.allowRightClick() || rule.allowE();
+            bestScore = score;
+            best = new ContextTarget(BlockPos.containing(anchor),
+                    0, false, anchor, rule.interactionKey(),
+                    rule.action(), name, showAction, showName,
+                    allowUse, icon, (float) rule.promptScale(),
+                    rule.allowOffscreen(), score, transformed);
+        }
+        return best;
     }
 
     private static ContextTarget findBlockTarget(Minecraft minecraft,
@@ -255,7 +315,7 @@ public final class ContextPromptClient {
                             rule.interactionKey(), rule.action(), name,
                             showAction, showName, allowUse, icon,
                             (float) rule.promptScale(),
-                            rule.allowOffscreen(), score);
+                            rule.allowOffscreen(), score, null);
                 }
             }
         }
@@ -323,7 +383,7 @@ public final class ContextPromptClient {
                             rule.interactionKey(), rule.action(), name,
                             showAction, showName, allowUse, icon,
                             (float) rule.promptScale(),
-                            rule.allowOffscreen(), score);
+                            rule.allowOffscreen(), score, null);
                 }
             }
         }
@@ -522,9 +582,12 @@ public final class ContextPromptClient {
             Vec3 anchor, String interactionKey, String action, String name,
             boolean showAction, boolean showName, boolean allowRightClick,
             ResourceLocation icon, float promptScale, boolean allowOffscreen,
-            double score) {
+            double score, TransformContextTargetClient.Target transformed) {
         private boolean isAlive(Minecraft minecraft) {
             if (minecraft.level == null) return false;
+            if (transformed != null) {
+                return TransformContextTargetClient.alive(transformed);
+            }
             if (entity) {
                 Entity found = minecraft.level.getEntity(entityId);
                 return found != null && found.isAlive();

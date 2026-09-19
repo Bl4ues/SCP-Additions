@@ -1025,8 +1025,12 @@ public final class TransformConstructionManager {
     }
 
     private static boolean materialize(ProxyCell cell) {
-        return cell != null && (!cell.groupIds().isEmpty()
-                || !cell.collision().isEmpty() || cell.light() > 0);
+        // Selection is now resolved by the authored local-grid raycasts. Do not
+        // place a technical vanilla block merely so Minecraft has something to
+        // outline. Proxies exist only when the parent world needs a physical
+        // bridge for collision or emitted light.
+        return cell != null
+                && (!cell.collision().isEmpty() || cell.light() > 0);
     }
 
     private static boolean canOccupy(ServerLevel level, TransformGroup group,

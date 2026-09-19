@@ -5,8 +5,6 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
-import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
-import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.SelectionType;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -21,10 +19,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
- * Physical Surface input uses the parametric grid and distinguishes a wall's
- * structural payload from extra blocks mounted onto its visible faces.
- */
+/** Physical use and placement are resolved against the nearest logical grid. */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class TransformSurfacePlacementClient {
@@ -38,42 +33,34 @@ public final class TransformSurfacePlacementClient {
         if (!event.isUseItem() || event.isCanceled()) return;
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        Selection selection = TransformConstructionClientState.selection();
-        if (player == null || minecraft.level == null || minecraft.screen != null) {
-            return;
-        }
+        if (player == null || minecraft.level == null || minecraft.screen != null
+                || holdingConstructionTool(player)) return;
 
-        TransformSurfaceRaycast.Target aimed;
-        if (selection != null && selection.type() == SelectionType.SURFACE) {
-            ConstructionSurface selectedSurface =
-                    TransformConstructionClientState.surface(selection.id());
-            aimed = selectedSurface == null ? null
-                    : TransformSurfaceRaycast.target(player, selectedSurface);
-        } else {
-            aimed = TransformSurfaceRaycast.target(player,
-                    TransformConstructionClientState.surfaces(
-                            minecraft.level.dimension().location()));
-        }
-
-        // A stale Surface editor selection must not capture interactions with
-        // a nearer Off-Grid fixture. Both targets come from their own logical
-        // grids and are compared along the same eye ray, never through vanilla
-        // proxy bounding boxes. This applies to USE as well as block placement.
-        if (selection != null && selection.type() == SelectionType.SURFACE
-                && !player.isShiftKeyDown() && !holdingConstructionTool(player)) {
+        // Never privilege the previous editing selection over the surface the
+        // player is actually looking at, or a nearer Off-Grid cell. The two
+        // targets are resolved in their respective logical grids, not from a
+        // vanilla proxy AABB.
+        TransformSurfaceRaycast.Target aimed = TransformSurfaceRaycast.target(
+                player, TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location()));
+        boolean placing = player.isCreative()
+                && player.getMainHandItem().getItem() instanceof BlockItem;
+        if (!player.isShiftKeyDown()) {
             TransformGroupPlacementClient.PayloadTarget groupUse =
                     TransformGroupPlacementClient.findPayloadTarget(player);
             if (groupUse != null && nearer(groupUse.distance(), aimed)) {
-                TransformConstructionNetwork.useGroupCell(
-                        groupUse.group().id(), groupUse.cell());
-                event.setCanceled(true);
-                return;
+                // Placing a block against a group must use the placement path,
+                // not activate an existing fixture on the group.
+                if (!placing) {
+                    TransformConstructionNetwork.useGroupCell(
+                            groupUse.group().id(), groupUse.cell());
+                    event.setCanceled(true);
+                    return;
+                }
             }
         }
 
-        if (selection != null && selection.type() == SelectionType.SURFACE
-                && player.isCreative()
-                && player.getMainHandItem().getItem() instanceof BlockItem) {
+        if (placing) {
             TransformGroupPlacementClient.Target groupTarget =
                     TransformGroupPlacementClient.findTarget(player);
             if (groupTarget != null && nearer(
@@ -130,15 +117,14 @@ public final class TransformSurfacePlacementClient {
             return;
         }
 
-        if (holdingConstructionTool(player) || aimed == null) return;
+        if (aimed == null) return;
         if (aimed.layer().overlay()) {
             ConstructionSurface.SurfaceAttachment overlay =
                     aimed.surface().overlay(aimed.slot(),
                             aimed.normalSign());
             if (overlay == null || !interactive(overlay.state())) return;
             TransformConstructionNetwork.useSurfaceOverlay(
-                    aimed.surface().id(), aimed.slot(),
-                    aimed.normalSign());
+                    aimed.surface().id(), aimed.slot(), aimed.normalSign());
         } else {
             ConstructionSurface.SurfaceAttachment attachment =
                     aimed.surface().attachments().get(aimed.slot());

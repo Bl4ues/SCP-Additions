@@ -544,7 +544,9 @@ public final class TransformConstructionClientRenderer {
         if (cached == null) {
             cached = buildSurfaceMesh(minecraft, surface);
             SURFACE_MESHES.put(surface.id(), cached);
-        } else if (cached.surface() != surface) {
+        } else if (cached.surface() != surface
+            && !TransformConstructionClientControls.previewingSurface(
+                    surface.id())) {
             if (!sameSurfaceGeometry(cached.surface(), surface)) {
                 cached = buildSurfaceMesh(minecraft, surface);
             } else {

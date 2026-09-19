@@ -112,7 +112,8 @@ public final class TransformAlarmAudioClient {
         if (key == null) return;
         boolean active = state != null && AlarmModule.isController(state)
                 && state.hasProperty(AlarmModule.ACTIVE)
-                && state.getValue(AlarmModule.ACTIVE);
+                && state.getValue(AlarmModule.ACTIVE)
+                && !state.getValue(AlarmModule.SILENT);
         if (active) {
             ACTIVE.add(key);
             AlarmLoop loop = LOOPS.get(key);
@@ -146,7 +147,8 @@ public final class TransformAlarmAudioClient {
             BlockState state = key.state();
             if (position == null || state == null
                     || !AlarmModule.isController(state)
-                    || !state.getValue(AlarmModule.ACTIVE)) {
+                    || !state.getValue(AlarmModule.ACTIVE)
+                    || state.getValue(AlarmModule.SILENT)) {
                 remove(key);
                 continue;
             }
@@ -210,7 +212,8 @@ public final class TransformAlarmAudioClient {
             setPosition(position);
 
             boolean active = state.hasProperty(AlarmModule.ACTIVE)
-                    && state.getValue(AlarmModule.ACTIVE);
+                    && state.getValue(AlarmModule.ACTIVE)
+                && !state.getValue(AlarmModule.SILENT);
             if (!active) finishCurrentCycle();
             else cancelPendingFinish();
 

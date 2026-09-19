@@ -509,6 +509,10 @@ public final class ContextInteractionRegistry {
                     "configure_with_screwdriver", action, screwdriver, 45);
         }
 
+        count += addToolVariant(configuredIdentities, Kind.BLOCK,
+                new ResourceLocation(ScpClassifiedDirectiveMod.MODID, "alarm"),
+                "configure_alarm_sound", "Toggle Sound", screwdriver, 90);
+
         for (String path : List.of("scp_131_a", "scp_131_b", "roomba")) {
             count += addToolVariant(configuredIdentities, Kind.ENTITY,
                     new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path),

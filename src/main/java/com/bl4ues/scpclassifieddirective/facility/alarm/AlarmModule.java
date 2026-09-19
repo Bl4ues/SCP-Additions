@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.client.AlarmClient;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
+import com.bl4ues.scpclassifieddirective.item.ScrewdriverItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -17,6 +18,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.InteractionResult;
@@ -78,6 +81,9 @@ public final class AlarmModule {
             HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty ACTIVE =
             BooleanProperty.create("active");
+    /** Configuration survives save/load and is shared by normal and transformed Alarms. */
+    public static final BooleanProperty SILENT =
+            BooleanProperty.create("silent");
     /** 0/1/2 encode left-center-right and bottom-center-top. */
     public static final IntegerProperty MOUNT_X =
             IntegerProperty.create("mount_x", 0, 2);
@@ -154,6 +160,7 @@ public final class AlarmModule {
             registerDefaultState(stateDefinition.any()
                     .setValue(FACING, Direction.NORTH)
                     .setValue(ACTIVE, false)
+                    .setValue(SILENT, false)
                     .setValue(MOUNT_X,
                             AlarmMountStructure.encodeSlot(
                                     AlarmMountStructure.CENTER))
@@ -191,7 +198,7 @@ public final class AlarmModule {
         @Override
         protected void createBlockStateDefinition(
                 StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(FACING, ACTIVE, MOUNT_X, MOUNT_Y);
+            builder.add(FACING, ACTIVE, SILENT, MOUNT_X, MOUNT_Y);
         }
 
         @Nullable
@@ -207,6 +214,7 @@ public final class AlarmModule {
             BlockState state = defaultBlockState()
                     .setValue(FACING, clicked)
                     .setValue(ACTIVE, false)
+                    .setValue(SILENT, false)
                     .setValue(MOUNT_X,
                             AlarmMountStructure.encodeSlot(horizontal))
                     .setValue(MOUNT_Y,
@@ -236,6 +244,19 @@ public final class AlarmModule {
             }
             return super.updateShape(state, direction, neighborState,
                     level, pos, neighborPos);
+        }
+
+        @Override
+        public InteractionResult use(BlockState state, Level level, BlockPos pos,
+                Player player, InteractionHand hand, BlockHitResult hit) {
+            if (!(player.getItemInHand(hand).getItem() instanceof ScrewdriverItem)) {
+                return InteractionResult.PASS;
+            }
+            if (!level.isClientSide) {
+                level.setBlock(pos, state.setValue(SILENT,
+                        !state.getValue(SILENT)), Block.UPDATE_CLIENTS);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         @Override
@@ -479,7 +500,7 @@ public final class AlarmModule {
                 BlockState state, AlarmBlockEntity alarm) {
             boolean active = state.getValue(ACTIVE);
             alarm.syncClientPhase(active);
-            AlarmAudioClient.update(level, pos, active);
+            AlarmAudioClient.update(level, pos, active && !state.getValue(SILENT));
         }
 
         private void refresh(ServerLevel server,
@@ -663,6 +684,9 @@ public final class AlarmModule {
                 List<Component> tooltip, TooltipFlag flag) {
             tooltip.add(Component.translatable(
                     "tooltip.scp_classified_directive.alarm")
+                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal(
+                    "Use a Screwdriver to toggle alarm sound without disabling its light.")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }

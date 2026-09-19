@@ -1,6 +1,8 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.bl4ues.scpclassifieddirective.item.ScrewdriverItem;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -70,6 +72,10 @@ public final class TransformControlRuntime {
         if (group == null || !group.dimension().equals(
                 level.dimension().location())) return false;
         BlockState state = group.cells().get(cell);
+        if (toggleAlarmSound(player, level, state,
+                ControlHit.group(group, cell, state, group.cellCenter(cell)))) {
+            return true;
+        }
         if (!control(state)) return false;
         Vec3 center = group.cellCenter(cell);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
@@ -87,8 +93,13 @@ public final class TransformControlRuntime {
                 level.dimension().location())) return false;
         ConstructionSurface.SurfaceAttachment attachment =
                 surface.attachments().get(slot);
-        if (attachment == null || !control(attachment.state())) return false;
+        if (attachment == null) return false;
         Vec3 center = surfaceCenter(surface, slot);
+        if (toggleAlarmSound(player, level, attachment.state(),
+                ControlHit.surface(surface, slot, attachment.state(), center))) {
+            return true;
+        }
+        if (!control(attachment.state())) return false;
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
         return activate(level, ControlHit.surface(surface, slot,
                 attachment.state(), center));
@@ -106,11 +117,30 @@ public final class TransformControlRuntime {
                 level.dimension().location())) return false;
         ConstructionSurface.SurfaceAttachment attachment =
                 surface.overlay(slot, side);
-        if (attachment == null || !control(attachment.state())) return false;
+        if (attachment == null) return false;
         Vec3 center = surfaceCenter(surface, slot, side);
+        if (toggleAlarmSound(player, level, attachment.state(),
+                ControlHit.surface(surface, slot, side,
+                        attachment.state(), center))) {
+            return true;
+        }
+        if (!control(attachment.state())) return false;
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
         return activate(level, ControlHit.surface(surface, slot, side,
                 attachment.state(), center));
+    }
+
+    private static boolean toggleAlarmSound(ServerPlayer player,
+            ServerLevel level, BlockState state, ControlHit hit) {
+        if (!AlarmModule.isController(state)
+                || !(player.getMainHandItem().getItem() instanceof ScrewdriverItem
+                    || player.getOffhandItem().getItem() instanceof ScrewdriverItem)
+                || player.getEyePosition().distanceToSqr(hit.center()) > 36.0D) {
+            return false;
+        }
+        set(level, hit, state.setValue(AlarmModule.SILENT,
+                !state.getValue(AlarmModule.SILENT)));
+        return true;
     }
 
     private static boolean activate(ServerLevel level, ControlHit hit) {

@@ -53,6 +53,27 @@ public final class TransformSurfacePlacementClient {
                             minecraft.level.dimension().location()));
         }
 
+        // An old Surface selection must never steal a right-click on a nearer
+        // Off-Grid cell after switching to a block in the hotbar. Resolve both
+        // logical grids along the same eye ray; do not compare vanilla proxy
+        // BlockPos or the misleading axis-aligned technical selection box.
+        if (selection != null && selection.type() == SelectionType.SURFACE
+                && player.isCreative()
+                && player.getMainHandItem().getItem() instanceof BlockItem) {
+            TransformGroupPlacementClient.Target groupTarget =
+                    TransformGroupPlacementClient.findTarget(player);
+            if (groupTarget != null && (aimed == null
+                    || player.getEyePosition().distanceTo(groupTarget.worldHit())
+                            + 0.025D < aimed.distance())) {
+                TransformConstructionNetwork.placeGroupBlock(
+                        groupTarget.group().id(), groupTarget.source(),
+                        groupTarget.adjacentCell(), groupTarget.face(),
+                        groupTarget.worldHit());
+                event.setCanceled(true);
+                return;
+            }
+        }
+
         if (!player.isShiftKeyDown() && aimed != null) {
             if (aimed.layer().overlay()) {
                 ConstructionSurface.SurfaceAttachment overlay =
@@ -82,12 +103,8 @@ public final class TransformSurfacePlacementClient {
             boolean mainOccupied =
                     aimed.surface().attachments().containsKey(aimed.slot());
             if (aimed.layer().overlay() || mainOccupied) {
-                // The main wall has a fixed authored location. Only an EXTRA
-                // block chooses a side. Main-cell ray hits describe the wall's
-                // stored +normal frame, not the side from which the builder
-                // approached it. Resolve that side from the actual eye/plane
-                // relationship so clicking inside the corridor places the
-                // fixture inward, without shifting the structural wall.
+                // Structural blocks stay on the authored surface. Only an
+                // EXTRA block chooses the side physically clicked by the user.
                 int side = aimed.layer().overlay()
                         ? aimed.normalSign()
                         : clickedSide(player, aimed.surface(), aimed.slot());

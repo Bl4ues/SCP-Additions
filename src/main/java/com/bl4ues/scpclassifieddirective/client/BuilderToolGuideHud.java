@@ -6,6 +6,7 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMapping
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringState;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientControls;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.EditMode;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Selection;
@@ -162,6 +163,11 @@ public final class BuilderToolGuideHud {
                 lines.add(new Line("C", TransformConstructionClientState.surfaceCurveAxis()
                         == TransformConstructionClientState.SurfaceCurveAxis.WIDTH
                         ? "curve axis: width" : "curve axis: height"));
+                lines.add(new Line("H", TransformConstructionClientControls
+                        .independentEdgeHandles()
+                        ? "edge mode: bend (fixed corners)"
+                        : "edge mode: move endpoints"));
+                lines.add(new Line("Ctrl", "hold to disable auto-snap"));
                 lines.add(new Line("F", "flip wall side"));
                 lines.add(new Line("V", "bend / rigid aimed block"));
                 String angle = angleText(selection);

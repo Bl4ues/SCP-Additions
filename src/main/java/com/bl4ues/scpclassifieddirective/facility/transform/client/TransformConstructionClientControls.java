@@ -44,6 +44,19 @@ public final class TransformConstructionClientControls {
     private static final double HANDLE_MAX_DISTANCE = 32.0D;
     private static DragState drag;
     private static boolean attackLatch;
+    // Editor preference only. Surface geometry remains server-authoritative.
+    private static boolean independentEdgeHandles;
+
+    public static boolean independentEdgeHandles() {
+        return independentEdgeHandles;
+    }
+
+    private static boolean edgeHandle(SurfaceHandle handle) {
+        return handle == SurfaceHandle.BOTTOM_EDGE
+                || handle == SurfaceHandle.TOP_EDGE
+                || handle == SurfaceHandle.START_EDGE
+                || handle == SurfaceHandle.END_EDGE;
+    }
     private static int suppressPauseTicks;
 
     private TransformConstructionClientControls() {
@@ -304,6 +317,15 @@ public final class TransformConstructionClientControls {
                     status(TransformConstructionClientState.surfaceCurveAxis()
                             == TransformConstructionClientState.SurfaceCurveAxis.WIDTH
                             ? "Curve axis: width" : "Curve axis: height");
+                }
+            }
+            case GLFW.GLFW_KEY_H -> {
+                if (selection.type() == SelectionType.SURFACE) {
+                    finishDrag();
+                    independentEdgeHandles = !independentEdgeHandles;
+                    status(independentEdgeHandles
+                            ? "Edge handles: bend without moving corners"
+                            : "Edge handles: move both endpoints");
                 }
             }
             case GLFW.GLFW_KEY_F -> {
@@ -835,20 +857,32 @@ public final class TransformConstructionClientControls {
             case TOP_START -> ts = ts.add(delta);
             case TOP_END -> te = te.add(delta);
             case BOTTOM_EDGE -> {
-                bs = bs.add(delta);
-                be = be.add(delta);
+                if (independentEdgeHandles) curve = curve.add(delta.scale(2.0D));
+                else {
+                    bs = bs.add(delta);
+                    be = be.add(delta);
+                }
             }
             case TOP_EDGE -> {
-                ts = ts.add(delta);
-                te = te.add(delta);
+                if (independentEdgeHandles) curve = curve.add(delta.scale(2.0D));
+                else {
+                    ts = ts.add(delta);
+                    te = te.add(delta);
+                }
             }
             case START_EDGE -> {
-                bs = bs.add(delta);
-                ts = ts.add(delta);
+                if (independentEdgeHandles) heightCurve = heightCurve.add(delta);
+                else {
+                    bs = bs.add(delta);
+                    ts = ts.add(delta);
+                }
             }
             case END_EDGE -> {
-                be = be.add(delta);
-                te = te.add(delta);
+                if (independentEdgeHandles) heightCurve = heightCurve.add(delta);
+                else {
+                    be = be.add(delta);
+                    te = te.add(delta);
+                }
             }
             case CENTER -> {
                 if (TransformConstructionClientState.surfaceCurveAxis()
@@ -863,7 +897,10 @@ public final class TransformConstructionClientControls {
             }
         }
 
-        if (snap && !Screen.hasControlDown()) {
+        // In independent mode snapping the endpoints would silently undo the
+        // user's choice to bend the edge without moving its four vertices.
+        if (snap && !Screen.hasControlDown()
+                && !(independentEdgeHandles && edgeHandle(handle))) {
             switch (handle) {
                 case BOTTOM_START -> bs = snap16(bs);
                 case BOTTOM_END -> be = snap16(be);
@@ -907,18 +944,11 @@ public final class TransformConstructionClientControls {
         // without Shift; Ctrl opts out of all snapping for precision editing.
         // Compute the target from the already-moved handle, not from the
         // original plane or a vanilla proxy, so a curved join remains exact.
-        if (!Screen.hasControlDown() && handle != SurfaceHandle.CENTER) {
-            Vec3 handlePoint = switch (handle) {
-                case BOTTOM_START -> bs;
-                case BOTTOM_END -> be;
-                case TOP_START -> ts;
-                case TOP_END -> te;
-                case BOTTOM_EDGE -> bs.add(be).scale(0.5D);
-                case TOP_EDGE -> ts.add(te).scale(0.5D);
-                case START_EDGE -> bs.add(ts).scale(0.5D);
-                case END_EDGE -> be.add(te).scale(0.5D);
-                case CENTER -> Vec3.ZERO;
-            };
+        if (!Screen.hasControlDown() && handle != SurfaceHandle.CENTER
+                && !(independentEdgeHandles && edgeHandle(handle))) {
+            ConstructionSurface moved = surface.withGeometry(bs, be, ts, te,
+                    curve, heightCurve);
+            Vec3 handlePoint = handlePosition(moved, handle);
             Vec3 adjustment = TransformSurfaceSnapClient.snap(handlePoint,
                     surface.id()).subtract(handlePoint);
             if (adjustment.lengthSqr() > 1.0E-10D) {
@@ -1014,15 +1044,13 @@ public final class TransformConstructionClientControls {
             case BOTTOM_END -> surface.bottomEnd();
             case TOP_START -> surface.topStart();
             case TOP_END -> surface.topEnd();
-            case BOTTOM_EDGE -> surface.bottomStart().add(surface.bottomEnd())
-                    .scale(0.5D);
-            case TOP_EDGE -> surface.topStart().add(surface.topEnd())
-                    .scale(0.5D);
-            case START_EDGE -> surface.bottomStart().add(surface.topStart())
-                    .scale(0.5D);
-            case END_EDGE -> surface.bottomEnd().add(surface.topEnd())
-                    .scale(0.5D);
-            case CENTER -> surface.gridPoint(0.5D, 0.5D);
+            // Handles track the actual parametric edge, not its chord. This
+            // matters when joining sharply curved walls and ceiling surfaces.
+            case BOTTOM_EDGE -> surface.point(0.5D, 0.0D);
+            case TOP_EDGE -> surface.point(0.5D, 1.0D);
+            case START_EDGE -> surface.point(0.0D, 0.5D);
+            case END_EDGE -> surface.point(1.0D, 0.5D);
+            case CENTER -> surface.point(0.5D, 0.5D);
         };
     }
 

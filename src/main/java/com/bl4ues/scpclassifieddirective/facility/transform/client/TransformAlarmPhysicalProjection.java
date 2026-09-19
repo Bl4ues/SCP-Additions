@@ -18,6 +18,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.AbstractGlassBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -39,7 +41,7 @@ final class TransformAlarmPhysicalProjection {
     private static final RenderType GLOW = RenderType.entityTranslucentEmissive(
             new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
                     "textures/effect/alarm_light_emissive.png"));
-    private static final double FACE_OFFSET = 0.0025D;
+    private static final double FACE_OFFSET = 0.008D;
     private static final double HALF_WIDTH = 1.72D;
     private static final double HALF_HEIGHT = 3.58D;
     private static final double MAX_DISTANCE_SQR = 24.0D * 24.0D;
@@ -150,10 +152,20 @@ final class TransformAlarmPhysicalProjection {
                 boolean deform = TransformSurfaceGeometry.effectiveDeform(backing);
                 // Four patches per cell follow the real parametric face. A flat
                 // world-space rectangle would cut through a strongly bent wall.
-                for (int x = 0; x < 2; x++) {
-                    for (int y = 0; y < 2; y++) {
-                        double x0 = x * 0.5D, x1 = (x + 1) * 0.5D;
-                        double y0 = y * 0.5D, y1 = (y + 1) * 0.5D;
+                // Match the payload mesh tessellation exactly. The previous
+                // 2x2 receiver was a different polygonal approximation to the
+                // same curved wall, so its triangles crossed behind the wall
+                // and appeared as short luminous slits under depth testing.
+                int horizontalSteps = deform ? 4 : 1;
+                int verticalSteps = deform
+                        && surface.heightCurveOffset().lengthSqr() > 1.0E-8D
+                        ? 2 : 1;
+                for (int x = 0; x < horizontalSteps; x++) {
+                    for (int y = 0; y < verticalSteps; y++) {
+                        double x0 = x / (double) horizontalSteps;
+                        double x1 = (x + 1.0D) / horizontalSteps;
+                        double y0 = y / (double) verticalSteps;
+                        double y1 = (y + 1.0D) / verticalSteps;
                         Vec3 a = receiverPoint(surface, receiver, deform,
                                 backingSign, backingOverlay, z, alarmSide, x0, y0);
                         Vec3 b = receiverPoint(surface, receiver, deform,
@@ -186,8 +198,13 @@ final class TransformAlarmPhysicalProjection {
     }
 
     private static boolean fullReceiver(BlockState state) {
-        if (state == null || state.isAir() || !state.canOcclude()
-                || FacilityModule.isDoorPassable(state)) return false;
+        if (state == null || state.isAir()
+                || FacilityModule.isDoorPassable(state)
+                || state.getBlock() instanceof AbstractGlassBlock
+                || state.is(Blocks.GLASS_PANE)) return false;
+        // Facility walls commonly render as full opaque-looking cubes with
+        // noOcclusion for custom textures. canOcclude() would silently reject
+        // their physical faces even when they completely fill the cell.
         List<AABB> boxes = state.getCollisionShape(EmptyBlockGetter.INSTANCE,
                 BlockPos.ZERO, CollisionContext.empty()).toAabbs();
         if (boxes.size() != 1) return false;

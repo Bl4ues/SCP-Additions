@@ -1479,34 +1479,47 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static void accumulateMapLine(Map<Long, Double> coverage,
             double x0, double y0, double x1, double y1,
             int width, int height) {
-        // 4x4 subpixel coverage keeps long oblique/curved contours from
-        // alternating between quarter-, half- and full-bright pixels.
-        final double radius = 0.68D;
-        final double radiusSqr = radius * radius;
-        int minX = Math.max(0, (int) Math.floor(Math.min(x0, x1) - 1.0D));
-        int maxX = Math.min(width - 1,
-                (int) Math.ceil(Math.max(x0, x1) + 1.0D));
-        int minY = Math.max(0, (int) Math.floor(Math.min(y0, y1) - 1.0D));
-        int maxY = Math.min(height - 1,
-                (int) Math.ceil(Math.max(y0, y1) + 1.0D));
-        if (minX > maxX || minY > maxY) return;
+        // Wu-style two-pixel coverage. This preserves smooth oblique/curved
+        // edges and shared-endpoint MAX blending without testing a 4x4 sample
+        // grid over every pixel in each segment's bounding rectangle.
+        double dx = x1 - x0;
+        double dy = y1 - y0;
+        if (Math.abs(dx) < 1.0E-8D && Math.abs(dy) < 1.0E-8D) {
+            accumulateCoverage(coverage, (int) Math.floor(x0),
+                    (int) Math.floor(y0), 1.0D, width, height);
+            return;
+        }
 
-        double[] samples = {0.125D, 0.375D, 0.625D, 0.875D};
-        for (int y = minY; y <= maxY; y++) {
-            for (int x = minX; x <= maxX; x++) {
-                int covered = 0;
-                for (double sy : samples) {
-                    for (double sx : samples) {
-                        if (pointSegmentDistanceSqr(x + sx, y + sy,
-                                x0, y0, x1, y1) <= radiusSqr) {
-                            covered++;
-                        }
-                    }
-                }
-                if (covered > 0) {
-                    accumulateCoverage(coverage, x, y,
-                            covered / 16.0D, width, height);
-                }
+        boolean steep = Math.abs(dy) > Math.abs(dx);
+        if (steep) {
+            double swap = x0; x0 = y0; y0 = swap;
+            swap = x1; x1 = y1; y1 = swap;
+        }
+        if (x0 > x1) {
+            double swap = x0; x0 = x1; x1 = swap;
+            swap = y0; y0 = y1; y1 = swap;
+        }
+
+        dx = x1 - x0;
+        dy = y1 - y0;
+        double gradient = Math.abs(dx) < 1.0E-9D ? 0.0D : dy / dx;
+        int first = (int) Math.floor(x0);
+        int last = (int) Math.ceil(x1);
+        for (int major = first; major <= last; major++) {
+            double sample = Mth.clamp(major + 0.5D, x0, x1);
+            double minor = y0 + (sample - x0) * gradient;
+            int base = (int) Math.floor(minor);
+            double fraction = minor - base;
+            if (steep) {
+                accumulateCoverage(coverage, base, major,
+                        1.0D - fraction, width, height);
+                accumulateCoverage(coverage, base + 1, major,
+                        fraction, width, height);
+            } else {
+                accumulateCoverage(coverage, major, base,
+                        1.0D - fraction, width, height);
+                accumulateCoverage(coverage, major, base + 1,
+                        fraction, width, height);
             }
         }
     }

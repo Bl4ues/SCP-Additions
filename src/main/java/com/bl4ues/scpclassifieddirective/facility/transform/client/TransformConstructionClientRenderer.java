@@ -886,22 +886,15 @@ public final class TransformConstructionClientRenderer {
     }
 
     private static TransformSurfaceRaycast.Target aimedSurfaceTarget(
-            LocalPlayer player) {
-        if (player == null) return null;
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) return null;
-        Selection selection = TransformConstructionClientState.selection();
-        if (selection != null && selection.type() == SelectionType.SURFACE) {
-            ConstructionSurface surface =
-                    TransformConstructionClientState.surface(selection.id());
-            if (surface != null) {
-                return TransformSurfaceRaycast.target(player, surface);
-            }
-        }
-        return TransformSurfaceRaycast.target(player,
-                TransformConstructionClientState.surfaces(
-                        minecraft.level.dimension().location()));
-    }
+        LocalPlayer player) {
+    if (player == null) return null;
+    Minecraft minecraft = Minecraft.getInstance();
+    if (minecraft.level == null) return null;
+    // The selected editor surface must not override the nearest hit.
+    return TransformSurfaceRaycast.target(player,
+            TransformConstructionClientState.surfaces(
+                    minecraft.level.dimension().location()));
+}
 
     private static void renderLogicalSurfaceSlot(PoseStack pose,
             VertexConsumer lines, ConstructionSurface surface,
@@ -1208,20 +1201,15 @@ public final class TransformConstructionClientRenderer {
         float blue = active ? 0.12F : 0.28F;
         int columns = surface.columns();
         int rows = surface.rows();
-        boolean positivePayload = surface.overlays().keySet().stream()
-                .anyMatch(key -> key.normalSign() > 0);
-        boolean negativePayload = !surface.attachments().isEmpty()
-                || surface.overlays().keySet().stream()
-                        .anyMatch(key -> key.normalSign() < 0);
         for (int column = 0; column <= columns; column++) {
             double u = column / (double) columns;
             Vec3 previous = visibleSurfaceGridPoint(surface, u, 0.0D,
-                    camera, positivePayload, negativePayload);
+                    camera);
             int samples = Math.max(4, rows * 2);
             for (int sample = 1; sample <= samples; sample++) {
                 double v = sample / (double) samples;
                 Vec3 current = visibleSurfaceGridPoint(surface, u, v,
-                        camera, positivePayload, negativePayload);
+                        camera);
                 line(pose, lines, previous, current, red, green, blue, 0.84F);
                 previous = current;
             }
@@ -1229,12 +1217,12 @@ public final class TransformConstructionClientRenderer {
         for (int row = 0; row <= rows; row++) {
             double v = row / (double) rows;
             Vec3 previous = visibleSurfaceGridPoint(surface, 0.0D, v,
-                    camera, positivePayload, negativePayload);
+                    camera);
             int samples = Math.max(8, columns * 3);
             for (int sample = 1; sample <= samples; sample++) {
                 double u = sample / (double) samples;
                 Vec3 current = visibleSurfaceGridPoint(surface, u, v,
-                        camera, positivePayload, negativePayload);
+                        camera);
                 line(pose, lines, previous, current, red, green, blue, 0.84F);
                 previous = current;
             }
@@ -1248,8 +1236,7 @@ public final class TransformConstructionClientRenderer {
     }
 
     private static Vec3 visibleSurfaceGridPoint(
-            ConstructionSurface surface, double u, double v, Vec3 camera,
-            boolean positivePayload, boolean negativePayload) {
+        ConstructionSurface surface, double u, double v, Vec3 camera) {
         Vec3 point = surface.gridPoint(u, v);
         Vec3 normal = TransformMath.safeNormalize(surface.gridNormal(u, v),
                 new Vec3(0.0D, 0.0D, 1.0D));

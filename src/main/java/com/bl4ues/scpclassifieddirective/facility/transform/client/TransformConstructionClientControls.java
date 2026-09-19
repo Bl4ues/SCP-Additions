@@ -48,14 +48,13 @@ public final class TransformConstructionClientControls {
 
     private TransformConstructionClientControls() {
     }
-    /** Live handle movement only changes the authoring preview; collision,
-      * lighting and expensive payload meshes are finalized on release. */
-     static boolean previewingSurface(UUID id) {
-         return id != null && drag != null && drag.remembered()
-      && drag.selection().type() == SelectionType.SURFACE
-      && id.equals(drag.selection().id());
-     }
-
+    /** Live handle movement only changes authoring guides; physical
+    * collision and the cached payload mesh are updated on release. */
+   static boolean previewingSurface(UUID id) {
+       return id != null && drag != null && drag.remembered()
+               && drag.selection().type() == SelectionType.SURFACE
+               && id.equals(drag.selection().id());
+   }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLeftClick(PlayerInteractEvent.LeftClickBlock event) {

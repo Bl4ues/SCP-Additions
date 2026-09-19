@@ -1,4 +1,4 @@
-name: Apply SCP-079 map credential correction
+name: Apply transformed-grid input arbitration correction
 
 on:
   push:
@@ -15,34 +15,35 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Align SCP-079 keycard markers with door segments
+      - name: Use one nearest-target handler for group and Surface inputs
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('src/main/java/com/bl4ues/scpclassifieddirective/client/scp079/Scp079FacilityMapScreen.java')
-          text = p.read_text(encoding='utf-8')
-          edits = [
-              ('renderClosedKeycardBadge(graphics, marker, transform,\n                            locked);',
-               'renderClosedKeycardBadge(graphics, marker, transform,\n                            locked, color);'),
-              ('MapDoorMarker marker, MapTransform transform, boolean locked) {',
-               'MapDoorMarker marker, MapTransform transform,\n            boolean locked, int color) {'),
-              ('int half = 7;', 'int half = 8;'),
-              ('int badge = locked ? 0xFF77868B : 0xFFF1FAFD;', 'int badge = color;'),
-              ('drawFixedCenteredMapLabel(graphics, value, x, y,',
-               'drawCenteredMapLabel(graphics, value, x, y, 1.30F,'),
-              ('drawFixedCenteredMapLabel(graphics,\n                Integer.toString(marker.requiredLevel()),',
-               'drawCenteredMapLabel(graphics,\n                Integer.toString(marker.requiredLevel()),'),
-              ('x, y, 0xFFF1FAFD);', 'x, y, 1.30F, 0xFFFFFFFF);'),
-          ]
-          for old, new in edits:
-              if text.count(old) != 1:
-                  raise RuntimeError('Expected exactly one map fragment, got %d: %r' % (text.count(old), old))
-              text = text.replace(old, new, 1)
-          p.write_text(text, encoding='utf-8')
+          p = Path('src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformGroupPlacementClient.java')
+          source = p.read_text(encoding='utf-8')
+          start_marker = '    @SubscribeEvent(priority = EventPriority.HIGHEST)\n    public static void onInteraction('
+          end_marker = '    private static TransformGroup.GridPos nearestCell('
+          if source.count(start_marker) != 1 or source.count(end_marker) != 1:
+              raise RuntimeError('Unexpected group input handler layout; no edits committed')
+          start = source.index(start_marker)
+          end = source.index(end_marker, start)
+          source = source[:start] + '''    // Group placement and use share one nearest-target arbitration with
+                  // curved surfaces in TransformSurfacePlacementClient. The former
+                  // HIGHEST-priority handler here pre-empted it and could steal a
+                  // click from a nearer Surface (or duplicate an interaction).
+
+          '''.replace('                  ', '    ') + source[end:]
+          for unused in ('import net.minecraftforge.client.event.InputEvent;\n',
+                         'import net.minecraftforge.eventbus.api.EventPriority;\n',
+                         'import net.minecraftforge.eventbus.api.SubscribeEvent;\n'):
+              if source.count(unused) != 1:
+                  raise RuntimeError('Unexpected input import layout')
+              source = source.replace(unused, '', 1)
+          p.write_text(source, encoding='utf-8')
           PY
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/main/java/com/bl4ues/scpclassifieddirective/client/scp079/Scp079FacilityMapScreen.java
-          git commit -m 'Align SCP-079 keycard labels and door marker colors'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformGroupPlacementClient.java
+          git commit -m 'Centralize nearest transformed-grid placement and use arbitration'
           git push origin HEAD:master

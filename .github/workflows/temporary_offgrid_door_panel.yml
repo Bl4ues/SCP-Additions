@@ -1,0 +1,30 @@
+name: Validate Off-Grid door side-panel power
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_offgrid_door_panel.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate bounded local-grid side-panel power
+        run: python3 .github/scripts/temporary_offgrid_door_panel.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build power integration
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit validated door propagation
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformPowerQuery.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformDoorRuntime.java
+          git commit -m 'Feed Off-Grid heavy doors from adjacent wall-mounted controls'
+          git pull --rebase origin master
+          git push origin HEAD:master

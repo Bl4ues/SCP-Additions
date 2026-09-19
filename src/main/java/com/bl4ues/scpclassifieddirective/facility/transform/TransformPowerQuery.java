@@ -59,10 +59,9 @@ public final class TransformPowerQuery {
                             consumer.row() + offset[1]);
             if (sourceAtLogicalSlot(surface, neighbor)) return true;
         }
-        double u = (consumer.column() + 0.5D) / surface.columns();
-        double v = (consumer.row() + 0.5D) / surface.rows();
-        return vanillaPowered(level, surface.gridPoint(u, v)
-                .add(surface.gridNormal(u, v).scale(0.5D)));
+        return vanillaPowered(level, TransformSurfaceGeometry.cellCenter(
+                surface, consumer, TransformSurfaceGeometry.MAIN_SIDE,
+                false));
     }
 
     public static boolean powered(ServerLevel level, Vec3 center) {
@@ -258,7 +257,7 @@ public final class TransformPowerQuery {
             if (main != null && source(main.state())) {
                 points.add(new SourcePoint(surface.dimension(),
                         TransformSurfaceGeometry.cellCenter(surface, slot,
-                                1, false)));
+                                TransformSurfaceGeometry.MAIN_SIDE, false)));
             }
             ConstructionSurface.SurfaceAttachment positive =
                     surface.overlay(slot, 1);

@@ -288,7 +288,11 @@ public final class TransformConstructionManager {
 
         BlockState source = group.cells().getOrDefault(sourceCell,
                 Blocks.AIR.defaultBlockState());
-        GridPos expected = source.isAir() ? sourceCell : sourceCell.offset(
+        // The client sends the hidden controller address as source identity,
+        // but adjacency is evaluated at the fixture's rendered local cell.
+        GridPos visualSource = source.isAir() ? sourceCell
+                : TransformWallFixturePlacement.visualCell(sourceCell, source);
+        GridPos expected = source.isAir() ? sourceCell : visualSource.offset(
                 outwardLocal.getStepX(), outwardLocal.getStepY(),
                 outwardLocal.getStepZ());
         // The client authors against the group's clean local 1x1 grid. Validate
@@ -299,8 +303,8 @@ public final class TransformConstructionManager {
         BlockState payload;
         Vec3 localHit = TransformMath.worldToLocal(group.origin(), hit,
                 group.rotationX(), group.rotationY(), group.rotationZ());
-        Vec3 supportOffset = localHit.subtract(sourceCell.x(), sourceCell.y(),
-                sourceCell.z());
+        Vec3 supportOffset = localHit.subtract(visualSource.x(),
+                visualSource.y(), visualSource.z());
         TransformWallFixturePlacement.Placement special =
                 TransformWallFixturePlacement.resolve(blockItem, outwardLocal,
                         supportOffset.x, supportOffset.z);

@@ -399,10 +399,14 @@ public final class TransformGroupPlacementClient {
             Direction face, Vec3 worldHit) {
         TransformGroup.GridPos adjacentCell() {
             BlockState sourceState = group.cells().get(source);
-            return sourceState == null || sourceState.isAir()
-                    ? source
-                    : source.offset(face.getStepX(), face.getStepY(),
-                            face.getStepZ());
+            if (sourceState == null || sourceState.isAir()) return source;
+            // The fixture's saved controller cell may sit beside its rendered
+            // panel. A click on its visible face must extend the VISIBLE grid
+            // cell, never the hidden controller address.
+            TransformGroup.GridPos visual =
+                    TransformWallFixturePlacement.visualCell(source, sourceState);
+            return visual.offset(face.getStepX(), face.getStepY(),
+                    face.getStepZ());
         }
     }
 

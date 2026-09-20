@@ -1,0 +1,30 @@
+name: Validate Surface internal-face seam correction
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_surface_mesh_seams.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cull shared full-cube Surface faces
+        run: python3 .github/scripts/temporary_surface_mesh_seams.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit verified Surface mesh change
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Cull adjacent structural faces on curved Surface cells'
+          git pull --rebase origin master
+          git push origin HEAD:master

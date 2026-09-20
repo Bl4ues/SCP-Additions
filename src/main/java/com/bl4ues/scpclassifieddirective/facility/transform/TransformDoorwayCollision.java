@@ -4,25 +4,26 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Retains accurate physical collision around an open transformed door.
- *
- * A rotated solid cell is represented by small world-axis-aligned boxes. The
- * boxes can protrude across the authored boundary into the neighbouring empty
- * door cell even when the real rotated solid does not. Clip ONLY those nearby
- * approximation boxes against an inscribed central walking passage; preserve
- * the door's frame, the rest of each wall, and unrelated construction owners.
- * Client and server use this same geometry so movement prediction agrees.
+ * Clips only overhanging world-axis AABB approximations around an open
+ * transformed door. Both physical indices call this shared implementation.
  */
 public final class TransformDoorwayCollision {
-    private static final double CLEAR_HALF_WIDTH = 0.42D;
+    // A world-aligned square narrows to a point as a player traverses its
+    // diagonal. Instead preserve a constant width along the DOOR's own plane.
+    private static final double CLEAR_HALF_WIDTH = 0.54D;
     private static final double CLEAR_BELOW = 0.48D;
     private static final double CLEAR_ABOVE = 1.55D;
     private static final double EPSILON = 1.0E-6D;
+    private static final int PASSAGE_STEPS = 7;
+    private static final double PASSAGE_STEP_LENGTH = 0.29D;
+    private static final double PASSAGE_HALF_DEPTH = 0.26D;
 
     private TransformDoorwayCollision() {
     }
@@ -37,15 +38,46 @@ public final class TransformDoorwayCollision {
                     GridPos candidate = source.offset(dx, dy, dz);
                     BlockState state = group.cells().get(candidate);
                     if (!FacilityModule.isFacilityDoor(state)
-                            || !FacilityModule.isDoorPassable(state)) continue;
+                            || !FacilityModule.isDoorPassable(state)
+                            || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                        continue;
+                    }
                     Vec3 center = group.cellCenter(candidate);
-                    result.add(new AABB(
-                            center.x - CLEAR_HALF_WIDTH,
-                            center.y - CLEAR_BELOW,
-                            center.z - CLEAR_HALF_WIDTH,
-                            center.x + CLEAR_HALF_WIDTH,
-                            center.y + CLEAR_ABOVE,
-                            center.z + CLEAR_HALF_WIDTH));
+                    Direction localFacing = state.getValue(
+                            HorizontalDirectionalBlock.FACING);
+                    Vec3 localWidth = localFacing.getAxis() == Direction.Axis.Z
+                            ? new Vec3(1.0D, 0.0D, 0.0D)
+                            : new Vec3(0.0D, 0.0D, 1.0D);
+                    Vec3 width = TransformMath.rotate(localWidth,
+                            group.rotationX(), group.rotationY(),
+                            group.rotationZ());
+                    Vec3 through = TransformMath.rotate(
+                            Vec3.atLowerCornerOf(localFacing.getNormal()),
+                            group.rotationX(), group.rotationY(),
+                            group.rotationZ());
+                    // Door collision is upright for ordinary yaw rotations;
+                    // projected directions keep the same constant world-space
+                    // walking width when the player crosses at 45 degrees.
+                    width = new Vec3(width.x, 0.0D, width.z).normalize();
+                    through = new Vec3(through.x, 0.0D, through.z).normalize();
+                    if (width.lengthSqr() < EPSILON
+                            || through.lengthSqr() < EPSILON) continue;
+                    for (int step = 0; step < PASSAGE_STEPS; step++) {
+                        double along = (step - (PASSAGE_STEPS - 1) * 0.5D)
+                                * PASSAGE_STEP_LENGTH;
+                        Vec3 centerStep = center.add(through.scale(along));
+                        double halfX = Math.abs(width.x) * CLEAR_HALF_WIDTH
+                                + Math.abs(through.x) * PASSAGE_HALF_DEPTH;
+                        double halfZ = Math.abs(width.z) * CLEAR_HALF_WIDTH
+                                + Math.abs(through.z) * PASSAGE_HALF_DEPTH;
+                        result.add(new AABB(
+                                centerStep.x - halfX,
+                                center.y - CLEAR_BELOW,
+                                centerStep.z - halfZ,
+                                centerStep.x + halfX,
+                                center.y + CLEAR_ABOVE,
+                                centerStep.z + halfZ));
+                    }
                 }
             }
         }

@@ -587,35 +587,48 @@ public final class Scp079FacilityMapScreen extends Screen {
     private void renderClosedKeycardBadge(GuiGraphics graphics,
             MapDoorMarker marker, MapTransform transform,
             boolean locked, int color) {
-        int x = transform.sx(marker.x());
-        int y = transform.sy(marker.z());
-        String value = Integer.toString(marker.requiredLevel());
-
-        // The badge belongs to the map, not the camera/HUD: zooming away
-        // makes it proportionally small, while close zoom caps its screen size.
-        // The door midpoint remains the anchor at every orientation.
-        final int half = clearanceHalfSize(transform);
         int segmentColor = locked ? 0xFF89989D : color;
-        // Solid badge and door segment share one visual material/palette.
-        graphics.fill(x - half, y - half, x + half + 1, y + half + 1,
-                segmentColor);
-        drawCenteredMapLabel(graphics, value, x, y,
-                half * (1.67F / 9.0F), 0xFF07151C);
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(transform.fx(marker.x()), transform.fy(marker.z()), 0.0D);
+        // Both the badge and its digit live in one map-space transform. Never
+        // round the badge dimensions independently of the glyph scale.
+        float mapScale = clearanceMapScale(transform);
+        pose.scale(mapScale, mapScale, 1.0F);
+        graphics.fill(-9, -9, 9, 9, segmentColor);
+        drawClearanceDigit(graphics, marker.requiredLevel(), 0xFF07151C);
+        pose.popPose();
     }
 
     private void renderOpenKeycardLevel(GuiGraphics graphics,
             MapDoorMarker marker, MapTransform transform, int color) {
-        int x = transform.sx(marker.x());
-        int y = transform.sy(marker.z());
-        drawCenteredMapLabel(graphics,
-                Integer.toString(marker.requiredLevel()),
-                x, y, clearanceHalfSize(transform) * (1.52F / 9.0F),
-                0xFFFFFFFF);
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.translate(transform.fx(marker.x()), transform.fy(marker.z()), 0.0D);
+        pose.scale(clearanceMapScale(transform),
+                clearanceMapScale(transform), 1.0F);
+        drawClearanceDigit(graphics, marker.requiredLevel(), 0xFFFFFFFF);
+        pose.popPose();
     }
 
-    private static int clearanceHalfSize(MapTransform transform) {
-        // A map unit scales exactly like the door segment beneath the badge.
-        return Mth.clamp((int) Math.round(transform.scale() * 0.38D), 2, 9);
+    private static float clearanceMapScale(MapTransform transform) {
+        // At close range the 18px badge is fully legible; at longer range the
+        // ENTIRE symbol shrinks with the authored map instead of acting as HUD.
+        return (float) Mth.clamp(transform.scale() * (0.38D / 9.0D),
+                0.16D, 1.0D);
+    }
+
+    private void drawClearanceDigit(GuiGraphics graphics,
+            int requiredLevel, int color) {
+        String value = Integer.toString(requiredLevel);
+        var pose = graphics.pose();
+        pose.pushPose();
+        pose.scale(1.5F, 1.5F, 1.0F);
+        // Font glyphs are 8px high in a 9px line box. Center the ink, rather
+        // than adding an unrelated screen-space baseline offset at each zoom.
+        graphics.drawString(font, value, -font.width(value) / 2, -4,
+                color, false);
+        pose.popPose();
     }
 
     private void drawFixedCenteredMapLabel(GuiGraphics graphics, String value,

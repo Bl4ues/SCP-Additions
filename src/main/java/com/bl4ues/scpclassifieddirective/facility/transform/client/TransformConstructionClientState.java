@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionClientBridge;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformDoorwayCollision;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
@@ -295,6 +296,22 @@ public final class TransformConstructionClientState {
                     groupId, cell);
             if (physicsChanged(previous, state)) {
                 rebuildGroupCellProxyCells(groupId, cell);
+            }
+            if (FacilityModule.isFacilityDoor(previous)
+                    && FacilityModule.isFacilityDoor(state)
+                    && FacilityModule.isDoorPassable(previous)
+                            != FacilityModule.isDoorPassable(state)) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        for (int dy = 0; dy <= 2; dy++) {
+                            if (dx == 0 && dz == 0 && dy == 0) continue;
+                            TransformGroup.GridPos neighbor = cell.offset(dx, dy, dz);
+                            if (next.get(index).cells().containsKey(neighbor)) {
+                                rebuildGroupCellProxyCells(groupId, neighbor);
+                            }
+                        }
+                    }
+                }
             }
             TransformAlarmAudioClient.groupCellChanged(groupId, cell, state);
             return;
@@ -1017,7 +1034,7 @@ public final class TransformConstructionClientState {
                 group.dimension(), group.origin(), group.rotationX(),
                 group.rotationY(), group.rotationZ(), Map.of(cell, state));
         Map<Long, MutableProxyCell> mutable = new LinkedHashMap<>();
-        addGroup(mutable, single);
+        addGroup(mutable, single, group);
         return freezeContribution(mutable);
     }
 
@@ -1144,7 +1161,7 @@ public final class TransformConstructionClientState {
     }
 
     private static void addGroup(Map<Long, MutableProxyCell> index,
-            TransformGroup group) {
+            TransformGroup group, TransformGroup neighborhood) {
         for (Map.Entry<TransformGroup.GridPos, BlockState> entry
                 : group.cells().entrySet()) {
             TransformGroup.GridPos cell = entry.getKey();
@@ -1171,6 +1188,8 @@ public final class TransformConstructionClientState {
                     : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
                             BlockPos.ZERO, CollisionContext.empty());
             if (collision.isEmpty()) continue;
+            List<AABB> doorways = TransformDoorwayCollision.nearbyPassages(
+                    neighborhood, cell);
             int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
             double inv = 1.0D / subdivisions;
             collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
@@ -1187,9 +1206,11 @@ public final class TransformConstructionClientState {
                                     cell.x() - 0.5D + minX + boxX * (sx + 1) * inv,
                                     cell.y() - 0.5D + minY + boxY * (sy + 1) * inv,
                                     cell.z() - 0.5D + minZ + boxZ * (sz + 1) * inv);
-                            addWorldBox(index, transformedBounds(group, local),
-                                    group.id(), null, false, true,
-                                    state.getLightEmission());
+                            for (AABB worldBox : TransformDoorwayCollision.clip(
+                                    transformedBounds(group, local), doorways)) {
+                                addWorldBox(index, worldBox, group.id(), null,
+                                        false, true, state.getLightEmission());
+                            }
                         }
                     }
                 }

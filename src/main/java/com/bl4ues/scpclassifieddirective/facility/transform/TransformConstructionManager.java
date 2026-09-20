@@ -806,6 +806,27 @@ public final class TransformConstructionManager {
         refreshGroupCell(server, groupId, cell, false);
     }
 
+    /** Door state changes can also change the clipped collision of adjacent
+     * rotated wall cells; refresh only those owners, never the whole group. */
+    public static void refreshOpenDoorNeighbours(MinecraftServer server,
+            UUID groupId, GridPos doorCell) {
+        if (server == null || groupId == null || doorCell == null) return;
+        TransformGroup group = TransformConstructionSavedData.get(server)
+                .group(groupId);
+        if (group == null) return;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int dy = 0; dy <= 2; dy++) {
+                    if (dx == 0 && dz == 0 && dy == 0) continue;
+                    GridPos neighbor = doorCell.offset(dx, dy, dz);
+                    if (group.cells().containsKey(neighbor)) {
+                        refreshGroupCellRuntime(server, groupId, neighbor);
+                    }
+                }
+            }
+        }
+    }
+
     public static synchronized void refreshSurfaceSlot(MinecraftServer server,
             UUID surfaceId, SurfaceSlot slot) {
         refreshSurfaceSlot(server, surfaceId, slot, true);
@@ -1248,6 +1269,8 @@ public final class TransformConstructionManager {
                 : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
                         BlockPos.ZERO, CollisionContext.empty());
         if (collision.isEmpty()) return;
+        List<AABB> doorways = TransformDoorwayCollision.nearbyPassages(
+                group, cell);
         int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
         double inv = 1.0D / subdivisions;
         collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
@@ -1267,9 +1290,11 @@ public final class TransformConstructionManager {
                                         + boxY * (sy + 1) * inv,
                                 cell.z() - 0.5D + minZ
                                         + boxZ * (sz + 1) * inv);
-                        addWorldBox(index, owner,
-                                transformedBounds(group, local),
-                                false, true, state.getLightEmission());
+                        for (AABB worldBox : TransformDoorwayCollision.clip(
+                                transformedBounds(group, local), doorways)) {
+                            addWorldBox(index, owner, worldBox,
+                                    false, true, state.getLightEmission());
+                        }
                     }
                 }
             }

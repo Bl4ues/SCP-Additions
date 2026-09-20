@@ -293,6 +293,10 @@ public final class TransformDoorRuntime {
             TransformConstructionManager.refreshGroupCellRuntime(
                     level.getServer(), group.id(), cell);
         }
+        if (passabilityChanged) {
+            TransformConstructionManager.refreshOpenDoorNeighbours(
+                    level.getServer(), group.id(), cell);
+        }
     }
 
     public static synchronized void structuralCellChanged(

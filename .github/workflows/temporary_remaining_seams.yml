@@ -1,0 +1,30 @@
+name: Validate curved ceiling-wall joints
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_remaining_seams.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stitch all four structural Surface edges
+        run: python3 .github/scripts/temporary_remaining_seams.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build full mod
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit verified Surface edge joints
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Join curved ceiling and wall planes across all four shared edges'
+          git pull --rebase origin master
+          git push origin HEAD:master

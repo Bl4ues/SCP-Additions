@@ -12,6 +12,7 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.lwjgl.glfw.GLFW;
 
 
 /** Restores vanilla middle-click copy semantics for transformed proxy blocks. */
@@ -21,13 +22,35 @@ public final class TransformPickBlockClient {
     private TransformPickBlockClient() {
     }
 
+    /**
+     * Forge's interaction-key event can be skipped when vanilla reports MISS
+     * for a visual Off-Grid/Surface block (there is no vanilla target block).
+     * Handle the physical middle click before vanilla's target-dependent path.
+     */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onMiddleClick(InputEvent.MouseButton.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (event.getAction() != GLFW.GLFW_PRESS
+                || event.getButton() != GLFW.GLFW_MOUSE_BUTTON_MIDDLE
+                || !minecraft.options.keyPickItem.matchesMouse(event.getButton())) {
+            return;
+        }
+        if (pickTransformedBlock(minecraft)) event.setCanceled(true);
+    }
+
+    /** Also support a remapped pick-block key when Forge dispatches it. */
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public static void onInteraction(InputEvent.InteractionKeyMappingTriggered event) {
         if (!event.isPickBlock()) return;
-        Minecraft minecraft = Minecraft.getInstance();
+        if (!pickTransformedBlock(Minecraft.getInstance())) return;
+        event.setCanceled(true);
+        event.setSwingHand(false);
+    }
+
+    private static boolean pickTransformedBlock(Minecraft minecraft) {
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null || minecraft.gameMode == null
-                || minecraft.screen != null || !player.isCreative()) return;
+                || minecraft.screen != null || !player.isCreative()) return false;
 
         TransformGroupPlacementClient.PayloadTarget group =
                 TransformGroupPlacementClient.findBreakTarget(player);
@@ -42,8 +65,7 @@ public final class TransformPickBlockClient {
                     surface.layer().overlay()
                             ? surface.surface().overlay(surface.slot(),
                                     surface.normalSign())
-                            : surface.surface().attachments().get(
-                                    surface.slot());
+                            : surface.surface().attachments().get(surface.slot());
             if (attachment != null && !attachment.state().isAir()) {
                 surfaceState = attachment.state();
             } else {
@@ -57,20 +79,15 @@ public final class TransformPickBlockClient {
                 ? Double.POSITIVE_INFINITY : surface.distance();
         BlockState state = groupDistance <= surfaceDistance
                 ? groupState : surfaceState;
-        if (state == null || state.isAir()) return;
+        if (state == null || state.isAir()) return false;
         ItemStack picked = FacilityPipeModule.pick(state);
-        if (picked.isEmpty()) {
-            picked = state.getBlock().asItem().getDefaultInstance();
-        }
-        if (picked.isEmpty()) return;
+        if (picked.isEmpty()) picked = state.getBlock().asItem().getDefaultInstance();
+        if (picked.isEmpty()) return false;
 
         player.getInventory().setPickedItem(picked);
         minecraft.gameMode.handleCreativeModeItemAdd(
                 player.getInventory().getSelected(),
                 36 + player.getInventory().selected);
-        event.setCanceled(true);
-        event.setSwingHand(false);
+        return true;
     }
-
-
 }

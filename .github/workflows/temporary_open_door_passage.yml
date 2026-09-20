@@ -1,0 +1,30 @@
+name: Validate open Off-Grid doorway collision
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/temporary_open_door_passage.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add matching server and client doorway collision
+        run: python3 .github/scripts/temporary_open_door_passage.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Commit verified doorway collision update
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformConstructionManager.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientState.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformDoorRuntime.java
+          git commit -m 'Keep rotated Off-Grid doorway passable on both client and server'
+          git pull --rebase origin master
+          git push origin HEAD:master

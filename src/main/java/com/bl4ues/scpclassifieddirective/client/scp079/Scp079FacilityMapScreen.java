@@ -591,15 +591,16 @@ public final class Scp079FacilityMapScreen extends Screen {
         int y = transform.sy(marker.z());
         String value = Integer.toString(marker.requiredLevel());
 
-        // Clearance is attached to the door's midpoint in screen space.
-        // It is readable at every zoom, never scaled by the map/camera.
-        final int half = 9;
+        // The badge belongs to the map, not the camera/HUD: zooming away
+        // makes it proportionally small, while close zoom caps its screen size.
+        // The door midpoint remains the anchor at every orientation.
+        final int half = clearanceHalfSize(transform);
         int segmentColor = locked ? 0xFF89989D : color;
         // Solid badge and door segment share one visual material/palette.
         graphics.fill(x - half, y - half, x + half + 1, y + half + 1,
                 segmentColor);
-        drawCenteredMapLabel(graphics, value, x, y + 1, 1.85F,
-                0xFF07151C);
+        drawCenteredMapLabel(graphics, value, x, y,
+                half * (1.67F / 9.0F), 0xFF07151C);
     }
 
     private void renderOpenKeycardLevel(GuiGraphics graphics,
@@ -608,7 +609,13 @@ public final class Scp079FacilityMapScreen extends Screen {
         int y = transform.sy(marker.z());
         drawCenteredMapLabel(graphics,
                 Integer.toString(marker.requiredLevel()),
-                x, y + 1, 1.60F, 0xFFFFFFFF);
+                x, y, clearanceHalfSize(transform) * (1.52F / 9.0F),
+                0xFFFFFFFF);
+    }
+
+    private static int clearanceHalfSize(MapTransform transform) {
+        // A map unit scales exactly like the door segment beneath the badge.
+        return Mth.clamp((int) Math.round(transform.scale() * 0.38D), 2, 9);
     }
 
     private void drawFixedCenteredMapLabel(GuiGraphics graphics, String value,
@@ -627,8 +634,8 @@ public final class Scp079FacilityMapScreen extends Screen {
         pose.translate(centerX, centerY, 0.0F);
         pose.scale(scale, scale, 1.0F);
         float x = -font.width(value) * 0.5F;
-        // Font ascent sits above the line box center; compensate for it.
-        float y = -font.lineHeight * 0.5F + 2.8F;
+        // The old +2.8 baseline pushed the clearance digit below its badge.
+        float y = -font.lineHeight * 0.5F + 0.2F;
         graphics.drawString(font, value, Math.round(x), Math.round(y),
                 color, false);
         pose.popPose();

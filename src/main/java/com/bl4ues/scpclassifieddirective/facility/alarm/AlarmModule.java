@@ -686,7 +686,7 @@ public final class AlarmModule {
                     "tooltip.scp_classified_directive.alarm")
                     .withStyle(ChatFormatting.GRAY));
             tooltip.add(Component.literal(
-                    "Use a Screwdriver to toggle alarm sound without disabling its light.")
+                    "Use a Screwdriver to toggle alarm sound.")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }

@@ -623,6 +623,9 @@ public final class Scp079FacilityMapScreen extends Screen {
         String value = Integer.toString(requiredLevel);
         var pose = graphics.pose();
         pose.pushPose();
+        // Optical correction in badge-local space: tracks the entire badge's
+        // zoom transform, including when it is smaller than one GUI pixel.
+        pose.translate(-0.65F, 0.65F, 0.0F);
         pose.scale(1.5F, 1.5F, 1.0F);
         // Font glyphs are 8px high in a 9px line box. Center the ink, rather
         // than adding an unrelated screen-space baseline offset at each zoom.

@@ -320,6 +320,61 @@ public final class TransformConstructionClientRenderer {
         GROUP_MESHES.keySet().removeIf(id -> !currentGroups.contains(id));
     }
 
+    @SubscribeEvent
+    public static void renderEditorGizmos(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || minecraft.player == null
+                || !minecraft.player.isCreative()) return;
+        Selection selection = TransformConstructionClientState.selection();
+        if (selection == null) return;
+        boolean editor = minecraft.player.getMainHandItem().is(
+                TransformConstructionModule.getOffGridTool())
+                || minecraft.player.getOffhandItem().is(
+                        TransformConstructionModule.getOffGridTool())
+                || minecraft.player.getMainHandItem().is(
+                        TransformConstructionModule.getSurfaceTool())
+                || minecraft.player.getOffhandItem().is(
+                        TransformConstructionModule.getSurfaceTool());
+        if (!editor) return;
+        PoseStack pose = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        MultiBufferSource.BufferSource buffers = minecraft.renderBuffers()
+                .bufferSource();
+        pose.pushPose();
+        pose.translate(-camera.x, -camera.y, -camera.z);
+        VertexConsumer xray = buffers.getBuffer(TransformEditorRenderTypes.GIZMO_LINES);
+        if (selection.type() == SelectionType.GROUP) {
+            TransformGroup group = TransformConstructionClientState.group(
+                    selection.id());
+            if (group != null && group.origin().distanceToSqr(camera)
+                    < MAX_RENDER_DISTANCE_SQR) renderGroupGizmo(pose, xray, group);
+        } else {
+            ConstructionSurface surface = TransformConstructionClientState.surface(
+                    selection.id());
+            if (surface != null) {
+                double[] uv = switch (selection.handle()) {
+                    case BOTTOM_START -> new double[]{0, 0};
+                    case BOTTOM_END -> new double[]{1, 0};
+                    case TOP_START -> new double[]{0, 1};
+                    case TOP_END -> new double[]{1, 1};
+                    case BOTTOM_EDGE -> new double[]{0.5, 0};
+                    case TOP_EDGE -> new double[]{0.5, 1};
+                    case START_EDGE -> new double[]{0, 0.5};
+                    case END_EDGE -> new double[]{1, 0.5};
+                    case CENTER -> new double[]{0.5, 0.5};
+                };
+                if (surface.gridPoint(uv[0], uv[1]).distanceToSqr(camera)
+                        < MAX_RENDER_DISTANCE_SQR) {
+                    renderHandles(pose, xray, surface, selection.handle());
+                    renderSurfaceGizmo(pose, xray, surface, selection.handle());
+                }
+            }
+        }
+        buffers.endBatch(TransformEditorRenderTypes.GIZMO_LINES);
+        pose.popPose();
+    }
+
     private static void renderGroup(Minecraft minecraft, PoseStack pose,
             MultiBufferSource.BufferSource buffers, TransformGroup group,
             Vec3 camera) {
@@ -1228,7 +1283,7 @@ public final class TransformConstructionClientRenderer {
                         r, g, b, 0.95F);
             }
         }
-        if (active) renderGroupGizmo(pose, lines, group);
+        // Gizmos have their own depth-free pass after the level is rendered.
     }
 
     private static void renderGroupGizmo(PoseStack pose, VertexConsumer lines,
@@ -1383,11 +1438,16 @@ public final class TransformConstructionClientRenderer {
         float blue = active ? 0.12F : 0.28F;
         int columns = surface.columns();
         int rows = surface.rows();
-        for (int column = 0; column <= columns; column++) {
+        boolean preview = TransformConstructionClientControls.previewingSurface(
+                surface.id());
+        int columnStep = preview ? Math.max(1, (columns + 17) / 18) : 1;
+        int rowStep = preview ? Math.max(1, (rows + 11) / 12) : 1;
+        for (int column = 0; column <= columns; column += columnStep) {
             double u = column / (double) columns;
             Vec3 previous = visibleSurfaceGridPoint(surface, u, 0.0D,
                     camera);
-            int samples = Math.max(4, rows * 2);
+            int samples = preview ? Math.max(4, Math.min(20, rows))
+                    : Math.max(4, rows * 2);
             for (int sample = 1; sample <= samples; sample++) {
                 double v = sample / (double) samples;
                 Vec3 current = visibleSurfaceGridPoint(surface, u, v,
@@ -1396,11 +1456,12 @@ public final class TransformConstructionClientRenderer {
                 previous = current;
             }
         }
-        for (int row = 0; row <= rows; row++) {
+        for (int row = 0; row <= rows; row += rowStep) {
             double v = row / (double) rows;
             Vec3 previous = visibleSurfaceGridPoint(surface, 0.0D, v,
                     camera);
-            int samples = Math.max(8, columns * 3);
+            int samples = preview ? Math.max(8, Math.min(36, columns))
+                    : Math.max(8, columns * 3);
             for (int sample = 1; sample <= samples; sample++) {
                 double u = sample / (double) samples;
                 Vec3 current = visibleSurfaceGridPoint(surface, u, v,
@@ -1411,9 +1472,9 @@ public final class TransformConstructionClientRenderer {
         }
         if (active) {
             renderAlignedBoundary(pose, lines, surface);
-            renderHandles(pose, lines, surface, selected.handle());
-            renderSurfaceGizmo(pose, lines, surface, selected.handle());
             renderSurfaceSides(pose, lines, surface);
+            // Handle spheres and axes are rendered after the world so walls
+            // never hide the controls that are intentionally selectable through it.
         }
     }
 

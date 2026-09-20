@@ -31,7 +31,7 @@ public final class TransformPickBlockClient {
 
         TransformGroupPlacementClient.PayloadTarget group =
                 TransformGroupPlacementClient.findBreakTarget(player);
-        TransformSurfaceRaycast.Target surface = TransformSurfaceRaycast.target(
+        TransformSurfaceRaycast.Target surface = TransformSurfaceRaycast.occupiedTarget(
                 player, TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location()));
 

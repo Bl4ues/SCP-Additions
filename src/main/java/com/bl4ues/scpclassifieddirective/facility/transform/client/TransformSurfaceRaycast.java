@@ -42,6 +42,18 @@ public final class TransformSurfaceRaycast {
 
     public static Target target(LocalPlayer player,
             Collection<ConstructionSurface> surfaces) {
+        return target(player, surfaces, false);
+    }
+
+    /** Pick-block must not stop at an empty construction guide in front
+     * of an occupied slot. Placement intentionally still sees those guides. */
+    public static Target occupiedTarget(LocalPlayer player,
+            Collection<ConstructionSurface> surfaces) {
+        return target(player, surfaces, true);
+    }
+
+    private static Target target(LocalPlayer player,
+            Collection<ConstructionSurface> surfaces, boolean occupiedOnly) {
         Minecraft minecraft = Minecraft.getInstance();
         if (player == null || minecraft.level == null
                 || surfaces == null || surfaces.isEmpty()) return null;
@@ -76,7 +88,7 @@ public final class TransformSurfaceRaycast {
             if (nearest.distanceToSqr(center) > radius * radius) continue;
 
             Target candidate = targetSurface(surface, eye, ray,
-                    Math.min(limit, bestDistance));
+                    Math.min(limit, bestDistance), occupiedOnly);
             if (candidate == null) continue;
             if (vanillaBlocker != null
                     && candidate.distance() > vanillaDistance + 1.0E-4D
@@ -95,7 +107,7 @@ public final class TransformSurfaceRaycast {
     }
 
     private static Target targetSurface(ConstructionSurface surface,
-            Vec3 eye, Vec3 ray, double limit) {
+            Vec3 eye, Vec3 ray, double limit, boolean occupiedOnly) {
         int columns = surface.columns();
         int rows = surface.rows();
         ArrayDeque<Patch> pending = new ArrayDeque<>();
@@ -130,7 +142,8 @@ public final class TransformSurfaceRaycast {
                                 ^ (row & 0xffffffffL);
                         if (!visited.add(key)) continue;
                         Target candidate = targetCell(surface, column, row,
-                                eye, ray, Math.min(limit, bestDistance));
+                                eye, ray, Math.min(limit, bestDistance),
+                                occupiedOnly);
                         if (candidate != null
                                 && candidate.distance() < bestDistance) {
                             bestDistance = candidate.distance();
@@ -159,7 +172,8 @@ public final class TransformSurfaceRaycast {
     }
 
     private static Target targetCell(ConstructionSurface surface,
-            int column, int row, Vec3 eye, Vec3 ray, double limit) {
+            int column, int row, Vec3 eye, Vec3 ray, double limit,
+            boolean occupiedOnly) {
         ConstructionSurface.SurfaceSlot slot =
                 new ConstructionSurface.SurfaceSlot(column, row);
         Target best = null;
@@ -197,7 +211,7 @@ public final class TransformSurfaceRaycast {
             if (best != null) bestDistance = best.distance();
         }
 
-        if (best != null) return best;
+        if (best != null || occupiedOnly) return best;
 
         // Empty authored cell: the guide itself is the placement plane.
         return targetGuideCell(surface, slot, eye, ray, limit);

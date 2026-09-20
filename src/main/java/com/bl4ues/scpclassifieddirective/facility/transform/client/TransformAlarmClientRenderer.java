@@ -184,6 +184,10 @@ public final class TransformAlarmClientRenderer {
             if (state == null || !AlarmModule.isController(state)) continue;
             Vec3 center = group.cellCenter(cell);
             if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) continue;
+            // The render index is already restricted to Alarm controllers. A
+            // visible active fixture also refreshes its audio key, covering
+            // missed/late state deltas without scanning an entire facility.
+            TransformAlarmAudioClient.groupCellChanged(group.id(), cell, state);
 
             CellKey key = new CellKey(group.id(), cell);
             AlarmModule.AlarmBlockEntity alarm = host(minecraft,
@@ -250,6 +254,8 @@ public final class TransformAlarmClientRenderer {
         Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot,
                 side, overlay);
         if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) return;
+        TransformAlarmAudioClient.surfaceChanged(surface.id(), slot,
+                overlay ? side : 0, state);
 
         SurfaceKey key = new SurfaceKey(surface.id(), slot, side, overlay);
         AlarmModule.AlarmBlockEntity alarm = host(minecraft,

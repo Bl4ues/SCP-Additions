@@ -160,8 +160,17 @@ public final class TransformAlarmAudioClient {
             }
             AlarmLoop existing = LOOPS.get(key);
             if (existing != null && !existing.isFinished()) {
-                existing.cancelPendingFinish();
-                continue;
+                // SoundEngine may discard a loop while its Java object remains
+                // in our address cache (e.g. engine reload or device reset).
+                // Never mistake that stale object for audible playback.
+                if (level.getGameTime() - existing.startedAtTick > 8L
+                        && !minecraft.getSoundManager().isActive(existing)) {
+                    existing.finish();
+                    LOOPS.remove(key);
+                } else {
+                    existing.cancelPendingFinish();
+                    continue;
+                }
             }
             AlarmLoop loop = new AlarmLoop(level, key);
             LOOPS.put(key, loop);
@@ -214,6 +223,10 @@ public final class TransformAlarmAudioClient {
             boolean active = state.hasProperty(AlarmModule.ACTIVE)
                     && state.getValue(AlarmModule.ACTIVE)
                 && !state.getValue(AlarmModule.SILENT);
+            if (state.getValue(AlarmModule.SILENT)) {
+                finish();
+                return;
+            }
             if (!active) finishCurrentCycle();
             else cancelPendingFinish();
 

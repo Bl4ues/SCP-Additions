@@ -67,16 +67,18 @@ public final class TransformSurfacePlacementClient {
             int side = surface.layer().overlay()
                     ? surface.normalSign()
                     : clickedSide(player, surface.surface(), surface.slot());
-            // An inside click authors an independent inner overlay, even when
-            // the outside main wall has not been constructed yet.
-            if (surface.layer().overlay() || occupied
-                    || side != TransformSurfaceGeometry.MAIN_SIDE) {
+            // A vacant logical cell is always a hole in the primary Surface,
+            // regardless of which side of the corridor the player stands on.
+            // An offset overlay is only added after the primary cell exists.
+            // This also preserves the physical inside/outside distinction for
+            // fixtures on an already constructed wall.
+            if (!occupied) {
+                TransformConstructionNetwork.placeSurfaceBlock(
+                        surface.surface().id(), surface.slot(), surface.hit());
+            } else {
                 TransformConstructionNetwork.placeSurfaceOverlay(
                         surface.surface().id(), surface.slot(), side,
                         surface.hit());
-            } else {
-                TransformConstructionNetwork.placeSurfaceBlock(
-                        surface.surface().id(), surface.slot(), surface.hit());
             }
             event.setCanceled(true);
             return;

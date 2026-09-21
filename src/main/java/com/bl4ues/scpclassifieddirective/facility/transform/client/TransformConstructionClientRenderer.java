@@ -942,11 +942,24 @@ public final class TransformConstructionClientRenderer {
         boolean curvedPipe = deform
                 && attachment.state().getBlock() instanceof FacilityPipeModule.PipeBlock
                 && surface.curveOffset().lengthSqr() > 1.0E-8D;
+        // Give only structural perimeter tiles additional curve samples.
+        // Two independently gridded quadratic planes need enough vertices on
+        // their shared edge to avoid a visible sawtooth between their chords.
+        // Interior tiles retain their cheap four-step tessellation.
+        boolean perimeter = !overlay && fullSurfaceCell(attachment.state())
+                && (slot.column() == 0 && minX < 1.0E-5D
+                || slot.column() == surface.columns() - 1
+                        && maxX > 0.99999D
+                || slot.row() == 0 && minY < 1.0E-5D
+                || slot.row() == surface.rows() - 1
+                        && maxY > 0.99999D);
         int xSteps = deform && maxX - minX > 0.20D
-                ? curvedPipe ? 16 : 4 : 1;
-        int ySteps = TransformSurfaceGeometry.effectiveDeform(attachment)
+                ? curvedPipe ? 16 : perimeter
+                        && surface.curveOffset().lengthSqr() > 1.0E-8D
+                        ? 12 : 4 : 1;
+        int ySteps = deform
                 && surface.heightCurveOffset().lengthSqr() > 1.0E-8D
-                && maxY - minY > 0.20D ? 2 : 1;
+                && maxY - minY > 0.20D ? perimeter ? 6 : 2 : 1;
         for (int ix = 0; ix < xSteps; ix++) {
             double s0 = ix / (double) xSteps;
             double s1 = (ix + 1.0D) / xSteps;
@@ -1067,7 +1080,40 @@ public final class TransformConstructionClientRenderer {
     /** Endpoint agreement is checked for both directions and at the center,
      * so independent curved planes only meet when their physical edges do. */
     private record MatchedSurfaceEdge(ConstructionSurface other,
-            int otherEdge, boolean reversed) { }
+            int otherEdge, boolean reversed, boolean partial,
+            List<Vec3> samples) { }
+
+    /** Cached arc points let a short wall edge meet an interior subsection of
+     * a longer ceiling edge even when their slot counts and arc parameters
+     * differ. Only neighbouring physical edges may be considered. */
+    private static List<Vec3> sampleEdge(ConstructionSurface surface,
+            int edge) {
+        List<Vec3> points = new ArrayList<>(49);
+        for (int i = 0; i <= 48; i++) {
+            points.add(edgePoint(surface, edge, i / 48.0D));
+        }
+        return List.copyOf(points);
+    }
+
+    private static double closestEdgeFraction(List<Vec3> samples, Vec3 point) {
+        double best = 0.45D * 0.45D;
+        double fraction = Double.NaN;
+        for (int i = 1; i < samples.size(); i++) {
+            Vec3 a = samples.get(i - 1);
+            Vec3 span = samples.get(i).subtract(a);
+            double length2 = span.lengthSqr();
+            double t = length2 < 1.0E-12D ? 0.0D
+                    : net.minecraft.util.Mth.clamp(
+                            point.subtract(a).dot(span) / length2,
+                            0.0D, 1.0D);
+            double distance = a.add(span.scale(t)).distanceToSqr(point);
+            if (distance < best) {
+                best = distance;
+                fraction = (i - 1 + t) / (samples.size() - 1.0D);
+            }
+        }
+        return fraction;
+    }
 
     private static Vec3 edgePoint(ConstructionSurface surface,
             int edge, double fraction) {
@@ -1129,15 +1175,42 @@ public final class TransformConstructionClientRenderer {
                         boolean reverse = !same
                                 && first.distanceToSqr(otherLast) < 0.0225D
                                 && last.distanceToSqr(otherFirst) < 0.0225D;
-                        if ((!same && !reverse)
-                                || middle.distanceToSqr(edgePoint(other,
-                                        otherEdge, 0.5D)) >= 0.0225D) continue;
+                        // A short edge is allowed to meet a portion of a
+                        // longer edge. Do not match unrelated nearby planes:
+                        // the entire edge must project continuously and their
+                        // normals must form an actual corner, not a parallel
+                        // coplanar overlay.
+                        if (!same && !reverse && middle.distanceToSqr(
+                                otherFirst.add(otherLast).scale(0.5D))
+                                > Math.pow(otherFirst.distanceTo(otherLast)
+                                        + 0.5D, 2.0D)) continue;
+                        List<Vec3> samples = sampleEdge(other, otherEdge);
+                        double startFraction = closestEdgeFraction(samples, first);
+                        double middleFraction = closestEdgeFraction(samples, middle);
+                        double endFraction = closestEdgeFraction(samples, last);
+                        if (!Double.isFinite(startFraction)
+                                || !Double.isFinite(middleFraction)
+                                || !Double.isFinite(endFraction)
+                                || Math.abs(endFraction - startFraction) < 0.12D
+                                || (middleFraction - startFraction)
+                                        * (middleFraction - endFraction) > 0.01D) {
+                            continue;
+                        }
+                        double otherU = otherEdge == 0 ? 0.0D
+                                : otherEdge == 1 ? 1.0D : middleFraction;
+                        double otherV = otherEdge == 2 ? 0.0D
+                                : otherEdge == 3 ? 1.0D : middleFraction;
+                        double dot = surface.gridNormal(
+                                edge < 2 ? edge : 0.5D,
+                                edge == 2 ? 0.0D : edge == 3 ? 1.0D : 0.5D)
+                                .dot(other.gridNormal(otherU, otherV));
+                        if (dot <= -0.2D || dot >= 0.985D) continue;
                         if (match != null) {
                             ambiguous = true;
                             break;
                         }
                         match = new MatchedSurfaceEdge(other, otherEdge,
-                                reverse);
+                                reverse, !same && !reverse, samples);
                     }
                     if (ambiguous) break;
                 }
@@ -1173,14 +1246,19 @@ public final class TransformConstructionClientRenderer {
             if (match == null) continue;
             ConstructionSurface other = match.other();
             double fraction = edge < 2 ? v : u;
-            double otherFraction = match.reversed()
-                    ? 1.0D - fraction : fraction;
+            // Grid arc-length distributions can differ at an otherwise exact
+            // physical edge. Project this vertex to the neighbour's edge
+            // rather than assuming the same grid fraction on both meshes.
+            double otherFraction = closestEdgeFraction(match.samples(),
+                    sourcePoint);
+            if (!Double.isFinite(otherFraction)) continue;
             double otherU = match.otherEdge() == 0 ? 0.0D
                     : match.otherEdge() == 1 ? 1.0D : otherFraction;
             double otherV = match.otherEdge() == 2 ? 0.0D
                     : match.otherEdge() == 3 ? 1.0D : otherFraction;
             Vec3 otherPoint = other.gridPoint(otherU, otherV);
-            if (sourcePoint.distanceToSqr(otherPoint) >= 0.0225D) continue;
+            if (sourcePoint.distanceToSqr(otherPoint) >= 0.45D * 0.45D)
+                continue;
             int column = Math.min(other.columns() - 1, Math.max(0,
                     (int) Math.floor(otherU * other.columns())));
             int row = Math.min(other.rows() - 1, Math.max(0,
@@ -1195,8 +1273,13 @@ public final class TransformConstructionClientRenderer {
             Vec3 miter = sourceNormal.add(otherNormal)
                     .scale(1.0D / (1.0D + dot));
             if (miter.lengthSqr() > 3.24D) continue;
-            result = sourcePoint.add(otherPoint).scale(0.5D)
-                    .add(miter.scale(depth));
+            // A partial edge has no corresponding neighbouring seam vertices.
+            // Weld its boundary directly onto the longer plane's *existing*
+            // face instead of mitering toward vertices that do not exist.
+            result = match.partial()
+                    ? otherPoint.add(otherNormal.scale(depth))
+                    : sourcePoint.add(otherPoint).scale(0.5D)
+                            .add(miter.scale(depth));
             if (++found > 1) return null;
         }
         return found == 1 ? result : null;

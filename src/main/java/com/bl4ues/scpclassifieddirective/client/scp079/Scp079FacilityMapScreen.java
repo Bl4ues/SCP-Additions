@@ -629,7 +629,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         pose.scale(1.5F, 1.5F, 1.0F);
         // Font glyphs are 8px high in a 9px line box. Center the ink, rather
         // than adding an unrelated screen-space baseline offset at each zoom.
-        graphics.drawString(font, value, -font.width(value) / 2, -4,
+        graphics.drawString(font, value, -font.width(value) / 2, -3,
                 color, false);
         pose.popPose();
     }

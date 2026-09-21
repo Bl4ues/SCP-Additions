@@ -148,9 +148,9 @@ rep(controls,
                 : TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location())) {
             Vec3 center = surface.gridPoint(0.5D, 0.5D);
-            double radius = Math.max(surface.width(), surface.height())
+            double surfaceRadius = Math.max(surface.width(), surface.height())
                     * 0.75D + 2.0D;
-            double broadReach = HANDLE_MAX_DISTANCE + radius;
+            double broadReach = HANDLE_MAX_DISTANCE + surfaceRadius;
             if (center.distanceToSqr(eye) > broadReach * broadReach) continue;
             for (SurfaceHandle handle : SurfaceHandle.values()) {
 ''',

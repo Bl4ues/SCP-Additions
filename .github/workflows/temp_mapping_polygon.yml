@@ -1,4 +1,4 @@
-name: Validate watertight Surface boundary caps
+name: Validate curved facility mapping polygon precision
 on:
   push:
     branches: [master]
@@ -12,24 +12,24 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Apply targeted Surface seam changes
-        run: python3 .github/scripts/temp_surface_join_caps.py
-      - name: Project integrity
+      - name: Apply mapped outline precision patch
+        run: python3 .github/scripts/temp_mapping_polygon.py
+      - name: Verify project integrity
         run: python3 .github/scripts/verify_project_integrity.py
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build
+      - name: Compile and build
         run: |
           chmod +x gradlew
           ./gradlew clean build --stacktrace
-      - name: Publish validated changes
+      - name: Commit verified mapping correction to master
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
-          git commit -m 'Keep cross-Surface boundary caps and cache curve edge samples'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/mapping/FacilitySurfaceBoundaryConformer.java
+          git commit -m 'Preserve curved mapping outline corners when reducing polygon detail'
           git pull --rebase origin master
           git push origin HEAD:master

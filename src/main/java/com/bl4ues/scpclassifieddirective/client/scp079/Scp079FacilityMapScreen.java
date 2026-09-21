@@ -993,6 +993,10 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
         if (total < 1.0E-7D) return;
 
+        // Rasterize all segments of a logical door into one coverage map.
+        // Independent translucent segments used to overdraw their shared ends,
+        // leaving bright dots at the vertices of off-grid/curved doors.
+        Map<Long, Double> coverage = new HashMap<>();
         double travelled = 0.0D;
         for (int index = 0; index + 1 < path.size(); index++) {
             Vec3 a = path.get(index);
@@ -1004,37 +1008,40 @@ public final class Scp079FacilityMapScreen extends Screen {
             travelled += length;
 
             if (!open) {
-                drawDoorSegment(graphics, transform, a, b, color);
+                accumulateDoorSegment(coverage, graphics, transform, a, b);
                 continue;
             }
-
-            // Open doors are two short leaves with a clear central gap, even
-            // when the marker is a single straight segment. Curved surface
-            // doors use the exact same normalized arc-length convention.
-            drawDoorRange(graphics, transform, a, b, start, end,
-                    0.0D, 0.18D, color);
-            drawDoorRange(graphics, transform, a, b, start, end,
-                    0.82D, 1.0D, color);
+            accumulateDoorRange(coverage, graphics, transform, a, b,
+                    start, end, 0.0D, 0.18D);
+            accumulateDoorRange(coverage, graphics, transform, a, b,
+                    start, end, 0.82D, 1.0D);
+        }
+        for (Map.Entry<Long, Double> pixel : coverage.entrySet()) {
+            int x = (int) (pixel.getKey() >> 32);
+            int y = (int) (long) pixel.getKey();
+            plotMapPixel(graphics, x, y, color, pixel.getValue());
         }
     }
 
-    private static void drawDoorRange(GuiGraphics graphics,
-            MapTransform transform, Vec3 a, Vec3 b, double segmentStart,
-            double segmentEnd, double rangeStart, double rangeEnd, int color) {
+    private static void accumulateDoorRange(Map<Long, Double> coverage,
+            GuiGraphics graphics, MapTransform transform, Vec3 a, Vec3 b,
+            double segmentStart, double segmentEnd,
+            double rangeStart, double rangeEnd) {
         double from = Math.max(segmentStart, rangeStart);
         double to = Math.min(segmentEnd, rangeEnd);
         if (to <= from + 1.0E-8D) return;
         double span = segmentEnd - segmentStart;
         double t0 = (from - segmentStart) / span;
         double t1 = (to - segmentStart) / span;
-        drawDoorSegment(graphics, transform, lerp(a, b, t0),
-                lerp(a, b, t1), color);
+        accumulateDoorSegment(coverage, graphics, transform,
+                lerp(a, b, t0), lerp(a, b, t1));
     }
 
-    private static void drawDoorSegment(GuiGraphics graphics,
-            MapTransform transform, Vec3 a, Vec3 b, int color) {
-        drawDoorLine(graphics, transform.fx(a.x), transform.fy(a.z),
-                transform.fx(b.x), transform.fy(b.z), color);
+    private static void accumulateDoorSegment(Map<Long, Double> coverage,
+            GuiGraphics graphics, MapTransform transform, Vec3 a, Vec3 b) {
+        accumulateMapLine(coverage, transform.fx(a.x), transform.fy(a.z),
+                transform.fx(b.x), transform.fy(b.z),
+                graphics.guiWidth(), graphics.guiHeight());
     }
 
     private static Vec3 lerp(Vec3 a, Vec3 b, double t) {

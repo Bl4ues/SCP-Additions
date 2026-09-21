@@ -1139,7 +1139,7 @@ public final class TransformConstructionClientRenderer {
      * so independent curved planes only meet when their physical edges do. */
     private record MatchedSurfaceEdge(ConstructionSurface other,
             int otherEdge, boolean reversed, boolean partial,
-            List<Vec3> samples) { }
+            List<Vec3> samples, Map<Long, Double> projectionCache) { }
 
     /** Cached arc points let a short wall edge meet an interior subsection of
      * a longer ceiling edge even when their slot counts and arc parameters
@@ -1271,7 +1271,10 @@ public final class TransformConstructionClientRenderer {
                                 edge < 2 ? edge : 0.5D,
                                 edge == 2 ? 0.0D : edge == 3 ? 1.0D : 0.5D)
                                 .dot(other.gridNormal(otherU, otherV));
-                        if (dot <= -0.2D || dot >= 0.985D) continue;
+                        // Nearly tangent neighbouring curves still share a
+                        // physical seam. Reject opposite-facing overlays, not
+                        // the smooth transition from ceiling into wall.
+                        if (dot <= -0.2D) continue;
                         Vec3 otherStart = edgePoint(other, otherEdge,
                                 startFraction);
                         Vec3 otherMiddle = edgePoint(other, otherEdge,
@@ -1287,7 +1290,8 @@ public final class TransformConstructionClientRenderer {
                                 endFraction) > 0.06D
                                 || Math.max(startFraction, endFraction) < 0.94D;
                         match = new MatchedSurfaceEdge(other, otherEdge,
-                                endFraction < startFraction, partial, samples);
+                                endFraction < startFraction, partial, samples,
+                                new HashMap<>());
                     }
                 }
                 if (match != null) matches.put(edge, match);
@@ -1325,8 +1329,11 @@ public final class TransformConstructionClientRenderer {
             // Grid arc-length distributions can differ at an otherwise exact
             // physical edge. Project this vertex to the neighbour's edge
             // rather than assuming the same grid fraction on both meshes.
-            double otherFraction = closestEdgeFraction(match.samples(),
-                    sourcePoint);
+            // Each boundary coordinate is shared by several model quads and
+            // both depth faces. Project it once per committed seam geometry.
+            double otherFraction = match.projectionCache().computeIfAbsent(
+                    Math.round(fraction * 1_000_000.0D), ignored ->
+                            closestEdgeFraction(match.samples(), sourcePoint));
             if (!Double.isFinite(otherFraction)) continue;
             double otherU = match.otherEdge() == 0 ? 0.0D
                     : match.otherEdge() == 1 ? 1.0D : otherFraction;
@@ -1345,7 +1352,19 @@ public final class TransformConstructionClientRenderer {
             if (attached == null || !fullSurfaceCell(attached.state())) continue;
             Vec3 otherNormal = other.gridNormal(otherU, otherV);
             double dot = sourceNormal.dot(otherNormal);
-            if (dot <= -0.2D || dot >= 0.985D) continue;
+            if (dot <= -0.2D) continue;
+            // Nearly parallel edge faces have no stable intersection line.
+            // Their common point is the midpoint of the neighbouring sampled
+            // boundary, keeping both existing curves and eliminating the slit.
+            if (dot >= 0.985D) {
+                Vec3 sharedNormal = TransformMath.safeNormalize(
+                        sourceNormal.add(otherNormal), sourceNormal);
+                Vec3 candidate = sourcePoint.add(otherPoint).scale(0.5D)
+                        .add(sharedNormal.scale(depth));
+                result = result == null ? candidate : result.add(candidate);
+                found++;
+                continue;
+            }
             // Compute the closest intersection of the two displaced faces.
             // Unlike the old average-normal miter, this handles inherited
             // rooms whose independent curves are close, but not coincident.
@@ -1365,12 +1384,15 @@ public final class TransformConstructionClientRenderer {
             if (intersection.distanceToSqr(middle) > 2.25D) continue;
             // An edge ending inside a longer neighbour must meet its existing
             // outer face, which has no counterpart boundary to move.
-            result = match.partial()
+            Vec3 candidate = match.partial()
                     ? otherPoint.add(otherNormal.scale(depth))
                     : intersection;
-            if (++found > 1) return null;
+            // A three-way wall/ceiling corner may have two legitimate shared
+            // edges. The old ambiguity fallback returned null and left a hole.
+            result = result == null ? candidate : result.add(candidate);
+            found++;
         }
-        return found == 1 ? result : null;
+        return found > 0 ? result.scale(1.0D / found) : null;
     }
 
     private static VertexFrame rigidFrame(ConstructionSurface surface,

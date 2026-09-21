@@ -1123,11 +1123,11 @@ public final class TransformConstructionClientRenderer {
         int xSteps = deform
                 && surface.curveOffset().lengthSqr() > 1.0E-8D
                 && maxX - minX > 0.20D
-                ? curvedPipe ? 12 : horizontalEdge ? 8 : 2 : 1;
+                ? curvedPipe ? 12 : horizontalEdge ? 16 : 2 : 1;
         int ySteps = deform
                 && surface.heightCurveOffset().lengthSqr() > 1.0E-8D
                 && maxY - minY > 0.20D
-                ? verticalEdge ? 8 : 2 : 1;
+                ? verticalEdge ? 16 : 2 : 1;
         for (int ix = 0; ix < xSteps; ix++) {
             double s0 = ix / (double) xSteps;
             double s1 = (ix + 1.0D) / xSteps;
@@ -1185,13 +1185,17 @@ public final class TransformConstructionClientRenderer {
         // A ceiling meets a wall at the latter's TOP/BOTTOM border, not just
         // its START/END border. All four physical edges are eligible; internal
         // tile borders, fixtures and overlays never get mitered.
+        // The authored X axis can be mirrored by Surface.flip. Never infer
+        // the world-space border from an unmapped local x=0/1: a flipped first
+        // column reaches the physical border at x=1, not x=0. The weld method
+        // below checks the final world-side (u,v) before doing any projection.
         boolean joinEdge = !overlay
                 && normalSign == TransformSurfaceGeometry.MAIN_SIDE
                 && fullSurfaceCell(attachment.state())
-                && ((slot.column() == 0
-                        && Math.abs(point.x) < 1.0E-6D)
-                    || (slot.column() == surface.columns() - 1
-                        && Math.abs(point.x - 1.0D) < 1.0E-6D)
+                && (((slot.column() == 0
+                        || slot.column() == surface.columns() - 1)
+                        && (Math.abs(point.x) < 1.0E-6D
+                        || Math.abs(point.x - 1.0D) < 1.0E-6D))
                     || (slot.row() == 0
                         && Math.abs(point.y) < 1.0E-6D)
                     || (slot.row() == surface.rows() - 1

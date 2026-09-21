@@ -1,0 +1,38 @@
+name: Validate and publish curved Surface and map controls
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  validate-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply narrowly scoped changes
+        run: python3 .github/scripts/temp_glue_surface_map.py
+      - name: Verify project integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build entire mod
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Commit validated changes to master
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --check
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Connect partially overlapping curved Surface borders with a physical seam overlap'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/client/scp079/Scp079FacilityMapScreen.java
+          git commit -m 'Keep SCP-079 floor dropdown above rooms and scale physical markers with zoom'
+          git pull --rebase origin master
+          git push origin HEAD:master

@@ -38,6 +38,7 @@ jobs:
         run: |
           git config user.name 'SCP CD CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git restore .github/scripts/temporary_editor_followup.py
           git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformDoorwayCollision.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientState.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformConstructionManager.java
           git commit -m 'Refresh diagonal door collision correctly and play off-grid block sounds'
           git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java

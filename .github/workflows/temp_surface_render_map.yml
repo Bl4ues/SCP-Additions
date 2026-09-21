@@ -13,7 +13,17 @@ jobs:
         with:
           fetch-depth: 0
       - name: Apply Surface and map patches
-        run: python3 .github/scripts/temp_surface_render_map.py
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/temp_surface_render_map.py')
+          content = path.read_text()
+          anchor = "                buildSurfaceBatches(frozenSlots, frozenOverlays));\n''')\n"
+          assert content.count(anchor) == 1
+          path.write_text(content.replace(anchor, "                buildSurfaceBatches(frozenSlots, frozenOverlays));\n''',2)\n"))
+          PY
+          python3 .github/scripts/temp_surface_render_map.py
+          git restore .github/scripts/temp_surface_render_map.py
       - name: Project integrity
         run: python3 .github/scripts/verify_project_integrity.py
       - uses: actions/setup-java@v4

@@ -529,6 +529,11 @@ public final class TransformConstructionClientControls {
         for (ConstructionSurface surface
                 : TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location())) {
+            Vec3 center = surface.gridPoint(0.5D, 0.5D);
+            double surfaceRadius = Math.max(surface.width(), surface.height())
+                    * 0.75D + 2.0D;
+            double broadReach = HANDLE_MAX_DISTANCE + surfaceRadius;
+            if (center.distanceToSqr(eye) > broadReach * broadReach) continue;
             for (SurfaceHandle handle : SurfaceHandle.values()) {
                 Vec3 point = handlePosition(surface, handle);
                 double rayDistance = point.subtract(eye).dot(view);

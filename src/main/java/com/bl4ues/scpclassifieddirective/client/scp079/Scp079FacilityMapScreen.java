@@ -83,6 +83,11 @@ public final class Scp079FacilityMapScreen extends Screen {
     private List<MapDoorMarker> cachedDoorMarkers = List.of();
     private int cachedDoorFloor = Integer.MIN_VALUE;
     private long doorTopologyRefreshAt;
+    // One antialias coverage field for the complete floor. Drawing every room
+    // independently blends shared pixels repeatedly and creates the bright
+    // speckles visible at off-grid/curved joins.
+    private final Map<Long, Double> frameContourCoverage = new HashMap<>();
+    private final Map<Long, Integer> frameContourColors = new HashMap<>();
 
     private Scp079FacilityMapScreen() {
         super(Scp079UiTheme.text("SCP-079 Surveillance Map"));
@@ -196,6 +201,8 @@ public final class Scp079FacilityMapScreen extends Screen {
             FloorGroup floor) {
         MapTransform transform = transformFor(floor, mapZoom, panX, panY);
         if (transform == null) return;
+        frameContourCoverage.clear();
+        frameContourColors.clear();
 
         // Merge every patch belonging to a room before render/hit testing.
         // Successive mapping selections therefore form one continuous shape
@@ -315,6 +322,7 @@ public final class Scp079FacilityMapScreen extends Screen {
                 }
             }
         }
+        flushFrameContours(graphics);
         renderDoorMarkers(graphics, floor, transform, geometryByRoom,
                 mouseX, mouseY);
         renderTrackers(graphics, floor, transform);
@@ -399,7 +407,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
     }
 
-    private static void renderFacilityRoomOutlineGeometry(GuiGraphics graphics,
+    private void renderFacilityRoomOutlineGeometry(GuiGraphics graphics,
             FacilityRoomOutlineGeometry geometry, MapTransform transform,
             int fill, int lineColor) {
         Rectangle2D bounds = geometry.bounds();
@@ -477,7 +485,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             }
         }
 
-        drawMapContours(graphics, geometry.contours(),
+        accumulateFrameContours(graphics, geometry.contours(),
                 transform, lineColor);
     }
 
@@ -1503,29 +1511,41 @@ public final class Scp079FacilityMapScreen extends Screen {
         }
     }
 
-    private static void drawMapContours(GuiGraphics graphics,
+    private void accumulateFrameContours(GuiGraphics graphics,
             List<List<FacilityFloorPatch.Vertex>> contours,
             MapTransform transform, int color) {
         if (contours == null || contours.isEmpty()) return;
-        // Accumulate the whole room in one coverage buffer. Independent
-        // contours previously painted their shared/join pixels separately,
-        // producing bright/dark seams along off-grid and curved unions.
-        Map<Long, Double> coverage = new HashMap<>();
+        // Keep MAX coverage for the entire floor, not merely for one room.
+        // The latest visible room owns an overlapping pixel, matching the room
+        // draw order while avoiding translucent alpha-over bright spots.
+        Map<Long, Double> local = new HashMap<>();
         for (List<FacilityFloorPatch.Vertex> contour : contours) {
             if (contour == null || contour.size() < 2) continue;
             for (int index = 0; index < contour.size(); index++) {
                 FacilityFloorPatch.Vertex a = contour.get(index);
                 FacilityFloorPatch.Vertex b = contour.get(
                         (index + 1) % contour.size());
-                accumulateMapLine(coverage,
+                accumulateMapLine(local,
                         transform.fx(a.x()), transform.fy(a.z()),
                         transform.fx(b.x()), transform.fy(b.z()),
                         graphics.guiWidth(), graphics.guiHeight());
             }
         }
-        for (Map.Entry<Long, Double> pixel : coverage.entrySet()) {
+        local.forEach((key, value) -> {
+            double previous = frameContourCoverage.getOrDefault(key, -1.0D);
+            if (value + 1.0E-6D >= previous) {
+                frameContourCoverage.put(key, value);
+                frameContourColors.put(key, color);
+            }
+        });
+    }
+
+    private void flushFrameContours(GuiGraphics graphics) {
+        for (Map.Entry<Long, Double> pixel : frameContourCoverage.entrySet()) {
             int x = (int) (pixel.getKey() >> 32);
             int y = (int) (long) pixel.getKey();
+            int color = frameContourColors.getOrDefault(pixel.getKey(),
+                    0xFFB8D8E1);
             plotMapPixel(graphics, x, y, color, pixel.getValue());
         }
     }

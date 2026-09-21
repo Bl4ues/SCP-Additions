@@ -135,12 +135,16 @@ new='''    private void accumulateFrameContours(GuiGraphics graphics,
 rep(mapfile,old,new,1)
 
 rep(controls,
-'''        for (ConstructionSurface surface
+'''        HoveredHandle best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (ConstructionSurface surface
                 : TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location())) {
             for (SurfaceHandle handle : SurfaceHandle.values()) {
 ''',
-'''        for (ConstructionSurface surface
+'''        HoveredHandle best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (ConstructionSurface surface
                 : TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location())) {
             Vec3 center = surface.gridPoint(0.5D, 0.5D);

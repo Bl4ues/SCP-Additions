@@ -1059,7 +1059,12 @@ public final class TransformConstructionClientControls {
                 }
             }
         }
-        TransformConstructionClientState.commitPreviewGeometry();
+        // Clicking an axis or releasing without changing the pose does not
+        // change physics and must not reconstruct the entire collision index.
+        if (drag.remembered()
+                && Math.abs(drag.lastDelta()) > 1.0E-5D) {
+            TransformConstructionClientState.commitPreviewGeometry();
+        }
         drag = null;
     }
 

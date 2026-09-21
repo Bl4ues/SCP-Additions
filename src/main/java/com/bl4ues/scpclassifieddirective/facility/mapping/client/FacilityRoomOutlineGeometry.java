@@ -88,6 +88,22 @@ public final class FacilityRoomOutlineGeometry {
         return bounds;
     }
 
+    /** A separate rendering mask; the source's selectable room Area is never
+     * modified when another room covers it in the SCP-079 map. */
+    public Area areaCopy() {
+        return new Area(merged);
+    }
+
+    public FacilityRoomOutlineGeometry visibleOutside(Area covered) {
+        if (covered == null || covered.isEmpty()
+                || !covered.getBounds2D().intersects(bounds)) return this;
+        Area visible = new Area(merged);
+        visible.subtract(covered);
+        if (visible.equals(merged)) return this;
+        return new FacilityRoomOutlineGeometry(visible,
+                contours(visible), visible.getBounds2D(), layers);
+    }
+
     public List<Layer> layers() {
         return layers;
     }

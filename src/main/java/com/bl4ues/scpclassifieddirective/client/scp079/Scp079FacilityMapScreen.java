@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
+import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -74,6 +75,11 @@ public final class Scp079FacilityMapScreen extends Screen {
     private boolean doorPromptActive;
     private final Map<UUID, FacilityRoomOutlineGeometry> roomGeometryCache =
             new HashMap<>();
+    // Layer silhouettes change only if the hovered room moves to the top or
+    // the operator selects a different floor, never with zoom/pan/render tick.
+    private int visibleRoomFloor = Integer.MIN_VALUE;
+    private List<UUID> visibleRoomOrder = List.of();
+    private Map<UUID, FacilityRoomOutlineGeometry> visibleRoomGeometry = Map.of();
     private List<MapDoorMarker> cachedDoorMarkers = List.of();
     private int cachedDoorFloor = Integer.MIN_VALUE;
     private long doorTopologyRefreshAt;
@@ -224,6 +230,26 @@ public final class Scp079FacilityMapScreen extends Screen {
             drawOrder.removeIf(room -> room.id().equals(hover.id()));
             drawOrder.add(hover);
         }
+        // A lower room's contour should not shine through a higher room at a
+        // shared corner. Compute visible Areas once per draw order, not once per
+        // frame: the original areas remain authoritative for hover/door probes.
+        List<UUID> order = drawOrder.stream()
+                .map(FacilityRoomSnapshot::id).toList();
+        if (visibleRoomFloor != floorIndex
+                || !order.equals(visibleRoomOrder)) {
+            Area covered = new Area();
+            Map<UUID, FacilityRoomOutlineGeometry> visible = new HashMap<>();
+            for (int index = drawOrder.size() - 1; index >= 0; index--) {
+                FacilityRoomSnapshot room = drawOrder.get(index);
+                FacilityRoomOutlineGeometry source = geometryByRoom.get(room);
+                if (source == null || source.empty()) continue;
+                visible.put(room.id(), source.visibleOutside(covered));
+                covered.add(source.areaCopy());
+            }
+            visibleRoomFloor = floorIndex;
+            visibleRoomOrder = order;
+            visibleRoomGeometry = Map.copyOf(visible);
+        }
 
         int minY = floor.rooms.stream()
                 .mapToInt(Scp079FacilityMapScreen::roomElevation)
@@ -233,7 +259,9 @@ public final class Scp079FacilityMapScreen extends Screen {
                 .max().orElse(floor.y);
 
         for (FacilityRoomSnapshot room : drawOrder) {
-            FacilityRoomOutlineGeometry geometry = geometryByRoom.get(room);
+            FacilityRoomOutlineGeometry geometry =
+                    visibleRoomGeometry.getOrDefault(room.id(),
+                            geometryByRoom.get(room));
             boolean hovered = hoveredRoom != null
                     && hoveredRoom.id().equals(room.id());
             boolean current = currentRoom != null

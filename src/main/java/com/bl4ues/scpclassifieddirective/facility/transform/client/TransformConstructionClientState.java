@@ -42,6 +42,19 @@ public final class TransformConstructionClientState {
     private static List<ConstructionSurface> surfaces = List.of();
     private static Map<Long, TransformConstructionManager.ProxyCell> proxyCells =
             new LinkedHashMap<>();
+    private static Map<Long, List<AABB>> doorPassages = Map.of();
+    // The world-cell raw proxy changes by identity when a part is edited.
+    // Cache the final global door cut per raw cell, not per collision query.
+    private static final Map<Long, MaskedProxyCell> maskedProxyCells =
+            new LinkedHashMap<>();
+    private record MaskedProxyCell(
+            TransformConstructionManager.ProxyCell raw,
+            TransformConstructionManager.ProxyCell masked) { }
+
+    private static void refreshDoorPassages() {
+        doorPassages = TransformDoorwayCollision.indexPassages(groups);
+        maskedProxyCells.clear();
+    }
     private static final Map<UUID,
             Map<Long, TransformConstructionManager.ProxyCell>>
             GROUP_PROXY_CONTRIBUTIONS = new LinkedHashMap<>();
@@ -124,6 +137,7 @@ public final class TransformConstructionClientState {
         groups = nextGroups == null ? List.of() : List.copyOf(nextGroups);
         surfaces = nextSurfaces == null ? List.of() : List.copyOf(nextSurfaces);
         TransformAlarmClientRenderer.resetIndices();
+        refreshDoorPassages();
         rebuildProxyCells();
         TransformAlarmAudioClient.sync(groups, surfaces);
         if (selection != null && !selectionStillExists()) selection = null;
@@ -134,6 +148,8 @@ public final class TransformConstructionClientState {
         groups = List.of();
         surfaces = List.of();
         proxyCells = new LinkedHashMap<>();
+        doorPassages = Map.of();
+        maskedProxyCells.clear();
         GROUP_PROXY_CONTRIBUTIONS.clear();
         SURFACE_PROXY_CONTRIBUTIONS.clear();
         GROUP_CELL_PROXY_CONTRIBUTIONS.clear();
@@ -231,7 +247,23 @@ public final class TransformConstructionClientState {
     }
 
     private static TransformConstructionManager.ProxyCell proxyCell(BlockPos pos) {
-        return pos == null ? null : proxyCells.get(pos.asLong());
+        if (pos == null) return null;
+        long key = pos.asLong();
+        TransformConstructionManager.ProxyCell raw = proxyCells.get(key);
+        if (raw == null || !doorPassages.containsKey(key)) return raw;
+        MaskedProxyCell cached = maskedProxyCells.get(key);
+        if (cached != null && cached.raw() == raw) return cached.masked();
+        TransformConstructionManager.ProxyCell masked =
+                new TransformConstructionManager.ProxyCell(raw.selection(),
+                        TransformDoorwayCollision.clipShape(raw.collision(),
+                                pos, doorPassages),
+                        TransformDoorwayCollision.clipShape(raw.groupCollision(),
+                                pos, doorPassages),
+                        TransformDoorwayCollision.clipShape(raw.surfaceCollision(),
+                                pos, doorPassages),
+                        raw.light(), raw.groupIds(), raw.surfaceIds());
+        maskedProxyCells.put(key, new MaskedProxyCell(raw, masked));
+        return masked;
     }
 
     public static void previewGroup(TransformGroup replacement) {
@@ -301,6 +333,7 @@ public final class TransformConstructionClientState {
                     && FacilityModule.isFacilityDoor(state)
                     && FacilityModule.isDoorPassable(previous)
                             != FacilityModule.isDoorPassable(state)) {
+                refreshDoorPassages();
                 for (int dx = -2; dx <= 2; dx++) {
                     for (int dz = -2; dz <= 2; dz++) {
                         for (int dy = 0; dy <= 2; dy++) {
@@ -399,6 +432,9 @@ public final class TransformConstructionClientState {
             if (!groupId.equals(current.id())) continue;
             next.set(index, current.withoutCell(cell));
             groups = List.copyOf(next);
+            if (FacilityModule.isDoorPassable(current.cells().get(cell))) {
+                refreshDoorPassages();
+            }
             TransformAlarmClientRenderer.groupCellChanged(groupId, cell, null);
             TransformConstructionClientRenderer.markGroupCellDirty(
                     groupId, cell);
@@ -460,12 +496,14 @@ public final class TransformConstructionClientState {
             if (next.get(index).id().equals(replacement.id())) {
                 next.set(index, replacement);
                 groups = List.copyOf(next);
+                refreshDoorPassages();
                 rebuildGroupProxyCells(replacement.id());
                 return;
             }
         }
         next.add(replacement);
         groups = List.copyOf(next);
+        refreshDoorPassages();
         rebuildGroupProxyCells(replacement.id());
     }
 
@@ -499,6 +537,7 @@ public final class TransformConstructionClientState {
             ArrayList<TransformGroup> next = new ArrayList<>(groups);
             if (next.removeIf(value -> id.equals(value.id()))) {
                 groups = List.copyOf(next);
+                refreshDoorPassages();
                 removeGroupProxyCells(id);
             }
         }

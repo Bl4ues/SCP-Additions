@@ -3,7 +3,13 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -82,6 +88,64 @@ public final class TransformDoorwayCollision {
             }
         }
         return result;
+    }
+
+    /** Immutable, world-cell keyed openings for every active transformed door.
+     * Both physical indices use this cache to clip the FINAL combined collision
+     * rather than only the group which owns the door. */
+    public static Map<Long, List<AABB>> indexPassages(
+            Collection<TransformGroup> groups) {
+        if (groups == null || groups.isEmpty()) return Map.of();
+        Map<Long, List<AABB>> indexed = new HashMap<>();
+        for (TransformGroup group : groups) {
+            for (Map.Entry<GridPos, BlockState> entry : group.cells().entrySet()) {
+                BlockState state = entry.getValue();
+                if (!FacilityModule.isFacilityDoor(state)
+                        || !FacilityModule.isDoorPassable(state)
+                        || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                    continue;
+                }
+                for (AABB passage : nearbyPassages(group, entry.getKey())) {
+                    int x0 = (int) Math.floor(passage.minX);
+                    int x1 = (int) Math.floor(passage.maxX - EPSILON);
+                    int y0 = (int) Math.floor(passage.minY);
+                    int y1 = (int) Math.floor(passage.maxY - EPSILON);
+                    int z0 = (int) Math.floor(passage.minZ);
+                    int z1 = (int) Math.floor(passage.maxZ - EPSILON);
+                    for (int x = x0; x <= x1; x++) {
+                        for (int y = y0; y <= y1; y++) {
+                            for (int z = z0; z <= z1; z++) {
+                                indexed.computeIfAbsent(
+                                        BlockPos.asLong(x, y, z),
+                                        ignored -> new ArrayList<>()).add(passage);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Map<Long, List<AABB>> result = new HashMap<>();
+        indexed.forEach((key,value) -> result.put(key, List.copyOf(value)));
+        return Map.copyOf(result);
+    }
+
+    /** World-space clip of a logical world-cell VoxelShape. Call only when the
+     * passage cache contains this cell and memoize its result at index level. */
+    public static VoxelShape clipShape(VoxelShape original, BlockPos cell,
+            Map<Long, List<AABB>> indexed) {
+        if (original == null || original.isEmpty() || cell == null
+                || indexed == null || indexed.isEmpty()) return original;
+        List<AABB> passages = indexed.get(cell.asLong());
+        if (passages == null || passages.isEmpty()) return original;
+        VoxelShape result = Shapes.empty();
+        for (AABB local : original.toAabbs()) {
+            for (AABB remaining : clip(local.move(cell), passages)) {
+                result = Shapes.or(result, Shapes.create(
+                        remaining.move(-cell.getX(), -cell.getY(),
+                                -cell.getZ())));
+            }
+        }
+        return result.optimize();
     }
 
     public static List<AABB> clip(AABB box, List<AABB> passages) {

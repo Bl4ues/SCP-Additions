@@ -832,6 +832,9 @@ public final class TransformConstructionManager {
         TransformGroup group = TransformConstructionSavedData.get(server)
                 .group(groupId);
         if (group == null) return;
+        SpatialIndex index = INDEXES.get(server);
+        if (index != null) index.refreshDoorPassages(
+                TransformConstructionSavedData.get(server).groups());
         for (int dx = -2; dx <= 2; dx++) {
             for (int dz = -2; dz <= 2; dz++) {
                 for (int dy = 0; dy <= 2; dy++) {
@@ -925,6 +928,7 @@ public final class TransformConstructionManager {
             }
         }
 
+        if (!surfaceOwner) index.refreshDoorPassages(data.groups());
         materializeAffected(server, index, affected);
         if (surfaceOwner) {
             TransformSurfaceDoorRuntime.structuralSurfaceChanged(server, id);
@@ -1251,6 +1255,7 @@ public final class TransformConstructionManager {
             addSurface(index, surface);
         }
         if (replacementSurface != null) addSurface(index, replacementSurface);
+        index.refreshDoorPassages(data.groups());
         return index;
     }
 
@@ -1629,6 +1634,14 @@ public final class TransformConstructionManager {
                 new LinkedHashMap<>();
         private final Map<ResourceLocation, Map<Long, ProxyCell>> frozen =
                 new LinkedHashMap<>();
+        private Map<Long, List<AABB>> doorPassages = Map.of();
+
+        private void refreshDoorPassages(
+                java.util.Collection<TransformGroup> groups) {
+            doorPassages = TransformDoorwayCollision.indexPassages(groups);
+            // Other owners' cached collision must be reclipped too.
+            frozen.clear();
+        }
 
         private void add(OwnerKey owner, BlockPos pos, AABB local,
                 boolean selection, boolean collision, int light) {
@@ -1665,7 +1678,17 @@ public final class TransformConstructionManager {
                         : ownerCells.get(packed);
                 if (contribution != null) aggregate.merge(contribution.freeze());
             }
-            ProxyCell result = aggregate.freeze();
+            ProxyCell raw = aggregate.freeze();
+            ProxyCell result = doorPassages.containsKey(packed)
+                    ? new ProxyCell(raw.selection(),
+                            TransformDoorwayCollision.clipShape(
+                                    raw.collision(), pos, doorPassages),
+                            TransformDoorwayCollision.clipShape(
+                                    raw.groupCollision(), pos, doorPassages),
+                            TransformDoorwayCollision.clipShape(
+                                    raw.surfaceCollision(), pos, doorPassages),
+                            raw.light(), raw.groupIds(), raw.surfaceIds())
+                    : raw;
             cache.put(packed, result);
             return result;
         }

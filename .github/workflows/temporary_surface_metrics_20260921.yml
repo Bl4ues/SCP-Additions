@@ -1,0 +1,34 @@
+name: Validate targeted Surface metric performance patch
+on:
+  push:
+    paths:
+      - '.github/workflows/temporary_surface_metrics_20260921.yml'
+permissions:
+  contents: write
+jobs:
+  validate-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Apply guarded source edits
+        run: python3 .github/scripts/temporary_surface_metrics_20260921.py
+      - name: Validate project files
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile and build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Commit only validated source edits
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/ConstructionSurface.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Reuse bounded Surface arc metrics and cached seam edge samples'
+          git push origin HEAD:master

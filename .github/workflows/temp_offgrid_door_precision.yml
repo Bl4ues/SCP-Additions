@@ -1,0 +1,35 @@
+name: Validate precise transformed door opening
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  patch-build-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply scoped collision changes
+        run: python3 .github/scripts/temp_offgrid_door_precision.py
+      - name: Project integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Validate compiled mod
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Commit validated changes to master
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformDoorwayCollision.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformConstructionManager.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientState.java
+          git commit -m 'Restrict off-grid door clipping to oriented aperture and preserve independent walls'
+          git pull --rebase origin master
+          git push origin HEAD:master

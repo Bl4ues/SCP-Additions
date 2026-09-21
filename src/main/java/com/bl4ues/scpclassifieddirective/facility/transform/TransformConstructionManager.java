@@ -1678,16 +1678,17 @@ public final class TransformConstructionManager {
                 if (contribution != null) aggregate.merge(contribution.freeze());
             }
             ProxyCell raw = aggregate.freeze();
-            ProxyCell result = doorPassages.containsKey(packed)
-                    ? new ProxyCell(raw.selection(),
-                            TransformDoorwayCollision.clipShape(
-                                    raw.collision(), pos, doorPassages),
-                            TransformDoorwayCollision.clipShape(
-                                    raw.groupCollision(), pos, doorPassages),
-                            TransformDoorwayCollision.clipShape(
-                                    raw.surfaceCollision(), pos, doorPassages),
-                            raw.light(), raw.groupIds(), raw.surfaceIds())
-                    : raw;
+            ProxyCell result;
+            if (doorPassages.containsKey(packed)) {
+                VoxelShape group = TransformDoorwayCollision.clipShape(
+                        raw.groupCollision(), pos, doorPassages);
+                result = new ProxyCell(raw.selection(),
+                        Shapes.or(group, raw.surfaceCollision()).optimize(),
+                        group, raw.surfaceCollision(), raw.light(),
+                        raw.groupIds(), raw.surfaceIds());
+            } else {
+                result = raw;
+            }
             cache.put(packed, result);
             return result;
         }

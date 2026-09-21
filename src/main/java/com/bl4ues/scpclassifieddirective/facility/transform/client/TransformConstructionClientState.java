@@ -253,15 +253,13 @@ public final class TransformConstructionClientState {
         if (raw == null || !doorPassages.containsKey(key)) return raw;
         MaskedProxyCell cached = maskedProxyCells.get(key);
         if (cached != null && cached.raw() == raw) return cached.masked();
+        VoxelShape group = TransformDoorwayCollision.clipShape(
+                raw.groupCollision(), pos, doorPassages);
         TransformConstructionManager.ProxyCell masked =
                 new TransformConstructionManager.ProxyCell(raw.selection(),
-                        TransformDoorwayCollision.clipShape(raw.collision(),
-                                pos, doorPassages),
-                        TransformDoorwayCollision.clipShape(raw.groupCollision(),
-                                pos, doorPassages),
-                        TransformDoorwayCollision.clipShape(raw.surfaceCollision(),
-                                pos, doorPassages),
-                        raw.light(), raw.groupIds(), raw.surfaceIds());
+                        Shapes.or(group, raw.surfaceCollision()).optimize(),
+                        group, raw.surfaceCollision(), raw.light(),
+                        raw.groupIds(), raw.surfaceIds());
         maskedProxyCells.put(key, new MaskedProxyCell(raw, masked));
         return masked;
     }

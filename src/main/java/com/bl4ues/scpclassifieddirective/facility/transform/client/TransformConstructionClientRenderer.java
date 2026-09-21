@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
 public final class TransformConstructionClientRenderer {
     private static final double MAX_RENDER_DISTANCE_SQR = 192.0D * 192.0D;
     private static final int GROUP_BATCH_SIZE = 8;
+    private static final int SURFACE_BATCH_SIZE = 8;
     private static final double GROUP_BATCH_RADIUS =
             Math.sqrt(3.0D) * GROUP_BATCH_SIZE * 0.5D;
     private static final Direction[] SIDES = {
@@ -687,10 +688,20 @@ public final class TransformConstructionClientRenderer {
             }
             SURFACE_MESHES.put(surface.id(), cached);
         }
-        // Static surface payloads are already culled as one authored object.
-        // Re-submit one packed layer per RenderType instead of re-entering the
-        // buffer map once for every logical slot on every frame.
-        renderSurfaceLayers(pose, buffers, cached.layers());
+        // One huge Surface can span several rooms: a surface-level frustum
+        // check previously submitted its entire mesh when only one corner was
+        // visible. Keep immutable 8x8 logical-region batches and cull each
+        // by its actual world-space geometry bounds before visiting vertices.
+        for (CachedSurfaceBatch batch : cached.batches()) {
+            if (batch.bounds() != null && frustum != null
+                    && !frustum.isVisible(batch.bounds())) continue;
+            if (batch.bounds() != null) {
+                double reach = 192.0D + batch.bounds().getSize() * 0.5D;
+                if (batch.bounds().getCenter().distanceToSqr(camera)
+                        > reach * reach) continue;
+            }
+            renderSurfaceLayers(pose, buffers, batch.layers());
+        }
     }
 
     private static void renderSurfaceLayers(PoseStack pose,
@@ -840,7 +851,7 @@ public final class TransformConstructionClientRenderer {
         Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot>
                 frozenOverlays = Map.copyOf(overlays);
         return new CachedSurface(surface, frozenSlots, frozenOverlays,
-                mergeSurfaceLayers(frozenSlots, frozenOverlays));
+                buildSurfaceBatches(frozenSlots, frozenOverlays));
     }
 
     private static CachedSurface buildSurfaceMesh(Minecraft minecraft,
@@ -870,25 +881,42 @@ public final class TransformConstructionClientRenderer {
         Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot>
                 frozenOverlays = Map.copyOf(overlays);
         return new CachedSurface(surface, frozenSlots, frozenOverlays,
-                mergeSurfaceLayers(frozenSlots, frozenOverlays));
+                buildSurfaceBatches(frozenSlots, frozenOverlays));
     }
 
-    private static Map<RenderType, List<PreparedVertex>> mergeSurfaceLayers(
+    private static long surfaceBatchKey(ConstructionSurface.SurfaceSlot slot) {
+        long column = Math.floorDiv(slot.column(), SURFACE_BATCH_SIZE);
+        long row = Math.floorDiv(slot.row(), SURFACE_BATCH_SIZE);
+        return (column << 32) ^ (row & 0xffffffffL);
+    }
+
+    private static List<CachedSurfaceBatch> buildSurfaceBatches(
             Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots,
             Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot> overlays) {
-        Map<RenderType, List<PreparedVertex>> merged = new LinkedHashMap<>();
-        java.util.function.Consumer<CachedSurfaceSlot> append = cached -> {
-            if (cached == null) return;
-            cached.layers().forEach((type, vertices) ->
-                    merged.computeIfAbsent(type,
-                            ignored -> new ArrayList<>()).addAll(vertices));
-        };
-        slots.values().forEach(append);
-        overlays.values().forEach(append);
-        Map<RenderType, List<PreparedVertex>> frozen = new LinkedHashMap<>();
-        merged.forEach((type, vertices) ->
-                frozen.put(type, List.copyOf(vertices)));
-        return Map.copyOf(frozen);
+        Map<Long, List<CachedSurfaceSlot>> regions = new LinkedHashMap<>();
+        slots.forEach((slot, cached) -> regions.computeIfAbsent(
+                surfaceBatchKey(slot), ignored -> new ArrayList<>()).add(cached));
+        overlays.forEach((slot, cached) -> regions.computeIfAbsent(
+                surfaceBatchKey(slot.slot()),
+                ignored -> new ArrayList<>()).add(cached));
+        List<CachedSurfaceBatch> result = new ArrayList<>(regions.size());
+        for (List<CachedSurfaceSlot> region : regions.values()) {
+            Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
+            AABB bounds = null;
+            for (CachedSurfaceSlot cached : region) {
+                cached.layers().forEach((type, vertices) -> layers
+                        .computeIfAbsent(type, ignored -> new ArrayList<>())
+                        .addAll(vertices));
+                if (cached.bounds() != null) bounds = bounds == null
+                        ? cached.bounds() : bounds.minmax(cached.bounds());
+            }
+            Map<RenderType, List<PreparedVertex>> frozen = new LinkedHashMap<>();
+            layers.forEach((type, vertices) ->
+                    frozen.put(type, List.copyOf(vertices)));
+            result.add(new CachedSurfaceBatch(Map.copyOf(frozen),
+                    bounds == null ? null : bounds.inflate(0.06D)));
+        }
+        return List.copyOf(result);
     }
 
     private static CachedSurfaceSlot buildSurfaceSlot(Minecraft minecraft,
@@ -1077,13 +1105,21 @@ public final class TransformConstructionClientRenderer {
         // visible seam. Keep shared boundaries dense so independent planes
         // still weld cleanly, while cutting the normal curved-wall vertex
         // count roughly in half. Pipes retain extra samples for their profile.
+        // Tessellate ALONG an exposed border, not 12x12 across every block
+        // merely touching any border. The old cross-product made even short
+        // two-axis curved corridors generate thousands of redundant quads.
+        boolean horizontalEdge = perimeter && (slot.row() == 0
+                || slot.row() == surface.rows() - 1);
+        boolean verticalEdge = perimeter && (slot.column() == 0
+                || slot.column() == surface.columns() - 1);
         int xSteps = deform
                 && surface.curveOffset().lengthSqr() > 1.0E-8D
                 && maxX - minX > 0.20D
-                ? curvedPipe ? 12 : perimeter ? 12 : 2 : 1;
+                ? curvedPipe ? 12 : horizontalEdge ? 8 : 2 : 1;
         int ySteps = deform
                 && surface.heightCurveOffset().lengthSqr() > 1.0E-8D
-                && maxY - minY > 0.20D ? perimeter ? 12 : 1 : 1;
+                && maxY - minY > 0.20D
+                ? verticalEdge ? 8 : 2 : 1;
         for (int ix = 0; ix < xSteps; ix++) {
             double s0 = ix / (double) xSteps;
             double s1 = (ix + 1.0D) / xSteps;
@@ -1959,7 +1995,11 @@ public final class TransformConstructionClientRenderer {
             Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots,
             Map<ConstructionSurface.SurfaceOverlaySlot,
                     CachedSurfaceSlot> overlays,
-            Map<RenderType, List<PreparedVertex>> layers) {
+            List<CachedSurfaceBatch> batches) {
+    }
+
+    private record CachedSurfaceBatch(
+            Map<RenderType, List<PreparedVertex>> layers, AABB bounds) {
     }
 
     private record CachedSurfaceSlot(

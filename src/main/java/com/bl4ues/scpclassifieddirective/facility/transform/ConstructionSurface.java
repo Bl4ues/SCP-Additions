@@ -34,6 +34,16 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 }
             };
 
+    // A mesh samples thousands of vertices from the same immutable surface.
+    // Avoid allocating a GeometryKey and locking the global LRU for every one.
+    // Identity is intentional: two records may share geometry yet differ in
+    // attachments; changing the geometry always creates a new record.
+    private static final ThreadLocal<MetricAccess> HOT_METRICS =
+            new ThreadLocal<>();
+
+    private record MetricAccess(ConstructionSurface surface,
+                                GeometryMetrics metrics) { }
+
     public ConstructionSurface {
         id = id == null ? UUID.randomUUID() : id;
         dimension = dimension == null
@@ -201,12 +211,18 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     private GeometryMetrics metrics() {
+        MetricAccess recent = HOT_METRICS.get();
+        if (recent != null && recent.surface() == this)
+            return recent.metrics();
         GeometryKey key = new GeometryKey(bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset);
+        GeometryMetrics resolved;
         synchronized (METRICS) {
-            return METRICS.computeIfAbsent(key,
+            resolved = METRICS.computeIfAbsent(key,
                     ignored -> GeometryMetrics.build(this));
         }
+        HOT_METRICS.set(new MetricAccess(this, resolved));
+        return resolved;
     }
 
     private record GeometryKey(Vec3 bottomStart, Vec3 bottomEnd,
@@ -258,10 +274,14 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
 
         private synchronized ArcTable vertical(ConstructionSurface surface,
                 double u) {
-            long key = Math.round(u * 1_000_000.0D);
+            // The old million-step key built nearly one 24-sample arc table
+            // per distinct tessellated vertex. 1024 horizontal samples bound
+            // that work while keeping the height reparameterization sub-pixel.
+            long key = Math.round(Math.max(0.0D,
+                    Math.min(1.0D, u)) * 1024.0D);
             return verticalTables.computeIfAbsent(key,
                     ignored -> ArcTable.sample(VERTICAL_SAMPLES,
-                            v -> surface.point(u, v)));
+                            v -> surface.point(key / 1024.0D, v)));
         }
     }
 

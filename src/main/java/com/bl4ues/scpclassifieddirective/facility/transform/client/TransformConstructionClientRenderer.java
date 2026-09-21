@@ -1223,16 +1223,20 @@ public final class TransformConstructionClientRenderer {
             SURFACE_EDGE_GEOMETRIES.put(surface.id(), surface);
             Map<Integer, MatchedSurfaceEdge> matches = new HashMap<>();
             for (int edge = 0; edge < 4; edge++) {
-                Vec3 first = edgePoint(surface, edge, 0.0D);
-                Vec3 middle = edgePoint(surface, edge, 0.5D);
-                Vec3 last = edgePoint(surface, edge, 1.0D);
+                List<Vec3> sourceSamples = edgeSamples.get(surface.id())
+                        .get(edge);
+                Vec3 first = sourceSamples.get(0);
+                Vec3 middle = sourceSamples.get(24);
+                Vec3 last = sourceSamples.get(48);
                 MatchedSurfaceEdge match = null;
                 double bestScore = Double.POSITIVE_INFINITY;
                 for (ConstructionSurface other : surfaces) {
                     if (other.id().equals(surface.id())) continue;
                     for (int otherEdge = 0; otherEdge < 4; otherEdge++) {
-                        Vec3 otherFirst = edgePoint(other, otherEdge, 0.0D);
-                        Vec3 otherLast = edgePoint(other, otherEdge, 1.0D);
+                        List<Vec3> samples = edgeSamples.get(other.id())
+                                .get(otherEdge);
+                        Vec3 otherFirst = samples.get(0);
+                        Vec3 otherLast = samples.get(48);
                         boolean same = first.distanceToSqr(otherFirst)
                                 < 0.0225D && last.distanceToSqr(otherLast)
                                 < 0.0225D;
@@ -1248,8 +1252,6 @@ public final class TransformConstructionClientRenderer {
                                 otherFirst.add(otherLast).scale(0.5D))
                                 > Math.pow(otherFirst.distanceTo(otherLast)
                                         + 0.5D, 2.0D)) continue;
-                        List<Vec3> samples = edgeSamples.get(other.id())
-                                .get(otherEdge);
                         double startFraction = closestEdgeFraction(samples, first);
                         double middleFraction = closestEdgeFraction(samples, middle);
                         double endFraction = closestEdgeFraction(samples, last);

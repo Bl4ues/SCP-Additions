@@ -301,8 +301,8 @@ public final class TransformConstructionClientState {
                     && FacilityModule.isFacilityDoor(state)
                     && FacilityModule.isDoorPassable(previous)
                             != FacilityModule.isDoorPassable(state)) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    for (int dz = -2; dz <= 2; dz++) {
                         for (int dy = 0; dy <= 2; dy++) {
                             if (dx == 0 && dz == 0 && dy == 0) continue;
                             TransformGroup.GridPos neighbor = cell.offset(dx, dy, dz);

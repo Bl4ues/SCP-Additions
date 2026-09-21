@@ -337,8 +337,20 @@ public final class TransformConstructionManager {
         if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
             FacilityPipeModule.refreshGroup(level, groupId);
         }
+        playConstructionSound(level, payload, group.cellCenter(target), true);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
+    }
+
+    private static void playConstructionSound(ServerLevel level,
+            BlockState state, Vec3 worldPosition, boolean placing) {
+        if (state == null || worldPosition == null || state.isAir()) return;
+        net.minecraft.world.level.block.SoundType sound = state.getSoundType();
+        level.playSound(null, BlockPos.containing(worldPosition),
+                placing ? sound.getPlaceSound() : sound.getBreakSound(),
+                net.minecraft.sounds.SoundSource.BLOCKS,
+                (sound.getVolume() + 1.0F) * 0.5F,
+                sound.getPitch() * (placing ? 0.8F : 1.0F));
     }
 
     private static GridPos nearestGridCell(Vec3 local) {
@@ -423,6 +435,7 @@ public final class TransformConstructionManager {
         if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
             FacilityPipeModule.refreshSurface(level, surfaceId);
         }
+        playConstructionSound(level, payload, center, true);
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
@@ -489,6 +502,7 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceOverlay(level, surfaceId,
                 targetSlot, side, payload, deform);
+        playConstructionSound(level, payload, center.add(normal.scale(side * 0.5D)), true);
         if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
             FacilityPipeModule.refreshSurface(level, surfaceId);
         }
@@ -514,6 +528,7 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), id, slot);
         TransformConstructionNetwork.broadcastSurfaceOverlayRemoved(level, id,
                 slot, side);
+        playConstructionSound(level, surface.overlay(slot, side).state(), center, false);
         if (surface.overlay(slot, side).state().getBlock()
                 instanceof FacilityPipeModule.PipeBlock) {
             FacilityPipeModule.refreshSurface(level, id);
@@ -540,12 +555,14 @@ public final class TransformConstructionManager {
         if (next.cells().isEmpty()) {
             data.removeGroup(id);
             refreshGroup(level.getServer(), id);
+            playConstructionSound(level, state, group.cellCenter(cell), false);
             // Deleting the owner itself still needs a structural snapshot.
             return true;
         }
         data.putGroup(next);
         refreshGroupCell(level.getServer(), id, cell);
         TransformConstructionNetwork.broadcastGroupCellRemoved(level, id, cell);
+        playConstructionSound(level, state, group.cellCenter(cell), false);
         if (state.getBlock() instanceof FacilityPipeModule.PipeBlock) {
             FacilityPipeModule.refreshGroup(level, id);
         }
@@ -573,6 +590,7 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), id, slot);
         TransformConstructionNetwork.broadcastSurfaceSlotRemoved(
                 level, id, slot);
+        playConstructionSound(level, attachment.state(), center, false);
         if (attachment.state().getBlock()
                 instanceof FacilityPipeModule.PipeBlock) {
             FacilityPipeModule.refreshSurface(level, id);
@@ -806,16 +824,16 @@ public final class TransformConstructionManager {
         refreshGroupCell(server, groupId, cell, false);
     }
 
-    /** Door state changes can also change the clipped collision of adjacent
-     * rotated wall cells; refresh only those owners, never the whole group. */
+    /** Door state changes must rebuild all rotated neighbours whose world
+     * AABBs can spill into the 45-degree doorway. */
     public static void refreshOpenDoorNeighbours(MinecraftServer server,
             UUID groupId, GridPos doorCell) {
         if (server == null || groupId == null || doorCell == null) return;
         TransformGroup group = TransformConstructionSavedData.get(server)
                 .group(groupId);
         if (group == null) return;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
                 for (int dy = 0; dy <= 2; dy++) {
                     if (dx == 0 && dz == 0 && dy == 0) continue;
                     GridPos neighbor = doorCell.offset(dx, dy, dz);

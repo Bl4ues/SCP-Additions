@@ -17,13 +17,13 @@ import net.minecraft.world.phys.Vec3;
 public final class TransformDoorwayCollision {
     // A world-aligned square narrows to a point as a player traverses its
     // diagonal. Instead preserve a constant width along the DOOR's own plane.
-    private static final double CLEAR_HALF_WIDTH = 0.54D;
+    private static final double CLEAR_HALF_WIDTH = 0.59D;
     private static final double CLEAR_BELOW = 0.48D;
     private static final double CLEAR_ABOVE = 1.55D;
     private static final double EPSILON = 1.0E-6D;
-    private static final int PASSAGE_STEPS = 7;
-    private static final double PASSAGE_STEP_LENGTH = 0.29D;
-    private static final double PASSAGE_HALF_DEPTH = 0.26D;
+    private static final int PASSAGE_STEPS = 9;
+    private static final double PASSAGE_STEP_LENGTH = 0.30D;
+    private static final double PASSAGE_HALF_DEPTH = 0.32D;
 
     private TransformDoorwayCollision() {
     }
@@ -32,8 +32,8 @@ public final class TransformDoorwayCollision {
             GridPos source) {
         if (group == null || source == null) return List.of();
         List<AABB> result = new ArrayList<>();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
                 for (int dy = -2; dy <= 0; dy++) {
                     GridPos candidate = source.offset(dx, dy, dz);
                     BlockState state = group.cells().get(candidate);

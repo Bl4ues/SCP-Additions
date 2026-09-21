@@ -71,6 +71,8 @@ public final class TransformConstructionClientRenderer {
     };
     private static final Map<UUID, CachedSurface> SURFACE_MESHES =
             new HashMap<>();
+    private static final Map<BlockState, Boolean> FULL_SURFACE_CELLS =
+            new java.util.IdentityHashMap<>();
     // Neighbour relationships depend on geometry, not individual block states.
     // Resolve each shared edge once per committed geometry change rather than
     // searching every other Surface for every vertex of a long curved corridor.
@@ -94,6 +96,7 @@ public final class TransformConstructionClientRenderer {
 
     public static void clearSurfaceCache() {
         SURFACE_MESHES.clear();
+        FULL_SURFACE_CELLS.clear();
         SURFACE_EDGE_GEOMETRIES.clear();
         SHARED_SURFACE_EDGES.clear();
         GROUP_MESHES.clear();
@@ -207,7 +210,8 @@ public final class TransformConstructionClientRenderer {
         }
         updateSharedSurfaceEdges(surfaces);
         for (ConstructionSurface surface : surfaces) {
-            renderSurfacePayloads(minecraft, pose, buffers, surface, camera);
+            renderSurfacePayloads(minecraft, pose, buffers, surface, camera,
+                    event.getFrustum());
         }
 
         boolean creativeAuthoring = minecraft.player.isCreative();
@@ -317,14 +321,6 @@ public final class TransformConstructionClientRenderer {
                         TransformConstructionClientState.surface(selection.id());
                 if (selectedSurface != null) {
                     renderSurfaceGrid(pose, lines, selectedSurface, camera);
-                }
-            } else if (placingBlock) {
-                for (ConstructionSurface surface : surfaces) {
-                    Vec3 center = surface.gridPoint(0.5D, 0.5D);
-                    if (center.distanceToSqr(camera) <= 40.0D * 40.0D
-                            && !surface.attachments().isEmpty()) {
-                        renderSurfaceGrid(pose, lines, surface, camera);
-                    }
                 }
             } else if (mappingTool) {
                 for (ConstructionSurface surface : surfaces) {
@@ -655,11 +651,16 @@ public final class TransformConstructionClientRenderer {
 
     private static void renderSurfacePayloads(Minecraft minecraft, PoseStack pose,
             MultiBufferSource.BufferSource buffers, ConstructionSurface surface,
-            Vec3 camera) {
+            Vec3 camera, net.minecraft.client.renderer.culling.Frustum frustum) {
         Vec3 center = surface.gridPoint(0.5D, 0.5D);
-        double radius = Math.max(surface.width(), surface.height()) * 0.75D + 2.0D;
+        double radius = Math.max(surface.width(), surface.height())
+                + surface.curveOffset().length()
+                + surface.heightCurveOffset().length() + 3.0D;
         if (center.distanceToSqr(camera)
                 > (192.0D + radius) * (192.0D + radius)) return;
+        if (frustum != null && !frustum.isVisible(new AABB(
+                center.x - radius, center.y - radius, center.z - radius,
+                center.x + radius, center.y + radius, center.z + radius))) return;
 
         CachedSurface cached = SURFACE_MESHES.get(surface.id());
         if (cached == null) {
@@ -675,14 +676,17 @@ public final class TransformConstructionClientRenderer {
             }
             SURFACE_MESHES.put(surface.id(), cached);
         }
-        renderSurfaceCache(pose, buffers, cached.slots().values());
-        renderSurfaceCache(pose, buffers, cached.overlays().values());
+        renderSurfaceCache(pose, buffers, cached.slots().values(), frustum);
+        renderSurfaceCache(pose, buffers, cached.overlays().values(), frustum);
     }
 
     private static void renderSurfaceCache(PoseStack pose,
             MultiBufferSource.BufferSource buffers,
-            Iterable<CachedSurfaceSlot> cachedSlots) {
+            Iterable<CachedSurfaceSlot> cachedSlots,
+            net.minecraft.client.renderer.culling.Frustum frustum) {
         for (CachedSurfaceSlot slot : cachedSlots) {
+            if (frustum != null && slot.bounds() != null
+                    && !frustum.isVisible(slot.bounds())) continue;
             for (Map.Entry<RenderType, List<PreparedVertex>> layer
                     : slot.layers().entrySet()) {
                 VertexConsumer consumer = buffers.getBuffer(layer.getKey());
@@ -839,7 +843,16 @@ public final class TransformConstructionClientRenderer {
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
         layers.forEach((type, vertices) ->
                 immutable.put(type, List.copyOf(vertices)));
-        return new CachedSurfaceSlot(Map.copyOf(immutable));
+        AABB bounds = null;
+        for (List<PreparedVertex> vertices : immutable.values()) {
+            for (PreparedVertex vertex : vertices) {
+                Vec3 point = vertex.position();
+                AABB position = new AABB(point, point);
+                bounds = bounds == null ? position : bounds.minmax(position);
+            }
+        }
+        return new CachedSurfaceSlot(Map.copyOf(immutable),
+                bounds == null ? null : bounds.inflate(0.02D));
     }
 
     private static void appendSurfaceBlock(Minecraft minecraft,
@@ -907,6 +920,11 @@ public final class TransformConstructionClientRenderer {
     private static boolean fullSurfaceCell(BlockState state) {
         if (state == null || state.isAir() || state.hasBlockEntity()
                 || state.getBlock() instanceof FacilityPipeModule.PipeBlock) return false;
+        return FULL_SURFACE_CELLS.computeIfAbsent(state,
+                TransformConstructionClientRenderer::computeFullSurfaceCell);
+    }
+
+    private static boolean computeFullSurfaceCell(BlockState state) {
         List<AABB> boxes = state.getCollisionShape(
                 EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
                 CollisionContext.empty()).toAabbs();
@@ -991,7 +1009,9 @@ public final class TransformConstructionClientRenderer {
                 || slot.row() == 0 && minY < 1.0E-5D
                 || slot.row() == surface.rows() - 1
                         && maxY > 0.99999D);
-        int xSteps = deform && maxX - minX > 0.20D
+        int xSteps = deform
+                && surface.curveOffset().lengthSqr() > 1.0E-8D
+                && maxX - minX > 0.20D
                 ? curvedPipe ? 16 : perimeter
                         && surface.curveOffset().lengthSqr() > 1.0E-8D
                         ? 12 : 4 : 1;
@@ -1874,7 +1894,7 @@ public final class TransformConstructionClientRenderer {
     }
 
     private record CachedSurfaceSlot(
-            Map<RenderType, List<PreparedVertex>> layers) {
+            Map<RenderType, List<PreparedVertex>> layers, AABB bounds) {
     }
 
     private record CachedGroup(TransformGroup source,

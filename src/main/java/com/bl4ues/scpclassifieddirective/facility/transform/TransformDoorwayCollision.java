@@ -23,13 +23,13 @@ import net.minecraft.world.phys.Vec3;
 public final class TransformDoorwayCollision {
     // A world-aligned square narrows to a point as a player traverses its
     // diagonal. Instead preserve a constant width along the DOOR's own plane.
-    private static final double CLEAR_HALF_WIDTH = 0.59D;
-    private static final double CLEAR_BELOW = 0.48D;
-    private static final double CLEAR_ABOVE = 1.55D;
+    private static final double CLEAR_HALF_WIDTH = 0.72D;
+    private static final double CLEAR_BELOW = 0.56D;
+    private static final double CLEAR_ABOVE = 1.78D;
     private static final double EPSILON = 1.0E-6D;
-    private static final int PASSAGE_STEPS = 9;
-    private static final double PASSAGE_STEP_LENGTH = 0.30D;
-    private static final double PASSAGE_HALF_DEPTH = 0.32D;
+    private static final int PASSAGE_STEPS = 13;
+    private static final double PASSAGE_STEP_LENGTH = 0.22D;
+    private static final double PASSAGE_HALF_DEPTH = 0.70D;
 
     private TransformDoorwayCollision() {
     }

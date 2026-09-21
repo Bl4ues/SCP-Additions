@@ -1363,9 +1363,10 @@ public final class TransformConstructionClientRenderer {
             for (int edge = 0; edge < 4; edge++) {
                 List<Vec3> sourceSamples = edgeSamples.get(surface.id())
                         .get(edge);
-                Vec3 first = sourceSamples.get(0);
-                Vec3 middle = sourceSamples.get(24);
-                Vec3 last = sourceSamples.get(48);
+                // Broad-phase only. A partially overlapping old wall/roof
+                // must not be rejected because its endpoints do not meet.
+                AABB sourceBounds = SURFACE_EDGE_BOUNDS.get(surface.id())
+                        .get(edge).inflate(0.55D);
                 MatchedSurfaceEdge match = null;
                 double bestScore = Double.POSITIVE_INFINITY;
                 for (ConstructionSurface other : surfaces) {
@@ -1373,67 +1374,64 @@ public final class TransformConstructionClientRenderer {
                     for (int otherEdge = 0; otherEdge < 4; otherEdge++) {
                         List<Vec3> samples = edgeSamples.get(other.id())
                                 .get(otherEdge);
-                        AABB nearEdge = SURFACE_EDGE_BOUNDS.get(other.id())
-                                .get(otherEdge).inflate(0.75D);
-                        if (!nearEdge.contains(first)
-                                || !nearEdge.contains(middle)
-                                || !nearEdge.contains(last)) continue;
-                        Vec3 otherFirst = samples.get(0);
-                        Vec3 otherLast = samples.get(48);
-                        boolean same = first.distanceToSqr(otherFirst)
-                                < 0.1225D && last.distanceToSqr(otherLast)
-                                < 0.1225D;
-                        boolean reverse = !same
-                                && first.distanceToSqr(otherLast) < 0.1225D
-                                && last.distanceToSqr(otherFirst) < 0.1225D;
-                        // A short edge is allowed to meet a portion of a
-                        // longer edge. Do not match unrelated nearby planes:
-                        // the entire edge must project continuously and their
-                        // normals must form an actual corner, not a parallel
-                        // coplanar overlay.
-                        if (!same && !reverse && middle.distanceToSqr(
-                                otherFirst.add(otherLast).scale(0.5D))
-                                > Math.pow(otherFirst.distanceTo(otherLast)
-                                        + 0.5D, 2.0D)) continue;
-                        double startFraction = closestEdgeFraction(samples, first);
-                        double middleFraction = closestEdgeFraction(samples, middle);
-                        double endFraction = closestEdgeFraction(samples, last);
-                        if (!Double.isFinite(startFraction)
-                                || !Double.isFinite(middleFraction)
-                                || !Double.isFinite(endFraction)
-                                || Math.abs(endFraction - startFraction) < 0.12D
-                                || (middleFraction - startFraction)
-                                        * (middleFraction - endFraction) > 0.01D) {
+                        if (!sourceBounds.intersects(SURFACE_EDGE_BOUNDS
+                                .get(other.id()).get(otherEdge).inflate(0.55D))) {
                             continue;
                         }
                         double otherU = otherEdge == 0 ? 0.0D
-                                : otherEdge == 1 ? 1.0D : middleFraction;
+                                : otherEdge == 1 ? 1.0D : 0.5D;
                         double otherV = otherEdge == 2 ? 0.0D
-                                : otherEdge == 3 ? 1.0D : middleFraction;
+                                : otherEdge == 3 ? 1.0D : 0.5D;
                         double dot = surface.gridNormal(
                                 edge < 2 ? edge : 0.5D,
                                 edge == 2 ? 0.0D : edge == 3 ? 1.0D : 0.5D)
                                 .dot(other.gridNormal(otherU, otherV));
-                        // Nearly tangent neighbouring curves still share a
-                        // physical seam. Reject opposite-facing overlays, not
-                        // the smooth transition from ceiling into wall.
                         if (dot <= -0.2D) continue;
-                        Vec3 otherStart = edgePoint(other, otherEdge,
-                                startFraction);
-                        Vec3 otherMiddle = edgePoint(other, otherEdge,
-                                middleFraction);
-                        Vec3 otherEnd = edgePoint(other, otherEdge,
-                                endFraction);
-                        double score = first.distanceToSqr(otherStart)
-                                + middle.distanceToSqr(otherMiddle)
-                                + last.distanceToSqr(otherEnd);
-                        if (score > 0.3675D || score >= bestScore) continue;
+
+                        // Existing surfaces need not have identical lengths or
+                        // perfectly matching endpoints. Only weld the contiguous
+                        // portions whose *physical* edges are already nearby.
+                        // Sample comparisons happen after committed geometry
+                        // changes and are never run in the per-frame vertex pass.
+                        int close = 0;
+                        int run = 0;
+                        int longestRun = 0;
+                        double separation = 0.0D;
+                        double firstFraction = Double.NaN;
+                        double lastFraction = Double.NaN;
+                        for (int sample = 0; sample <= 48; sample += 4) {
+                            Vec3 point = sourceSamples.get(sample);
+                            double mapped = closestEdgeFraction(samples, point);
+                            if (!Double.isFinite(mapped)) {
+                                run = 0;
+                                continue;
+                            }
+                            double distance = point.distanceToSqr(
+                                    edgePoint(other, otherEdge, mapped));
+                            if (distance > 0.45D * 0.45D) {
+                                run = 0;
+                                continue;
+                            }
+                            close++;
+                            longestRun = Math.max(longestRun, ++run);
+                            separation += distance;
+                            if (!Double.isFinite(firstFraction)) {
+                                firstFraction = mapped;
+                            }
+                            lastFraction = mapped;
+                        }
+                        // A one-point intersection between unrelated edges is
+                        // not a seam; require an actual shared arc interval.
+                        if (close < 3 || longestRun < 3
+                                || Math.abs(lastFraction - firstFraction)
+                                        < 0.035D) continue;
+                        double score = separation / close
+                                + (13 - close) * 0.004D;
+                        if (score >= bestScore) continue;
                         bestScore = score;
-                        boolean partial = Math.min(startFraction,
-                                endFraction) > 0.06D
-                                || Math.max(startFraction, endFraction) < 0.94D;
+                        boolean partial = close < 12;
                         match = new MatchedSurfaceEdge(other, otherEdge,
-                                endFraction < startFraction, partial, samples,
+                                lastFraction < firstFraction, partial, samples,
                                 new HashMap<>());
                     }
                 }
@@ -1513,7 +1511,29 @@ public final class TransformConstructionClientRenderer {
             result = result == null ? candidate : result.add(candidate);
             found++;
         }
-        return found > 0 ? result.scale(1.0D / found) : null;
+        if (found == 0) return null;
+        // Adjacent curved surfaces may use different cell subdivisions: even
+        // after their sampled border points agree, their polygon chords can
+        // leave a narrow sky slit between samples. Continue each joined edge
+        // 0.055 block OUTSIDE its own parametric domain, into the neighbouring
+        // solid surface. This gives both meshes a small physical overlap rather
+        // than relying on two independently tessellated lines touching at
+        // infinitely thin vertices. The authored curve, interior vertices,
+        // collision, and saved geometry are unchanged.
+        Vec3 overlap = Vec3.ZERO;
+        if (Math.abs(u) < 1.0E-6D) {
+            overlap = overlap.subtract(surface.gridTangent(u, v));
+        } else if (Math.abs(u - 1.0D) < 1.0E-6D) {
+            overlap = overlap.add(surface.gridTangent(u, v));
+        }
+        if (Math.abs(v) < 1.0E-6D) {
+            overlap = overlap.subtract(surface.gridVertical(u, v));
+        } else if (Math.abs(v - 1.0D) < 1.0E-6D) {
+            overlap = overlap.add(surface.gridVertical(u, v));
+        }
+        Vec3 joined = result.scale(1.0D / found);
+        return overlap.lengthSqr() < 1.0E-10D ? joined
+                : joined.add(overlap.normalize().scale(0.055D));
     }
 
     private static VertexFrame rigidFrame(ConstructionSurface surface,

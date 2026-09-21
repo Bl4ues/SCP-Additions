@@ -1227,8 +1227,8 @@ public final class TransformConstructionClientState {
                     : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
                             BlockPos.ZERO, CollisionContext.empty());
             if (collision.isEmpty()) continue;
-            List<AABB> doorways = TransformDoorwayCollision.nearbyPassages(
-                    neighborhood, cell);
+            // Match the server: clip the combined spatial index exactly once,
+            // after contributions from every transformed owner are merged.
             int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
             double inv = 1.0D / subdivisions;
             collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
@@ -1245,11 +1245,10 @@ public final class TransformConstructionClientState {
                                     cell.x() - 0.5D + minX + boxX * (sx + 1) * inv,
                                     cell.y() - 0.5D + minY + boxY * (sy + 1) * inv,
                                     cell.z() - 0.5D + minZ + boxZ * (sz + 1) * inv);
-                            for (AABB worldBox : TransformDoorwayCollision.clip(
-                                    transformedBounds(group, local), doorways)) {
-                                addWorldBox(index, worldBox, group.id(), null,
-                                        false, true, state.getLightEmission());
-                            }
+                            addWorldBox(index,
+                                    transformedBounds(group, local),
+                                    group.id(), null, false, true,
+                                    state.getLightEmission());
                         }
                     }
                 }

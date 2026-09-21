@@ -1292,8 +1292,9 @@ public final class TransformConstructionManager {
                 : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
                         BlockPos.ZERO, CollisionContext.empty());
         if (collision.isEmpty()) return;
-        List<AABB> doorways = TransformDoorwayCollision.nearbyPassages(
-                group, cell);
+        // The final, aggregated world-cell collision is clipped once by the
+        // shared doorway index. Early per-cell clipping duplicates hundreds of
+        // overlapping AABBs and is invalidated whenever a door animates.
         int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
         double inv = 1.0D / subdivisions;
         collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
@@ -1313,11 +1314,9 @@ public final class TransformConstructionManager {
                                         + boxY * (sy + 1) * inv,
                                 cell.z() - 0.5D + minZ
                                         + boxZ * (sz + 1) * inv);
-                        for (AABB worldBox : TransformDoorwayCollision.clip(
-                                transformedBounds(group, local), doorways)) {
-                            addWorldBox(index, owner, worldBox,
-                                    false, true, state.getLightEmission());
-                        }
+                        addWorldBox(index, owner,
+                                transformedBounds(group, local),
+                                false, true, state.getLightEmission());
                     }
                 }
             }

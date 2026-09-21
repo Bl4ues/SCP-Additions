@@ -34,6 +34,9 @@ public final class TransformDoorwayCollision {
     private TransformDoorwayCollision() {
     }
 
+    /** Only the authored neighbouring doors are looked up. The individual
+     * opening geometry is shared with indexPassages so a doorway is generated
+     * exactly once for its owner, not once for every nearby door. */
     public static List<AABB> nearbyPassages(TransformGroup group,
             GridPos source) {
         if (group == null || source == null) return List.of();
@@ -42,50 +45,48 @@ public final class TransformDoorwayCollision {
             for (int dz = -2; dz <= 2; dz++) {
                 for (int dy = -2; dy <= 0; dy++) {
                     GridPos candidate = source.offset(dx, dy, dz);
-                    BlockState state = group.cells().get(candidate);
-                    if (!FacilityModule.isFacilityDoor(state)
-                            || !FacilityModule.isDoorPassable(state)
-                            || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                        continue;
-                    }
-                    Vec3 center = group.cellCenter(candidate);
-                    Direction localFacing = state.getValue(
-                            HorizontalDirectionalBlock.FACING);
-                    Vec3 localWidth = localFacing.getAxis() == Direction.Axis.Z
-                            ? new Vec3(1.0D, 0.0D, 0.0D)
-                            : new Vec3(0.0D, 0.0D, 1.0D);
-                    Vec3 width = TransformMath.rotate(localWidth,
-                            group.rotationX(), group.rotationY(),
-                            group.rotationZ());
-                    Vec3 through = TransformMath.rotate(
-                            Vec3.atLowerCornerOf(localFacing.getNormal()),
-                            group.rotationX(), group.rotationY(),
-                            group.rotationZ());
-                    // Door collision is upright for ordinary yaw rotations;
-                    // projected directions keep the same constant world-space
-                    // walking width when the player crosses at 45 degrees.
-                    width = new Vec3(width.x, 0.0D, width.z).normalize();
-                    through = new Vec3(through.x, 0.0D, through.z).normalize();
-                    if (width.lengthSqr() < EPSILON
-                            || through.lengthSqr() < EPSILON) continue;
-                    for (int step = 0; step < PASSAGE_STEPS; step++) {
-                        double along = (step - (PASSAGE_STEPS - 1) * 0.5D)
-                                * PASSAGE_STEP_LENGTH;
-                        Vec3 centerStep = center.add(through.scale(along));
-                        double halfX = Math.abs(width.x) * CLEAR_HALF_WIDTH
-                                + Math.abs(through.x) * PASSAGE_HALF_DEPTH;
-                        double halfZ = Math.abs(width.z) * CLEAR_HALF_WIDTH
-                                + Math.abs(through.z) * PASSAGE_HALF_DEPTH;
-                        result.add(new AABB(
-                                centerStep.x - halfX,
-                                center.y - CLEAR_BELOW,
-                                centerStep.z - halfZ,
-                                centerStep.x + halfX,
-                                center.y + CLEAR_ABOVE,
-                                centerStep.z + halfZ));
-                    }
+                    result.addAll(passagesForDoor(group, candidate,
+                            group.cells().get(candidate)));
                 }
             }
+        }
+        return result;
+    }
+
+    private static List<AABB> passagesForDoor(TransformGroup group,
+            GridPos cell, BlockState state) {
+        if (group == null || cell == null
+                || !FacilityModule.isFacilityDoor(state)
+                || !FacilityModule.isDoorPassable(state)
+                || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return List.of();
+        }
+        Vec3 center = group.cellCenter(cell);
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        Vec3 localWidth = facing.getAxis() == Direction.Axis.Z
+                ? new Vec3(1.0D, 0.0D, 0.0D)
+                : new Vec3(0.0D, 0.0D, 1.0D);
+        Vec3 width = TransformMath.rotate(localWidth,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        Vec3 through = TransformMath.rotate(
+                Vec3.atLowerCornerOf(facing.getNormal()),
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        width = new Vec3(width.x, 0.0D, width.z).normalize();
+        through = new Vec3(through.x, 0.0D, through.z).normalize();
+        if (width.lengthSqr() < EPSILON || through.lengthSqr() < EPSILON)
+            return List.of();
+        double halfX = Math.abs(width.x) * CLEAR_HALF_WIDTH
+                + Math.abs(through.x) * PASSAGE_HALF_DEPTH;
+        double halfZ = Math.abs(width.z) * CLEAR_HALF_WIDTH
+                + Math.abs(through.z) * PASSAGE_HALF_DEPTH;
+        List<AABB> result = new ArrayList<>(PASSAGE_STEPS);
+        for (int step = 0; step < PASSAGE_STEPS; step++) {
+            double along = (step - (PASSAGE_STEPS - 1) * 0.5D)
+                    * PASSAGE_STEP_LENGTH;
+            Vec3 at = center.add(through.scale(along));
+            result.add(new AABB(at.x - halfX, center.y - CLEAR_BELOW,
+                    at.z - halfZ, at.x + halfX,
+                    center.y + CLEAR_ABOVE, at.z + halfZ));
         }
         return result;
     }
@@ -105,7 +106,8 @@ public final class TransformDoorwayCollision {
                         || !state.hasProperty(HorizontalDirectionalBlock.FACING)) {
                     continue;
                 }
-                for (AABB passage : nearbyPassages(group, entry.getKey())) {
+                for (AABB passage : passagesForDoor(group,
+                        entry.getKey(), state)) {
                     int x0 = (int) Math.floor(passage.minX);
                     int x1 = (int) Math.floor(passage.maxX - EPSILON);
                     int y0 = (int) Math.floor(passage.minY);

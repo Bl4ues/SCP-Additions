@@ -117,6 +117,17 @@ public final class TransformConstructionClientRenderer {
                 slot.column() - 1, slot.row()));
         dirty.add(new ConstructionSurface.SurfaceSlot(
                 slot.column() + 1, slot.row()));
+        // A changed border block can turn a previously unused matched seam on
+        // in its neighbour. Rebuild only that neighbour, not every Surface.
+        ConstructionSurface owner = TransformConstructionClientState.surface(id);
+        if (owner != null && (slot.column() == 0
+                || slot.column() == owner.columns() - 1
+                || slot.row() == 0 || slot.row() == owner.rows() - 1)) {
+            for (MatchedSurfaceEdge edge : SHARED_SURFACE_EDGES
+                    .getOrDefault(id, Map.of()).values()) {
+                SURFACE_MESHES.remove(edge.other().id());
+            }
+        }
     }
 
     static void invalidateGroup(UUID id) {
@@ -319,6 +330,10 @@ public final class TransformConstructionClientRenderer {
                     1.0F, 0.08F, 0.04F, pulse);
             buffers.endBatch(RenderType.lines());
         }
+        // Use precisely the same camera-relative pose as the Surface mesh.
+        // The old AFTER_LEVEL callback supplied a different projection frame,
+        // leaving axes apparently attached to the screen rather than the handle.
+        renderEditorGizmos(minecraft, pose, buffers, camera);
         pose.popPose();
         buffers.endBatch();
 
@@ -330,12 +345,9 @@ public final class TransformConstructionClientRenderer {
         GROUP_MESHES.keySet().removeIf(id -> !currentGroups.contains(id));
     }
 
-    @SubscribeEvent
-    public static void renderEditorGizmos(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || minecraft.player == null
-                || !minecraft.player.isCreative()) return;
+    private static void renderEditorGizmos(Minecraft minecraft, PoseStack pose,
+            MultiBufferSource.BufferSource buffers, Vec3 camera) {
+        if (!minecraft.player.isCreative()) return;
         Selection selection = TransformConstructionClientState.selection();
         if (selection == null) return;
         boolean editor = minecraft.player.getMainHandItem().is(
@@ -347,12 +359,6 @@ public final class TransformConstructionClientRenderer {
                 || minecraft.player.getOffhandItem().is(
                         TransformConstructionModule.getSurfaceTool());
         if (!editor) return;
-        PoseStack pose = event.getPoseStack();
-        Vec3 camera = event.getCamera().getPosition();
-        MultiBufferSource.BufferSource buffers = minecraft.renderBuffers()
-                .bufferSource();
-        pose.pushPose();
-        pose.translate(-camera.x, -camera.y, -camera.z);
         VertexConsumer xray = buffers.getBuffer(TransformEditorRenderTypes.GIZMO_LINES);
         if (selection.type() == SelectionType.GROUP) {
             TransformGroup group = TransformConstructionClientState.group(
@@ -382,7 +388,6 @@ public final class TransformConstructionClientRenderer {
             }
         }
         buffers.endBatch(TransformEditorRenderTypes.GIZMO_LINES);
-        pose.popPose();
     }
 
     private static void renderGroup(Minecraft minecraft, PoseStack pose,
@@ -1088,11 +1093,22 @@ public final class TransformConstructionClientRenderer {
         if (!changed || surfaces.stream().anyMatch(surface ->
                 TransformConstructionClientControls.previewingSurface(
                         surface.id()))) return;
+        Set<UUID> affected = new java.util.HashSet<>();
+        for (ConstructionSurface surface : surfaces) {
+            if (!sameSurfaceGeometry(SURFACE_EDGE_GEOMETRIES.get(surface.id()),
+                    surface)) affected.add(surface.id());
+        }
+        for (Map.Entry<UUID, Map<Integer, MatchedSurfaceEdge>> previous
+                : SHARED_SURFACE_EDGES.entrySet()) {
+            if (affected.contains(previous.getKey()) || surfaces.stream()
+                    .noneMatch(surface -> surface.id().equals(previous.getKey()))) {
+                for (MatchedSurfaceEdge edge : previous.getValue().values()) {
+                    affected.add(edge.other().id());
+                }
+            }
+        }
         SURFACE_EDGE_GEOMETRIES.clear();
         SHARED_SURFACE_EDGES.clear();
-        // Both sides must be rebaked: the wall may predate the newly authored
-        // ceiling, but its outer vertices and caps still need the same join.
-        SURFACE_MESHES.clear();
         for (ConstructionSurface surface : surfaces) {
             SURFACE_EDGE_GEOMETRIES.put(surface.id(), surface);
             Map<Integer, MatchedSurfaceEdge> matches = new HashMap<>();
@@ -1128,7 +1144,12 @@ public final class TransformConstructionClientRenderer {
                 if (!ambiguous && match != null) matches.put(edge, match);
             }
             SHARED_SURFACE_EDGES.put(surface.id(), Map.copyOf(matches));
+            if (matches.values().stream().anyMatch(edge ->
+                    affected.contains(edge.other().id()))) {
+                affected.add(surface.id());
+            }
         }
+        SURFACE_MESHES.keySet().removeAll(affected);
     }
 
     /** Use the same physical miter point for both meshes. The shared-edge

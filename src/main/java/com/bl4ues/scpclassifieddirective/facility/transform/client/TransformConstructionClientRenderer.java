@@ -1134,7 +1134,7 @@ public final class TransformConstructionClientRenderer {
     }
 
     private static double closestEdgeFraction(List<Vec3> samples, Vec3 point) {
-        double best = 0.45D * 0.45D;
+        double best = 0.72D * 0.72D;
         double fraction = Double.NaN;
         for (int i = 1; i < samples.size(); i++) {
             Vec3 a = samples.get(i - 1);
@@ -1193,6 +1193,12 @@ public final class TransformConstructionClientRenderer {
         }
         SURFACE_EDGE_GEOMETRIES.clear();
         SHARED_SURFACE_EDGES.clear();
+        Map<UUID, List<List<Vec3>>> edgeSamples = new HashMap<>();
+        for (ConstructionSurface surface : surfaces) {
+            edgeSamples.put(surface.id(), List.of(sampleEdge(surface, 0),
+                    sampleEdge(surface, 1), sampleEdge(surface, 2),
+                    sampleEdge(surface, 3)));
+        }
         for (ConstructionSurface surface : surfaces) {
             SURFACE_EDGE_GEOMETRIES.put(surface.id(), surface);
             Map<Integer, MatchedSurfaceEdge> matches = new HashMap<>();
@@ -1201,7 +1207,7 @@ public final class TransformConstructionClientRenderer {
                 Vec3 middle = edgePoint(surface, edge, 0.5D);
                 Vec3 last = edgePoint(surface, edge, 1.0D);
                 MatchedSurfaceEdge match = null;
-                boolean ambiguous = false;
+                double bestScore = Double.POSITIVE_INFINITY;
                 for (ConstructionSurface other : surfaces) {
                     if (other.id().equals(surface.id())) continue;
                     for (int otherEdge = 0; otherEdge < 4; otherEdge++) {
@@ -1222,7 +1228,8 @@ public final class TransformConstructionClientRenderer {
                                 otherFirst.add(otherLast).scale(0.5D))
                                 > Math.pow(otherFirst.distanceTo(otherLast)
                                         + 0.5D, 2.0D)) continue;
-                        List<Vec3> samples = sampleEdge(other, otherEdge);
+                        List<Vec3> samples = edgeSamples.get(other.id())
+                                .get(otherEdge);
                         double startFraction = closestEdgeFraction(samples, first);
                         double middleFraction = closestEdgeFraction(samples, middle);
                         double endFraction = closestEdgeFraction(samples, last);
@@ -1243,16 +1250,25 @@ public final class TransformConstructionClientRenderer {
                                 edge == 2 ? 0.0D : edge == 3 ? 1.0D : 0.5D)
                                 .dot(other.gridNormal(otherU, otherV));
                         if (dot <= -0.2D || dot >= 0.985D) continue;
-                        if (match != null) {
-                            ambiguous = true;
-                            break;
-                        }
+                        Vec3 otherStart = edgePoint(other, otherEdge,
+                                startFraction);
+                        Vec3 otherMiddle = edgePoint(other, otherEdge,
+                                middleFraction);
+                        Vec3 otherEnd = edgePoint(other, otherEdge,
+                                endFraction);
+                        double score = first.distanceToSqr(otherStart)
+                                + middle.distanceToSqr(otherMiddle)
+                                + last.distanceToSqr(otherEnd);
+                        if (score >= bestScore) continue;
+                        bestScore = score;
+                        boolean partial = Math.min(startFraction,
+                                endFraction) > 0.06D
+                                || Math.max(startFraction, endFraction) < 0.94D;
                         match = new MatchedSurfaceEdge(other, otherEdge,
-                                reverse, !same && !reverse, samples);
+                                endFraction < startFraction, partial, samples);
                     }
-                    if (ambiguous) break;
                 }
-                if (!ambiguous && match != null) matches.put(edge, match);
+                if (match != null) matches.put(edge, match);
             }
             SHARED_SURFACE_EDGES.put(surface.id(), Map.copyOf(matches));
             if (matches.values().stream().anyMatch(edge ->
@@ -1295,7 +1311,7 @@ public final class TransformConstructionClientRenderer {
             double otherV = match.otherEdge() == 2 ? 0.0D
                     : match.otherEdge() == 3 ? 1.0D : otherFraction;
             Vec3 otherPoint = other.gridPoint(otherU, otherV);
-            if (sourcePoint.distanceToSqr(otherPoint) >= 0.45D * 0.45D)
+            if (sourcePoint.distanceToSqr(otherPoint) >= 0.72D * 0.72D)
                 continue;
             int column = Math.min(other.columns() - 1, Math.max(0,
                     (int) Math.floor(otherU * other.columns())));
@@ -1308,16 +1324,28 @@ public final class TransformConstructionClientRenderer {
             Vec3 otherNormal = other.gridNormal(otherU, otherV);
             double dot = sourceNormal.dot(otherNormal);
             if (dot <= -0.2D || dot >= 0.985D) continue;
-            Vec3 miter = sourceNormal.add(otherNormal)
-                    .scale(1.0D / (1.0D + dot));
-            if (miter.lengthSqr() > 3.24D) continue;
-            // A partial edge has no corresponding neighbouring seam vertices.
-            // Weld its boundary directly onto the longer plane's *existing*
-            // face instead of mitering toward vertices that do not exist.
+            // Compute the closest intersection of the two displaced faces.
+            // Unlike the old average-normal miter, this handles inherited
+            // rooms whose independent curves are close, but not coincident.
+            double determinant = 1.0D - dot * dot;
+            if (determinant < 0.025D) continue;
+            Vec3 middle = sourcePoint.add(otherPoint).scale(0.5D);
+            double sourceHeight = depth
+                    - middle.subtract(sourcePoint).dot(sourceNormal);
+            double otherHeight = depth
+                    - middle.subtract(otherPoint).dot(otherNormal);
+            double sourceShift = (sourceHeight - dot * otherHeight)
+                    / determinant;
+            double otherShift = (otherHeight - dot * sourceHeight)
+                    / determinant;
+            Vec3 intersection = middle.add(sourceNormal.scale(sourceShift))
+                    .add(otherNormal.scale(otherShift));
+            if (intersection.distanceToSqr(middle) > 2.25D) continue;
+            // An edge ending inside a longer neighbour must meet its existing
+            // outer face, which has no counterpart boundary to move.
             result = match.partial()
                     ? otherPoint.add(otherNormal.scale(depth))
-                    : sourcePoint.add(otherPoint).scale(0.5D)
-                            .add(miter.scale(depth));
+                    : intersection;
             if (++found > 1) return null;
         }
         return found == 1 ? result : null;

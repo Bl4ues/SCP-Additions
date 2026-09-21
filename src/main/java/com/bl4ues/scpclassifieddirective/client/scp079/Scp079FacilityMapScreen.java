@@ -119,8 +119,10 @@ public final class Scp079FacilityMapScreen extends Screen {
         } else {
             FloorGroup floor = floors.get(Mth.clamp(floorIndex, 0,
                     floors.size() - 1));
-            renderFloorSelector(graphics, mouseX, mouseY, floor);
             renderMap(graphics, mouseX, mouseY, floor);
+            // The dropdown is a HUD control. Render it after the world map so
+            // overlapping/upper-floor silhouettes cannot cover its choices.
+            renderFloorSelector(graphics, mouseX, mouseY, floor);
         }
 
         renderTopActions(graphics, mouseX, mouseY);
@@ -167,7 +169,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         boolean hovered = !leaveConfirmation
                 && inside(mouseX, mouseY, x, TOP_Y, w, TOP_BUTTON_H);
         graphics.fill(x, TOP_Y, x + w, TOP_Y + TOP_BUTTON_H,
-                hovered || floorMenuOpen ? 0xD51A3545 : 0xB8122835);
+                hovered || floorMenuOpen ? 0xFF1A3545 : 0xFF122835);
         border(graphics, x, TOP_Y, w, TOP_BUTTON_H,
                 floorMenuOpen ? Scp079UiTheme.ACCENT : 0xFF52798C);
         Scp079UiTheme.drawCenteredInControl(graphics, font, label,
@@ -187,8 +189,8 @@ public final class Scp079FacilityMapScreen extends Screen {
             boolean rowHover = !leaveConfirmation
                     && inside(mouseX, mouseY, x, rowY, w, rowH);
             graphics.fill(x, rowY, x + w, rowY + rowH,
-                    i == floorIndex ? 0xE1265064
-                            : rowHover ? 0xE11A3A4B : 0xE10B202B);
+                    i == floorIndex ? 0xFF265064
+                            : rowHover ? 0xFF1A3A4B : 0xFF0B202B);
             Scp079UiTheme.drawCenteredInControl(graphics, font,
                     option.longLabel, x + w * 0.5F, rowY, rowH,
                     1.02F, i == floorIndex
@@ -652,8 +654,7 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static float clearanceMapScale(MapTransform transform) {
         // At close range the 18px badge is fully legible; at longer range the
         // ENTIRE symbol shrinks with the authored map instead of acting as HUD.
-        return (float) Mth.clamp(transform.scale() * (0.38D / 9.0D),
-                0.16D, 1.0D);
+        return (float) (transform.scale() * (0.38D / 9.0D));
     }
 
     private void drawClearanceDigit(GuiGraphics graphics,
@@ -1051,8 +1052,9 @@ public final class Scp079FacilityMapScreen extends Screen {
             GuiGraphics graphics, MapTransform transform, Vec3 a, Vec3 b) {
         // A door is a selectable, physical slab on the map, not a one-pixel
         // annotation. Its long dimension follows the exact authored doorway.
-        double thickness = Mth.clamp(transform.scale() * 0.45D,
-                3.5D, 6.0D);
+        // Marker thickness is a world-space dimension, like its length.
+        // A fixed 3.5px floor made distant doors wider than their mapped rooms.
+        double thickness = Math.max(0.35D, transform.scale() * 0.45D);
         accumulateMapStroke(coverage, transform.fx(a.x), transform.fy(a.z),
                 transform.fx(b.x), transform.fy(b.z), thickness, true,
                 graphics.guiWidth(), graphics.guiHeight());
@@ -1076,7 +1078,10 @@ public final class Scp079FacilityMapScreen extends Screen {
                     room.id().equals(marker.roomId()))) continue;
             int x = transform.sx(marker.x());
             int y = transform.sy(marker.z());
-            int size = 21;
+            // Surveillance marker geometry scales with its room; only
+            // the accompanying SCP number remains a fixed-size text label.
+            int size = Math.max(2, (int) Math.round(
+                    transform.scale() * 1.2D));
             graphics.pose().pushPose();
             graphics.pose().translate(x, y, 0.0F);
             // The authored arrow points up. Minecraft yaw 0 points south/down on
@@ -1089,7 +1094,7 @@ public final class Scp079FacilityMapScreen extends Screen {
             graphics.pose().popPose();
             Scp079UiTheme.drawCentered(graphics, font,
                     Integer.toString(marker.scpNumber()), x,
-                    y + 13, 1.03F, 0xFFFF765D);
+                    y + size / 2 + 4, 1.03F, 0xFFFF765D);
         }
     }
 

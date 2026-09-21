@@ -1,0 +1,35 @@
+name: Validate watertight Surface boundary caps
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  validate-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply targeted Surface seam changes
+        run: python3 .github/scripts/temp_surface_join_caps.py
+      - name: Project integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Publish validated changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Keep cross-Surface boundary caps and cache curve edge samples'
+          git pull --rebase origin master
+          git push origin HEAD:master

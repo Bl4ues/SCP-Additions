@@ -1,0 +1,31 @@
+name: Validate SCP-079 map room silhouettes
+on:
+  push:
+    paths:
+      - .github/workflows/temporary_map_occlusion_20260920.yml
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - name: Cache visible map room outlines
+        run: python3 .github/scripts/temporary_map_occlusion_20260920.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify full build
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+      - name: Publish validated map geometry changes
+        run: |
+          git config user.name 'SCP CD CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/mapping/client/FacilityRoomOutlineGeometry.java src/main/java/com/bl4ues/scpclassifieddirective/client/scp079/Scp079FacilityMapScreen.java
+          git commit -m 'Cache visible SCP-079 room contours to prevent overlapping map corners'
+          git push origin HEAD:master

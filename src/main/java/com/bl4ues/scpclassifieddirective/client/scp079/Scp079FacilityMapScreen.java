@@ -1582,10 +1582,27 @@ public final class Scp079FacilityMapScreen extends Screen {
         dx = x1 - x0;
         dy = y1 - y0;
         double gradient = Math.abs(dx) < 1.0E-9D ? 0.0D : dy / dx;
-        int first = (int) Math.floor(x0);
-        int last = (int) Math.ceil(x1);
+        // Only rasterize pixel centres INSIDE this finite segment. The old
+        // floor/ceil loop clamped samples at both endpoints but still painted
+        // their exterior pixels, leaving small dashes past 90/45-degree joins.
+        int first = Math.max(0, (int) Math.ceil(x0 - 0.5D));
+        int last = Math.min(steep ? height - 1 : width - 1,
+                (int) Math.floor(x1 - 0.5D));
+        if (first > last) {
+            if (x1 - x0 > 0.001D) {
+                double centre = (x0 + x1) * 0.5D;
+                double minor = y0 + (centre - x0) * gradient;
+                int major = (int) Math.floor(centre);
+                int side = (int) Math.floor(minor);
+                if (steep) accumulateCoverage(coverage, side, major,
+                        Math.min(1.0D, x1 - x0), width, height);
+                else accumulateCoverage(coverage, major, side,
+                        Math.min(1.0D, x1 - x0), width, height);
+            }
+            return;
+        }
         for (int major = first; major <= last; major++) {
-            double sample = Mth.clamp(major + 0.5D, x0, x1);
+            double sample = major + 0.5D;
             double minor = y0 + (sample - x0) * gradient;
             int base = (int) Math.floor(minor);
             double fraction = minor - base;

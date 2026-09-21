@@ -158,48 +158,13 @@ public final class FacilityRoomOutlineGeometry {
         return List.copyOf(result);
     }
 
-    /**
-     * Refine the polygon once when room geometry is cached, not every frame.
-     * Small neighbouring segments with a shallow turn are noisy curve samples;
-     * blending them by at most 0.045 block removes visible pixel spikes. A
-     * right-angle corner, an isolated vertex, or a long straight edge is kept
-     * exact, as are the underlying Area and its hit-testing semantics.
-     */
+    /** The union's Area is also the filled and selectable geometry. Do not
+     * shift only its contour vertices: moving them independently produces a
+     * bright/dark one-pixel halo and small spikes where 45-degree edges meet.
+     * The map rasterizer performs screen-space antialiasing instead. */
     private static List<FacilityFloorPatch.Vertex> refineCurve(
             List<FacilityFloorPatch.Vertex> contour) {
-        int size = contour.size();
-        if (size < 5) return List.copyOf(contour);
-        List<FacilityFloorPatch.Vertex> refined = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            FacilityFloorPatch.Vertex before = contour.get((i + size - 1) % size);
-            FacilityFloorPatch.Vertex point = contour.get(i);
-            FacilityFloorPatch.Vertex after = contour.get((i + 1) % size);
-            double ax = point.x() - before.x();
-            double az = point.z() - before.z();
-            double bx = after.x() - point.x();
-            double bz = after.z() - point.z();
-            double lenA = Math.hypot(ax, az);
-            double lenB = Math.hypot(bx, bz);
-            if (lenA < 0.015D || lenB < 0.015D
-                    || lenA > 0.8D || lenB > 0.8D
-                    || ax * bx + az * bz < 0.94D * lenA * lenB) {
-                refined.add(point);
-                continue;
-            }
-            double midX = (before.x() + after.x()) * 0.5D;
-            double midZ = (before.z() + after.z()) * 0.5D;
-            double deltaX = (midX - point.x()) * 0.5D;
-            double deltaZ = (midZ - point.z()) * 0.5D;
-            double distance = Math.hypot(deltaX, deltaZ);
-            if (distance > MAX_CURVE_SMOOTHING) {
-                double factor = MAX_CURVE_SMOOTHING / distance;
-                deltaX *= factor;
-                deltaZ *= factor;
-            }
-            refined.add(new FacilityFloorPatch.Vertex(
-                    point.x() + deltaX, point.z() + deltaZ));
-        }
-        return List.copyOf(refined);
+        return List.copyOf(contour);
     }
 
     private static void trimClosingDuplicate(

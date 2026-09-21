@@ -582,6 +582,8 @@ public final class Scp079FacilityMapScreen extends Screen {
             MapTransform transform, double mouseX, double mouseY) {
         if (leaveConfirmation || floorMenuOpen) return null;
         MapDoorMarker best = null;
+        // Hit testing includes the visible rectangular marker plus a modest
+        // mouse margin. It remains reachable at low map zoom.
         double bestDistance = 12.0D * 12.0D;
         for (MapDoorMarker marker : markers) {
             if (!marker.controllable()) continue;
@@ -1047,8 +1049,12 @@ public final class Scp079FacilityMapScreen extends Screen {
 
     private static void accumulateDoorSegment(Map<Long, Double> coverage,
             GuiGraphics graphics, MapTransform transform, Vec3 a, Vec3 b) {
-        accumulateMapLine(coverage, transform.fx(a.x), transform.fy(a.z),
-                transform.fx(b.x), transform.fy(b.z),
+        // A door is a selectable, physical slab on the map, not a one-pixel
+        // annotation. Its long dimension follows the exact authored doorway.
+        double thickness = Mth.clamp(transform.scale() * 0.45D,
+                3.5D, 6.0D);
+        accumulateMapStroke(coverage, transform.fx(a.x), transform.fy(a.z),
+                transform.fx(b.x), transform.fy(b.z), thickness, true,
                 graphics.guiWidth(), graphics.guiHeight());
     }
 
@@ -1558,64 +1564,71 @@ public final class Scp079FacilityMapScreen extends Screen {
     private static void accumulateMapLine(Map<Long, Double> coverage,
             double x0, double y0, double x1, double y1,
             int width, int height) {
-        // Wu-style two-pixel coverage. This preserves smooth oblique/curved
-        // edges and shared-endpoint MAX blending without testing a 4x4 sample
-        // grid over every pixel in each segment's bounding rectangle.
+        accumulateMapStroke(coverage, x0, y0, x1, y1,
+                1.05D, false, width, height);
+    }
+
+    /** Screen-space 4x4 coverage, with finite segment caps. The previous
+     * major-axis loop discarded endpoint pixels whenever their centers fell
+     * outside a segment: the next room's vertical border could then stop one
+     * pixel short of the curved border it physically met. Round contour caps
+     * close only subpixel raster gaps, without extending authored geometry or
+     * redrawing overlapping segments brighter. Doors use square end caps. */
+    private static void accumulateMapStroke(Map<Long, Double> coverage,
+            double x0, double y0, double x1, double y1,
+            double thickness, boolean squareEnds, int width, int height) {
         double dx = x1 - x0;
         double dy = y1 - y0;
-        if (Math.abs(dx) < 1.0E-8D && Math.abs(dy) < 1.0E-8D) {
+        double lengthSquared = dx * dx + dy * dy;
+        double radius = thickness * 0.5D;
+        if (lengthSquared < 1.0E-12D) {
             accumulateCoverage(coverage, (int) Math.floor(x0),
                     (int) Math.floor(y0), 1.0D, width, height);
             return;
         }
-
         boolean steep = Math.abs(dy) > Math.abs(dx);
-        if (steep) {
-            double swap = x0; x0 = y0; y0 = swap;
-            swap = x1; x1 = y1; y1 = swap;
-        }
-        if (x0 > x1) {
-            double swap = x0; x0 = x1; x1 = swap;
-            swap = y0; y0 = y1; y1 = swap;
-        }
-
-        dx = x1 - x0;
-        dy = y1 - y0;
-        double gradient = Math.abs(dx) < 1.0E-9D ? 0.0D : dy / dx;
-        // Only rasterize pixel centres INSIDE this finite segment. The old
-        // floor/ceil loop clamped samples at both endpoints but still painted
-        // their exterior pixels, leaving small dashes past 90/45-degree joins.
-        int first = Math.max(0, (int) Math.ceil(x0 - 0.5D));
-        int last = Math.min(steep ? height - 1 : width - 1,
-                (int) Math.floor(x1 - 0.5D));
-        if (first > last) {
-            if (x1 - x0 > 0.001D) {
-                double centre = (x0 + x1) * 0.5D;
-                double minor = y0 + (centre - x0) * gradient;
-                int major = (int) Math.floor(centre);
-                int side = (int) Math.floor(minor);
-                if (steep) accumulateCoverage(coverage, side, major,
-                        Math.min(1.0D, x1 - x0), width, height);
-                else accumulateCoverage(coverage, major, side,
-                        Math.min(1.0D, x1 - x0), width, height);
-            }
-            return;
-        }
+        double aMajor = steep ? y0 : x0;
+        double bMajor = steep ? y1 : x1;
+        double aMinor = steep ? x0 : y0;
+        double bMinor = steep ? x1 : y1;
+        int majorLimit = steep ? height : width;
+        int minorLimit = steep ? width : height;
+        int first = Math.max(0, (int) Math.floor(
+                Math.min(aMajor, bMajor) - radius - 1.0D));
+        int last = Math.min(majorLimit - 1, (int) Math.ceil(
+                Math.max(aMajor, bMajor) + radius + 1.0D));
+        double radiusSquared = radius * radius;
         for (int major = first; major <= last; major++) {
-            double sample = major + 0.5D;
-            double minor = y0 + (sample - x0) * gradient;
-            int base = (int) Math.floor(minor);
-            double fraction = minor - base;
-            if (steep) {
-                accumulateCoverage(coverage, base, major,
-                        1.0D - fraction, width, height);
-                accumulateCoverage(coverage, base + 1, major,
-                        fraction, width, height);
-            } else {
-                accumulateCoverage(coverage, major, base,
-                        1.0D - fraction, width, height);
-                accumulateCoverage(coverage, major, base + 1,
-                        fraction, width, height);
+            double t = Mth.clamp((major + 0.5D - aMajor)
+                    / (bMajor - aMajor), 0.0D, 1.0D);
+            double minorCenter = Mth.lerp(t, aMinor, bMinor);
+            int minMinor = Math.max(0, (int) Math.floor(
+                    minorCenter - radius - 2.0D));
+            int maxMinor = Math.min(minorLimit - 1, (int) Math.ceil(
+                    minorCenter + radius + 2.0D));
+            for (int minor = minMinor; minor <= maxMinor; minor++) {
+                int covered = 0;
+                for (int sy = 0; sy < 4; sy++) {
+                    for (int sx = 0; sx < 4; sx++) {
+                        double px = (steep ? minor : major)
+                                + (sx + 0.5D) * 0.25D;
+                        double py = (steep ? major : minor)
+                                + (sy + 0.5D) * 0.25D;
+                        double projection = ((px - x0) * dx
+                                + (py - y0) * dy) / lengthSquared;
+                        if (squareEnds && (projection < 0.0D
+                                || projection > 1.0D)) continue;
+                        double along = Mth.clamp(projection, 0.0D, 1.0D);
+                        double ox = px - (x0 + along * dx);
+                        double oy = py - (y0 + along * dy);
+                        if (ox * ox + oy * oy <= radiusSquared) covered++;
+                    }
+                }
+                if (covered > 0) {
+                    accumulateCoverage(coverage,
+                            steep ? minor : major, steep ? major : minor,
+                            covered / 16.0D, width, height);
+                }
             }
         }
     }

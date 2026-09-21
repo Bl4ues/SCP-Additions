@@ -22,6 +22,9 @@ import java.util.Map;
  */
 public final class FacilityRoomOutlineGeometry {
     private static final double FLATNESS = 0.008D;
+    // A shallow, cached contour refinement in world units; sharp 90-degree
+    // map corners and authored room hit regions remain unchanged.
+    private static final double MAX_CURVE_SMOOTHING = 0.045D;
 
     private final Area merged;
     private final List<List<FacilityFloorPatch.Vertex>> contours;
@@ -113,7 +116,7 @@ public final class FacilityRoomOutlineGeometry {
             int type = iterator.currentSegment(coords);
             if (type == PathIterator.SEG_MOVETO) {
                 if (current != null && current.size() >= 3) {
-                    result.add(List.copyOf(current));
+                    result.add(refineCurve(current));
                 }
                 current = new ArrayList<>();
                 current.add(new FacilityFloorPatch.Vertex(
@@ -127,16 +130,60 @@ public final class FacilityRoomOutlineGeometry {
                 }
             } else if (type == PathIterator.SEG_CLOSE && current != null) {
                 trimClosingDuplicate(current);
-                if (current.size() >= 3) result.add(List.copyOf(current));
+                if (current.size() >= 3) result.add(refineCurve(current));
                 current = null;
             }
             iterator.next();
         }
         if (current != null) {
             trimClosingDuplicate(current);
-            if (current.size() >= 3) result.add(List.copyOf(current));
+            if (current.size() >= 3) result.add(refineCurve(current));
         }
         return List.copyOf(result);
+    }
+
+    /**
+     * Refine the polygon once when room geometry is cached, not every frame.
+     * Small neighbouring segments with a shallow turn are noisy curve samples;
+     * blending them by at most 0.045 block removes visible pixel spikes. A
+     * right-angle corner, an isolated vertex, or a long straight edge is kept
+     * exact, as are the underlying Area and its hit-testing semantics.
+     */
+    private static List<FacilityFloorPatch.Vertex> refineCurve(
+            List<FacilityFloorPatch.Vertex> contour) {
+        int size = contour.size();
+        if (size < 5) return List.copyOf(contour);
+        List<FacilityFloorPatch.Vertex> refined = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            FacilityFloorPatch.Vertex before = contour.get((i + size - 1) % size);
+            FacilityFloorPatch.Vertex point = contour.get(i);
+            FacilityFloorPatch.Vertex after = contour.get((i + 1) % size);
+            double ax = point.x() - before.x();
+            double az = point.z() - before.z();
+            double bx = after.x() - point.x();
+            double bz = after.z() - point.z();
+            double lenA = Math.hypot(ax, az);
+            double lenB = Math.hypot(bx, bz);
+            if (lenA < 0.015D || lenB < 0.015D
+                    || lenA > 0.8D || lenB > 0.8D
+                    || ax * bx + az * bz < 0.94D * lenA * lenB) {
+                refined.add(point);
+                continue;
+            }
+            double midX = (before.x() + after.x()) * 0.5D;
+            double midZ = (before.z() + after.z()) * 0.5D;
+            double deltaX = (midX - point.x()) * 0.5D;
+            double deltaZ = (midZ - point.z()) * 0.5D;
+            double distance = Math.hypot(deltaX, deltaZ);
+            if (distance > MAX_CURVE_SMOOTHING) {
+                double factor = MAX_CURVE_SMOOTHING / distance;
+                deltaX *= factor;
+                deltaZ *= factor;
+            }
+            refined.add(new FacilityFloorPatch.Vertex(
+                    point.x() + deltaX, point.z() + deltaZ));
+        }
+        return List.copyOf(refined);
     }
 
     private static void trimClosingDuplicate(

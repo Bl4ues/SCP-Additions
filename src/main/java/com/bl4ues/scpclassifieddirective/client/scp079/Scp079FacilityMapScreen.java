@@ -1054,7 +1054,9 @@ public final class Scp079FacilityMapScreen extends Screen {
         // annotation. Its long dimension follows the exact authored doorway.
         // Marker thickness is a world-space dimension, like its length.
         // A fixed 3.5px floor made distant doors wider than their mapped rooms.
-        double thickness = Math.max(0.35D, transform.scale() * 0.45D);
+        // The door occupies a slim physical strip in world-map units.
+        // Keep it slender at every zoom without a fixed screen-pixel floor.
+        double thickness = Math.max(0.25D, transform.scale() * 0.27D);
         accumulateMapStroke(coverage, transform.fx(a.x), transform.fy(a.z),
                 transform.fx(b.x), transform.fy(b.z), thickness, true,
                 graphics.guiWidth(), graphics.guiHeight());

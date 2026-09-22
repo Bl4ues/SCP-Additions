@@ -691,7 +691,7 @@ new_overlap='''        if (found == 0) return null;
             int firstEdge, ConstructionSurface second, int secondEdge,
             boolean reversed, double fraction) {
         final int segments = 128;
-        double scaled = Mth.clamp(fraction, 0.0D, 1.0D) * segments;
+        double scaled = Math.max(0.0D, Math.min(1.0D, fraction)) * segments;
         int index = Math.min(segments - 1, (int) Math.floor(scaled));
         double local = scaled - index;
         double a = index / (double) segments;

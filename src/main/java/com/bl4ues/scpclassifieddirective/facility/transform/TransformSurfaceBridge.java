@@ -47,8 +47,13 @@ public final class TransformSurfaceBridge {
         ConstructionSurface.BridgeAnchor anchor =
                 new ConstructionSurface.BridgeAnchor(first.id(), firstEdge,
                         second.id(), secondEdge, reverse);
-        return derive(id, first.dimension(), anchor, first, second,
-                Vec3.ZERO, Map.of(), Map.of(), false);
+        ConstructionSurface roof = derive(id, first.dimension(), anchor,
+                first, second, Vec3.ZERO, Map.of(), Map.of(), false);
+        // A newly bridged ceiling occupies the exterior/upward side by
+        // default, regardless of the order in which its parent edges were
+        // selected. F can still deliberately reverse that side afterwards.
+        return roof.gridNormal(0.5D, 0.5D).y < -0.15D
+                ? roof.withFlipped(true) : roof;
     }
 
     public static ConstructionSurface reanchor(ConstructionSurface current,
@@ -58,6 +63,26 @@ public final class TransformSurfaceBridge {
         return derive(current.id(), current.dimension(), current.bridge(),
                 first, second, current.heightCurveOffset(),
                 current.attachments(), current.overlays(), current.flipped());
+    }
+
+    private static Vec3 edgeGridPoint(ConstructionSurface parent, int edge,
+            double t) {
+        return switch (edge) {
+            case 0 -> parent.gridPoint(0.0D, t);
+            case 1 -> parent.gridPoint(1.0D, t);
+            case 2 -> parent.gridPoint(t, 0.0D);
+            case 3 -> parent.gridPoint(t, 1.0D);
+            default -> throw new IllegalArgumentException("Unknown Surface edge");
+        };
+    }
+
+    private static int edgeCells(ConstructionSurface parent, int edge) {
+        return edge < 2 ? parent.rows() : parent.columns();
+    }
+
+    private static int gcd(int a, int b) {
+        while (b != 0) { int rem = a % b; a = b; b = rem; }
+        return Math.max(1, a);
     }
 
     private static ConstructionSurface derive(UUID id,
@@ -79,9 +104,29 @@ public final class TransformSurfaceBridge {
         Vec3 aBend = edgeBend(first, link.firstEdge(), false);
         Vec3 bBend = edgeBend(second, link.secondEdge(),
                 link.reverseSecond());
+        // Sample the very same normalized grid fractions as the parents.
+        // A common multiple of their edge cell counts makes the authored
+        // vertices of both walls explicit vertices of the roof boundaries.
+        int firstCells = edgeCells(first, link.firstEdge());
+        int secondCells = edgeCells(second, link.secondEdge());
+        int common = firstCells / gcd(firstCells, secondCells) * secondCells;
+        int samples = Math.min(768, Math.max(48, common * 4));
+        List<Vec3> firstProfile = new ArrayList<>(samples + 1);
+        List<Vec3> secondProfile = new ArrayList<>(samples + 1);
+        for (int index = 0; index <= samples; index++) {
+            double t = index / (double) samples;
+            firstProfile.add(edgeGridPoint(first, link.firstEdge(), t));
+            secondProfile.add(edgeGridPoint(second, link.secondEdge(),
+                    link.reverseSecond() ? 1.0D - t : t));
+        }
+        ConstructionSurface.BridgeAnchor updatedLink =
+                new ConstructionSurface.BridgeAnchor(link.firstId(),
+                        link.firstEdge(), link.secondId(), link.secondEdge(),
+                        link.reverseSecond(), firstProfile, secondProfile);
         return new ConstructionSurface(id, dimension, a0, a1, b0, b1,
                 aBend, new Vec3(0.0D, heightBend.y, 0.0D),
-                attachments, overlays, flipped, bBend.subtract(aBend), link);
+                attachments, overlays, flipped, bBend.subtract(aBend),
+                updatedLink);
     }
 
     /** Reanchor only direct dependent roofs after a committed parent edit. */

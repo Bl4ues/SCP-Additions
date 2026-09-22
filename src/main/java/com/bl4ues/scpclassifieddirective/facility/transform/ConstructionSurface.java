@@ -8,7 +8,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -116,6 +118,16 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public Vec3 point(double u, double v) {
+        // The linked roof must use the exact sampled parent boundaries.
+        // Independently fitting two quadratic curves introduced a visible
+        // opening whenever the parents used different arc-length grids.
+        if (bridge != null && bridge.hasProfiles()) {
+            Vec3 bottom = bridge.profilePoint(true, u);
+            Vec3 top = bridge.profilePoint(false, u);
+            double bulge = 4.0D * v * (1.0D - v);
+            return bottom.scale(1.0D - v).add(top.scale(v))
+                    .add(heightCurveOffset.scale(bulge));
+        }
         Vec3 bottom = TransformMath.quadratic(bottomStart, bottomControl(),
                 bottomEnd, u);
         Vec3 top = TransformMath.quadratic(topStart, topControl(), topEnd, u);
@@ -125,6 +137,12 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public Vec3 tangent(double u, double v) {
+        if (bridge != null && bridge.hasProfiles()) {
+            Vec3 a = point(Math.max(0.0D, u - 0.0005D), v);
+            Vec3 b = point(Math.min(1.0D, u + 0.0005D), v);
+            return TransformMath.safeNormalize(b.subtract(a),
+                    new Vec3(1.0D, 0.0D, 0.0D));
+        }
         Vec3 bottom = TransformMath.quadraticTangent(bottomStart,
                 bottomControl(), bottomEnd, u);
         Vec3 top = TransformMath.quadraticTangent(topStart, topControl(),
@@ -138,6 +156,13 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public Vec3 vertical(double u, double v) {
+        if (bridge != null && bridge.hasProfiles()) {
+            Vec3 derivative = bridge.profilePoint(false, u)
+                    .subtract(bridge.profilePoint(true, u))
+                    .add(heightCurveOffset.scale(4.0D * (1.0D - 2.0D * v)));
+            return TransformMath.safeNormalize(derivative,
+                    new Vec3(0.0D, 1.0D, 0.0D));
+        }
         Vec3 bottom = TransformMath.quadratic(bottomStart, bottomControl(),
                 bottomEnd, u);
         Vec3 top = TransformMath.quadratic(topStart, topControl(), topEnd, u);
@@ -161,6 +186,11 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
      * around one end of a strongly curved wall.
      */
     public double gridParameter(double fraction) {
+        // Parent profiles are already parameterized by their logical grid.
+        // Reparameterizing them by the roof's centerline would move the
+        // attachment vertices away from the source wall again.
+        if (bridge != null && bridge.hasProfiles())
+            return Math.max(0.0D, Math.min(1.0D, fraction));
         return metrics().horizontal().parameter(fraction);
     }
 
@@ -230,7 +260,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             return recent.metrics();
         GeometryKey key = new GeometryKey(bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset,
-                topCurveOffset);
+                topCurveOffset, bridge);
         GeometryMetrics resolved;
         synchronized (METRICS) {
             resolved = METRICS.computeIfAbsent(key,
@@ -242,7 +272,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
 
     private record GeometryKey(Vec3 bottomStart, Vec3 bottomEnd,
             Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
-            Vec3 heightCurveOffset, Vec3 topCurveOffset) {
+            Vec3 heightCurveOffset, Vec3 topCurveOffset,
+            BridgeAnchor bridge) {
     }
 
     private static final class GeometryMetrics {
@@ -443,9 +474,11 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
 
     public ConstructionSurface withFlipped(boolean nextFlipped) {
         if (nextFlipped == flipped) return this;
+        // Keep the parent link and separate top curve. Losing them on F turned
+        // the constrained roof into a free Surface and collapsed its arch.
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset, attachments,
-                overlays, nextFlipped);
+                overlays, nextFlipped, topCurveOffset, bridge);
     }
 
     public ConstructionSurface withoutAttachment(SurfaceSlot slot) {
@@ -558,9 +591,16 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 vector.getDouble("Z"));
     }
 
-    /** Two authored parent edges. The bridge cannot be pulled off them. */
+    /** Parent edges sampled in their own logical grids, persisted with the roof. */
     public record BridgeAnchor(UUID firstId, int firstEdge,
-            UUID secondId, int secondEdge, boolean reverseSecond) {
+            UUID secondId, int secondEdge, boolean reverseSecond,
+            List<Vec3> firstProfile, List<Vec3> secondProfile) {
+        public BridgeAnchor(UUID firstId, int firstEdge,
+                UUID secondId, int secondEdge, boolean reverseSecond) {
+            this(firstId, firstEdge, secondId, secondEdge, reverseSecond,
+                    List.of(), List.of());
+        }
+
         public BridgeAnchor {
             if (firstId == null || secondId == null
                     || firstId.equals(secondId)
@@ -568,6 +608,31 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                     || secondEdge < 0 || secondEdge > 3) {
                 throw new IllegalArgumentException("Invalid linked Surface edges");
             }
+            firstProfile = firstProfile == null ? List.of()
+                    : List.copyOf(firstProfile);
+            secondProfile = secondProfile == null ? List.of()
+                    : List.copyOf(secondProfile);
+            if (firstProfile.size() != secondProfile.size()
+                    || firstProfile.size() < 2) {
+                firstProfile = List.of();
+                secondProfile = List.of();
+            }
+        }
+
+        public boolean hasProfiles() {
+            return firstProfile.size() >= 2;
+        }
+
+        public Vec3 profilePoint(boolean first, double fraction) {
+            List<Vec3> points = first ? firstProfile : secondProfile;
+            if (points.isEmpty()) return Vec3.ZERO;
+            double coordinate = Math.max(0.0D,
+                    Math.min(1.0D, fraction)) * (points.size() - 1);
+            int index = Math.min(points.size() - 2,
+                    (int) Math.floor(coordinate));
+            double part = coordinate - index;
+            return points.get(index).scale(1.0D - part)
+                    .add(points.get(index + 1).scale(part));
         }
 
         private CompoundTag save() {
@@ -577,7 +642,30 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             tag.putUUID("Second", secondId);
             tag.putInt("SecondEdge", secondEdge);
             tag.putBoolean("ReverseSecond", reverseSecond);
+            saveProfile(tag, "FirstProfile", firstProfile);
+            saveProfile(tag, "SecondProfile", secondProfile);
             return tag;
+        }
+
+        private static void saveProfile(CompoundTag tag, String name,
+                List<Vec3> points) {
+            if (points.isEmpty()) return;
+            ListTag entries = new ListTag();
+            for (Vec3 point : points) {
+                CompoundTag entry = new CompoundTag();
+                putVec(entry, "Point", point);
+                entries.add(entry);
+            }
+            tag.put(name, entries);
+        }
+
+        private static List<Vec3> loadProfile(CompoundTag tag, String name) {
+            ListTag entries = tag.getList(name, Tag.TAG_COMPOUND);
+            if (entries.isEmpty() || entries.size() > 2049) return List.of();
+            List<Vec3> points = new ArrayList<>(entries.size());
+            for (int index = 0; index < entries.size(); index++)
+                points.add(getVec(entries.getCompound(index), "Point"));
+            return List.copyOf(points);
         }
 
         private static BridgeAnchor load(CompoundTag tag) {
@@ -590,7 +678,9 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 return null;
             return new BridgeAnchor(tag.getUUID("First"), firstEdge,
                     tag.getUUID("Second"), secondEdge,
-                    tag.getBoolean("ReverseSecond"));
+                    tag.getBoolean("ReverseSecond"),
+                    loadProfile(tag, "FirstProfile"),
+                    loadProfile(tag, "SecondProfile"));
         }
     }
 

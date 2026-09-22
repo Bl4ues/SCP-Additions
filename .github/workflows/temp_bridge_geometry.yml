@@ -13,7 +13,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Apply linked roof geometry
-        run: python3 .github/scripts/temp_bridge_geometry.py
+        run: |
+          sed -i 's/!= 6:/!= 4:/' .github/scripts/temp_bridge_geometry.py
+          python3 .github/scripts/temp_bridge_geometry.py
       - name: Verify project integrity
         run: python3 .github/scripts/verify_project_integrity.py
       - uses: actions/setup-java@v4

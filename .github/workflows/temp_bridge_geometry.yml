@@ -1,0 +1,35 @@
+name: Validate linked Surface geometry
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply linked roof geometry
+        run: python3 .github/scripts/temp_bridge_geometry.py
+      - name: Verify project integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build mod
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Commit linked geometry
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/ConstructionSurface.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformSurfaceBridge.java
+          git diff --cached --check
+          git commit -m 'Persist linked Surface boundaries with independent parent curvature'
+          git push origin HEAD:master

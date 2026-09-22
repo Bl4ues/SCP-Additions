@@ -47,6 +47,25 @@ public final class TransformConstructionSavedData extends SavedData {
                     surfaces.getCompound(index));
             if (surface != null) data.surfaces.put(surface.id(), surface);
         }
+        // Upgrade existing authored linked ceilings on world load. Keep their
+        // IDs, blocks, shape control and mother surfaces; only re-sample the
+        // two saved edge profiles on their respective parent grids.
+        boolean upgraded = false;
+        for (ConstructionSurface roof : List.copyOf(data.surfaces.values())) {
+            ConstructionSurface.BridgeAnchor link = roof.bridge();
+            if (link == null || link.firstCells() > 0 && link.secondCells() > 0)
+                continue;
+            ConstructionSurface first = data.surfaces.get(link.firstId());
+            ConstructionSurface second = data.surfaces.get(link.secondId());
+            if (first == null || second == null) continue;
+            ConstructionSurface refreshed = TransformSurfaceBridge.reanchor(
+                    roof, first, second);
+            if (!refreshed.equals(roof)) {
+                data.surfaces.put(roof.id(), refreshed);
+                upgraded = true;
+            }
+        }
+        if (upgraded) data.setDirty();
         return data;
     }
 

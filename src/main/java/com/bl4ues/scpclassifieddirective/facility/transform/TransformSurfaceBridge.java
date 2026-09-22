@@ -80,9 +80,11 @@ public final class TransformSurfaceBridge {
         return edge < 2 ? parent.rows() : parent.columns();
     }
 
-    private static int gcd(int a, int b) {
-        while (b != 0) { int rem = a % b; a = b; b = rem; }
-        return Math.max(1, a);
+    private static int boundarySamples(int parentCells) {
+        // Each parent cell boundary is exactly one sample endpoint. The two
+        // edge profiles may have different lengths; no LCM or 768-sample cap
+        // silently discards one wall's authored vertices.
+        return parentCells * Math.max(4, (48 + parentCells - 1) / parentCells);
     }
 
     private static ConstructionSurface derive(UUID id,
@@ -104,25 +106,30 @@ public final class TransformSurfaceBridge {
         Vec3 aBend = edgeBend(first, link.firstEdge(), false);
         Vec3 bBend = edgeBend(second, link.secondEdge(),
                 link.reverseSecond());
-        // Sample the very same normalized grid fractions as the parents.
-        // A common multiple of their edge cell counts makes the authored
-        // vertices of both walls explicit vertices of the roof boundaries.
+        // Two independently sampled half-roof boundaries, welded at their
+        // shared centerline by ConstructionSurface.point(). Each half inherits
+        // its own parent grid; a 7-cell wall need not be quantized onto the
+        // same longitudinal divisions as a 10-cell wall.
         int firstCells = edgeCells(first, link.firstEdge());
         int secondCells = edgeCells(second, link.secondEdge());
-        int common = firstCells / gcd(firstCells, secondCells) * secondCells;
-        int samples = Math.min(768, Math.max(48, common * 4));
-        List<Vec3> firstProfile = new ArrayList<>(samples + 1);
-        List<Vec3> secondProfile = new ArrayList<>(samples + 1);
-        for (int index = 0; index <= samples; index++) {
-            double t = index / (double) samples;
+        int firstSamples = boundarySamples(firstCells);
+        int secondSamples = boundarySamples(secondCells);
+        List<Vec3> firstProfile = new ArrayList<>(firstSamples + 1);
+        List<Vec3> secondProfile = new ArrayList<>(secondSamples + 1);
+        for (int index = 0; index <= firstSamples; index++) {
+            double t = index / (double) firstSamples;
             firstProfile.add(edgeGridPoint(first, link.firstEdge(), t));
+        }
+        for (int index = 0; index <= secondSamples; index++) {
+            double t = index / (double) secondSamples;
             secondProfile.add(edgeGridPoint(second, link.secondEdge(),
                     link.reverseSecond() ? 1.0D - t : t));
         }
         ConstructionSurface.BridgeAnchor updatedLink =
                 new ConstructionSurface.BridgeAnchor(link.firstId(),
                         link.firstEdge(), link.secondId(), link.secondEdge(),
-                        link.reverseSecond(), firstProfile, secondProfile);
+                        link.reverseSecond(), firstProfile, secondProfile,
+                        firstCells, secondCells);
         return new ConstructionSurface(id, dimension, a0, a1, b0, b1,
                 aBend, new Vec3(0.0D, heightBend.y, 0.0D),
                 attachments, overlays, flipped, bBend.subtract(aBend),

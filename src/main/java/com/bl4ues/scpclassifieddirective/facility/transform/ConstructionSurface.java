@@ -594,11 +594,20 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     /** Parent edges sampled in their own logical grids, persisted with the roof. */
     public record BridgeAnchor(UUID firstId, int firstEdge,
             UUID secondId, int secondEdge, boolean reverseSecond,
-            List<Vec3> firstProfile, List<Vec3> secondProfile) {
+            List<Vec3> firstProfile, List<Vec3> secondProfile,
+            int firstCells, int secondCells) {
         public BridgeAnchor(UUID firstId, int firstEdge,
                 UUID secondId, int secondEdge, boolean reverseSecond) {
             this(firstId, firstEdge, secondId, secondEdge, reverseSecond,
-                    List.of(), List.of());
+                    List.of(), List.of(), 0, 0);
+        }
+
+        /** Read older linked roofs without changing their saved block slots. */
+        public BridgeAnchor(UUID firstId, int firstEdge,
+                UUID secondId, int secondEdge, boolean reverseSecond,
+                List<Vec3> firstProfile, List<Vec3> secondProfile) {
+            this(firstId, firstEdge, secondId, secondEdge, reverseSecond,
+                    firstProfile, secondProfile, 0, 0);
         }
 
         public BridgeAnchor {
@@ -612,15 +621,19 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                     : List.copyOf(firstProfile);
             secondProfile = secondProfile == null ? List.of()
                     : List.copyOf(secondProfile);
-            if (firstProfile.size() != secondProfile.size()
-                    || firstProfile.size() < 2) {
+            firstCells = Math.max(0, Math.min(512, firstCells));
+            secondCells = Math.max(0, Math.min(512, secondCells));
+            // Both parent edges are sampled on THEIR OWN logical grids. Their
+            // sample counts need not agree: forcing a shared LCM grid omitted
+            // authored parent vertices once the safety cap was reached.
+            if (firstProfile.size() < 2 || secondProfile.size() < 2) {
                 firstProfile = List.of();
                 secondProfile = List.of();
             }
         }
 
         public boolean hasProfiles() {
-            return firstProfile.size() >= 2;
+            return firstProfile.size() >= 2 && secondProfile.size() >= 2;
         }
 
         public Vec3 profilePoint(boolean first, double fraction) {
@@ -642,6 +655,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             tag.putUUID("Second", secondId);
             tag.putInt("SecondEdge", secondEdge);
             tag.putBoolean("ReverseSecond", reverseSecond);
+            if (firstCells > 0) tag.putInt("FirstCells", firstCells);
+            if (secondCells > 0) tag.putInt("SecondCells", secondCells);
             saveProfile(tag, "FirstProfile", firstProfile);
             saveProfile(tag, "SecondProfile", secondProfile);
             return tag;
@@ -680,7 +695,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                     tag.getUUID("Second"), secondEdge,
                     tag.getBoolean("ReverseSecond"),
                     loadProfile(tag, "FirstProfile"),
-                    loadProfile(tag, "SecondProfile"));
+                    loadProfile(tag, "SecondProfile"),
+                    tag.getInt("FirstCells"), tag.getInt("SecondCells"));
         }
     }
 

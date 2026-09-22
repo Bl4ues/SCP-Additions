@@ -1056,7 +1056,9 @@ public final class Scp079FacilityMapScreen extends Screen {
         // A fixed 3.5px floor made distant doors wider than their mapped rooms.
         // The door occupies a slim physical strip in world-map units.
         // Keep it slender at every zoom without a fixed screen-pixel floor.
-        double thickness = Math.max(0.25D, transform.scale() * 0.27D);
+        // Keep the marker a slim physical slab. It scales with the map like
+        // the rooms themselves; text remains the only screen-space exception.
+        double thickness = Math.max(0.18D, transform.scale() * 0.18D);
         accumulateMapStroke(coverage, transform.fx(a.x), transform.fy(a.z),
                 transform.fx(b.x), transform.fy(b.z), thickness, true,
                 graphics.guiWidth(), graphics.guiHeight());

@@ -1,0 +1,34 @@
+name: Validate linked Surface geometry
+on:
+  push:
+    branches: [ master ]
+permissions:
+  contents: write
+jobs:
+  validate-and-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch linked Surface geometry
+        run: python3 .github/scripts/temp_linked_surface_geometry.py
+      - name: Verify integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Validate complete mod
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Commit validated linked Surface fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/ConstructionSurface.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformSurfaceBridge.java
+          git commit -m 'Preserve linked roof on flip and weld parent edge profiles' || exit 0
+          git push origin HEAD:master

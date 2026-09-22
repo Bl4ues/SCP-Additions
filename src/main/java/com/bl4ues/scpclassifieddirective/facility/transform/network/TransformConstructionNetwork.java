@@ -124,6 +124,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(22, UseSurfaceOverlay.class,
                 UseSurfaceOverlay::encode, UseSurfaceOverlay::decode,
                 UseSurfaceOverlay::handle);
+        CHANNEL.registerMessage(23, CreateLinkedSurface.class,
+                CreateLinkedSurface::encode, CreateLinkedSurface::decode,
+                CreateLinkedSurface::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -163,6 +166,13 @@ public final class TransformConstructionNetwork {
 
     public static void cancelSurfaceAuthoring() {
         CHANNEL.sendToServer(new CancelSurfaceAuthoring());
+    }
+
+    public static void createLinkedSurface(UUID newId, UUID firstId,
+            int firstEdge, UUID secondId, int secondEdge) {
+        if (newId == null || firstId == null || secondId == null) return;
+        CHANNEL.sendToServer(new CreateLinkedSurface(newId, firstId,
+                firstEdge, secondId, secondEdge));
     }
 
     public static void placeGroupBlock(UUID groupId,
@@ -464,6 +474,38 @@ public final class TransformConstructionNetwork {
                         message.bottomStart, message.bottomEnd, message.topStart,
                         message.topEnd, message.curveOffset,
                         message.heightCurveOffset);
+                sendSnapshot(sender);
+            });
+            context.setPacketHandled(true);
+        }
+    }
+
+    /** Intent only. Server resolves parent edges and validates all geometry. */
+    public record CreateLinkedSurface(UUID id, UUID firstId, int firstEdge,
+            UUID secondId, int secondEdge) {
+        private static void encode(CreateLinkedSurface message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.id);
+            buffer.writeUUID(message.firstId);
+            buffer.writeVarInt(message.firstEdge);
+            buffer.writeUUID(message.secondId);
+            buffer.writeVarInt(message.secondEdge);
+        }
+
+        private static CreateLinkedSurface decode(FriendlyByteBuf buffer) {
+            return new CreateLinkedSurface(buffer.readUUID(),
+                    buffer.readUUID(), buffer.readVarInt(),
+                    buffer.readUUID(), buffer.readVarInt());
+        }
+
+        private static void handle(CreateLinkedSurface message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer sender = context.getSender();
+                TransformConstructionManager.createSurfaceBridge(sender,
+                        message.id, message.firstId, message.firstEdge,
+                        message.secondId, message.secondEdge);
                 sendSnapshot(sender);
             });
             context.setPacketHandled(true);

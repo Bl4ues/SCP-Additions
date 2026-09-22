@@ -244,11 +244,74 @@ public final class TransformConstructionManager {
         ConstructionSurface surface = data.surface(id);
         if (surface == null || !surface.dimension().equals(
                 level.dimension().location())) return false;
-        ConstructionSurface next = surface.withGeometry(bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, heightCurveOffset);
+        ConstructionSurface next;
+        if (surface.bridge() != null) {
+            // A linked ceiling has immutable parent borders. The client can
+            // request only its vertical crown; never trust supplied corners.
+            ConstructionSurface.BridgeAnchor anchor = surface.bridge();
+            ConstructionSurface first = data.surface(anchor.firstId());
+            ConstructionSurface second = data.surface(anchor.secondId());
+            if (first == null || second == null) return false;
+            ConstructionSurface anchored = TransformSurfaceBridge.reanchor(
+                    surface, first, second);
+            Vec3 crown = new Vec3(0.0D,
+                    Math.max(-64.0D, Math.min(64.0D, heightCurveOffset.y)),
+                    0.0D);
+            next = anchored.withGeometry(anchored.bottomStart(),
+                    anchored.bottomEnd(), anchored.topStart(),
+                    anchored.topEnd(), anchored.curveOffset(), crown);
+        } else {
+            next = surface.withGeometry(bottomStart, bottomEnd,
+                    topStart, topEnd, curveOffset, heightCurveOffset);
+        }
         if ((long) next.columns() * next.rows() > MAX_SURFACE_SLOTS) return false;
+        if (next.equals(surface)) return true;
         data.putSurface(next);
         refreshSurface(level.getServer(), id);
+        if (surface.bridge() == null) {
+            // Editing either parent reanchors each linked roof once per
+            // committed edit, not during the per-frame gizmo preview.
+            for (UUID childId : TransformSurfaceBridge.refreshDependents(data,
+                    id)) refreshSurface(level.getServer(), childId);
+        }
+        return true;
+    }
+
+    /** Create a two-parent ceiling from an explicit pair of authored edges. */
+    public static boolean createSurfaceBridge(ServerPlayer player,
+            UUID newId, UUID firstId, int firstEdge,
+            UUID secondId, int secondEdge) {
+        if (!canEdit(player) || newId == null || firstId == null
+                || secondId == null
+                || !(player.level() instanceof ServerLevel level)) return false;
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                level.getServer());
+        if (data.surface(newId) != null) return false;
+        ConstructionSurface first = data.surface(firstId);
+        ConstructionSurface second = data.surface(secondId);
+        if (first == null || second == null
+                || !first.dimension().equals(level.dimension().location())
+                || !second.dimension().equals(level.dimension().location())
+                || firstEdge < 0 || firstEdge > 3
+                || secondEdge < 0 || secondEdge > 3) return false;
+        Vec3 middleFirst = TransformSurfaceBridge.edgePoint(first,
+                firstEdge, 0.5D);
+        Vec3 middleSecond = TransformSurfaceBridge.edgePoint(second,
+                secondEdge, 0.5D);
+        if (middleFirst.distanceToSqr(player.getEyePosition()) > 40.0D * 40.0D
+                || middleSecond.distanceToSqr(player.getEyePosition()) > 40.0D * 40.0D
+                || middleFirst.distanceToSqr(middleSecond) > 64.0D * 64.0D) {
+            return false;
+        }
+        ConstructionSurface roof = TransformSurfaceBridge.create(newId,
+                first, firstEdge, second, secondEdge);
+        if (roof == null || (long) roof.columns() * roof.rows()
+                > MAX_SURFACE_SLOTS) return false;
+        data.putSurface(roof);
+        refreshSurface(level.getServer(), roof.id());
+        player.displayClientMessage(Component.literal(
+                "Linked ceiling created. Drag its center up or down to bend it."),
+                true);
         return true;
     }
 
@@ -613,8 +676,18 @@ public final class TransformConstructionManager {
         if (!canEdit(player) || id == null || player.getServer() == null) {
             return false;
         }
-        boolean changed = TransformConstructionSavedData.get(player.getServer())
-                .removeSurface(id);
+        TransformConstructionSavedData data = TransformConstructionSavedData.get(
+                player.getServer());
+        for (ConstructionSurface candidate : data.surfaces()) {
+            ConstructionSurface.BridgeAnchor link = candidate.bridge();
+            if (link != null && (id.equals(link.firstId())
+                    || id.equals(link.secondId()))) {
+                player.displayClientMessage(Component.literal(
+                        "Delete the linked ceiling before removing this wall."), true);
+                return false;
+            }
+        }
+        boolean changed = data.removeSurface(id);
         if (changed) refreshSurface(player.getServer(), id);
         return changed;
     }

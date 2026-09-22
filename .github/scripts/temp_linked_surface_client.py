@@ -197,10 +197,32 @@ rep(controls,
 ''',1)
 
 rep(controls,
-'''        for (Axis candidate : Axis.values()) {
+'''        ConstructionSurface surface =
+                TransformConstructionClientState.surface(selection.id());
+        if (surface == null) return null;
+
+        Vec3 origin = handlePosition(surface, selection.handle());
+        Vec3 eye = player.getEyePosition();
+        Vec3 ray = player.getViewVector(1.0F).normalize();
+        double distance = Math.sqrt(eye.distanceToSqr(origin));
+        double tolerance = 0.10D + Math.min(0.16D, distance * 0.008D);
+        Axis best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (Axis candidate : Axis.values()) {
             Vec3 axis = gizmoAxisDirection(selection, candidate);
 ''',
-'''        for (Axis candidate : Axis.values()) {
+'''        ConstructionSurface surface =
+                TransformConstructionClientState.surface(selection.id());
+        if (surface == null) return null;
+
+        Vec3 origin = handlePosition(surface, selection.handle());
+        Vec3 eye = player.getEyePosition();
+        Vec3 ray = player.getViewVector(1.0F).normalize();
+        double distance = Math.sqrt(eye.distanceToSqr(origin));
+        double tolerance = 0.10D + Math.min(0.16D, distance * 0.008D);
+        Axis best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (Axis candidate : Axis.values()) {
             if (surface.bridge() != null && candidate != Axis.Y) continue;
             Vec3 axis = gizmoAxisDirection(selection, candidate);
 ''',1)

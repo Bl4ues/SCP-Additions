@@ -12,6 +12,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientRenderer;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import com.bl4ues.scpclassifieddirective.mixin.client.LevelRendererEntityTargetAccessor;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -205,6 +206,12 @@ public final class PickupOutlineRenderer {
                 || state.getRenderShape() == RenderShape.INVISIBLE) return;
 
         Vec3 cameraPosition = camera.getPosition();
+        if (target.kind() != TransformContextTargetClient.Kind.GROUP
+                && TransformConstructionClientRenderer.renderSurfaceContextOutline(
+                        minecraft, target, poseStack, OUTLINE_BUFFER,
+                        cameraPosition)) {
+            return;
+        }
         poseStack.pushPose();
         try {
             if (target.kind() == TransformContextTargetClient.Kind.GROUP) {

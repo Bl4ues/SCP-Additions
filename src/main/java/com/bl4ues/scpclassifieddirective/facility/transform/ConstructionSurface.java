@@ -22,7 +22,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Vec3 curveOffset, Vec3 heightCurveOffset,
         Map<SurfaceSlot, SurfaceAttachment> attachments,
         Map<SurfaceOverlaySlot, SurfaceAttachment> overlays,
-        boolean flipped) {
+        boolean flipped, Vec3 topCurveOffset, BridgeAnchor bridge) {
     private static final int ARC_SAMPLES = 32;
     private static final int METRIC_CACHE_LIMIT = 192;
     private static final Map<GeometryKey, GeometryMetrics> METRICS =
@@ -56,9 +56,22 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         curveOffset = curveOffset == null ? Vec3.ZERO : curveOffset;
         heightCurveOffset = heightCurveOffset == null
                 ? Vec3.ZERO : heightCurveOffset;
+        topCurveOffset = topCurveOffset == null ? Vec3.ZERO : topCurveOffset;
         attachments = attachments == null ? Map.of()
                 : Map.copyOf(attachments);
         overlays = overlays == null ? Map.of() : Map.copyOf(overlays);
+    }
+
+    /** Existing authored surfaces keep their original constructor and NBT layout. */
+    public ConstructionSurface(UUID id, ResourceLocation dimension,
+            Vec3 bottomStart, Vec3 bottomEnd, Vec3 topStart, Vec3 topEnd,
+            Vec3 curveOffset, Vec3 heightCurveOffset,
+            Map<SurfaceSlot, SurfaceAttachment> attachments,
+            Map<SurfaceOverlaySlot, SurfaceAttachment> overlays,
+            boolean flipped) {
+        this(id, dimension, bottomStart, bottomEnd, topStart, topEnd,
+                curveOffset, heightCurveOffset, attachments, overlays,
+                flipped, Vec3.ZERO, null);
     }
 
     /** Compatibility constructor for every pre-overlay authored surface. */
@@ -98,7 +111,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     }
 
     public Vec3 topControl() {
-        return topStart.add(topEnd).scale(0.5D).add(curveOffset);
+        return topStart.add(topEnd).scale(0.5D)
+                .add(curveOffset).add(topCurveOffset);
     }
 
     public Vec3 point(double u, double v) {
@@ -215,7 +229,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         if (recent != null && recent.surface() == this)
             return recent.metrics();
         GeometryKey key = new GeometryKey(bottomStart, bottomEnd,
-                topStart, topEnd, curveOffset, heightCurveOffset);
+                topStart, topEnd, curveOffset, heightCurveOffset,
+                topCurveOffset);
         GeometryMetrics resolved;
         synchronized (METRICS) {
             resolved = METRICS.computeIfAbsent(key,
@@ -227,7 +242,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
 
     private record GeometryKey(Vec3 bottomStart, Vec3 bottomEnd,
             Vec3 topStart, Vec3 topEnd, Vec3 curveOffset,
-            Vec3 heightCurveOffset) {
+            Vec3 heightCurveOffset, Vec3 topCurveOffset) {
     }
 
     private static final class GeometryMetrics {
@@ -347,7 +362,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         ConstructionSurface geometry = new ConstructionSurface(id, dimension,
                 nextBottomStart, nextBottomEnd, nextTopStart, nextTopEnd,
                 nextCurveOffset, nextHeightCurveOffset, Map.of(), Map.of(),
-                flipped);
+                flipped, topCurveOffset, bridge);
         if (attachments.isEmpty() && overlays.isEmpty()) return geometry;
 
         int oldColumns = columns();
@@ -372,7 +387,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         }
         return new ConstructionSurface(id, dimension, nextBottomStart,
                 nextBottomEnd, nextTopStart, nextTopEnd, nextCurveOffset,
-                nextHeightCurveOffset, remapped, remappedOverlays, flipped);
+                nextHeightCurveOffset, remapped, remappedOverlays, flipped,
+                topCurveOffset, bridge);
     }
 
     private static SurfaceSlot remapSlot(SurfaceSlot slot, int oldColumns,
@@ -393,7 +409,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         next.put(slot, new SurfaceAttachment(state, deform));
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset, next,
-                overlays, flipped);
+                overlays, flipped, topCurveOffset, bridge);
     }
 
     public SurfaceAttachment overlay(SurfaceSlot slot, int normalSign) {
@@ -410,7 +426,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 new SurfaceAttachment(state, deform));
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset, attachments,
-                next, flipped);
+                next, flipped, topCurveOffset, bridge);
     }
 
     public ConstructionSurface withoutOverlay(SurfaceSlot slot,
@@ -422,7 +438,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         next.remove(key);
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset, attachments,
-                next, flipped);
+                next, flipped, topCurveOffset, bridge);
     }
 
     public ConstructionSurface withFlipped(boolean nextFlipped) {
@@ -439,7 +455,7 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         next.remove(slot);
         return new ConstructionSurface(id, dimension, bottomStart, bottomEnd,
                 topStart, topEnd, curveOffset, heightCurveOffset, next,
-                overlays, flipped);
+                overlays, flipped, topCurveOffset, bridge);
     }
 
     public CompoundTag save() {
@@ -452,6 +468,9 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         putVec(tag, "TopEnd", topEnd);
         putVec(tag, "CurveOffset", curveOffset);
         putVec(tag, "HeightCurveOffset", heightCurveOffset);
+        if (topCurveOffset.lengthSqr() > 1.0E-12D)
+            putVec(tag, "TopCurveOffset", topCurveOffset);
+        if (bridge != null) tag.put("LinkedBridge", bridge.save());
         tag.putBoolean("Flipped", flipped);
         ListTag list = new ListTag();
         for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
@@ -517,7 +536,12 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 getVec(tag, "CurveOffset"),
                 tag.contains("HeightCurveOffset", Tag.TAG_COMPOUND)
                         ? getVec(tag, "HeightCurveOffset") : Vec3.ZERO,
-                attachments, overlays, tag.getBoolean("Flipped"));
+                attachments, overlays, tag.getBoolean("Flipped"),
+                tag.contains("TopCurveOffset", Tag.TAG_COMPOUND)
+                        ? getVec(tag, "TopCurveOffset") : Vec3.ZERO,
+                tag.contains("LinkedBridge", Tag.TAG_COMPOUND)
+                        ? BridgeAnchor.load(tag.getCompound("LinkedBridge"))
+                        : null);
     }
 
     private static void putVec(CompoundTag tag, String key, Vec3 value) {
@@ -532,6 +556,42 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         CompoundTag vector = tag.getCompound(key);
         return new Vec3(vector.getDouble("X"), vector.getDouble("Y"),
                 vector.getDouble("Z"));
+    }
+
+    /** Two authored parent edges. The bridge cannot be pulled off them. */
+    public record BridgeAnchor(UUID firstId, int firstEdge,
+            UUID secondId, int secondEdge, boolean reverseSecond) {
+        public BridgeAnchor {
+            if (firstId == null || secondId == null
+                    || firstId.equals(secondId)
+                    || firstEdge < 0 || firstEdge > 3
+                    || secondEdge < 0 || secondEdge > 3) {
+                throw new IllegalArgumentException("Invalid linked Surface edges");
+            }
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putUUID("First", firstId);
+            tag.putInt("FirstEdge", firstEdge);
+            tag.putUUID("Second", secondId);
+            tag.putInt("SecondEdge", secondEdge);
+            tag.putBoolean("ReverseSecond", reverseSecond);
+            return tag;
+        }
+
+        private static BridgeAnchor load(CompoundTag tag) {
+            if (!tag.hasUUID("First") || !tag.hasUUID("Second")) return null;
+            int firstEdge = tag.getInt("FirstEdge");
+            int secondEdge = tag.getInt("SecondEdge");
+            if (firstEdge < 0 || firstEdge > 3
+                    || secondEdge < 0 || secondEdge > 3
+                    || tag.getUUID("First").equals(tag.getUUID("Second")))
+                return null;
+            return new BridgeAnchor(tag.getUUID("First"), firstEdge,
+                    tag.getUUID("Second"), secondEdge,
+                    tag.getBoolean("ReverseSecond"));
+        }
     }
 
     public record SurfaceSlot(int column, int row) {

@@ -1,0 +1,106 @@
+package com.bl4ues.scpclassifieddirective.facility.transform;
+
+import net.minecraft.world.phys.Vec3;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/** Persistent, server-authoritative connection between two existing Surface edges. */
+public final class TransformSurfaceBridge {
+    private TransformSurfaceBridge() { }
+
+    public static Vec3 edgePoint(ConstructionSurface surface, int edge,
+            double t) {
+        return switch (edge) {
+            case 0 -> surface.point(0.0D, t);
+            case 1 -> surface.point(1.0D, t);
+            case 2 -> surface.point(t, 0.0D);
+            case 3 -> surface.point(t, 1.0D);
+            default -> throw new IllegalArgumentException("Unknown Surface edge");
+        };
+    }
+
+    private static Vec3 edgeBend(ConstructionSurface parent, int edge,
+            boolean reverse) {
+        Vec3 start = edgePoint(parent, edge, reverse ? 1.0D : 0.0D);
+        Vec3 end = edgePoint(parent, edge, reverse ? 0.0D : 1.0D);
+        Vec3 middle = edgePoint(parent, edge, 0.5D);
+        return middle.subtract(start.add(end).scale(0.5D)).scale(2.0D);
+    }
+
+    public static ConstructionSurface create(UUID id,
+            ConstructionSurface first, int firstEdge,
+            ConstructionSurface second, int secondEdge) {
+        if (id == null || first == null || second == null
+                || first.id().equals(second.id())
+                || first.bridge() != null || second.bridge() != null
+                || !first.dimension().equals(second.dimension())
+                || firstEdge < 0 || firstEdge > 3
+                || secondEdge < 0 || secondEdge > 3) return null;
+        Vec3 a0 = edgePoint(first, firstEdge, 0.0D);
+        Vec3 a1 = edgePoint(first, firstEdge, 1.0D);
+        Vec3 b0 = edgePoint(second, secondEdge, 0.0D);
+        Vec3 b1 = edgePoint(second, secondEdge, 1.0D);
+        boolean reverse = a0.distanceToSqr(b1) + a1.distanceToSqr(b0)
+                < a0.distanceToSqr(b0) + a1.distanceToSqr(b1);
+        ConstructionSurface.BridgeAnchor anchor =
+                new ConstructionSurface.BridgeAnchor(first.id(), firstEdge,
+                        second.id(), secondEdge, reverse);
+        return derive(id, first.dimension(), anchor, first, second,
+                Vec3.ZERO, Map.of(), Map.of(), false);
+    }
+
+    public static ConstructionSurface reanchor(ConstructionSurface current,
+            ConstructionSurface first, ConstructionSurface second) {
+        if (current == null || current.bridge() == null
+                || first == null || second == null) return current;
+        return derive(current.id(), current.dimension(), current.bridge(),
+                first, second, current.heightCurveOffset(),
+                current.attachments(), current.overlays(), current.flipped());
+    }
+
+    private static ConstructionSurface derive(UUID id,
+            net.minecraft.resources.ResourceLocation dimension,
+            ConstructionSurface.BridgeAnchor link,
+            ConstructionSurface first, ConstructionSurface second,
+            Vec3 heightBend,
+            Map<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> attachments,
+            Map<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> overlays,
+            boolean flipped) {
+        Vec3 a0 = edgePoint(first, link.firstEdge(), 0.0D);
+        Vec3 a1 = edgePoint(first, link.firstEdge(), 1.0D);
+        Vec3 b0 = edgePoint(second, link.secondEdge(),
+                link.reverseSecond() ? 1.0D : 0.0D);
+        Vec3 b1 = edgePoint(second, link.secondEdge(),
+                link.reverseSecond() ? 0.0D : 1.0D);
+        Vec3 aBend = edgeBend(first, link.firstEdge(), false);
+        Vec3 bBend = edgeBend(second, link.secondEdge(),
+                link.reverseSecond());
+        return new ConstructionSurface(id, dimension, a0, a1, b0, b1,
+                aBend, new Vec3(0.0D, heightBend.y, 0.0D),
+                attachments, overlays, flipped, bBend.subtract(aBend), link);
+    }
+
+    /** Reanchor only direct dependent roofs after a committed parent edit. */
+    public static List<UUID> refreshDependents(
+            TransformConstructionSavedData data, UUID changedId) {
+        List<UUID> refreshed = new ArrayList<>();
+        for (ConstructionSurface old : data.surfaces()) {
+            ConstructionSurface.BridgeAnchor link = old.bridge();
+            if (link == null || (!link.firstId().equals(changedId)
+                    && !link.secondId().equals(changedId))) continue;
+            ConstructionSurface first = data.surface(link.firstId());
+            ConstructionSurface second = data.surface(link.secondId());
+            if (first == null || second == null) continue;
+            ConstructionSurface next = reanchor(old, first, second);
+            if (!next.equals(old)) {
+                data.putSurface(next);
+                refreshed.add(next.id());
+            }
+        }
+        return refreshed;
+    }
+}

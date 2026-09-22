@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceBridge;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Axis;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.EditMode;
@@ -328,6 +329,7 @@ public final class TransformConstructionClientRenderer {
                         }
                     }
                 }
+                renderLinkedSurfaceAuthoring(pose, lines, camera);
             } else if (showSelectedSurface
                     && selection != null
                     && selection.type() == SelectionType.SURFACE) {
@@ -1123,11 +1125,11 @@ public final class TransformConstructionClientRenderer {
         int xSteps = deform
                 && surface.curveOffset().lengthSqr() > 1.0E-8D
                 && maxX - minX > 0.20D
-                ? curvedPipe ? 12 : horizontalEdge ? 16 : 2 : 1;
+                ? curvedPipe ? 12 : horizontalEdge ? 24 : 2 : 1;
         int ySteps = deform
                 && surface.heightCurveOffset().lengthSqr() > 1.0E-8D
                 && maxY - minY > 0.20D
-                ? verticalEdge ? 16 : 2 : 1;
+                ? verticalEdge ? 24 : 2 : 1;
         for (int ix = 0; ix < xSteps; ix++) {
             double s0 = ix / (double) xSteps;
             double s1 = (ix + 1.0D) / xSteps;
@@ -1472,9 +1474,12 @@ public final class TransformConstructionClientRenderer {
             // rather than assuming the same grid fraction on both meshes.
             // Each boundary coordinate is shared by several model quads and
             // both depth faces. Project it once per committed seam geometry.
-            double otherFraction = match.projectionCache().computeIfAbsent(
-                    Math.round(fraction * 1_000_000.0D), ignored ->
-                            closestEdgeFraction(match.samples(), sourcePoint));
+            double otherFraction = match.partial()
+                    ? match.projectionCache().computeIfAbsent(
+                            Math.round(fraction * 1_000_000.0D), ignored ->
+                                    closestEdgeFraction(match.samples(),
+                                            sourcePoint))
+                    : (match.reversed() ? 1.0D - fraction : fraction);
             if (!Double.isFinite(otherFraction)) continue;
             double otherU = match.otherEdge() == 0 ? 0.0D
                     : match.otherEdge() == 1 ? 1.0D : otherFraction;
@@ -1500,7 +1505,10 @@ public final class TransformConstructionClientRenderer {
             // almost-equal edges and a bright slit. Midpoint + bisector is
             // symmetric: both meshes reach the exact same world-space vertex
             // while their original curves remain unchanged away from the edge.
-            Vec3 sharedBase = sourcePoint.add(otherPoint).scale(0.5D);
+            Vec3 sharedBase = match.partial()
+                    ? sourcePoint.add(otherPoint).scale(0.5D)
+                    : canonicalSharedEdgePoint(surface, edge, other,
+                            match.otherEdge(), match.reversed(), fraction);
             Vec3 bisector = TransformMath.safeNormalize(
                     sourceNormal.add(otherNormal), sourceNormal);
             double projection = Math.abs(bisector.dot(sourceNormal));
@@ -1512,28 +1520,29 @@ public final class TransformConstructionClientRenderer {
             found++;
         }
         if (found == 0) return null;
-        // Adjacent curved surfaces may use different cell subdivisions: even
-        // after their sampled border points agree, their polygon chords can
-        // leave a narrow sky slit between samples. Continue each joined edge
-        // 0.055 block OUTSIDE its own parametric domain, into the neighbouring
-        // solid surface. This gives both meshes a small physical overlap rather
-        // than relying on two independently tessellated lines touching at
-        // infinitely thin vertices. The authored curve, interior vertices,
-        // collision, and saved geometry are unchanged.
-        Vec3 overlap = Vec3.ZERO;
-        if (Math.abs(u) < 1.0E-6D) {
-            overlap = overlap.subtract(surface.gridTangent(u, v));
-        } else if (Math.abs(u - 1.0D) < 1.0E-6D) {
-            overlap = overlap.add(surface.gridTangent(u, v));
-        }
-        if (Math.abs(v) < 1.0E-6D) {
-            overlap = overlap.subtract(surface.gridVertical(u, v));
-        } else if (Math.abs(v - 1.0D) < 1.0E-6D) {
-            overlap = overlap.add(surface.gridVertical(u, v));
-        }
-        Vec3 joined = result.scale(1.0D / found);
-        return overlap.lengthSqr() < 1.0E-10D ? joined
-                : joined.add(overlap.normalize().scale(0.055D));
+        // Do not extend a seam beyond either authored plane. That old overlap
+        // hid pinholes but produced the visible "raised" lips in tight curves.
+        // Full matches now share one deterministic piecewise-linear border,
+        // so both independently subdivided grids land on the same seam.
+        return result.scale(1.0D / found);
+    }
+
+    private static Vec3 canonicalSharedEdgePoint(ConstructionSurface first,
+            int firstEdge, ConstructionSurface second, int secondEdge,
+            boolean reversed, double fraction) {
+        final int segments = 128;
+        double scaled = Math.max(0.0D, Math.min(1.0D, fraction)) * segments;
+        int index = Math.min(segments - 1, (int) Math.floor(scaled));
+        double local = scaled - index;
+        double a = index / (double) segments;
+        double b = (index + 1.0D) / segments;
+        Vec3 p0 = edgePoint(first, firstEdge, a).add(
+                edgePoint(second, secondEdge,
+                        reversed ? 1.0D - a : a)).scale(0.5D);
+        Vec3 p1 = edgePoint(first, firstEdge, b).add(
+                edgePoint(second, secondEdge,
+                        reversed ? 1.0D - b : b)).scale(0.5D);
+        return p0.lerp(p1, local);
     }
 
     private static VertexFrame rigidFrame(ConstructionSurface surface,
@@ -1796,6 +1805,57 @@ public final class TransformConstructionClientRenderer {
         };
     }
 
+    private static void renderLinkedSurfaceAuthoring(PoseStack pose,
+            VertexConsumer lines, Vec3 camera) {
+        if (!TransformConstructionClientControls.linkedSurfaceMode()) return;
+        TransformConstructionClientControls.LinkedSurfaceEdge first =
+                TransformConstructionClientControls.linkedFirstEdge();
+        TransformConstructionClientControls.LinkedSurfaceEdge hovered =
+                TransformConstructionClientControls.linkedHoveredEdge();
+        if (first != null) {
+            ConstructionSurface surface =
+                    TransformConstructionClientState.surface(first.surfaceId());
+            if (surface != null) {
+                renderLinkedSurfaceEdge(pose, lines, surface, first.edge(),
+                        0.20F, 0.85F, 1.0F, 1.0F);
+            }
+        }
+        if (hovered != null) {
+            ConstructionSurface surface =
+                    TransformConstructionClientState.surface(hovered.surfaceId());
+            if (surface != null) {
+                renderLinkedSurfaceEdge(pose, lines, surface, hovered.edge(),
+                        1.0F, 0.78F, 0.16F, 1.0F);
+            }
+        }
+        ConstructionSurface preview =
+                TransformConstructionClientControls.linkedPreview();
+        if (preview != null
+                && preview.gridPoint(0.5D, 0.5D).distanceToSqr(camera)
+                        <= MAX_RENDER_DISTANCE_SQR) {
+            renderSurfaceGrid(pose, lines, preview, camera);
+            Vec3 a = preview.gridPoint(0.5D, 0.0D);
+            Vec3 crown = preview.gridPoint(0.5D, 0.5D);
+            Vec3 b = preview.gridPoint(0.5D, 1.0D);
+            line(pose, lines, a, crown, 0.35F, 0.92F, 1.0F, 0.96F);
+            line(pose, lines, crown, b, 0.35F, 0.92F, 1.0F, 0.96F);
+        }
+    }
+
+    private static void renderLinkedSurfaceEdge(PoseStack pose,
+            VertexConsumer lines, ConstructionSurface surface, int edge,
+            float red, float green, float blue, float alpha) {
+        Vec3 previous = TransformConstructionClientControls.linkedEdgePoint(
+                surface, edge, 0.0D);
+        for (int sample = 1; sample <= 48; sample++) {
+            double t = sample / 48.0D;
+            Vec3 current = TransformConstructionClientControls.linkedEdgePoint(
+                    surface, edge, t);
+            line(pose, lines, previous, current, red, green, blue, alpha);
+            previous = current;
+        }
+    }
+
     private static void renderSurfaceOutline(PoseStack pose,
             VertexConsumer lines, ConstructionSurface surface, Vec3 camera) {
         Vec3 center = surface.gridPoint(0.5D, 0.5D);
@@ -1921,6 +1981,14 @@ public final class TransformConstructionClientRenderer {
             ConstructionSurface surface, double u, double v,
             Vec3 camera) {
         Vec3 point = surface.gridPoint(u, v);
+        boolean border = Math.abs(u) < 1.0E-8D
+                || Math.abs(u - 1.0D) < 1.0E-8D
+                || Math.abs(v) < 1.0E-8D
+                || Math.abs(v - 1.0D) < 1.0E-8D;
+        if (border) {
+            Vec3 joined = joinedSurfaceEdge(surface, u, v, 0.0D);
+            if (joined != null) point = joined;
+        }
         Vec3 normal = TransformMath.safeNormalize(surface.gridNormal(u, v),
                 new Vec3(0.0D, 0.0D, 1.0D));
         double cameraSide = camera.subtract(point).dot(normal);
@@ -1975,6 +2043,7 @@ public final class TransformConstructionClientRenderer {
                 : TransformConstructionClientControls.hoveredSurfaceGizmoAxis(
                         minecraft.player);
         for (Axis axis : Axis.values()) {
+            if (surface.bridge() != null && axis != Axis.Y) continue;
             renderMoveAxis(pose, lines, origin,
                     TransformConstructionClientControls.gizmoAxisDirection(
                             TransformConstructionClientState.selection(), axis),
@@ -1989,6 +2058,9 @@ public final class TransformConstructionClientRenderer {
                 && hoveredId.equals(surface.id())
                 ? TransformConstructionClientState.hoveredSurfaceHandle() : null;
         for (SurfaceHandle handle : SurfaceHandle.values()) {
+            if (surface.bridge() != null && handle != SurfaceHandle.CENTER) {
+                continue;
+            }
             Vec3 point = TransformConstructionClientControls.handlePosition(
                     surface, handle);
             boolean active = handle == selected;

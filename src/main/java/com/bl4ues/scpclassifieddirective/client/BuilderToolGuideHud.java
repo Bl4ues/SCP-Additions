@@ -149,8 +149,31 @@ public final class BuilderToolGuideHud {
         List<Line> lines = new ArrayList<>();
         int step = TransformSurfaceAuthoringState.step();
         if (step == 0) {
+            if (TransformConstructionClientControls.linkedSurfaceMode()) {
+                lines.add(new Line("LMB",
+                        TransformConstructionClientControls
+                                .linkedSurfaceHasFirstEdge()
+                                ? "select second parent edge"
+                                : "select first parent edge"));
+                lines.add(new Line("B", "cancel linked surface mode"));
+                lines.add(new Line("Esc", "cancel"));
+                return new Guide("SURFACE LINK", lines);
+            }
             Selection selection = TransformConstructionClientState.selection();
             if (selection != null && selection.type() == SelectionType.SURFACE) {
+                ConstructionSurface selectedSurface =
+                        TransformConstructionClientState.surface(selection.id());
+                if (selectedSurface != null && selectedSurface.bridge() != null) {
+                    lines.add(new Line("LMB", "drag crown up / down"));
+                    lines.add(new Line("Shift", "snap crown height to 1/16"));
+                    lines.add(new Line("Ctrl", "hold to disable feature snap"));
+                    lines.add(new Line("Parents", "both boundary curves locked", true));
+                    String angle = angleText(selection);
+                    if (angle != null) lines.add(new Line("Angle", angle, true));
+                    lines.add(new Line("Ctrl+Z", "undo"));
+                    lines.add(new Line("Del", "delete linked surface"));
+                    return new Guide("LINKED SURFACE", lines);
+                }
                 lines.add(new Line("LMB",
                         "select handle / drag colored arrow"));
                 lines.add(new Line("Shift",
@@ -179,6 +202,7 @@ public final class BuilderToolGuideHud {
                 lines.add(new Line("Shift", "snap point to 1/16"));
                 lines.add(new Line("LMB", "select existing handle"));
                 lines.add(new Line("MMB", "copy transformed block"));
+                lines.add(new Line("B", "link two existing Surface edges"));
             }
         } else if (step == 1) {
             lines.add(new Line("RMB", "set baseline point 2"));
@@ -201,6 +225,13 @@ public final class BuilderToolGuideHud {
                 .equals(surface.id())
                 ? TransformConstructionClientState.hoveredSurfaceHandle()
                 : selection.handle();
+        if (surface.bridge() != null) {
+            Vec3 a = surface.gridVertical(0.5D, 0.0D).normalize();
+            Vec3 b = surface.gridVertical(0.5D, 1.0D).normalize();
+            double dot = Mth.clamp(a.dot(b), -1.0D, 1.0D);
+            return String.format(java.util.Locale.ROOT, "crown %.1f°",
+                    Math.toDegrees(Math.acos(dot)));
+        }
         if (handle == SurfaceHandle.CENTER) {
             Vec3 a;
             Vec3 b;

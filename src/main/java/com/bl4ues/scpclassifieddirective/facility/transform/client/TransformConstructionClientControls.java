@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceBridge;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceAuthoringState;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState.Axis;
@@ -46,6 +47,34 @@ public final class TransformConstructionClientControls {
     private static boolean attackLatch;
     // Editor preference only. Surface geometry remains server-authoritative.
     private static boolean independentEdgeHandles;
+    private static boolean linkedSurfaceMode;
+    private static LinkedSurfaceEdge linkedFirstEdge;
+    private static LinkedSurfaceEdge linkedHoveredEdge;
+    private static ConstructionSurface linkedPreview;
+    private static final UUID LINKED_PREVIEW_ID =
+            new UUID(0x5A71FACE5A71FACEL, 0x1EE7C0DE1EE7C0DEL);
+
+    public record LinkedSurfaceEdge(UUID surfaceId, int edge) { }
+
+    public static boolean linkedSurfaceMode() {
+        return linkedSurfaceMode;
+    }
+
+    public static boolean linkedSurfaceHasFirstEdge() {
+        return linkedFirstEdge != null;
+    }
+
+    static LinkedSurfaceEdge linkedFirstEdge() {
+        return linkedFirstEdge;
+    }
+
+    static LinkedSurfaceEdge linkedHoveredEdge() {
+        return linkedHoveredEdge;
+    }
+
+    static ConstructionSurface linkedPreview() {
+        return linkedPreview;
+    }
 
     public static boolean independentEdgeHandles() {
         return independentEdgeHandles;
@@ -115,7 +144,16 @@ public final class TransformConstructionClientControls {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         if (player == null || minecraft.level == null || minecraft.screen != null
-                || !player.isCreative() || !holdingOffGridTool(player)) return;
+                || !player.isCreative()) return;
+
+        if (holdingSurfaceTool(player) && linkedSurfaceMode) {
+            // Linked-Surface authoring deliberately owns RMB while active so
+            // the normal three-click wall authoring flow cannot start behind it.
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            return;
+        }
+        if (!holdingOffGridTool(player)) return;
 
         UUID aimedGroup = TransformGroupPlacementClient.findAimedGroup(player);
         if (aimedGroup == null) return;
@@ -144,6 +182,12 @@ public final class TransformConstructionClientControls {
         event.setCanceled(true);
         if (attackLatch) return;
         attackLatch = true;
+
+        if (linkedSurfaceMode && holdingSurfaceTool(player)
+                && TransformSurfaceAuthoringState.step() == 0) {
+            handleLinkedSurfaceClick(player);
+            return;
+        }
 
         Selection currentSelection = TransformConstructionClientState.selection();
         if (currentSelection != null
@@ -254,6 +298,14 @@ public final class TransformConstructionClientControls {
             return;
         }
 
+        if (event.getKey() == GLFW.GLFW_KEY_ESCAPE && linkedSurfaceMode) {
+            suppressPauseTicks = 2;
+            finishDrag();
+            clearLinkedSurfaceMode();
+            status("Linked surface creation cancelled");
+            return;
+        }
+
         if (event.getKey() == GLFW.GLFW_KEY_ESCAPE
                 && TransformSurfaceAuthoringState.active()) {
             suppressPauseTicks = 2;
@@ -261,6 +313,20 @@ public final class TransformConstructionClientControls {
             TransformSurfaceAuthoringState.clear();
             TransformConstructionNetwork.cancelSurfaceAuthoring();
             status("Surface selection cancelled");
+            return;
+        }
+
+        if (event.getKey() == GLFW.GLFW_KEY_B && holdingSurfaceTool(player)
+                && TransformSurfaceAuthoringState.step() == 0) {
+            finishDrag();
+            linkedSurfaceMode = !linkedSurfaceMode;
+            linkedFirstEdge = null;
+            linkedHoveredEdge = null;
+            linkedPreview = null;
+            TransformConstructionClientState.clearHoveredSurface();
+            status(linkedSurfaceMode
+                    ? "Linked surface: click the first parent edge"
+                    : "Linked surface mode disabled");
             return;
         }
 
@@ -374,6 +440,10 @@ public final class TransformConstructionClientControls {
         if (suppressPauseTicks > 0) suppressPauseTicks--;
         if (!minecraft.options.keyAttack.isDown()) attackLatch = false;
 
+        if (!holdingSurfaceTool(player) && linkedSurfaceMode) {
+            clearLinkedSurfaceMode();
+        }
+        updateLinkedSurfaceHover(player);
         updateSurfaceHover(player);
 
         Selection selection = TransformConstructionClientState.selection();
@@ -504,8 +574,132 @@ public final class TransformConstructionClientControls {
         event.setCanceled(true);
     }
 
+    private static void clearLinkedSurfaceMode() {
+        linkedSurfaceMode = false;
+        linkedFirstEdge = null;
+        linkedHoveredEdge = null;
+        linkedPreview = null;
+    }
+
+    private static void updateLinkedSurfaceHover(LocalPlayer player) {
+        linkedHoveredEdge = null;
+        linkedPreview = null;
+        if (!linkedSurfaceMode || !holdingSurfaceTool(player)
+                || TransformSurfaceAuthoringState.step() != 0) return;
+        linkedHoveredEdge = findAimedLinkedSurfaceEdge(player);
+        if (linkedFirstEdge == null || linkedHoveredEdge == null
+                || linkedFirstEdge.surfaceId().equals(
+                        linkedHoveredEdge.surfaceId())) return;
+        ConstructionSurface first = TransformConstructionClientState.surface(
+                linkedFirstEdge.surfaceId());
+        ConstructionSurface second = TransformConstructionClientState.surface(
+                linkedHoveredEdge.surfaceId());
+        linkedPreview = TransformSurfaceBridge.create(LINKED_PREVIEW_ID,
+                first, linkedFirstEdge.edge(), second,
+                linkedHoveredEdge.edge());
+    }
+
+    private static void handleLinkedSurfaceClick(LocalPlayer player) {
+        LinkedSurfaceEdge aimed = findAimedLinkedSurfaceEdge(player);
+        if (aimed == null) {
+            status(linkedFirstEdge == null
+                    ? "Aim at a Surface edge"
+                    : "Aim at an edge on the second Surface");
+            return;
+        }
+        if (linkedFirstEdge == null) {
+            linkedFirstEdge = aimed;
+            linkedHoveredEdge = null;
+            linkedPreview = null;
+            status("First parent edge selected. Click an edge on the other wall");
+            return;
+        }
+        if (linkedFirstEdge.surfaceId().equals(aimed.surfaceId())) {
+            status("The second edge must belong to another Surface");
+            return;
+        }
+        ConstructionSurface first = TransformConstructionClientState.surface(
+                linkedFirstEdge.surfaceId());
+        ConstructionSurface second = TransformConstructionClientState.surface(
+                aimed.surfaceId());
+        UUID id = UUID.randomUUID();
+        ConstructionSurface created = TransformSurfaceBridge.create(id,
+                first, linkedFirstEdge.edge(), second, aimed.edge());
+        if (created == null) {
+            status("Those two edges cannot create a linked surface");
+            return;
+        }
+
+        finishDrag();
+        TransformConstructionClientState.upsertSurface(created);
+        TransformConstructionClientState.selectSurface(id, SurfaceHandle.CENTER);
+        TransformConstructionClientState.setAxis(Axis.Y);
+        TransformConstructionNetwork.createLinkedSurface(id,
+                linkedFirstEdge.surfaceId(), linkedFirstEdge.edge(),
+                aimed.surfaceId(), aimed.edge());
+        clearLinkedSurfaceMode();
+        status("Linked surface created. Drag its center up or down");
+    }
+
+    private static LinkedSurfaceEdge findAimedLinkedSurfaceEdge(
+            LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return null;
+        Vec3 eye = player.getEyePosition();
+        Vec3 ray = player.getViewVector(1.0F).normalize();
+        LinkedSurfaceEdge best = null;
+        double bestScore = Double.POSITIVE_INFINITY;
+        double bestAlong = Double.POSITIVE_INFINITY;
+        for (ConstructionSurface surface
+                : TransformConstructionClientState.surfaces(
+                        minecraft.level.dimension().location())) {
+            if (surface.bridge() != null) continue;
+            Vec3 center = surface.gridPoint(0.5D, 0.5D);
+            double radius = Math.max(surface.width(), surface.height()) + 2.0D;
+            if (center.distanceToSqr(eye)
+                    > (HANDLE_MAX_DISTANCE + radius)
+                    * (HANDLE_MAX_DISTANCE + radius)) continue;
+            for (int edge = 0; edge < 4; edge++) {
+                Vec3 previous = linkedEdgePoint(surface, edge, 0.0D);
+                for (int sample = 1; sample <= 32; sample++) {
+                    double t = sample / 32.0D;
+                    Vec3 current = linkedEdgePoint(surface, edge, t);
+                    Vec3 middle = previous.add(current).scale(0.5D);
+                    double along = middle.subtract(eye).dot(ray);
+                    if (along > 0.0D && along <= HANDLE_MAX_DISTANCE) {
+                        double tolerance = 0.13D
+                                + Math.min(0.20D, along * 0.009D);
+                        double score = segmentHitScore(eye, ray,
+                                previous, current);
+                        if (score <= tolerance * tolerance
+                                && (score < bestScore - 1.0E-7D
+                                || Math.abs(score - bestScore) < 1.0E-7D
+                                && along < bestAlong)) {
+                            bestScore = score;
+                            bestAlong = along;
+                            best = new LinkedSurfaceEdge(surface.id(), edge);
+                        }
+                    }
+                    previous = current;
+                }
+            }
+        }
+        return best;
+    }
+
+    static Vec3 linkedEdgePoint(ConstructionSurface surface, int edge,
+            double t) {
+        return switch (edge) {
+            case 0 -> surface.gridPoint(0.0D, t);
+            case 1 -> surface.gridPoint(1.0D, t);
+            case 2 -> surface.gridPoint(t, 0.0D);
+            case 3 -> surface.gridPoint(t, 1.0D);
+            default -> surface.gridPoint(0.5D, 0.5D);
+        };
+    }
+
     private static void updateSurfaceHover(LocalPlayer player) {
-        if (!holdingSurfaceTool(player)
+        if (linkedSurfaceMode || !holdingSurfaceTool(player)
                 || TransformSurfaceAuthoringState.step() != 0) {
             TransformConstructionClientState.clearHoveredSurface();
             return;
@@ -535,6 +729,9 @@ public final class TransformConstructionClientControls {
             double broadReach = HANDLE_MAX_DISTANCE + surfaceRadius;
             if (center.distanceToSqr(eye) > broadReach * broadReach) continue;
             for (SurfaceHandle handle : SurfaceHandle.values()) {
+                if (surface.bridge() != null && handle != SurfaceHandle.CENTER) {
+                    continue;
+                }
                 Vec3 point = handlePosition(surface, handle);
                 double rayDistance = point.subtract(eye).dot(view);
                 if (rayDistance < 0.0D || rayDistance > HANDLE_MAX_DISTANCE) {
@@ -604,6 +801,9 @@ public final class TransformConstructionClientControls {
                 : TransformConstructionClientState.surfaces(
                         minecraft.level.dimension().location())) {
             for (SurfaceHandle handle : SurfaceHandle.values()) {
+                if (surface.bridge() != null && handle != SurfaceHandle.CENTER) {
+                    continue;
+                }
                 double distance = handlePosition(surface, handle)
                         .distanceToSqr(hit);
                 if (distance < bestDistance) {
@@ -644,6 +844,7 @@ public final class TransformConstructionClientControls {
         Axis best = null;
         double bestScore = Double.MAX_VALUE;
         for (Axis candidate : Axis.values()) {
+            if (surface.bridge() != null && candidate != Axis.Y) continue;
             Vec3 axis = gizmoAxisDirection(selection, candidate);
             double score = segmentHitScore(eye, ray, origin,
                     origin.add(axis.scale(1.18D)));
@@ -710,6 +911,11 @@ public final class TransformConstructionClientControls {
         ConstructionSurface surface =
                 TransformConstructionClientState.surface(selection.id());
         if (surface == null) return basis;
+        if (surface.bridge() != null) {
+            // A linked ceiling is permanently attached to both parent edges.
+            // Its only editable degree of freedom is the world-up crown.
+            return new Vec3(0.0D, 1.0D, 0.0D);
+        }
         double[] uv = handleUv(selection.handle());
         return switch (axis) {
             case X -> surface.gridFrameTangent(uv[0], uv[1]).normalize();
@@ -850,6 +1056,10 @@ public final class TransformConstructionClientControls {
 
     private static void applySurfaceDelta(ConstructionSurface surface,
             SurfaceHandle handle, Vec3 delta, boolean send, boolean snap) {
+        if (surface.bridge() != null) {
+            applyLinkedSurfaceCrownDelta(surface, handle, delta, send, snap);
+            return;
+        }
         Vec3 bs = surface.bottomStart();
         Vec3 be = surface.bottomEnd();
         Vec3 ts = surface.topStart();
@@ -1092,8 +1302,44 @@ public final class TransformConstructionClientControls {
             case TOP_EDGE -> surface.point(0.5D, 1.0D);
             case START_EDGE -> surface.point(0.0D, 0.5D);
             case END_EDGE -> surface.point(1.0D, 0.5D);
-            case CENTER -> surface.point(0.5D, 0.5D);
+            case CENTER -> surface.bridge() == null
+                    ? surface.point(0.5D, 0.5D)
+                    : surface.gridPoint(0.5D, 0.5D);
         };
+    }
+
+    private static void applyLinkedSurfaceCrownDelta(ConstructionSurface surface,
+            SurfaceHandle handle, Vec3 delta, boolean send, boolean snap) {
+        if (handle != SurfaceHandle.CENTER) return;
+        Vec3 currentCenter = surface.gridPoint(0.5D, 0.5D);
+        double targetY = currentCenter.y + delta.y;
+
+        if (!Screen.hasControlDown()) {
+            Vec3 probe = new Vec3(currentCenter.x, targetY, currentCenter.z);
+            Vec3 snappedFeature = TransformSurfaceSnapClient.snap(probe,
+                    surface.id());
+            if (snappedFeature != null
+                    && Math.abs(snappedFeature.y - targetY) <= 0.31D) {
+                targetY = snappedFeature.y;
+            }
+        }
+        if (snap) targetY = Math.rint(targetY * 16.0D) / 16.0D;
+
+        double nextCrown = surface.heightCurveOffset().y
+                + targetY - currentCenter.y;
+        Vec3 crown = new Vec3(0.0D, nextCrown, 0.0D);
+        ConstructionSurface next = surface.withGeometry(
+                surface.bottomStart(), surface.bottomEnd(),
+                surface.topStart(), surface.topEnd(),
+                surface.curveOffset(), crown);
+        if (send) TransformConstructionClientState.upsertSurface(next);
+        else TransformConstructionClientState.previewSurface(next);
+        if (send) {
+            TransformConstructionNetwork.updateSurface(surface.id(),
+                    next.bottomStart(), next.bottomEnd(),
+                    next.topStart(), next.topEnd(),
+                    next.curveOffset(), next.heightCurveOffset());
+        }
     }
 
     private static double axisParameter(Vec3 eye, Vec3 view, Vec3 origin,

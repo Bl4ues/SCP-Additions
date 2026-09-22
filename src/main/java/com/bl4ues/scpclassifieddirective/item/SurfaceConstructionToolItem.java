@@ -83,5 +83,8 @@ public final class SurfaceConstructionToolItem extends Item {
         tooltip.add(Component.literal(
                 "Practical controls and the current authoring step are shown on-screen.")
                 .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.literal(
+                "Press B to link edges from two existing Surfaces into a parent-anchored curved plane.")
+                .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

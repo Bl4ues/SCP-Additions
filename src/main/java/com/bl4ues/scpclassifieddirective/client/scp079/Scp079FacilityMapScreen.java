@@ -1061,7 +1061,7 @@ public final class Scp079FacilityMapScreen extends Screen {
         // Keep the useful rectangular hit/visual language from the close
         // view, but slimmer. Thickness remains a world-map dimension so it
         // shrinks together with rooms when zooming out.
-        double thickness = Math.max(0.10D, transform.scale() * 0.10D);
+        double thickness = Math.max(0.10D, transform.scale() * 0.165D);
         accumulateMapStroke(coverage, transform.fx(a.x), transform.fy(a.z),
                 transform.fx(b.x), transform.fy(b.z), thickness, true,
                 graphics.guiWidth(), graphics.guiHeight());

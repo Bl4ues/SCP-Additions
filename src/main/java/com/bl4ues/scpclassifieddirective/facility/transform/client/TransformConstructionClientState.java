@@ -219,6 +219,7 @@ public final class TransformConstructionClientState {
         blockedPlacementUntil = 0L;
         TransformAlarmAudioClient.clear();
         TransformAlarmClientRenderer.resetIndices();
+        TransformContextTargetClient.clearButtonCache();
     }
 
     public static ResourceLocation dimension() {

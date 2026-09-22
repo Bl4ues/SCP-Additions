@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import net.minecraft.client.Minecraft;
@@ -11,6 +12,11 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Local-grid target bridge for the normal Context Interaction HUD.
@@ -21,6 +27,101 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class TransformContextTargetClient {
     private TransformContextTargetClient() {
+    }
+
+    // A proximity prompt must not raycast every full cube in the facility each
+    // tick. Cache only actual door-button addresses, rebuilding the tiny index
+    // when a group/surface snapshot is replaced by its authoritative state.
+    private record GroupButtons(TransformGroup source,
+            List<TransformGroup.GridPos> addresses) { }
+    private record SurfaceButton(ConstructionSurface.SurfaceSlot slot,
+            boolean overlay, int normalSign) { }
+    private record SurfaceButtons(ConstructionSurface source,
+            List<SurfaceButton> addresses) { }
+    private static final Map<UUID, GroupButtons> GROUP_BUTTONS = new HashMap<>();
+    private static final Map<UUID, SurfaceButtons> SURFACE_BUTTONS = new HashMap<>();
+
+    public static void clearButtonCache() {
+        GROUP_BUTTONS.clear();
+        SURFACE_BUTTONS.clear();
+    }
+
+    /** Nearby authored buttons share vanilla's proximity/offscreen prompt
+     * behavior. Other fixtures keep precise raycast targeting. */
+    public static List<Target> nearbyDoorButtons(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (player == null || minecraft.level == null) return List.of();
+        Vec3 eye = player.getEyePosition(1.0F);
+        var dimension = minecraft.level.dimension().location();
+        List<Target> found = new ArrayList<>();
+        for (TransformGroup group : TransformConstructionClientState.groups(dimension)) {
+            GroupButtons cached = GROUP_BUTTONS.get(group.id());
+            if (cached == null || cached.source() != group) {
+                List<TransformGroup.GridPos> addresses = new ArrayList<>();
+                group.cells().forEach((cell, state) -> {
+                    if (TransformWallFixturePlacement.isDoorButton(state))
+                        addresses.add(cell);
+                });
+                cached = new GroupButtons(group, List.copyOf(addresses));
+                GROUP_BUTTONS.put(group.id(), cached);
+            }
+            if (cached.addresses().isEmpty()) continue;
+            Vec3 eyeLocal = TransformMath.worldToLocal(group.origin(), eye,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            for (TransformGroup.GridPos cell : cached.addresses()) {
+                BlockState state = group.cells().get(cell);
+                if (state == null || state.isAir()) continue;
+                TransformGroup.GridPos visual =
+                        TransformWallFixturePlacement.visualCell(cell, state);
+                Vec3 local = new Vec3(visual.x(), visual.y(), visual.z());
+                double distanceSqr = local.distanceToSqr(eyeLocal);
+                if (distanceSqr > 64.0D) continue;
+                found.add(new Target(Kind.GROUP, state,
+                        Math.sqrt(distanceSqr), group.id(), cell,
+                        null, null, 0));
+            }
+        }
+        for (ConstructionSurface surface :
+                TransformConstructionClientState.surfaces(dimension)) {
+            SurfaceButtons cached = SURFACE_BUTTONS.get(surface.id());
+            if (cached == null || cached.source() != surface) {
+                List<SurfaceButton> addresses = new ArrayList<>();
+                surface.attachments().forEach((slot, attachment) -> {
+                    if (TransformWallFixturePlacement.isDoorButton(
+                            attachment.state())) {
+                        addresses.add(new SurfaceButton(slot, false,
+                                TransformSurfaceGeometry.MAIN_SIDE));
+                    }
+                });
+                surface.overlays().forEach((slot, attachment) -> {
+                    if (TransformWallFixturePlacement.isDoorButton(
+                            attachment.state())) {
+                        addresses.add(new SurfaceButton(slot.slot(), true,
+                                slot.normalSign()));
+                    }
+                });
+                cached = new SurfaceButtons(surface, List.copyOf(addresses));
+                SURFACE_BUTTONS.put(surface.id(), cached);
+            }
+            for (SurfaceButton address : cached.addresses()) {
+                ConstructionSurface.SurfaceAttachment attachment =
+                        address.overlay()
+                        ? surface.overlay(address.slot(), address.normalSign())
+                        : surface.attachments().get(address.slot());
+                if (attachment == null || attachment.state().isAir()) continue;
+                Vec3 center = TransformSurfaceGeometry.logicalPoint(surface,
+                        address.slot(), false, address.normalSign(),
+                        address.overlay(), 0.5D, 0.5D, 0.5D);
+                double distanceSqr = center.distanceToSqr(eye);
+                if (distanceSqr > 64.0D) continue;
+                found.add(new Target(address.overlay()
+                        ? Kind.SURFACE_OVERLAY : Kind.SURFACE_MAIN,
+                        attachment.state(), Math.sqrt(distanceSqr),
+                        null, null, surface.id(), address.slot(),
+                        address.normalSign()));
+            }
+        }
+        return found;
     }
 
     public static Target find(LocalPlayer player) {

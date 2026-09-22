@@ -174,6 +174,7 @@ public final class BuilderToolGuideHud {
                     lines.add(new Line("Del", "delete linked surface"));
                     return new Guide("LINKED SURFACE", lines);
                 }
+                lines.add(new Line("B", "link two existing Surface edges"));
                 lines.add(new Line("LMB",
                         "select handle / drag colored arrow"));
                 lines.add(new Line("Shift",

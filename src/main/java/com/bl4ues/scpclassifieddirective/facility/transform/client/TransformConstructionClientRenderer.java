@@ -164,8 +164,9 @@ public final class TransformConstructionClientRenderer {
         if (owner != null && (slot.column() == 0
                 || slot.column() == owner.columns() - 1
                 || slot.row() == 0 || slot.row() == owner.rows() - 1)) {
-            // A border block can expose a previously hidden welded face.
-            PARENT_SHELLS.clear();
+            // Block occupancy changes the visible caps, not the physical
+            // parent edge. Retain its already sampled shell and only rebake
+            // the adjacent meshes that depend on the exposed face.
             for (MatchedSurfaceEdge edge : SHARED_SURFACE_EDGES
                     .getOrDefault(id, Map.of()).values()) {
                 SURFACE_MESHES.remove(edge.other().id());
@@ -1248,6 +1249,8 @@ public final class TransformConstructionClientRenderer {
      * the two unequal parent meshes agree on one common ridge without forcing
      * an expensive Cartesian product of both grids across the entire roof.
      */
+    private record RoofVertexKey(double s, double t) { }
+
     private static boolean emitLinkedRoofQuad(List<PreparedVertex> output,
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment,
@@ -1268,10 +1271,12 @@ public final class TransformConstructionClientRenderer {
                 || Math.abs(xAcross) > 1.0E-4D
                 || Math.abs(yAlong) > 1.0E-4D) return false;
         ConstructionSurface.BridgeAnchor bridge = surface.bridge();
+        // Persisted edge profiles are the source of truth. Their two lengths
+        // can differ even if the authored walls have identical cell counts.
         List<Double> first = roofLongitudinalCuts(surface, slot, x0,
-                xDelta, xSteps, bridge.firstCells());
+                xDelta, xSteps, bridge.firstProfile().size() - 1);
         List<Double> second = roofLongitudinalCuts(surface, slot, x0,
-                xDelta, xSteps, bridge.secondCells());
+                xDelta, xSteps, bridge.secondProfile().size() - 1);
         java.util.TreeSet<Double> central = new java.util.TreeSet<>(first);
         central.addAll(second);
         List<Double> crown = List.copyOf(central);
@@ -1280,6 +1285,10 @@ public final class TransformConstructionClientRenderer {
         double localCrown = surface.rows() * 0.5D - slot.row();
         addRoofCut(across, (localCrown - y0) / yDelta);
         List<Double> transverse = List.copyOf(across);
+        // The zipper references a border vertex from several neighbouring
+        // triangles. Calculate its expensive curved frame and parent-shell
+        // projection once per baked face instead of once per triangle corner.
+        Map<RoofVertexKey, PreparedVertex> vertexCache = new HashMap<>();
         for (int band = 0; band + 1 < transverse.size(); band++) {
             double from = transverse.get(band);
             double to = transverse.get(band + 1);
@@ -1307,10 +1316,16 @@ public final class TransformConstructionClientRenderer {
                 }
                 for (int vertex = 0; vertex < 4; vertex++) {
                     double s = ss[vertex], t = tt[vertex];
-                    emitSurfaceVertex(output, surface, slot, attachment,
-                            normalSign, overlay, bilerp(points, s, t),
-                            quadNormal, bilerp(us, s, t), bilerp(vs, s, t),
-                            red, green, blue, fallbackLight);
+                    RoofVertexKey key = new RoofVertexKey(s, t);
+                    PreparedVertex cached = vertexCache.get(key);
+                    if (cached == null) {
+                        cached = prepareSurfaceVertex(surface, slot, attachment,
+                                normalSign, overlay, bilerp(points, s, t),
+                                quadNormal, bilerp(us, s, t), bilerp(vs, s, t),
+                                red, green, blue, fallbackLight);
+                        vertexCache.put(key, cached);
+                    }
+                    output.add(cached);
                 }
             }
         }
@@ -1319,13 +1334,16 @@ public final class TransformConstructionClientRenderer {
 
     private static List<Double> roofLongitudinalCuts(
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
-            double x0, double xDelta, int steps, int parentCells) {
+            double x0, double xDelta, int steps, int profileSegments) {
+        // The parent profile supplies all actual contact vertices. A small
+        // interior base grid preserves curvature even if this child slot is
+        // narrower than a single parent polygon; the unrelated 24-cut grid
+        // formerly multiplied triangles and split the contact edge again.
         java.util.TreeSet<Double> cuts = new java.util.TreeSet<>(
-                uniformCuts(steps));
-        if (parentCells <= 0) return List.copyOf(cuts);
+                uniformCuts(Math.max(2, Math.min(4, steps))));
+        if (profileSegments <= 0) return List.copyOf(cuts);
         int columns = surface.columns();
-        int subdivisions = parentCells * Math.max(1,
-                Math.min(24, 2048 / parentCells));
+        int subdivisions = profileSegments;
         double u0 = slot.column() / (double) columns;
         double u1 = (slot.column() + 1.0D) / columns;
         int begin = Math.max(1,
@@ -1459,7 +1477,7 @@ public final class TransformConstructionClientRenderer {
                         == state.getValue(HorizontalDirectionalBlock.FACING);
     }
 
-    private static void emitSurfaceVertex(List<PreparedVertex> output,
+    private static PreparedVertex prepareSurfaceVertex(
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment, int normalSign,
             boolean overlay, Vec3 point, Vec3 localNormal, float u, float v,
@@ -1491,8 +1509,18 @@ public final class TransformConstructionClientRenderer {
                         localNormal, normalSign, depthOffset, seamEligible)
                 : rigidFrame(surface, slot, point.x, point.y, point.z,
                         localNormal, normalSign, depthOffset);
-        output.add(new PreparedVertex(attachment.state(), frame.position(),
-                frame.normal(), u, v, red, green, blue, light));
+        return new PreparedVertex(attachment.state(), frame.position(),
+                frame.normal(), u, v, red, green, blue, light);
+    }
+
+    private static void emitSurfaceVertex(List<PreparedVertex> output,
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceAttachment attachment, int normalSign,
+            boolean overlay, Vec3 point, Vec3 localNormal, float u, float v,
+            int red, int green, int blue, int light) {
+        output.add(prepareSurfaceVertex(surface, slot, attachment,
+                normalSign, overlay, point, localNormal, u, v,
+                red, green, blue, light));
     }
 
     private static Vec3 bilerp(Vec3[] p, double s, double t) {

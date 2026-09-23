@@ -53,7 +53,15 @@ public final class TransformConstructionSavedData extends SavedData {
         boolean upgraded = false;
         for (ConstructionSurface roof : List.copyOf(data.surfaces.values())) {
             ConstructionSurface.BridgeAnchor link = roof.bridge();
-            if (link == null || link.firstCells() > 0 && link.secondCells() > 0)
+            if (link == null) continue;
+            // Previously linked roofs may already record the parent cell
+            // counts yet still carry coarse boundary profiles. Upgrade those
+            // on world load too, preserving the roof's ID, blocks and crown.
+            if (link.firstCells() > 0 && link.secondCells() > 0
+                    && link.firstProfile().size() == TransformSurfaceBridge
+                            .boundarySamples(link.firstCells()) + 1
+                    && link.secondProfile().size() == TransformSurfaceBridge
+                            .boundarySamples(link.secondCells()) + 1)
                 continue;
             ConstructionSurface first = data.surfaces.get(link.firstId());
             ConstructionSurface second = data.surfaces.get(link.secondId());

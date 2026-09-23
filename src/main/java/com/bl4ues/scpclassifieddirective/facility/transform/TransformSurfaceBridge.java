@@ -80,11 +80,15 @@ public final class TransformSurfaceBridge {
         return edge < 2 ? parent.rows() : parent.columns();
     }
 
-    private static int boundarySamples(int parentCells) {
-        // Each parent cell boundary is exactly one sample endpoint. The two
-        // edge profiles may have different lengths; no LCM or 768-sample cap
-        // silently discards one wall's authored vertices.
-        return parentCells * Math.max(4, (48 + parentCells - 1) / parentCells);
+    static int boundarySamples(int parentCells) {
+        // Save the actual parent-side polygonal chord positions, not just a
+        // coarse approximation of its quadratic curve. A roof can only share
+        // the rendered edge if its persisted profile has the same cut points
+        // as the parent's (up to 24 subdivisions per logical cell). Keep the
+        // NBT profile within BridgeAnchor.loadProfile's 2049-point limit for
+        // unusually large authored walls.
+        int cells = Math.max(1, parentCells);
+        return cells * Math.max(1, Math.min(24, 2048 / cells));
     }
 
     private static ConstructionSurface derive(UUID id,

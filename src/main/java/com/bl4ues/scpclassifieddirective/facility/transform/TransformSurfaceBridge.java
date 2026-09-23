@@ -60,9 +60,14 @@ public final class TransformSurfaceBridge {
             ConstructionSurface first, ConstructionSurface second) {
         if (current == null || current.bridge() == null
                 || first == null || second == null) return current;
-        return derive(current.id(), current.dimension(), current.bridge(),
-                first, second, current.heightCurveOffset(),
-                current.attachments(), current.overlays(), current.flipped());
+        // A parent edit can change the linked roof's longitudinal or
+        // transverse cell count. Regrid its existing blocks against the new
+        // geometry instead of copying their old indices into a larger mesh.
+        ConstructionSurface geometry = derive(current.id(),
+                current.dimension(), current.bridge(), first, second,
+                current.heightCurveOffset(), Map.of(), Map.of(),
+                current.flipped());
+        return current.regridTo(geometry);
     }
 
     private static Vec3 edgeGridPoint(ConstructionSurface parent, int edge,

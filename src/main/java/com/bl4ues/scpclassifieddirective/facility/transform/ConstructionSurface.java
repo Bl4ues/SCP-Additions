@@ -394,43 +394,59 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 nextBottomStart, nextBottomEnd, nextTopStart, nextTopEnd,
                 nextCurveOffset, nextHeightCurveOffset, Map.of(), Map.of(),
                 flipped, topCurveOffset, bridge);
-        if (attachments.isEmpty() && overlays.isEmpty()) return geometry;
+        return regridTo(geometry);
+    }
 
+    /** Preserve physical cell coverage when a reshape changes the logical grid.
+     * Mapping each OLD block to a single new slot left entire empty roof rows
+     * when a linked ceiling's crown increased its arc length. Instead sample
+     * every NEW slot from the corresponding old grid region. Authored empty
+     * regions remain empty; a fully covered ceiling stays fully covered. */
+    public ConstructionSurface regridTo(ConstructionSurface geometry) {
+        if (geometry == null || !id.equals(geometry.id())
+                || !dimension.equals(geometry.dimension())) {
+            throw new IllegalArgumentException("Cannot regrid unrelated Surfaces");
+        }
+        if (attachments.isEmpty() && overlays.isEmpty()) return geometry;
         int oldColumns = columns();
         int oldRows = rows();
         int newColumns = geometry.columns();
         int newRows = geometry.rows();
-        Map<SurfaceSlot, SurfaceAttachment> remapped = new LinkedHashMap<>();
-        for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
-                : attachments.entrySet()) {
-            SurfaceSlot mapped = remapSlot(entry.getKey(), oldColumns, oldRows,
-                    newColumns, newRows);
-            remapped.putIfAbsent(mapped, entry.getValue());
+        if (oldColumns == newColumns && oldRows == newRows) {
+            return new ConstructionSurface(geometry.id(), geometry.dimension(),
+                    geometry.bottomStart(), geometry.bottomEnd(),
+                    geometry.topStart(), geometry.topEnd(),
+                    geometry.curveOffset(), geometry.heightCurveOffset(),
+                    attachments, overlays, geometry.flipped(),
+                    geometry.topCurveOffset(), geometry.bridge());
         }
+        Map<SurfaceSlot, SurfaceAttachment> remapped = new LinkedHashMap<>();
         Map<SurfaceOverlaySlot, SurfaceAttachment> remappedOverlays =
                 new LinkedHashMap<>();
-        for (Map.Entry<SurfaceOverlaySlot, SurfaceAttachment> entry
-                : overlays.entrySet()) {
-            SurfaceSlot mapped = remapSlot(entry.getKey().slot(), oldColumns,
-                    oldRows, newColumns, newRows);
-            remappedOverlays.putIfAbsent(new SurfaceOverlaySlot(mapped,
-                    entry.getKey().normalSign()), entry.getValue());
+        for (int column = 0; column < newColumns; column++) {
+            int oldColumn = Math.min(oldColumns - 1,
+                    (int) Math.floor((column + 0.5D) * oldColumns / newColumns));
+            for (int row = 0; row < newRows; row++) {
+                int oldRow = Math.min(oldRows - 1,
+                        (int) Math.floor((row + 0.5D) * oldRows / newRows));
+                SurfaceSlot original = new SurfaceSlot(oldColumn, oldRow);
+                SurfaceSlot target = new SurfaceSlot(column, row);
+                SurfaceAttachment attachment = attachments.get(original);
+                if (attachment != null) remapped.put(target, attachment);
+                for (int sign : new int[] {-1, 1}) {
+                    SurfaceAttachment overlay = overlays.get(
+                            new SurfaceOverlaySlot(original, sign));
+                    if (overlay != null) remappedOverlays.put(
+                            new SurfaceOverlaySlot(target, sign), overlay);
+                }
+            }
         }
-        return new ConstructionSurface(id, dimension, nextBottomStart,
-                nextBottomEnd, nextTopStart, nextTopEnd, nextCurveOffset,
-                nextHeightCurveOffset, remapped, remappedOverlays, flipped,
-                topCurveOffset, bridge);
-    }
-
-    private static SurfaceSlot remapSlot(SurfaceSlot slot, int oldColumns,
-            int oldRows, int newColumns, int newRows) {
-        double u = (slot.column() + 0.5D) / oldColumns;
-        double v = (slot.row() + 0.5D) / oldRows;
-        int column = Math.max(0, Math.min(newColumns - 1,
-                (int) Math.floor(u * newColumns)));
-        int row = Math.max(0, Math.min(newRows - 1,
-                (int) Math.floor(v * newRows)));
-        return new SurfaceSlot(column, row);
+        return new ConstructionSurface(geometry.id(), geometry.dimension(),
+                geometry.bottomStart(), geometry.bottomEnd(),
+                geometry.topStart(), geometry.topEnd(),
+                geometry.curveOffset(), geometry.heightCurveOffset(),
+                remapped, remappedOverlays, geometry.flipped(),
+                geometry.topCurveOffset(), geometry.bridge());
     }
 
     public ConstructionSurface withAttachment(SurfaceSlot slot,

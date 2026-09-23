@@ -1,12 +1,16 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -423,6 +427,19 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         Map<SurfaceSlot, SurfaceAttachment> remapped = new LinkedHashMap<>();
         Map<SurfaceOverlaySlot, SurfaceAttachment> remappedOverlays =
                 new LinkedHashMap<>();
+        // Only continuous, deformable full-cube construction may spread across
+        // newly created cells. A moved keycard reader, pipe, fixture or overlay
+        // must not silently turn into several duplicate functional blocks.
+        Map<BlockState, Boolean> fullCubeCache = new LinkedHashMap<>();
+        java.util.Set<SurfaceSlot> structural = new java.util.HashSet<>();
+        for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
+                : attachments.entrySet()) {
+            SurfaceAttachment attachment = entry.getValue();
+            if (attachment.deform() && fullCubeCache.computeIfAbsent(
+                    attachment.state(), ConstructionSurface::fullCubeShape)) {
+                structural.add(entry.getKey());
+            }
+        }
         for (int column = 0; column < newColumns; column++) {
             int oldColumn = Math.min(oldColumns - 1,
                     (int) Math.floor((column + 0.5D) * oldColumns / newColumns));
@@ -430,16 +447,27 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 int oldRow = Math.min(oldRows - 1,
                         (int) Math.floor((row + 0.5D) * oldRows / newRows));
                 SurfaceSlot original = new SurfaceSlot(oldColumn, oldRow);
-                SurfaceSlot target = new SurfaceSlot(column, row);
-                SurfaceAttachment attachment = attachments.get(original);
-                if (attachment != null) remapped.put(target, attachment);
-                for (int sign : new int[] {-1, 1}) {
-                    SurfaceAttachment overlay = overlays.get(
-                            new SurfaceOverlaySlot(original, sign));
-                    if (overlay != null) remappedOverlays.put(
-                            new SurfaceOverlaySlot(target, sign), overlay);
+                if (structural.contains(original)) {
+                    remapped.put(new SurfaceSlot(column, row),
+                            attachments.get(original));
                 }
             }
+        }
+        // Keep non-structural payloads and overlays as discrete, single
+        // instances, using their prior center-to-center placement semantics.
+        for (Map.Entry<SurfaceSlot, SurfaceAttachment> entry
+                : attachments.entrySet()) {
+            if (!structural.contains(entry.getKey())) {
+                remapped.put(remapSlot(entry.getKey(), oldColumns, oldRows,
+                        newColumns, newRows), entry.getValue());
+            }
+        }
+        for (Map.Entry<SurfaceOverlaySlot, SurfaceAttachment> entry
+                : overlays.entrySet()) {
+            SurfaceSlot target = remapSlot(entry.getKey().slot(), oldColumns,
+                    oldRows, newColumns, newRows);
+            remappedOverlays.putIfAbsent(new SurfaceOverlaySlot(target,
+                    entry.getKey().normalSign()), entry.getValue());
         }
         return new ConstructionSurface(geometry.id(), geometry.dimension(),
                 geometry.bottomStart(), geometry.bottomEnd(),
@@ -447,6 +475,33 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                 geometry.curveOffset(), geometry.heightCurveOffset(),
                 remapped, remappedOverlays, geometry.flipped(),
                 geometry.topCurveOffset(), geometry.bridge());
+    }
+
+    private static boolean fullCubeShape(BlockState state) {
+        if (state == null || state.isAir()
+                || !TransformSurfaceGeometry.canDeform(state)) return false;
+        List<AABB> boxes = state.getCollisionShape(
+                EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
+                CollisionContext.empty()).toAabbs();
+        if (boxes.size() != 1) return false;
+        AABB box = boxes.get(0);
+        return box.minX >= -1.0E-6D && box.minY >= -1.0E-6D
+                && box.minZ >= -1.0E-6D && box.maxX <= 1.000001D
+                && box.maxY <= 1.000001D && box.maxZ <= 1.000001D
+                && box.minX < 1.0E-6D && box.minY < 1.0E-6D
+                && box.minZ < 1.0E-6D && box.maxX > 0.999999D
+                && box.maxY > 0.999999D && box.maxZ > 0.999999D;
+    }
+
+    private static SurfaceSlot remapSlot(SurfaceSlot slot, int oldColumns,
+            int oldRows, int newColumns, int newRows) {
+        int column = Math.min(newColumns - 1,
+                (int) Math.floor((slot.column() + 0.5D)
+                        * newColumns / oldColumns));
+        int row = Math.min(newRows - 1,
+                (int) Math.floor((slot.row() + 0.5D)
+                        * newRows / oldRows));
+        return new SurfaceSlot(column, row);
     }
 
     public ConstructionSurface withAttachment(SurfaceSlot slot,

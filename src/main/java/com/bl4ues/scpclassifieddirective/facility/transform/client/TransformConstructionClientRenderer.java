@@ -1598,16 +1598,25 @@ public final class TransformConstructionClientRenderer {
                 || Math.abs(depth - 1.0D) < 1.0E-7D) {
             int layer = depth < 0.5D ? 0 : 1;
             ParentShellKey key = new ParentShellKey(parent.id(), edge, layer);
-            Vec3[] shell = PARENT_SHELLS.computeIfAbsent(key, ignored -> {
-                Vec3[] points = new Vec3[segments + 1];
-                for (int i = 0; i <= segments; i++)
-                    points[i] = parentShellVertex(parent, edge,
-                            i / (double) segments, layer);
-                return points;
-            });
+            // Allocate only an address table here. A long wall can have
+            // thousands of border vertices, but a visible roof may touch just
+            // a few of them; preparing all samples synchronously at first
+            // contact caused a new selection/geometry stutter.
+            Vec3[] shell = PARENT_SHELLS.computeIfAbsent(key,
+                    ignored -> new Vec3[segments + 1]);
             a = shell[lower];
+            if (a == null) {
+                a = parentShellVertex(parent, edge,
+                        lower / (double) segments, layer);
+                shell[lower] = a;
+            }
             if (amount < 1.0E-9D) return a;
             b = shell[lower + 1];
+            if (b == null) {
+                b = parentShellVertex(parent, edge,
+                        (lower + 1.0D) / segments, layer);
+                shell[lower + 1] = b;
+            }
         } else {
             a = parentShellVertex(parent, edge,
                     lower / (double) segments, depth);

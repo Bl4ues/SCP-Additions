@@ -1,0 +1,36 @@
+name: Validate linked roof contact correction
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  validate-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply linked roof patch
+        run: python3 .github/scripts/temp_linked_roof_contact.py
+      - name: Verify project integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build mod
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Commit validated sources
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientControls.java
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformConstructionManager.java
+          git commit -m 'Weld linked roof shell to parent mesh and lock linked flip' || exit 0
+          git push origin HEAD:master

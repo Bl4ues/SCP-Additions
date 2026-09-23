@@ -1,4 +1,4 @@
-name: Validate variable-resolution linked roof stitching
+name: Validate lazy linked roof parent samples
 on:
   push:
     branches: [ master ]
@@ -12,8 +12,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Apply variable roof tessellation changes
-        run: python3 .github/scripts/temp_linked_roof_stitch.py
+      - name: Apply lazy parent sample changes
+        run: python3 .github/scripts/temp_linked_roof_lazy.py
       - name: Verify integrity
         run: python3 .github/scripts/verify_project_integrity.py
       - uses: actions/setup-java@v4
@@ -30,5 +30,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
-          git commit -m 'Stitch linked roof halves with independent parent vertex grids' || exit 0
+          git commit -m 'Build linked roof parent-shell samples only when touched' || exit 0
           git push origin HEAD:master

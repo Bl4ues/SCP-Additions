@@ -406,6 +406,13 @@ public final class TransformConstructionClientControls {
                     minecraft.options.keySwapOffhand.setDown(false);
                     ConstructionSurface surface =
                             TransformConstructionClientState.surface(selection.id());
+                    if (surface != null && surface.bridge() != null) {
+                        // A linked roof has two immutable parent-side borders.
+                        // Flipping only its frame produces an impossible inverted
+                        // shell and detaches the visible contact from its parents.
+                        status("Linked surface: only crown height is editable");
+                        return;
+                    }
                     if (surface != null) {
                         TransformConstructionClientState.remember(selection);
                         ConstructionSurface next =

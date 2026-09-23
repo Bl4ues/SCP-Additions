@@ -323,7 +323,8 @@ public final class TransformConstructionManager {
                 level.getServer());
         ConstructionSurface surface = data.surface(id);
         if (surface == null || !surface.dimension().equals(
-                level.dimension().location())) return false;
+                level.dimension().location()) || surface.bridge() != null)
+            return false;
         ConstructionSurface next = surface.withFlipped(flipped);
         data.putSurface(next);
         refreshSurface(level.getServer(), id);

@@ -643,6 +643,10 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                     Math.min(1.0D, fraction)) * (points.size() - 1);
             int index = Math.min(points.size() - 2,
                     (int) Math.floor(coordinate));
+            int exact = (int) Math.rint(coordinate);
+            if (exact >= 0 && exact < points.size()
+                    && Math.abs(coordinate - exact) <= 1.0E-9D)
+                return points.get(exact);
             double part = coordinate - index;
             return points.get(index).scale(1.0D - part)
                     .add(points.get(index + 1).scale(part));

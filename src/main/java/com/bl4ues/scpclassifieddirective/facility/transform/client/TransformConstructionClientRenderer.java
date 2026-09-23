@@ -805,6 +805,9 @@ public final class TransformConstructionClientRenderer {
                 && java.util.Objects.equals(a.curveOffset(), b.curveOffset())
                 && java.util.Objects.equals(a.heightCurveOffset(),
                         b.heightCurveOffset())
+                && java.util.Objects.equals(a.topCurveOffset(),
+                        b.topCurveOffset())
+                && java.util.Objects.equals(a.bridge(), b.bridge())
                 && a.flipped() == b.flipped();
     }
 
@@ -1226,6 +1229,12 @@ public final class TransformConstructionClientRenderer {
         boolean linkedRoof = surface.bridge() != null && deform && !overlay
                 && fullSurfaceCell(attachment.state())
                 && surface.bridge().hasProfiles();
+        if (linkedRoof) {
+            // Use identical transverse cuts on every linked-roof column and
+            // every baked face, including the side caps. More samples are
+            // reserved for short roofs whose entire arch spans 1-2 cells.
+            ySteps = surface.rows() <= 2 ? 8 : 4;
+        }
         // The two parent walls may have DIFFERENT grids. Their boundaries
         // must not be forced onto a single set of longitudinal cuts. Stitch
         // each independently sampled side to the shared crown by triangles.
@@ -1315,8 +1324,10 @@ public final class TransformConstructionClientRenderer {
         // the center is a shared, inexpensive four-cut grid. A zipper between
         // each contact strip and the center accepts arbitrary vertex counts
         // without multiplying both parent grids across every roof cell.
-        List<Double> interior = uniformCuts(Math.max(2,
-                Math.min(4, xSteps)));
+        // Every roof row shares identical interior longitudinal knots.
+        // Only the contact strips inherit the two independent parent grids;
+        // the zipper joins each one to this stable interior/crown grid.
+        List<Double> interior = uniformCuts(4);
         List<Double> first = slot.row() == 0
                 ? roofLongitudinalCuts(surface, slot, x0, xDelta, xSteps,
                         bridge.firstProfile().size() - 1) : interior;
@@ -1437,15 +1448,14 @@ public final class TransformConstructionClientRenderer {
     private static void addRoofCut(java.util.TreeSet<Double> cuts,
             double fraction) {
         if (fraction > 1.0E-6D && fraction < 1.0D - 1.0E-6D) {
-            double value = Math.rint(fraction * 1.0E7D) / 1.0E7D;
-            // Parent cuts and uniform cuts sometimes differ only in the last
-            // digits; never emit zero-width quads along the stitched ridge.
-            Double lower = cuts.floor(value);
-            Double upper = cuts.ceiling(value);
-            if ((lower != null && Math.abs(lower - value) < 1.0E-6D)
-                    || (upper != null && Math.abs(upper - value) < 1.0E-6D))
+            // Keep full precision and merge only machine-near duplicates.
+            // The original 1e-7 rounding broke exact parent vertex identity.
+            Double lower = cuts.floor(fraction);
+            Double upper = cuts.ceiling(fraction);
+            if ((lower != null && Math.abs(lower - fraction) < 1.0E-10D)
+                    || (upper != null && Math.abs(upper - fraction) < 1.0E-10D))
                 return;
-            cuts.add(value);
+            cuts.add(fraction);
         }
     }
 
@@ -1665,6 +1675,7 @@ public final class TransformConstructionClientRenderer {
         if (roofWeld != null) roofEdge = roofWeld;
         double t = 1.0D - Math.max(0.0D, cells / blendCells);
         double weight = t * t * t * (t * (t * 6.0D - 15.0D) + 10.0D);
+        if (cells <= 1.0E-10D) return parentShell;
         return current.add(parentShell.subtract(roofEdge).scale(weight));
     }
 

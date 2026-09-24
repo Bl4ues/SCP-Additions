@@ -86,6 +86,13 @@ public final class TransformConstructionClientRenderer {
             !Boolean.getBoolean("scp_classified_directive.disable_surface_vbo");
     private static final int MAX_SURFACE_VBO_VERTICES = 1_800_000;
     private static final int MIN_SURFACE_VBO_VERTICES = 512;
+    // Avoid a large first-visible-frame upload burst. If the visible facility
+    // exceeds the GPU cache budget, keep already-visible batches resident and
+    // use the regular CPU buffer path for the remainder instead of evicting
+    // and re-uploading the same geometry every frame.
+    private static final int MAX_SURFACE_VBO_UPLOAD_PER_FRAME = 128_000;
+    private static long surfaceGpuFrame;
+    private static int surfaceGpuUploadedThisFrame;
     private static final Map<SurfaceGpuKey, SurfaceGpuBatch> SURFACE_GPU_BATCHES =
             new LinkedHashMap<>(64, 0.75F, true);
     private static int surfaceGpuVertices;
@@ -258,6 +265,8 @@ public final class TransformConstructionClientRenderer {
         var groups = TransformConstructionClientState.groups(dimension);
         var surfaces = TransformConstructionClientState.surfaces(dimension);
         if (groups.isEmpty() && surfaces.isEmpty()) return;
+        surfaceGpuFrame++;
+        surfaceGpuUploadedThisFrame = 0;
 
         Vec3 camera = event.getCamera().getPosition();
         PoseStack pose = event.getPoseStack();
@@ -827,17 +836,27 @@ public final class TransformConstructionClientRenderer {
             CachedSurfaceBatch batch, List<PreparedVertex> vertices) {
         SurfaceGpuKey key = new SurfaceGpuKey(batch);
         SurfaceGpuBatch cached = SURFACE_GPU_BATCHES.get(key);
-        if (cached != null) return cached;
-        // Bound video memory and release stale buffers instead of retaining
-        // the entire facility's previously viewed geometry indefinitely.
+        if (cached != null) {
+            cached.lastVisibleFrame = surfaceGpuFrame;
+            return cached;
+        }
+        if (vertices.size() > MAX_SURFACE_VBO_UPLOAD_PER_FRAME
+                || surfaceGpuUploadedThisFrame + vertices.size()
+                        > MAX_SURFACE_VBO_UPLOAD_PER_FRAME) return null;
+        // Only reclaim batches NOT rendered this frame. Once all resident
+        // geometry is visible, fallback to the CPU path until the view moves;
+        // evicting another visible batch would cause perpetual GPU uploads.
+        var entries = SURFACE_GPU_BATCHES.entrySet().iterator();
         while (surfaceGpuVertices + vertices.size()
-                > MAX_SURFACE_VBO_VERTICES && !SURFACE_GPU_BATCHES.isEmpty()) {
-            var entries = SURFACE_GPU_BATCHES.entrySet().iterator();
+                > MAX_SURFACE_VBO_VERTICES && entries.hasNext()) {
             SurfaceGpuBatch oldest = entries.next().getValue();
+            if (oldest.lastVisibleFrame == surfaceGpuFrame) continue;
             entries.remove();
             surfaceGpuVertices -= oldest.vertexCount();
             disposeGpuBuffer(oldest.buffer());
         }
+        if (surfaceGpuVertices + vertices.size()
+                > MAX_SURFACE_VBO_VERTICES) return null;
         Vec3 origin = batch.bounds() == null ? Vec3.ZERO
                 : batch.bounds().getCenter();
         SURFACE_GPU_BUILDER.begin(VertexFormat.Mode.QUADS,
@@ -865,8 +884,10 @@ public final class TransformConstructionClientRenderer {
         }
         SurfaceGpuBatch result = new SurfaceGpuBatch(gpuBuffer, origin,
                 vertices.size());
+        result.lastVisibleFrame = surfaceGpuFrame;
         SURFACE_GPU_BATCHES.put(key, result);
         surfaceGpuVertices += vertices.size();
+        surfaceGpuUploadedThisFrame += vertices.size();
         return result;
     }
 
@@ -932,8 +953,23 @@ public final class TransformConstructionClientRenderer {
         }
     }
 
-    private record SurfaceGpuBatch(VertexBuffer buffer, Vec3 origin,
-            int vertexCount) { }
+    private static final class SurfaceGpuBatch {
+        private final VertexBuffer buffer;
+        private final Vec3 origin;
+        private final int vertexCount;
+        private long lastVisibleFrame;
+
+        private SurfaceGpuBatch(VertexBuffer buffer, Vec3 origin,
+                int vertexCount) {
+            this.buffer = buffer;
+            this.origin = origin;
+            this.vertexCount = vertexCount;
+        }
+
+        private VertexBuffer buffer() { return buffer; }
+        private Vec3 origin() { return origin; }
+        private int vertexCount() { return vertexCount; }
+    }
 
     private static void renderSurfaceCache(PoseStack pose,
             MultiBufferSource.BufferSource buffers,

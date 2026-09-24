@@ -39,6 +39,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git restore --worktree .github/scripts/temp_surface_g1_loft_patch.py
           git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/ConstructionSurface.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformSurfaceBridge.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformConstructionSavedData.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
           git commit -m 'Build a tangent-matched linked ceiling and prevent mother-wall T-junctions'
           git pull --rebase origin master

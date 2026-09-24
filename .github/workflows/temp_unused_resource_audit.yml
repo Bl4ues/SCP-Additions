@@ -1,0 +1,13 @@
+name: Temporary read-only resource audit
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inventory potential unused game assets without modifying files
+        run: python3 .github/scripts/temp_unused_resource_audit.py

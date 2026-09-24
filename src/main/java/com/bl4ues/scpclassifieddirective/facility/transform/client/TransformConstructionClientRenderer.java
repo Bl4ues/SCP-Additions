@@ -85,6 +85,12 @@ public final class TransformConstructionClientRenderer {
     // remains the geometric source of truth.
     private static final Map<UUID, int[]> LINKED_PARENT_EDGE_STEPS =
             new HashMap<>();
+    // These are physical edge VERTEX PARAMETERS, not samples fitted to a
+    // curve. Union the parent's own subdivision knots with every attached
+    // child's logical cell boundaries; both meshes must render this identical
+    // sorted vertex sequence. This never alters the parent's authored curve.
+    private static final Map<UUID, Map<Integer, List<Double>>>
+            LINKED_PARENT_EDGE_KNOTS = new HashMap<>();
     private static final Map<ParentShellKey, Vec3[]> PARENT_SHELLS =
             new LinkedHashMap<>(32, 0.75F, true) {
                 @Override
@@ -126,6 +132,7 @@ public final class TransformConstructionClientRenderer {
     public static void clearSurfaceCache() {
         SURFACE_MESHES.clear();
         LINKED_PARENT_EDGE_STEPS.clear();
+        LINKED_PARENT_EDGE_KNOTS.clear();
         PARENT_SHELLS.clear();
         FULL_SURFACE_CELLS.clear();
         SURFACE_EDGE_GEOMETRIES.clear();
@@ -1086,66 +1093,15 @@ public final class TransformConstructionClientRenderer {
                         slot.row() + dr);
         if (neighbour.column() < 0 || neighbour.column() >= surface.columns()
                 || neighbour.row() < 0 || neighbour.row() >= surface.rows()) {
-            // Never cull generic inter-Surface caps: unmatched/partial joins
-            // need them as a watertight fallback. A linked roof is different:
-            // the parent edge is its physical boundary and both solids would
-            // draw a coincident cap. Keep the PARENT cap and omit only the
-            // CHILD cap when every contacted parent cell is actually solid.
-            return !overlay && normalSign == TransformSurfaceGeometry.MAIN_SIDE
-                    && coveredLinkedRoofCap(surface, slot, face);
+            // Separate Surfaces keep their perimeter faces, including at
+            // incomplete or partially occupied joins. Boundary topology is
+            // fixed in the vertex grid; do not expose a sky slit by culling.
+            return false;
         }
         ConstructionSurface.SurfaceAttachment other = overlay
                 ? surface.overlay(neighbour, normalSign)
                 : surface.attachments().get(neighbour);
         return other != null && fullSurfaceCell(other.state());
-    }
-
-    /**
-     * Suppress only a linked roof's overlapping contact cap, and only where
-     * the complete corresponding parent edge has structural full cells. The
-     * parent cap is left intact, so partial roofs and wall openings retain
-     * their watertight fallback instead of exposing sky.
-     */
-    private static boolean coveredLinkedRoofCap(ConstructionSurface roof,
-            ConstructionSurface.SurfaceSlot slot, Direction face) {
-        ConstructionSurface.BridgeAnchor link = roof.bridge();
-        if (link == null || !link.hasProfiles()) return false;
-        boolean first;
-        if (face == Direction.DOWN && slot.row() == 0) first = true;
-        else if (face == Direction.UP
-                && slot.row() == roof.rows() - 1) first = false;
-        else return false;
-        ConstructionSurface parent = TransformConstructionClientState.surface(
-                first ? link.firstId() : link.secondId());
-        if (parent == null || !parent.dimension().equals(roof.dimension()))
-            return false;
-        int edge = first ? link.firstEdge() : link.secondEdge();
-        double start = slot.column() / (double) roof.columns();
-        double end = (slot.column() + 1.0D) / roof.columns();
-        if (!first && link.reverseSecond()) {
-            start = 1.0D - start;
-            end = 1.0D - end;
-        }
-        double lo = Math.min(start, end);
-        double hi = Math.max(start, end);
-        int cells = edge < 2 ? parent.rows() : parent.columns();
-        int begin = Math.max(0, (int) Math.floor(lo * cells + 1.0E-9D));
-        int finish = Math.min(cells - 1,
-                (int) Math.ceil(hi * cells - 1.0E-9D) - 1);
-        if (begin > finish) return false;
-        for (int index = begin; index <= finish; index++) {
-            ConstructionSurface.SurfaceSlot parentSlot = edge < 2
-                    ? new ConstructionSurface.SurfaceSlot(
-                            edge == 0 ? 0 : parent.columns() - 1, index)
-                    : new ConstructionSurface.SurfaceSlot(index,
-                            edge == 2 ? 0 : parent.rows() - 1);
-            ConstructionSurface.SurfaceAttachment attachment =
-                    parent.attachments().get(parentSlot);
-            if (attachment == null || !fullSurfaceCell(attachment.state())
-                    || !TransformSurfaceGeometry.effectiveDeform(attachment))
-                return false;
-        }
-        return true;
     }
 
     private static boolean fullSurfaceCell(BlockState state) {
@@ -1290,7 +1246,11 @@ public final class TransformConstructionClientRenderer {
                 blue, fallbackLight, xSteps, ySteps)) return;
         RoofCuts cuts = linkedRoof
                 ? roofCuts(surface, slot, points, xSteps, ySteps)
-                : new RoofCuts(uniformCuts(xSteps), uniformCuts(ySteps));
+                : deform && !overlay && fullSurfaceCell(attachment.state())
+                        ? linkedParentQuadCuts(surface, slot, points,
+                                xSteps, ySteps)
+                        : new RoofCuts(uniformCuts(xSteps),
+                                uniformCuts(ySteps));
         for (int ix = 0; ix + 1 < cuts.s().size(); ix++) {
             double s0 = cuts.s().get(ix);
             double s1 = cuts.s().get(ix + 1);
@@ -1376,11 +1336,11 @@ public final class TransformConstructionClientRenderer {
         // the zipper joins each one to this stable interior/crown grid.
         List<Double> interior = uniformCuts(4);
         List<Double> first = slot.row() == 0
-                ? roofLongitudinalCuts(surface, slot, x0, xDelta, xSteps,
-                        bridge.firstProfile().size() - 1) : interior;
+                ? roofLongitudinalCuts(surface, slot, x0, xDelta,
+                        bridge, true) : interior;
         List<Double> second = slot.row() == surface.rows() - 1
-                ? roofLongitudinalCuts(surface, slot, x0, xDelta, xSteps,
-                        bridge.secondProfile().size() - 1) : interior;
+                ? roofLongitudinalCuts(surface, slot, x0, xDelta,
+                        bridge, false) : interior;
         java.util.TreeSet<Double> across = new java.util.TreeSet<>(
                 uniformCuts(Math.max(2, Math.min(8, ySteps))));
         double localCrown = surface.rows() * 0.5D - slot.row();
@@ -1442,29 +1402,33 @@ public final class TransformConstructionClientRenderer {
 
     private static List<Double> roofLongitudinalCuts(
             ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
-            double x0, double xDelta, int steps, int profileSegments) {
-        // The parent profile supplies all actual contact vertices. A small
-        // interior base grid preserves curvature even if this child slot is
-        // narrower than a single parent polygon; the unrelated 24-cut grid
-        // formerly multiplied triangles and split the contact edge again.
-        // The actual contact edge contains ONLY mother's physical mesh knots
-        // and this child's cell endpoints. Interior tessellation is handled
-        // by the zipper, not by injecting unmatched contact vertices.
+            double x0, double xDelta,
+            ConstructionSurface.BridgeAnchor bridge, boolean first) {
         java.util.TreeSet<Double> cuts = new java.util.TreeSet<>();
         cuts.add(0.0D);
         cuts.add(1.0D);
-        if (profileSegments <= 0) return List.copyOf(cuts);
-        int columns = surface.columns();
-        int subdivisions = profileSegments;
-        double u0 = slot.column() / (double) columns;
-        double u1 = (slot.column() + 1.0D) / columns;
-        int begin = Math.max(1,
-                (int) Math.ceil(u0 * subdivisions - 1.0E-8D));
-        int end = Math.min(subdivisions - 1,
-                (int) Math.floor(u1 * subdivisions + 1.0E-8D));
-        for (int k = begin; k <= end; k++) {
-            double localX = k / (double) subdivisions * columns
-                    - slot.column();
+        UUID parentId = first ? bridge.firstId() : bridge.secondId();
+        int edge = first ? bridge.firstEdge() : bridge.secondEdge();
+        Map<Integer, List<Double>> edges =
+                LINKED_PARENT_EDGE_KNOTS.get(parentId);
+        List<Double> parentKnots = edges == null ? null : edges.get(edge);
+        // The source profile is also the native parent polygon subdivision
+        // grid, so an old roof still behaves sensibly before cache refresh.
+        if (parentKnots == null) {
+            int segments = (first ? bridge.firstProfile()
+                    : bridge.secondProfile()).size() - 1;
+            if (segments <= 0) return List.copyOf(cuts);
+            java.util.ArrayList<Double> fallback =
+                    new java.util.ArrayList<>(segments + 1);
+            for (int k = 0; k <= segments; k++)
+                fallback.add(k / (double) segments);
+            parentKnots = fallback;
+        }
+        double columns = surface.columns();
+        for (double parentFraction : parentKnots) {
+            double roofFraction = first || !bridge.reverseSecond()
+                    ? parentFraction : 1.0D - parentFraction;
+            double localX = roofFraction * columns - slot.column();
             double modelX = surface.flipped() ? 1.0D - localX : localX;
             addRoofCut(cuts, (modelX - x0) / xDelta);
         }
@@ -1508,6 +1472,61 @@ public final class TransformConstructionClientRenderer {
                 return;
             cuts.add(fraction);
         }
+    }
+
+    private static RoofCuts linkedParentQuadCuts(
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
+            Vec3[] points, int xSteps, int ySteps) {
+        Map<Integer, List<Double>> edges =
+                LINKED_PARENT_EDGE_KNOTS.get(surface.id());
+        if (edges == null || edges.isEmpty())
+            return new RoofCuts(uniformCuts(xSteps), uniformCuts(ySteps));
+        java.util.TreeSet<Double> sCuts =
+                new java.util.TreeSet<>(uniformCuts(xSteps));
+        java.util.TreeSet<Double> tCuts =
+                new java.util.TreeSet<>(uniformCuts(ySteps));
+        // For top/bottom attachments the shared edge is along model X.
+        // For a side attachment it is along model Y. Baked quads can swap
+        // their s/t axes and a flipped Surface mirrors model X.
+        java.util.TreeSet<Double> globalX = new java.util.TreeSet<>();
+        java.util.TreeSet<Double> globalY = new java.util.TreeSet<>();
+        if (edges.containsKey(2)) globalX.addAll(edges.get(2));
+        if (edges.containsKey(3)) globalX.addAll(edges.get(3));
+        if (edges.containsKey(0)) globalY.addAll(edges.get(0));
+        if (edges.containsKey(1)) globalY.addAll(edges.get(1));
+        double xS = bilerp(points, 1.0D, 0.5D).x
+                - bilerp(points, 0.0D, 0.5D).x;
+        double xT = bilerp(points, 0.5D, 1.0D).x
+                - bilerp(points, 0.5D, 0.0D).x;
+        double yS = bilerp(points, 1.0D, 0.5D).y
+                - bilerp(points, 0.0D, 0.5D).y;
+        double yT = bilerp(points, 0.5D, 1.0D).y
+                - bilerp(points, 0.5D, 0.0D).y;
+        double x0 = bilerp(points, 0.0D, 0.5D).x;
+        double xt0 = bilerp(points, 0.5D, 0.0D).x;
+        double y0 = bilerp(points, 0.0D, 0.5D).y;
+        double yt0 = bilerp(points, 0.5D, 0.0D).y;
+        for (double fraction : globalX) {
+            double physicalX = fraction * surface.columns() - slot.column();
+            if (physicalX <= 1.0E-8D || physicalX >= 1.0D - 1.0E-8D)
+                continue;
+            double modelX = surface.flipped()
+                    ? 1.0D - physicalX : physicalX;
+            if (Math.abs(xS) > 0.20D && Math.abs(xT) < 1.0E-6D)
+                addRoofCut(sCuts, (modelX - x0) / xS);
+            else if (Math.abs(xT) > 0.20D && Math.abs(xS) < 1.0E-6D)
+                addRoofCut(tCuts, (modelX - xt0) / xT);
+        }
+        for (double fraction : globalY) {
+            double modelY = fraction * surface.rows() - slot.row();
+            if (modelY <= 1.0E-8D || modelY >= 1.0D - 1.0E-8D)
+                continue;
+            if (Math.abs(yS) > 0.20D && Math.abs(yT) < 1.0E-6D)
+                addRoofCut(sCuts, (modelY - y0) / yS);
+            else if (Math.abs(yT) > 0.20D && Math.abs(yS) < 1.0E-6D)
+                addRoofCut(tCuts, (modelY - yt0) / yT);
+        }
+        return new RoofCuts(List.copyOf(sCuts), List.copyOf(tCuts));
     }
 
     private static RoofCuts roofCuts(ConstructionSurface surface,
@@ -1740,6 +1759,44 @@ public final class TransformConstructionClientRenderer {
     private static Vec3 parentShellOnTessellatedEdge(
             ConstructionSurface parent, int edge, double fraction,
             double depth) {
+        Map<Integer, List<Double>> edgeKnots =
+                LINKED_PARENT_EDGE_KNOTS.get(parent.id());
+        List<Double> shared = edgeKnots == null ? null : edgeKnots.get(edge);
+        if (shared != null && shared.size() >= 2) {
+            double clamped = net.minecraft.util.Mth.clamp(fraction,
+                    0.0D, 1.0D);
+            int found = java.util.Collections.binarySearch(shared, clamped);
+            int lo = found >= 0 ? found : Math.max(0, -found - 2);
+            int hi = found >= 0 ? found
+                    : Math.min(shared.size() - 1, lo + 1);
+            if (Math.abs(depth) < 1.0E-7D
+                    || Math.abs(depth - 1.0D) < 1.0E-7D) {
+                int layer = depth < 0.5D ? 0 : 1;
+                ParentShellKey key = new ParentShellKey(
+                        parent.id(), edge, layer);
+                Vec3[] vertices = PARENT_SHELLS.computeIfAbsent(key,
+                        ignored -> new Vec3[shared.size()]);
+                if (vertices[lo] == null)
+                    vertices[lo] = parentShellVertex(parent, edge,
+                            shared.get(lo), layer);
+                if (lo == hi || clamped - shared.get(lo) < 1.0E-9D)
+                    return vertices[lo];
+                if (vertices[hi] == null)
+                    vertices[hi] = parentShellVertex(parent, edge,
+                            shared.get(hi), layer);
+                double t = (clamped - shared.get(lo))
+                        / (shared.get(hi) - shared.get(lo));
+                return vertices[lo].scale(1.0D - t)
+                        .add(vertices[hi].scale(t));
+            }
+            Vec3 a = parentShellVertex(parent, edge, shared.get(lo), depth);
+            if (lo == hi || clamped - shared.get(lo) < 1.0E-9D)
+                return a;
+            Vec3 b = parentShellVertex(parent, edge, shared.get(hi), depth);
+            double t = (clamped - shared.get(lo))
+                    / (shared.get(hi) - shared.get(lo));
+            return a.scale(1.0D - t).add(b.scale(t));
+        }
         int cells = edge < 2 ? parent.rows() : parent.columns();
         int segments = Math.max(1, cells * Math.max(1,
                 Math.min(24, 2048 / Math.max(1, cells))));
@@ -1921,6 +1978,25 @@ public final class TransformConstructionClientRenderer {
                 || ba.secondId().equals(a.id()));
     }
 
+    private static void addLinkedEdgeKnots(
+            Map<UUID, Map<Integer, java.util.TreeSet<Double>>> pending,
+            UUID id, int edge, int parentSegments, int childColumns,
+            boolean reverse) {
+        java.util.TreeSet<Double> knots = pending
+                .computeIfAbsent(id, ignored -> new HashMap<>())
+                .computeIfAbsent(edge, ignored -> new java.util.TreeSet<>());
+        knots.add(0.0D);
+        knots.add(1.0D);
+        // The mother keeps its complete original tessellation. A linked
+        // child may only add positions at which its own cells need a vertex.
+        for (int k = 1; k < parentSegments; k++)
+            knots.add(k / (double) parentSegments);
+        for (int k = 1; k < childColumns; k++) {
+            double u = k / (double) childColumns;
+            knots.add(reverse ? 1.0D - u : u);
+        }
+    }
+
     /** Refresh neighbours only after a committed edit. A temporary drag
      * changes its authoring guides but must not rebake the entire facility. */
     private static void updateSharedSurfaceEdges(
@@ -1938,6 +2014,8 @@ public final class TransformConstructionClientRenderer {
         PARENT_SHELLS.clear();
         Set<UUID> affected = new java.util.HashSet<>();
         Map<UUID, int[]> nextLinkedSteps = new HashMap<>();
+        Map<UUID, Map<Integer, java.util.TreeSet<Double>>> pendingKnots =
+                new HashMap<>();
         for (ConstructionSurface child : surfaces) {
             ConstructionSurface.BridgeAnchor link = child.bridge();
             if (link == null || !link.hasProfiles()) continue;
@@ -1953,7 +2031,29 @@ public final class TransformConstructionClientRenderer {
             secondSteps[link.secondEdge()] = Math.max(
                     secondSteps[link.secondEdge()],
                     Math.max(1, (link.secondProfile().size() - 1) / secondCells));
+            addLinkedEdgeKnots(pendingKnots, link.firstId(),
+                    link.firstEdge(), link.firstProfile().size() - 1,
+                    child.columns(), false);
+            addLinkedEdgeKnots(pendingKnots, link.secondId(),
+                    link.secondEdge(), link.secondProfile().size() - 1,
+                    child.columns(), link.reverseSecond());
         }
+        Map<UUID, Map<Integer, List<Double>>> nextKnots = new HashMap<>();
+        pendingKnots.forEach((id, edges) -> {
+            Map<Integer, List<Double>> sorted = new HashMap<>();
+            edges.forEach((edge, knots) -> sorted.put(edge,
+                    List.copyOf(knots)));
+            nextKnots.put(id, Map.copyOf(sorted));
+        });
+        java.util.HashSet<UUID> knotParents =
+                new java.util.HashSet<>(LINKED_PARENT_EDGE_KNOTS.keySet());
+        knotParents.addAll(nextKnots.keySet());
+        for (UUID id : knotParents) {
+            if (!java.util.Objects.equals(LINKED_PARENT_EDGE_KNOTS.get(id),
+                    nextKnots.get(id))) affected.add(id);
+        }
+        LINKED_PARENT_EDGE_KNOTS.clear();
+        LINKED_PARENT_EDGE_KNOTS.putAll(nextKnots);
         Set<UUID> parentIds = new java.util.HashSet<>(
                 LINKED_PARENT_EDGE_STEPS.keySet());
         parentIds.addAll(nextLinkedSteps.keySet());

@@ -1667,15 +1667,15 @@ public final class TransformConstructionClientRenderer {
             return null;
         int parentEdge = first ? link.firstEdge() : link.secondEdge();
         double parentU = first || !link.reverseSecond() ? u : 1.0D - u;
-        // At a child cell boundary the mother now renders an explicit vertex,
-        // not an interpolated point along its older, coarser polygon chord.
-        // Evaluate exactly that same transformed mother vertex on the roof.
-        double roofCell = u * roof.columns();
-        Vec3 parentShell = Math.abs(roofCell - Math.rint(roofCell))
-                < 1.0E-9D
-                ? parentShellVertex(parent, parentEdge, parentU, depth)
-                : parentShellOnTessellatedEdge(parent, parentEdge,
-                        parentU, depth);
+        // The parent owns the physical seam. Its polygonal edge has vertices
+        // at the parent's render-grid cuts, NOT at each child-cell boundary.
+        // A child column boundary may land halfway along a parent polygon:
+        // sampling the analytic parent curve at that point places the child's
+        // vertex outside the mother's straight rendered chord. This produced
+        // the intermittent visible slits along the otherwise smooth arch.
+        // Always sample the actual parent polygon, including at child corners.
+        Vec3 parentShell = parentShellOnTessellatedEdge(parent,
+                parentEdge, parentU, depth);
         double edgeV = first ? 0.0D : 1.0D;
         Vec3 roofEdge = roof.gridPoint(u, edgeV)
                 .add(roof.gridNormal(u, edgeV).scale(depth));

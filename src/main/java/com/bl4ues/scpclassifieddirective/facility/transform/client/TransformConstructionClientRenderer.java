@@ -1549,6 +1549,35 @@ public final class TransformConstructionClientRenderer {
         boolean alongS = Math.abs(xDS) >= Math.abs(xDT)
                 && Math.abs(xDS) > 0.20D;
         boolean alongT = !alongS && Math.abs(xDT) > 0.20D;
+        // The front/back roof faces use the shared contact knots via the
+        // zipper renderer. The thin physical END CAP at y=0 or y=1 must use
+        // that VERY SAME knot sequence. The old cap path added arbitrary
+        // 24-step cuts from both parents even on one wall's contact edge,
+        // producing a T-junction inside the linked roof itself and the
+        // visible sky pixels between parent and child blocks.
+        double minQuadY = Double.POSITIVE_INFINITY;
+        double maxQuadY = Double.NEGATIVE_INFINITY;
+        for (Vec3 corner : points) {
+            minQuadY = Math.min(minQuadY, corner.y);
+            maxQuadY = Math.max(maxQuadY, corner.y);
+        }
+        if ((alongS || alongT) && maxQuadY - minQuadY < 1.0E-6D) {
+            boolean firstContact = slot.row() == 0
+                    && Math.abs(minQuadY) < 1.0E-6D;
+            boolean secondContact = slot.row() == surface.rows() - 1
+                    && Math.abs(maxQuadY - 1.0D) < 1.0E-6D;
+            if (firstContact || secondContact) {
+                List<Double> contact = roofLongitudinalCuts(surface, slot,
+                        alongS ? xS0 : xT0, alongS ? xDS : xDT,
+                        bridge, firstContact);
+                // Thickness spans the other quad axis exactly once, like the
+                // mother wall's exposed cap. No extra vertices on either
+                // edge can be introduced by the child's cap tessellation.
+                return alongS
+                        ? new RoofCuts(contact, uniformCuts(1))
+                        : new RoofCuts(uniformCuts(1), contact);
+            }
+        }
         if (alongS || alongT) {
             int[] parentCounts = {bridge.firstCells(), bridge.secondCells()};
             double u0 = slot.column() / (double) columns;

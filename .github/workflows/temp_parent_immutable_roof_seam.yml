@@ -1,0 +1,35 @@
+name: Validate parent-immutable linked ceiling seam
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  validate-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply seam architecture correction
+        run: python3 .github/scripts/temp_parent_immutable_roof_seam.py
+      - name: Verify project integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Commit validated source change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Keep linked ceiling seams smooth without cutting parent surfaces'
+          git pull --rebase origin master
+          git push origin HEAD:master

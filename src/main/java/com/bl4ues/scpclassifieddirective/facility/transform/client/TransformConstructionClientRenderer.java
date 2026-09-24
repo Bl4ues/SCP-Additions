@@ -1511,7 +1511,7 @@ public final class TransformConstructionClientRenderer {
         double yt0 = bilerp(points, 0.5D, 0.0D).y;
         // A long parent edge can contain >2,000 shared knots. Do not copy
         // and scan its entire edge for every baked face of every parent cell.
-        // Binary-search only the 24 or so knots INSIDE this logical cell.
+        // Binary-search only the shared knots INSIDE this logical cell.
         addParentCellAxisCuts(edges.get(2), slot.column(),
                 surface.columns(), surface.flipped(), xS, xT,
                 x0, xt0, sCuts, tCuts);
@@ -1606,16 +1606,20 @@ public final class TransformConstructionClientRenderer {
         }
         if (alongS || alongT) {
             int[] parentCounts = {bridge.firstCells(), bridge.secondCells()};
+            int[] parentSegments = {bridge.firstProfile().size() - 1,
+                    bridge.secondProfile().size() - 1};
             double u0 = slot.column() / (double) columns;
             double u1 = (slot.column() + 1.0D) / columns;
-            for (int count : parentCounts) {
+            for (int parentIndex = 0; parentIndex < parentCounts.length;
+                    parentIndex++) {
+                int count = parentCounts[parentIndex];
                 if (count <= 0) continue;
-                // A border row also splits at the mother's 24-per-cell mesh
-                // vertices. Otherwise the child spans a different polygonal
-                // chord even if both curves share their mathematical points.
+                // Contact-side caps must use the same polygon knots as the
+                // parent AND the roof's main faces. Hard-coding 24 here after
+                // changing the common profile density creates new T-junctions.
                 int subdivisions = (slot.row() == 0
                         || slot.row() == surface.rows() - 1)
-                        ? count * 24 : count;
+                        ? Math.max(1, parentSegments[parentIndex]) : count;
                 int begin = Math.max(1, (int) Math.ceil(
                         u0 * subdivisions - 1.0E-8D));
                 int end = Math.min(subdivisions - 1,
@@ -1821,7 +1825,7 @@ public final class TransformConstructionClientRenderer {
         if (knots == null || knots.size() < 2) {
             int cells = edge < 2 ? parent.rows() : parent.columns();
             int segments = Math.max(1, cells * Math.max(1,
-                    Math.min(24, 2048 / Math.max(1, cells))));
+                    Math.min(8, 2048 / Math.max(1, cells))));
             java.util.ArrayList<Double> fallback =
                     new java.util.ArrayList<>(segments + 1);
             for (int i = 0; i <= segments; i++)

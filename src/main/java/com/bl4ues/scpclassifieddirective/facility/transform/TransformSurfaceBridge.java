@@ -96,14 +96,15 @@ public final class TransformSurfaceBridge {
     }
 
     static int boundarySamples(int parentCells) {
-        // Save the actual parent-side polygonal chord positions, not just a
-        // coarse approximation of its quadratic curve. A roof can only share
-        // the rendered edge if its persisted profile has the same cut points
-        // as the parent's (up to 24 subdivisions per logical cell). Keep the
-        // NBT profile within BridgeAnchor.loadProfile's 2049-point limit for
-        // unusually large authored walls.
+        // Eight segments per block are shared by the parent and child, not
+        // independently reduced on either side. The previous 24-per-block
+        // boundary multiplied *every row* of the parent wall's front/back
+        // faces and every linked-roof contact strip; caching did not reduce
+        // that per-frame vertex submission cost. This remains sub-block
+        // curvature resolution and preserves the exact common polygon.
+        // Keep both profiles inside BridgeAnchor's 2049-point NBT limit.
         int cells = Math.max(1, parentCells);
-        return cells * Math.max(1, Math.min(24, 2048 / cells));
+        return cells * Math.max(1, Math.min(8, 2048 / cells));
     }
 
     private static ConstructionSurface derive(UUID id,

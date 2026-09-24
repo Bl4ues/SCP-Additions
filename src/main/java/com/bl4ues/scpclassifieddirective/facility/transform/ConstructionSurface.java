@@ -128,6 +128,26 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
         if (bridge != null && bridge.hasProfiles()) {
             Vec3 bottom = bridge.profilePoint(true, u);
             Vec3 top = bridge.profilePoint(false, u);
+            if (bridge.hasOutwardProfiles()) {
+                // Cubic Hermite loft: both parent edges own the roof position
+                // AND its cross-sectional tangent. A quadratic height bulge
+                // changes that tangent at the joint, so the editable crown
+                // instead uses a quartic bump with zero endpoint derivatives.
+                double span = Math.max(0.125D, bottom.distanceTo(top));
+                Vec3 startTangent = bridge.outwardPoint(true, u)
+                        .scale(span * 0.75D);
+                Vec3 endTangent = bridge.outwardPoint(false, u)
+                        .scale(-span * 0.75D);
+                double v2 = v * v, v3 = v2 * v;
+                double h00 = 2.0D * v3 - 3.0D * v2 + 1.0D;
+                double h10 = v3 - 2.0D * v2 + v;
+                double h01 = -2.0D * v3 + 3.0D * v2;
+                double h11 = v3 - v2;
+                double bulge = 16.0D * v2 * (1.0D - v) * (1.0D - v);
+                return bottom.scale(h00).add(startTangent.scale(h10))
+                        .add(top.scale(h01)).add(endTangent.scale(h11))
+                        .add(heightCurveOffset.scale(bulge));
+            }
             double bulge = 4.0D * v * (1.0D - v);
             return bottom.scale(1.0D - v).add(top.scale(v))
                     .add(heightCurveOffset.scale(bulge));
@@ -161,8 +181,30 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
 
     public Vec3 vertical(double u, double v) {
         if (bridge != null && bridge.hasProfiles()) {
-            Vec3 derivative = bridge.profilePoint(false, u)
-                    .subtract(bridge.profilePoint(true, u))
+            Vec3 bottom = bridge.profilePoint(true, u);
+            Vec3 top = bridge.profilePoint(false, u);
+            if (bridge.hasOutwardProfiles()) {
+                double span = Math.max(0.125D, bottom.distanceTo(top));
+                Vec3 startTangent = bridge.outwardPoint(true, u)
+                        .scale(span * 0.75D);
+                Vec3 endTangent = bridge.outwardPoint(false, u)
+                        .scale(-span * 0.75D);
+                double v2 = v * v;
+                double dh00 = 6.0D * v2 - 6.0D * v;
+                double dh10 = 3.0D * v2 - 4.0D * v + 1.0D;
+                double dh01 = -dh00;
+                double dh11 = 3.0D * v2 - 2.0D * v;
+                double dbulge = 32.0D * v * (1.0D - v)
+                        * (1.0D - 2.0D * v);
+                Vec3 derivative = bottom.scale(dh00)
+                        .add(startTangent.scale(dh10))
+                        .add(top.scale(dh01))
+                        .add(endTangent.scale(dh11))
+                        .add(heightCurveOffset.scale(dbulge));
+                return TransformMath.safeNormalize(derivative,
+                        new Vec3(0.0D, 1.0D, 0.0D));
+            }
+            Vec3 derivative = top.subtract(bottom)
                     .add(heightCurveOffset.scale(4.0D * (1.0D - 2.0D * v)));
             return TransformMath.safeNormalize(derivative,
                     new Vec3(0.0D, 1.0D, 0.0D));
@@ -666,7 +708,16 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     public record BridgeAnchor(UUID firstId, int firstEdge,
             UUID secondId, int secondEdge, boolean reverseSecond,
             List<Vec3> firstProfile, List<Vec3> secondProfile,
-            int firstCells, int secondCells) {
+            int firstCells, int secondCells,
+            List<Vec3> firstOutward, List<Vec3> secondOutward) {
+        public BridgeAnchor(UUID firstId, int firstEdge,
+                UUID secondId, int secondEdge, boolean reverseSecond,
+                List<Vec3> firstProfile, List<Vec3> secondProfile,
+                int firstCells, int secondCells) {
+            this(firstId, firstEdge, secondId, secondEdge, reverseSecond,
+                    firstProfile, secondProfile, firstCells, secondCells,
+                    List.of(), List.of());
+        }
         public BridgeAnchor(UUID firstId, int firstEdge,
                 UUID secondId, int secondEdge, boolean reverseSecond) {
             this(firstId, firstEdge, secondId, secondEdge, reverseSecond,
@@ -692,6 +743,14 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                     : List.copyOf(firstProfile);
             secondProfile = secondProfile == null ? List.of()
                     : List.copyOf(secondProfile);
+            firstOutward = firstOutward == null ? List.of()
+                    : List.copyOf(firstOutward);
+            secondOutward = secondOutward == null ? List.of()
+                    : List.copyOf(secondOutward);
+            if (firstOutward.size() < 2 || secondOutward.size() < 2) {
+                firstOutward = List.of();
+                secondOutward = List.of();
+            }
             firstCells = Math.max(0, Math.min(512, firstCells));
             secondCells = Math.max(0, Math.min(512, secondCells));
             // Both parent edges are sampled on THEIR OWN logical grids. Their
@@ -707,8 +766,23 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             return firstProfile.size() >= 2 && secondProfile.size() >= 2;
         }
 
+        public boolean hasOutwardProfiles() {
+            return firstOutward.size() >= 2 && secondOutward.size() >= 2;
+        }
+
+        public Vec3 outwardPoint(boolean first, double fraction) {
+            List<Vec3> points = first ? firstOutward : secondOutward;
+            return TransformMath.safeNormalize(interpolateProfile(points,
+                    fraction), new Vec3(0.0D, 1.0D, 0.0D));
+        }
+
         public Vec3 profilePoint(boolean first, double fraction) {
             List<Vec3> points = first ? firstProfile : secondProfile;
+            return interpolateProfile(points, fraction);
+        }
+
+        private static Vec3 interpolateProfile(List<Vec3> points,
+                double fraction) {
             if (points.isEmpty()) return Vec3.ZERO;
             double coordinate = Math.max(0.0D,
                     Math.min(1.0D, fraction)) * (points.size() - 1);
@@ -734,6 +808,8 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
             if (secondCells > 0) tag.putInt("SecondCells", secondCells);
             saveProfile(tag, "FirstProfile", firstProfile);
             saveProfile(tag, "SecondProfile", secondProfile);
+            saveProfile(tag, "FirstOutward", firstOutward);
+            saveProfile(tag, "SecondOutward", secondOutward);
             return tag;
         }
 
@@ -771,7 +847,9 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
                     tag.getBoolean("ReverseSecond"),
                     loadProfile(tag, "FirstProfile"),
                     loadProfile(tag, "SecondProfile"),
-                    tag.getInt("FirstCells"), tag.getInt("SecondCells"));
+                    tag.getInt("FirstCells"), tag.getInt("SecondCells"),
+                    loadProfile(tag, "FirstOutward"),
+                    loadProfile(tag, "SecondOutward"));
         }
     }
 

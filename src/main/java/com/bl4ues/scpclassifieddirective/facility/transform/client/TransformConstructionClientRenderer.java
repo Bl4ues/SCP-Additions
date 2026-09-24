@@ -1208,16 +1208,13 @@ public final class TransformConstructionClientRenderer {
         boolean verticalEdge = perimeter && (slot.column() == 0
                 || slot.column() == surface.columns() - 1);
         int[] linkedSteps = LINKED_PARENT_EDGE_STEPS.get(surface.id());
-        int linkedHorizontal = linkedSteps == null ? 0 :
-                Math.max(slot.row() == 0 && minY < 1.0E-5D
-                        ? linkedSteps[2] : 0,
-                        slot.row() == surface.rows() - 1
-                        && maxY > 0.99999D ? linkedSteps[3] : 0);
-        int linkedVertical = linkedSteps == null ? 0 :
-                Math.max(slot.column() == 0 && minX < 1.0E-5D
-                        ? linkedSteps[0] : 0,
-                        slot.column() == surface.columns() - 1
-                        && maxX > 0.99999D ? linkedSteps[1] : 0);
+        // ALL mother rows/columns inherit contact-edge knots. Limiting the
+        // dense grid to the topmost row left T-junctions where that row met
+        // the next coarse row: the apparent cut ran THROUGH the mother wall.
+        int linkedHorizontal = linkedSteps == null ? 0
+                : Math.max(linkedSteps[2], linkedSteps[3]);
+        int linkedVertical = linkedSteps == null ? 0
+                : Math.max(linkedSteps[0], linkedSteps[1]);
         boolean curvedAcross = surface.curveOffset().lengthSqr() > 1.0E-8D
                 || surface.topCurveOffset().lengthSqr() > 1.0E-8D;
         int xSteps = deform && maxX - minX > 0.20D
@@ -1488,10 +1485,15 @@ public final class TransformConstructionClientRenderer {
                 uniformCuts(xSteps));
         java.util.TreeSet<Double> tCuts = new java.util.TreeSet<>(
                 uniformCuts(ySteps));
-        List<Double> alongX = slot.row() == 0 && minY < 1.0E-5D
-                ? edges.get(2) : null;
-        if (slot.row() == surface.rows() - 1 && maxY > 0.99999D
-                && edges.containsKey(3)) alongX = edges.get(3);
+        List<Double> alongX = edges.get(2);
+        if (edges.containsKey(3)) {
+            if (alongX == null) alongX = edges.get(3);
+            else {
+                java.util.TreeSet<Double> both = new java.util.TreeSet<>(alongX);
+                both.addAll(edges.get(3));
+                alongX = List.copyOf(both);
+            }
+        }
         if (alongX != null && maxX - minX > 0.20D) {
             double xS0 = bilerp(points, 0.0D, 0.5D).x;
             double xDS = bilerp(points, 1.0D, 0.5D).x - xS0;
@@ -1510,11 +1512,15 @@ public final class TransformConstructionClientRenderer {
                     addRoofCut(tCuts, (modelX - xT0) / xDT);
             }
         }
-        List<Double> alongY = slot.column() == 0 && minX < 1.0E-5D
-                ? edges.get(0) : null;
-        if (slot.column() == surface.columns() - 1
-                && maxX > 0.99999D && edges.containsKey(1))
-            alongY = edges.get(1);
+        List<Double> alongY = edges.get(0);
+        if (edges.containsKey(1)) {
+            if (alongY == null) alongY = edges.get(1);
+            else {
+                java.util.TreeSet<Double> both = new java.util.TreeSet<>(alongY);
+                both.addAll(edges.get(1));
+                alongY = List.copyOf(both);
+            }
+        }
         if (alongY != null && maxY - minY > 0.20D) {
             double yS0 = bilerp(points, 0.0D, 0.5D).y;
             double yDS = bilerp(points, 1.0D, 0.5D).y - yS0;

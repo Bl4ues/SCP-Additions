@@ -61,7 +61,8 @@ public final class TransformConstructionSavedData extends SavedData {
                     && link.firstProfile().size() == TransformSurfaceBridge
                             .boundarySamples(link.firstCells()) + 1
                     && link.secondProfile().size() == TransformSurfaceBridge
-                            .boundarySamples(link.secondCells()) + 1)
+                            .boundarySamples(link.secondCells()) + 1
+                    && link.hasOutwardProfiles())
                 continue;
             ConstructionSurface first = data.surfaces.get(link.firstId());
             ConstructionSurface second = data.surfaces.get(link.secondId());

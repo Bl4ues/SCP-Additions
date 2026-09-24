@@ -81,6 +81,16 @@ public final class TransformSurfaceBridge {
         };
     }
 
+    /** Derivative pointing out of the selected mother edge and into the
+     * child's side of the join; reverseSecond is longitudinal only. */
+    private static Vec3 edgeOutward(ConstructionSurface parent, int edge,
+            double t) {
+        Vec3 tangent = edge < 2
+                ? parent.gridTangent(edge == 0 ? 0.0D : 1.0D, t)
+                : parent.gridVertical(t, edge == 2 ? 0.0D : 1.0D);
+        return tangent.scale(edge == 0 || edge == 2 ? -1.0D : 1.0D);
+    }
+
     private static int edgeCells(ConstructionSurface parent, int edge) {
         return edge < 2 ? parent.rows() : parent.columns();
     }
@@ -125,6 +135,21 @@ public final class TransformSurfaceBridge {
         int secondSamples = boundarySamples(secondCells);
         List<Vec3> firstProfile = new ArrayList<>(firstSamples + 1);
         List<Vec3> secondProfile = new ArrayList<>(secondSamples + 1);
+        // A 4-per-cell tangent table is sufficient to interpolate smooth
+        // parent derivatives without duplicating their 24-per-cell positions.
+        int firstTangents = Math.max(1, Math.min(2048, firstCells * 4));
+        int secondTangents = Math.max(1, Math.min(2048, secondCells * 4));
+        List<Vec3> firstOutward = new ArrayList<>(firstTangents + 1);
+        List<Vec3> secondOutward = new ArrayList<>(secondTangents + 1);
+        for (int index = 0; index <= firstTangents; index++) {
+            firstOutward.add(edgeOutward(first, link.firstEdge(),
+                    index / (double) firstTangents));
+        }
+        for (int index = 0; index <= secondTangents; index++) {
+            double t = index / (double) secondTangents;
+            secondOutward.add(edgeOutward(second, link.secondEdge(),
+                    link.reverseSecond() ? 1.0D - t : t));
+        }
         for (int index = 0; index <= firstSamples; index++) {
             double t = index / (double) firstSamples;
             firstProfile.add(edgeGridPoint(first, link.firstEdge(), t));
@@ -138,7 +163,7 @@ public final class TransformSurfaceBridge {
                 new ConstructionSurface.BridgeAnchor(link.firstId(),
                         link.firstEdge(), link.secondId(), link.secondEdge(),
                         link.reverseSecond(), firstProfile, secondProfile,
-                        firstCells, secondCells);
+                        firstCells, secondCells, firstOutward, secondOutward);
         return new ConstructionSurface(id, dimension, a0, a1, b0, b1,
                 aBend, new Vec3(0.0D, heightBend.y, 0.0D),
                 attachments, overlays, flipped, bBend.subtract(aBend),

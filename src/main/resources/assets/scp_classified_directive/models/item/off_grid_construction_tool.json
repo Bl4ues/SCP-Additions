@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "scp_classified_directive:item/offgrid_construct"
+    "layer0": "scp_classified_directive:item/off_grid_tool"
   }
 }

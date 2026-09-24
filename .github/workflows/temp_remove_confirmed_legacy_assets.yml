@@ -1,0 +1,35 @@
+name: Validate and remove reviewed legacy media
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remove only explicitly reviewed orphan resource paths
+        run: python3 .github/scripts/temp_remove_confirmed_legacy_assets.py
+      - name: Verify source and namespace integrity
+        run: python3 .github/scripts/verify_project_integrity.py
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build with reviewed media removed
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build --stacktrace
+      - name: Publish validated resource cleanup directly to master
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --cached --name-status
+          git commit -m 'Remove verified unused legacy models, textures and sound'
+          git pull --rebase origin master
+          git push origin HEAD:master

@@ -1,0 +1,51 @@
+name: Validate linked roof overlays and mesh budget
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  validate-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Apply structural overlay loft fix
+        run: python3 .github/scripts/temp_fix_linked_roof_overlay.py
+      - name: Check overlay compilation
+        run: |
+          chmod +x gradlew
+          ./gradlew compileJava --stacktrace
+      - name: Commit validated overlay fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java
+          git commit -m 'Tessellate structural overlays along linked roof loft'
+          git pull --rebase origin master
+          git push origin HEAD:master
+      - name: Apply shared topology performance budget
+        run: python3 .github/scripts/temp_optimize_linked_roof_mesh.py
+      - name: Check integrity and full build
+        run: |
+          python3 .github/scripts/verify_project_integrity.py
+          ./gradlew clean build --stacktrace
+      - name: Commit validated mesh optimization
+        run: |
+          git add src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/client/TransformConstructionClientRenderer.java src/main/java/com/bl4ues/scpclassifieddirective/facility/transform/TransformSurfaceBridge.java
+          git commit -m 'Reduce linked roof and parent mesh density together'
+          git pull --rebase origin master
+          git push origin HEAD:master
+      - name: Remove temporary validation files
+        run: |
+          git rm .github/scripts/temp_fix_linked_roof_overlay.py .github/scripts/temp_optimize_linked_roof_mesh.py .github/workflows/temp_linked_roof_overlay_perf.yml
+          git commit -m 'Remove temporary roof geometry validation helpers'
+          git pull --rebase origin master
+          git push origin HEAD:master

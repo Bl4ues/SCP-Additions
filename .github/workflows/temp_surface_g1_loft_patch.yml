@@ -13,7 +13,17 @@ jobs:
         with:
           fetch-depth: 0
       - name: Patch linked roof geometry and parent tessellation
-        run: python3 .github/scripts/temp_surface_g1_loft_patch.py
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/temp_surface_g1_loft_patch.py')
+          content = path.read_text()
+          old = '                link.reverseSecond(), firstProfile, secondProfile,\n                firstCells, secondCells'
+          new = '                        link.reverseSecond(), firstProfile, secondProfile,\n                        firstCells, secondCells'
+          assert content.count(old) == 2, 'Unexpected bridge patch shape'
+          path.write_text(content.replace(old, new))
+          PY
+          python3 .github/scripts/temp_surface_g1_loft_patch.py
       - name: Verify project integrity
         run: python3 .github/scripts/verify_project_integrity.py
       - uses: actions/setup-java@v4

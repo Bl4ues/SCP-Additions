@@ -74,7 +74,7 @@ start = s.find('''            java.util.TreeSet<Double> firstCuts = pendingConta
 end = s.find('''        Set<UUID> parentIds = new java.util.HashSet<>(''', start)
 if start < 0 or end < 0:
     raise RuntimeError("pending linked contact cut block not found")
-s = s[:start] + s[end:]
+s = s[:start] + '        }\n' + s[end:]
 
 replace_once(
 '''                for (ConstructionSurface other : surfaces) {

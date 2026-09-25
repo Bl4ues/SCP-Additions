@@ -86,7 +86,6 @@ public final class AreaUnderConstructionSignModule {
             event.accept(SpeakerModule.ITEM.get());
             event.accept(IntercomModule.ITEM.get());
             event.accept(HazardSignModule.ITEM.get());
-            FacilityPipeModule.creativeItems().forEach(event::accept);
         }
     }
 
@@ -119,11 +118,6 @@ public final class AreaUnderConstructionSignModule {
                 addUnique(items, new ItemStack(CeilingCameraModule.ITEM.get()));
                 addUnique(items, new ItemStack(SpeakerModule.ITEM.get()));
                 addUnique(items, new ItemStack(IntercomModule.ITEM.get()));
-            }
-            if (section.sprite().getPath().endsWith("/proptab.png")) {
-                for (Item pipe : FacilityPipeModule.creativeItems()) {
-                    addUnique(items, new ItemStack(pipe));
-                }
             }
             result.add(new FacilityModule.CreativeSection(section.sprite(),
                     items));

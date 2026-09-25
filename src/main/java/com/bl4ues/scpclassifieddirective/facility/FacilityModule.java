@@ -431,6 +431,9 @@ public final class FacilityModule {
         addUBlockCreativeItem(sublevel2, "sl_2_wall_bot");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_mid");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_top");
+        for (Item pipe : FacilityPipeModule.creativeItems()) {
+            addExternalCreativeItem(sublevel2, pipe);
+        }
         sections.add(section("sl2tab", sublevel2));
 
         sections.add(section("sl3tab", List.of()));

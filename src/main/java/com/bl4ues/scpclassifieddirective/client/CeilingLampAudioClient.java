@@ -4,6 +4,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -52,32 +56,37 @@ public final class CeilingLampAudioClient {
         if (discoveryTicks < DISCOVERY_INTERVAL_TICKS) return;
         discoveryTicks = 0;
 
-        BlockPos nearest = findNearestPoweredLamp(minecraft.level,
+        Vec3 current = activeLoop == null || activeLoop.isFinished()
+                ? null : activeLoop.target();
+        Discovery discovery = findNearestPoweredLamp(minecraft.level,
                 minecraft.player.getX(), minecraft.player.getY(),
-                minecraft.player.getZ(), minecraft.player.blockPosition());
-        if (nearest == null) stopLoop();
-        else selectTarget(minecraft.level, nearest, minecraft.player.getX(),
+                minecraft.player.getZ(), minecraft.player.blockPosition(),
+                current);
+        if (discovery.nearest() == null) stopLoop();
+        else selectTarget(minecraft.level, discovery.nearest(),
+                discovery.currentActive(), minecraft.player.getX(),
                 minecraft.player.getY(), minecraft.player.getZ());
     }
 
-    private static void selectTarget(ClientLevel level, BlockPos candidate,
-            double listenerX, double listenerY, double listenerZ) {
+    private static void selectTarget(ClientLevel level, Vec3 candidate,
+            boolean currentActive, double listenerX, double listenerY,
+            double listenerZ) {
         if (activeLoop == null || activeLoop.isFinished()
                 || activeLoop.level() != level) {
             startLoop(level, candidate);
             return;
         }
 
-        BlockPos current = activeLoop.target();
-        if (current.equals(candidate)) return;
-        if (!CeilingLampLoopSound.shouldPlayFor(level.getBlockState(current))) {
+        Vec3 current = activeLoop.target();
+        if (current.distanceToSqr(candidate) < 1.0E-4D) return;
+        if (!currentActive) {
             activeLoop.retarget(candidate);
             return;
         }
 
-        double currentDistance = distanceToCenterSqr(current, listenerX,
+        double currentDistance = distanceToPointSqr(current, listenerX,
                 listenerY, listenerZ);
-        double candidateDistance = distanceToCenterSqr(candidate, listenerX,
+        double candidateDistance = distanceToPointSqr(candidate, listenerX,
                 listenerY, listenerZ);
         if (candidateDistance + RETARGET_ADVANTAGE_SQ < currentDistance) {
             activeLoop.retarget(candidate);
@@ -85,8 +94,12 @@ public final class CeilingLampAudioClient {
     }
 
     private static void startLoop(ClientLevel level, BlockPos pos) {
+        startLoop(level, Vec3.atCenterOf(pos));
+    }
+
+    private static void startLoop(ClientLevel level, Vec3 position) {
         stopLoop();
-        activeLoop = new CeilingLampLoopSound(level, pos);
+        activeLoop = new CeilingLampLoopSound(level, position);
         Minecraft.getInstance().getSoundManager().play(activeLoop);
     }
 
@@ -97,12 +110,13 @@ public final class CeilingLampAudioClient {
         }
     }
 
-    private static BlockPos findNearestPoweredLamp(ClientLevel level,
+    private static Discovery findNearestPoweredLamp(ClientLevel level,
             double listenerX, double listenerY, double listenerZ,
-            BlockPos center) {
+            BlockPos center, Vec3 currentTarget) {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        BlockPos nearest = null;
+        Vec3 nearest = null;
         double nearestDistance = Double.MAX_VALUE;
+        boolean currentActive = false;
         for (int y = -VERTICAL_DISCOVERY_RADIUS;
                 y <= VERTICAL_DISCOVERY_RADIUS; y++) {
             for (int x = -HORIZONTAL_DISCOVERY_RADIUS;
@@ -114,23 +128,69 @@ public final class CeilingLampAudioClient {
                     if (!level.hasChunkAt(cursor)
                             || !CeilingLampLoopSound.shouldPlayFor(
                             level.getBlockState(cursor))) continue;
-                    double distance = distanceToCenterSqr(cursor, listenerX,
+                    Vec3 position = Vec3.atCenterOf(cursor);
+                    if (currentTarget != null
+                            && position.distanceToSqr(currentTarget) < 1.0E-4D) {
+                        currentActive = true;
+                    }
+                    double distance = distanceToPointSqr(position, listenerX,
                             listenerY, listenerZ);
                     if (distance < nearestDistance) {
                         nearestDistance = distance;
-                        nearest = cursor.immutable();
+                        nearest = position;
                     }
                 }
             }
         }
-        return nearest;
+
+        for (ConstructionSurface surface : TransformConstructionClientState
+                .surfaces(level.dimension().location())) {
+            for (var entry : surface.attachments().entrySet()) {
+                if (!CeilingLampLoopSound.shouldPlayFor(
+                        entry.getValue().state())) continue;
+                Vec3 position = TransformSurfaceGeometry.cellCenter(surface,
+                        entry.getKey(), TransformSurfaceGeometry.MAIN_SIDE,
+                        false);
+                if (currentTarget != null
+                        && position.distanceToSqr(currentTarget) < 1.0E-4D) {
+                    currentActive = true;
+                }
+                double distance = distanceToPointSqr(position, listenerX,
+                        listenerY, listenerZ);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearest = position;
+                }
+            }
+            for (var entry : surface.overlays().entrySet()) {
+                if (!CeilingLampLoopSound.shouldPlayFor(
+                        entry.getValue().state())) continue;
+                var key = entry.getKey();
+                Vec3 position = TransformSurfaceGeometry.cellCenter(surface,
+                        key.slot(), key.normalSign(), true);
+                if (currentTarget != null
+                        && position.distanceToSqr(currentTarget) < 1.0E-4D) {
+                    currentActive = true;
+                }
+                double distance = distanceToPointSqr(position, listenerX,
+                        listenerY, listenerZ);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearest = position;
+                }
+            }
+        }
+        return new Discovery(nearest, currentActive);
     }
 
-    private static double distanceToCenterSqr(BlockPos pos, double x,
+    private static double distanceToPointSqr(Vec3 pos, double x,
             double y, double z) {
-        double dx = pos.getX() + 0.5D - x;
-        double dy = pos.getY() + 0.5D - y;
-        double dz = pos.getZ() + 0.5D - z;
+        double dx = pos.x - x;
+        double dy = pos.y - y;
+        double dz = pos.z - z;
         return dx * dx + dy * dy + dz * dz;
+    }
+
+    private record Discovery(Vec3 nearest, boolean currentActive) {
     }
 }

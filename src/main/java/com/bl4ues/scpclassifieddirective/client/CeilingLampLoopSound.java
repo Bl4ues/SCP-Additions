@@ -9,7 +9,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.Vec3;
 import com.bl4ues.scpclassifieddirective.facility.UBlocksModule;
+import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
 
 /** Positional electrical hum smoothly retargeted to a nearby powered ceiling lamp. */
@@ -17,13 +19,17 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
     private static final double POSITION_LERP = 0.18D;
 
     private final ClientLevel level;
-    private BlockPos target;
+    private Vec3 target;
     private double targetX;
     private double targetY;
     private double targetZ;
     private boolean finished;
 
     public CeilingLampLoopSound(ClientLevel level, BlockPos pos) {
+        this(level, Vec3.atCenterOf(pos));
+    }
+
+    public CeilingLampLoopSound(ClientLevel level, Vec3 position) {
         super(ScpClassifiedDirectiveModSounds.LAMP_LOOP.get(), SoundSource.BLOCKS,
                 RandomSource.create());
         this.level = level;
@@ -33,25 +39,27 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
         this.pitch = 0.98F + RandomSource.create().nextFloat() * 0.04F;
         this.relative = false;
         this.attenuation = SoundInstance.Attenuation.LINEAR;
-        this.target = pos.immutable();
-        this.x = this.targetX = pos.getX() + 0.5D;
-        this.y = this.targetY = pos.getY() + 0.5D;
-        this.z = this.targetZ = pos.getZ() + 0.5D;
+        Vec3 safe = position == null ? Vec3.ZERO : position;
+        this.target = safe;
+        this.x = this.targetX = safe.x;
+        this.y = this.targetY = safe.y;
+        this.z = this.targetZ = safe.z;
     }
 
     ClientLevel level() {
         return level;
     }
 
-    BlockPos target() {
+    Vec3 target() {
         return target;
     }
 
-    void retarget(BlockPos newTarget) {
-        this.target = newTarget.immutable();
-        this.targetX = target.getX() + 0.5D;
-        this.targetY = target.getY() + 0.5D;
-        this.targetZ = target.getZ() + 0.5D;
+    void retarget(Vec3 newTarget) {
+        if (newTarget == null) return;
+        this.target = newTarget;
+        this.targetX = newTarget.x;
+        this.targetY = newTarget.y;
+        this.targetZ = newTarget.z;
     }
 
     @Override
@@ -75,7 +83,9 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
             return state.hasProperty(BlockStateProperties.POWERED)
                     && state.getValue(BlockStateProperties.POWERED);
         }
-        return false;
+        return Sl2FacilityPropsModule.isRoundLamp(state)
+                && state.hasProperty(BlockStateProperties.LIT)
+                && state.getValue(BlockStateProperties.LIT);
     }
 
     public boolean isFinished() {

@@ -1,7 +1,11 @@
 package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import net.minecraft.client.Minecraft;
@@ -92,6 +96,15 @@ public final class Scp079BlackoutAvailabilityClient {
             // a just-used Blackout never makes its own command row blink away.
             begin(current, true);
         }
+        SurfaceLampStatus surfaceStatus =
+                surfaceLampStatus(minecraft, current);
+        if (surfaceStatus.supported()) supported = true;
+        if (surfaceStatus.available()) {
+            available = true;
+            scanning = false;
+            completedAt = tick;
+            return;
+        }
         if (!scanning) return;
 
         int budget = BLOCK_BUDGET_PER_TICK;
@@ -178,7 +191,60 @@ public final class Scp079BlackoutAvailabilityClient {
         }
         boolean powered = state.hasProperty(BlockStateProperties.POWERED)
                 && state.getValue(BlockStateProperties.POWERED);
-        return powered || minecraft.level.hasNeighborSignal(pos);
+        return Sl2FacilityPropsModule.isRoundLamp(state)
+                || powered || minecraft.level.hasNeighborSignal(pos);
+    }
+
+
+    private static SurfaceLampStatus surfaceLampStatus(Minecraft minecraft,
+            FacilityRoomSnapshot room) {
+        if (minecraft.level == null || room == null) {
+            return new SurfaceLampStatus(false, false);
+        }
+        boolean supported = false;
+        boolean available = false;
+        for (ConstructionSurface surface : TransformConstructionClientState
+                .surfaces(minecraft.level.dimension().location())) {
+            for (var entry : surface.attachments().entrySet()) {
+                BlockState state = entry.getValue().state();
+                if (!Sl2FacilityPropsModule.isRoundLamp(state)) continue;
+                var center = TransformSurfaceGeometry.cellCenter(surface,
+                        entry.getKey(), TransformSurfaceGeometry.MAIN_SIDE,
+                        false);
+                if (!insideRoom(room, center.x, center.y, center.z)) continue;
+                supported = true;
+                if (state.getValue(Sl2FacilityPropsModule.LIT)) {
+                    available = true;
+                }
+            }
+            for (var entry : surface.overlays().entrySet()) {
+                BlockState state = entry.getValue().state();
+                if (!Sl2FacilityPropsModule.isRoundLamp(state)) continue;
+                var key = entry.getKey();
+                var center = TransformSurfaceGeometry.cellCenter(surface,
+                        key.slot(), key.normalSign(), true);
+                if (!insideRoom(room, center.x, center.y, center.z)) continue;
+                supported = true;
+                if (state.getValue(Sl2FacilityPropsModule.LIT)) {
+                    available = true;
+                }
+            }
+        }
+        return new SurfaceLampStatus(supported, available);
+    }
+
+    private static boolean insideRoom(FacilityRoomSnapshot room,
+            double x, double y, double z) {
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (y < patch.y() - 1.0D || y > patch.y() + SCAN_HEIGHT + 0.5D) {
+                continue;
+            }
+            if (patch.containsXZ(x, z)) return true;
+        }
+        return false;
+    }
+
+    private record SurfaceLampStatus(boolean supported, boolean available) {
     }
 
     private static void clear() {

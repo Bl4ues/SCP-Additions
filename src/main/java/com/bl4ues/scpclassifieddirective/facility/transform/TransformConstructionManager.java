@@ -3,6 +3,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityPipeModule;
+import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface.SurfaceAttachment;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface.SurfaceSlot;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -500,6 +501,10 @@ public final class TransformConstructionManager {
             FacilityPipeModule.refreshSurface(level, surfaceId);
         }
         playConstructionSound(level, payload, center, true);
+        if (Sl2FacilityPropsModule.isRoundLamp(payload)) {
+            Sl2FacilityPropsModule.playTransition(level,
+                    BlockPos.containing(center), true);
+        }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
         return true;
     }
@@ -566,7 +571,12 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceOverlay(level, surfaceId,
                 targetSlot, side, payload, deform);
-        playConstructionSound(level, payload, center.add(normal.scale(side * 0.5D)), true);
+        Vec3 soundCenter = center.add(normal.scale(side * 0.5D));
+        playConstructionSound(level, payload, soundCenter, true);
+        if (Sl2FacilityPropsModule.isRoundLamp(payload)) {
+            Sl2FacilityPropsModule.playTransition(level,
+                    BlockPos.containing(soundCenter), true);
+        }
         if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
             FacilityPipeModule.refreshSurface(level, surfaceId);
         }

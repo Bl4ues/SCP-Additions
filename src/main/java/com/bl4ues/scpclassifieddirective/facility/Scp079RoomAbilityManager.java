@@ -203,18 +203,24 @@ public final class Scp079RoomAbilityManager {
     private static List<LightTarget> poweredLights(ServerLevel level,
             FacilityRoomSnapshot room, State state) {
         LightScanCache cache = state.lightCache;
+        List<LightTarget> result;
         if (cache != null && cache.complete
                 && cache.dimension.equals(level.dimension())
                 && cache.roomId.equals(room.id())) {
-            return resolvePoweredLights(level, cache.candidates);
+            result = resolvePoweredLights(level, cache.candidates);
+        } else {
+            LightScanCache completed = createLightScanCache(level, room);
+            while (!completed.complete) {
+                scanNextLightSlice(level, completed);
+            }
+            state.lightCache = completed;
+            result = resolvePoweredLights(level, completed.candidates);
         }
-
-        LightScanCache completed = createLightScanCache(level, room);
-        while (!completed.complete) {
-            scanNextLightSlice(level, completed);
+        for (Sl2FacilityPropsModule.SurfaceLampRef ref :
+                Sl2FacilityPropsModule.surfaceLampsInRoom(level, room, true)) {
+            result.add(LightTarget.surface(ref));
         }
-        state.lightCache = completed;
-        return resolvePoweredLights(level, completed.candidates);
+        return result;
     }
 
     /** Build cheap bounded chunk/section tasks without touching block states. */
@@ -325,8 +331,11 @@ public final class Scp079RoomAbilityManager {
             }
             boolean powered = blockState.hasProperty(BlockStateProperties.POWERED)
                     && blockState.getValue(BlockStateProperties.POWERED);
-            if (!powered && !level.hasNeighborSignal(cursor)) continue;
-            result.add(new LightTarget(cursor.immutable(),
+            boolean intrinsic = Sl2FacilityPropsModule.isRoundLamp(blockState);
+            if (!intrinsic && !powered && !level.hasNeighborSignal(cursor)) {
+                continue;
+            }
+            result.add(LightTarget.world(cursor.immutable(),
                     blockState.getBlock()));
         }
         return result;
@@ -393,9 +402,20 @@ public final class Scp079RoomAbilityManager {
     }
 
     private static void forceOff(ServerLevel level, LightTarget target) {
+        if (level == null || target == null) return;
+        if (target.surface != null) {
+            Sl2FacilityPropsModule.setSurfaceLampLit(level, target.surface,
+                    false, true);
+            return;
+        }
         if (!level.hasChunkAt(target.pos)) return;
         BlockState state = level.getBlockState(target.pos);
         if (state.getBlock() != target.block) return;
+        if (Sl2FacilityPropsModule.isRoundLamp(state)) {
+            Sl2FacilityPropsModule.setWorldLampLit(level, target.pos,
+                    false, true);
+            return;
+        }
         BlockState off = state;
         if (off.hasProperty(BlockStateProperties.LIT)
                 && off.getValue(BlockStateProperties.LIT)) {
@@ -411,9 +431,20 @@ public final class Scp079RoomAbilityManager {
     }
 
     private static void restoreLight(ServerLevel level, LightTarget target) {
+        if (level == null || target == null) return;
+        if (target.surface != null) {
+            Sl2FacilityPropsModule.setSurfaceLampLit(level, target.surface,
+                    true, true);
+            return;
+        }
         if (!level.hasChunkAt(target.pos)) return;
         BlockState state = level.getBlockState(target.pos);
         if (state.getBlock() != target.block) return;
+        if (Sl2FacilityPropsModule.isRoundLamp(state)) {
+            Sl2FacilityPropsModule.setWorldLampLit(level, target.pos,
+                    true, true);
+            return;
+        }
         state.getBlock().neighborChanged(state, level, target.pos,
                 state.getBlock(), target.pos, false);
         level.scheduleTick(target.pos, state.getBlock(), 1);
@@ -553,7 +584,17 @@ public final class Scp079RoomAbilityManager {
             int endsAt, List<LightTarget> lights) {
     }
 
-    private record LightTarget(BlockPos pos, Block block) {
+    private record LightTarget(BlockPos pos, Block block,
+            Sl2FacilityPropsModule.SurfaceLampRef surface) {
+        private static LightTarget world(BlockPos pos, Block block) {
+            return new LightTarget(pos, block, null);
+        }
+
+        private static LightTarget surface(
+                Sl2FacilityPropsModule.SurfaceLampRef ref) {
+            return new LightTarget(ref.worldPos(),
+                    Sl2FacilityPropsModule.ROUND_LAMP.get(), ref);
+        }
     }
 
     private record LightKey(ResourceKey<Level> dimension, long pos) {

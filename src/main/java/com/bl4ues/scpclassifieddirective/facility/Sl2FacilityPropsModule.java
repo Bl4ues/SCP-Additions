@@ -3,6 +3,13 @@ package com.bl4ues.scpclassifieddirective.facility;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.CeilingLampAudioClient;
 import com.bl4ues.scpclassifieddirective.init.ScpClassifiedDirectiveModSounds;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
+import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionSavedData;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,7 +46,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /** SL2 utility props whose models are authored from the SCP Unity references. */
 public final class Sl2FacilityPropsModule {
@@ -128,6 +137,108 @@ public final class Sl2FacilityPropsModule {
                         ? ScpClassifiedDirectiveModSounds.LAMP_ON.get()
                         : ScpClassifiedDirectiveModSounds.LAMP_OFF.get(),
                 net.minecraft.sounds.SoundSource.BLOCKS, 0.55F, 1.0F);
+    }
+
+
+    public record SurfaceLampRef(UUID surfaceId,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            boolean overlay, BlockPos worldPos) {
+    }
+
+    /**
+     * Surface lamps are stored in transform saved data rather than as vanilla
+     * blocks. Expose the ones physically inside a mapped room so SCP-079 and
+     * client audio can treat them exactly like ordinary Round Lamps.
+     */
+    public static List<SurfaceLampRef> surfaceLampsInRoom(ServerLevel level,
+            FacilityRoomSnapshot room, boolean litOnly) {
+        if (level == null || room == null || level.getServer() == null) {
+            return List.of();
+        }
+        List<SurfaceLampRef> result = new ArrayList<>();
+        for (ConstructionSurface surface :
+                TransformConstructionSavedData.get(level.getServer()).surfaces()) {
+            if (!surface.dimension().equals(level.dimension().location())) continue;
+            for (var entry : surface.attachments().entrySet()) {
+                BlockState state = entry.getValue().state();
+                if (!isRoundLamp(state)
+                        || litOnly && !state.getValue(LIT)) continue;
+                var slot = entry.getKey();
+                var center = TransformSurfaceGeometry.cellCenter(surface, slot,
+                        TransformSurfaceGeometry.MAIN_SIDE, false);
+                if (insideRoom(room, center.x, center.y, center.z)) {
+                    result.add(new SurfaceLampRef(surface.id(), slot,
+                            TransformSurfaceGeometry.MAIN_SIDE, false,
+                            BlockPos.containing(center)));
+                }
+            }
+            for (var entry : surface.overlays().entrySet()) {
+                BlockState state = entry.getValue().state();
+                if (!isRoundLamp(state)
+                        || litOnly && !state.getValue(LIT)) continue;
+                var key = entry.getKey();
+                var center = TransformSurfaceGeometry.cellCenter(surface,
+                        key.slot(), key.normalSign(), true);
+                if (insideRoom(room, center.x, center.y, center.z)) {
+                    result.add(new SurfaceLampRef(surface.id(), key.slot(),
+                            key.normalSign(), true,
+                            BlockPos.containing(center)));
+                }
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private static boolean insideRoom(FacilityRoomSnapshot room,
+            double x, double y, double z) {
+        for (FacilityFloorPatch patch : room.patches()) {
+            if (y < patch.y() - 1.0D || y > patch.y() + 8.5D) continue;
+            if (patch.containsXZ(x, z)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Runtime state mutation for a lamp attached to a curved Surface. This is a
+     * quiet state update: geometry ownership stays untouched while proxy light,
+     * renderer state and clients receive the one-cell delta.
+     */
+    public static boolean setSurfaceLampLit(ServerLevel level,
+            SurfaceLampRef ref, boolean lit, boolean transitionSound) {
+        if (level == null || ref == null || level.getServer() == null) {
+            return false;
+        }
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(level.getServer());
+        ConstructionSurface surface = data.surface(ref.surfaceId());
+        if (surface == null || !surface.dimension().equals(
+                level.dimension().location())) return false;
+
+        ConstructionSurface.SurfaceAttachment attachment = ref.overlay()
+                ? surface.overlay(ref.slot(), ref.normalSign())
+                : surface.attachments().get(ref.slot());
+        if (attachment == null || !isRoundLamp(attachment.state())
+                || attachment.state().getValue(LIT) == lit) return false;
+
+        BlockState updated = attachment.state().setValue(LIT, lit);
+        ConstructionSurface next = ref.overlay()
+                ? surface.withOverlay(ref.slot(), ref.normalSign(), updated,
+                        attachment.deform())
+                : surface.withAttachment(ref.slot(), updated,
+                        attachment.deform());
+        data.putSurfaceState(next);
+        TransformConstructionManager.refreshSurfaceSlotRuntime(
+                level.getServer(), surface.id(), ref.slot());
+        if (ref.overlay()) {
+            TransformConstructionNetwork.broadcastSurfaceOverlay(level,
+                    surface.id(), ref.slot(), ref.normalSign(), updated,
+                    attachment.deform());
+        } else {
+            TransformConstructionNetwork.broadcastSurfaceSlot(level,
+                    surface.id(), ref.slot(), updated, attachment.deform());
+        }
+        if (transitionSound) playTransition(level, ref.worldPos(), lit);
+        return true;
     }
 
     private static final class WallFixtureBlock

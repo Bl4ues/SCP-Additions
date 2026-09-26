@@ -1980,8 +1980,51 @@ public final class TransformConstructionClientRenderer {
                         localNormal, normalSign, depthOffset, seamEligible)
                 : rigidFrame(surface, slot, point.x, point.y, point.z,
                         localNormal, normalSign, depthOffset);
+        int vertexLight = surfaceVertexLight(surface, attachment.state(),
+                frame, light);
         return new PreparedVertex(attachment.state(), frame.position(),
-                frame.normal(), u, v, red, green, blue, light);
+                frame.normal(), u, v, red, green, blue, vertexLight);
+    }
+
+    /**
+     * Surface meshes are not vanilla chunk meshes, so one light sample at the
+     * logical cell center makes an entire curved tile share one light value.
+     * Around a point light that produces the bright cross/checker pattern seen
+     * on linked ceilings. Sample the actual transformed vertices instead and
+     * bias the probes toward the visible side of each face. The values then
+     * interpolate across the tessellated curve just like ordinary terrain.
+     */
+    private static int surfaceVertexLight(ConstructionSurface surface,
+            BlockState state, VertexFrame frame, int fallback) {
+        boolean curved = surface.curveOffset().lengthSqr() > 1.0E-8D
+                || surface.heightCurveOffset().lengthSqr() > 1.0E-8D
+                || surface.topCurveOffset().lengthSqr() > 1.0E-8D
+                || surface.bridge() != null;
+        if (!curved) return fallback;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return fallback;
+        Vec3 normal = TransformMath.safeNormalize(frame.normal(), Vec3.ZERO);
+        if (normal.lengthSqr() < 1.0E-10D) return fallback;
+
+        int first = lightAt(minecraft, state,
+                frame.position().add(normal.scale(0.10D)), fallback);
+        int second = lightAt(minecraft, state,
+                frame.position().add(normal.scale(0.52D)), first);
+        return net.minecraft.client.renderer.LightTexture.pack(
+                Math.max(net.minecraft.client.renderer.LightTexture.block(first),
+                        net.minecraft.client.renderer.LightTexture.block(second)),
+                Math.max(net.minecraft.client.renderer.LightTexture.sky(first),
+                        net.minecraft.client.renderer.LightTexture.sky(second)));
+    }
+
+    private static int lightAt(Minecraft minecraft, BlockState state,
+            Vec3 world, int fallback) {
+        BlockPos pos = BlockPos.containing(world);
+        if (minecraft.level == null || !minecraft.level.hasChunkAt(pos)) {
+            return fallback;
+        }
+        return LevelRenderer.getLightColor(minecraft.level, state, pos);
     }
 
     private static void emitSurfaceVertex(List<PreparedVertex> output,

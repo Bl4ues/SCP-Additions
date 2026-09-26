@@ -149,6 +149,9 @@ public final class TransformConstructionClientRenderer {
             DIRTY_GROUP_CELLS = new HashMap<>();
     private static final Map<UUID, Set<ConstructionSurface.SurfaceSlot>>
             DIRTY_SURFACE_SLOTS = new HashMap<>();
+    private static final List<LightingRefresh> PENDING_LIGHTING_REFRESHES =
+            new ArrayList<>();
+    private record LightingRefresh(Vec3 source, double radius, long dueTick) { }
 
     private TransformConstructionClientRenderer() {
     }
@@ -167,6 +170,7 @@ public final class TransformConstructionClientRenderer {
         GROUP_MESHES.clear();
         DIRTY_GROUP_CELLS.clear();
         DIRTY_SURFACE_SLOTS.clear();
+        PENDING_LIGHTING_REFRESHES.clear();
         editorWorldPose = null;
         editorWorldNormal = null;
     }
@@ -215,7 +219,78 @@ public final class TransformConstructionClientRenderer {
     }
 
     static void invalidateGroup(UUID id) {
-        if (id != null) GROUP_MESHES.remove(id);
+        if (id != null) {
+            GROUP_MESHES.remove(id);
+            DIRTY_GROUP_CELLS.remove(id);
+        }
+    }
+
+    /**
+     * Prepared transformed vertices contain packed block light. If a Surface
+     * lamp changes while only its logical slot is rebuilt, that slot and its
+     * four neighbours can retain a visibly different light sample from the
+     * rest of the cached ceiling. Rebuild only transformed structures close
+     * enough to receive this light, then repeat after vanilla light propagation
+     * has had a few ticks to settle.
+     */
+    public static void invalidateLightingAround(Vec3 source, double radius) {
+        if (source == null) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return;
+        double safeRadius = Math.max(1.0D, radius);
+        invalidateLightingAroundNow(minecraft, source, safeRadius);
+        PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
+                minecraft.level.getGameTime() + 3L));
+    }
+
+    private static void flushLightingRefreshes(Minecraft minecraft) {
+        if (minecraft.level == null || PENDING_LIGHTING_REFRESHES.isEmpty()) {
+            return;
+        }
+        long tick = minecraft.level.getGameTime();
+        for (int index = PENDING_LIGHTING_REFRESHES.size() - 1;
+                index >= 0; index--) {
+            LightingRefresh refresh = PENDING_LIGHTING_REFRESHES.get(index);
+            if (refresh.dueTick() > tick) continue;
+            PENDING_LIGHTING_REFRESHES.remove(index);
+            invalidateLightingAroundNow(minecraft, refresh.source(),
+                    refresh.radius());
+        }
+    }
+
+    private static void invalidateLightingAroundNow(Minecraft minecraft,
+            Vec3 source, double radius) {
+        var dimension = minecraft.level.dimension().location();
+        for (ConstructionSurface surface :
+                TransformConstructionClientState.surfaces(dimension)) {
+            Vec3 center = surface.gridPoint(0.5D, 0.5D);
+            double surfaceRadius = Math.max(surface.width(), surface.height())
+                    + surface.curveOffset().length()
+                    + surface.heightCurveOffset().length()
+                    + surface.topCurveOffset().length() + 3.0D;
+            double reach = radius + surfaceRadius;
+            if (center.distanceToSqr(source) <= reach * reach) {
+                invalidateSurfaceMesh(surface.id());
+            }
+        }
+        for (TransformGroup group :
+                TransformConstructionClientState.groups(dimension)) {
+            CachedGroup cached = GROUP_MESHES.get(group.id());
+            if (cached == null) continue;
+            double reach = radius + GROUP_BATCH_RADIUS;
+            double reachSqr = reach * reach;
+            boolean nearby = false;
+            for (CachedGroupBatch batch : cached.batches()) {
+                Vec3 world = TransformMath.localToWorld(group.origin(),
+                        batch.localCenter(), group.rotationX(),
+                        group.rotationY(), group.rotationZ());
+                if (world.distanceToSqr(source) <= reachSqr) {
+                    nearby = true;
+                    break;
+                }
+            }
+            if (nearby) invalidateGroup(group.id());
+        }
     }
 
     @SubscribeEvent
@@ -261,6 +336,7 @@ public final class TransformConstructionClientRenderer {
         }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) return;
+        flushLightingRefreshes(minecraft);
         var dimension = minecraft.level.dimension().location();
         var groups = TransformConstructionClientState.groups(dimension);
         var surfaces = TransformConstructionClientState.surfaces(dimension);
@@ -928,6 +1004,7 @@ public final class TransformConstructionClientRenderer {
 
     private static void invalidateSurfaceMesh(UUID id) {
         releaseSurfaceGpu(SURFACE_MESHES.remove(id));
+        DIRTY_SURFACE_SLOTS.remove(id);
     }
 
     private static void clearSurfaceGpuCache() {
@@ -1877,9 +1954,8 @@ public final class TransformConstructionClientRenderer {
             ConstructionSurface.SurfaceAttachment attachment, int normalSign,
             boolean overlay, Vec3 point, Vec3 localNormal, float u, float v,
             int red, int green, int blue, int light) {
-        double depthOffset = overlay
-                && (normalSign < 0 ? -1 : 1)
-                == TransformSurfaceGeometry.MAIN_SIDE ? 1.0D : 0.0D;
+        double depthOffset = TransformSurfaceGeometry.attachmentDepthOffset(
+                attachment.state(), normalSign, overlay);
         // A ceiling meets a wall at the latter's TOP/BOTTOM border, not just
         // its START/END border. All four physical edges are eligible; internal
         // tile borders, fixtures and overlays never get mitered.

@@ -31,6 +31,10 @@ public final class TransformSurfaceGeometry {
     private static final int CURVE_U_SUBDIVISIONS = 4;
     private static final int CURVE_V_SUBDIVISIONS = 3;
     private static final int RIGID_SUBDIVISIONS = 2;
+    // Very thin Surface fixtures need a small physical seat. On a strongly
+    // curved ceiling, a coplanar cutout can otherwise be crossed by the
+    // structural shell between tessellation samples.
+    public static final double ROUND_LAMP_SURFACE_SEAT = 0.03125D;
 
     private TransformSurfaceGeometry() {
     }
@@ -78,7 +82,8 @@ public final class TransformSurfaceGeometry {
             return List.of();
         }
         int side = normalSign < 0 ? -1 : 1;
-        double depthOffset = overlay && side == MAIN_SIDE ? 1.0D : 0.0D;
+        double depthOffset = attachmentDepthOffset(
+                attachment.state(), normalSign, overlay);
         VoxelShape shape = attachment.state().getCollisionShape(
                 EmptyBlockGetter.INSTANCE, BlockPos.ZERO,
                 CollisionContext.empty());
@@ -92,6 +97,16 @@ public final class TransformSurfaceGeometry {
             }
         }
         return List.copyOf(result);
+    }
+
+    public static double attachmentDepthOffset(BlockState state,
+            int normalSign, boolean overlay) {
+        int side = normalSign < 0 ? -1 : 1;
+        double offset = overlay && side == MAIN_SIDE ? 1.0D : 0.0D;
+        if (Sl2FacilityPropsModule.isRoundLamp(state)) {
+            offset += ROUND_LAMP_SURFACE_SEAT;
+        }
+        return offset;
     }
 
     private static void addDeformed(ConstructionSurface surface,

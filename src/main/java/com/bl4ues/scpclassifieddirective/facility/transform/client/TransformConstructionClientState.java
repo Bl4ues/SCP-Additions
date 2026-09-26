@@ -416,6 +416,14 @@ public final class TransformConstructionClientState {
                     current.attachments().get(slot);
             next.set(index, current.withAttachment(slot, state, deform));
             surfaces = List.copyOf(next);
+            boolean roundLampLight = Sl2FacilityPropsModule.isRoundLamp(state)
+                    || previous != null
+                    && Sl2FacilityPropsModule.isRoundLamp(previous.state());
+            Vec3 roundLampLightPos = roundLampLight
+                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
+                            next.get(index), slot,
+                            TransformSurfaceGeometry.MAIN_SIDE, false)
+                    : null;
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
                     next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
@@ -425,6 +433,10 @@ public final class TransformConstructionClientState {
                 rebuildSurfaceSlotProxyCells(surfaceId, slot);
             }
             TransformAlarmAudioClient.surfaceChanged(surfaceId, slot, 0, state);
+            if (roundLampLightPos != null) {
+                TransformConstructionClientRenderer.invalidateLightingAround(
+                        roundLampLightPos, 16.0D);
+            }
             return;
         }
     }
@@ -442,6 +454,13 @@ public final class TransformConstructionClientState {
             next.set(index, current.withOverlay(slot, normalSign,
                     state, deform));
             surfaces = List.copyOf(next);
+            boolean roundLampLight = Sl2FacilityPropsModule.isRoundLamp(state)
+                    || previous != null
+                    && Sl2FacilityPropsModule.isRoundLamp(previous.state());
+            Vec3 roundLampLightPos = roundLampLight
+                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
+                            next.get(index), slot, normalSign, true)
+                    : null;
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
                     next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
@@ -452,6 +471,10 @@ public final class TransformConstructionClientState {
             }
             TransformAlarmAudioClient.surfaceChanged(surfaceId, slot,
                     normalSign < 0 ? -1 : 1, state);
+            if (roundLampLightPos != null) {
+                TransformConstructionClientRenderer.invalidateLightingAround(
+                        roundLampLightPos, 16.0D);
+            }
             return;
         }
     }
@@ -463,6 +486,12 @@ public final class TransformConstructionClientState {
         for (int index = 0; index < next.size(); index++) {
             ConstructionSurface current = next.get(index);
             if (!surfaceId.equals(current.id())) continue;
+            ConstructionSurface.SurfaceAttachment removed =
+                    current.overlay(slot, normalSign);
+            Vec3 removedLightPos = removed != null
+                    && Sl2FacilityPropsModule.isRoundLamp(removed.state())
+                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
+                            current, slot, normalSign, true) : null;
             next.set(index, current.withoutOverlay(slot, normalSign));
             surfaces = List.copyOf(next);
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
@@ -472,6 +501,10 @@ public final class TransformConstructionClientState {
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
             TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot,
                     normalSign < 0 ? -1 : 1);
+            if (removedLightPos != null) {
+                TransformConstructionClientRenderer.invalidateLightingAround(
+                        removedLightPos, 16.0D);
+            }
             return;
         }
     }
@@ -504,6 +537,13 @@ public final class TransformConstructionClientState {
         for (int index = 0; index < next.size(); index++) {
             ConstructionSurface current = next.get(index);
             if (!surfaceId.equals(current.id())) continue;
+            ConstructionSurface.SurfaceAttachment removed =
+                    current.attachments().get(slot);
+            Vec3 removedLightPos = removed != null
+                    && Sl2FacilityPropsModule.isRoundLamp(removed.state())
+                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
+                            current, slot,
+                            TransformSurfaceGeometry.MAIN_SIDE, false) : null;
             next.set(index, current.withoutAttachment(slot));
             surfaces = List.copyOf(next);
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
@@ -512,6 +552,10 @@ public final class TransformConstructionClientState {
                     surfaceId, slot);
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
             TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot, 0);
+            if (removedLightPos != null) {
+                TransformConstructionClientRenderer.invalidateLightingAround(
+                        removedLightPos, 16.0D);
+            }
             return;
         }
     }

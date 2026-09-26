@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -119,10 +120,10 @@ public final class TransformConstructionModule {
         @Override
         public VoxelShape getOcclusionShape(BlockState state, BlockGetter level,
                 BlockPos pos) {
-            if (level instanceof Level world && world.isClientSide) {
-                return TransformConstructionClientBridge.collision(pos);
-            }
-            return TransformConstructionManager.proxyCollisionShape(level, pos);
+            // Invisible technical proxy. Its collision is queried separately;
+            // exposing that collision as occlusion made AO/shaders paint dark
+            // rectangles where a temporary Surface light proxy existed.
+            return Shapes.empty();
         }
 
         @Override

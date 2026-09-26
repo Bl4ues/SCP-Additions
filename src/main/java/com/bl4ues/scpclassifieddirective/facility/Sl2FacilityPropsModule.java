@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -110,7 +111,10 @@ public final class Sl2FacilityPropsModule {
     }
 
     public static boolean isRigidFixture(Block block) {
-        return isWallFixture(block) || isRoundLamp(block);
+        // Thin wall fixtures stay rigid. Round Lamp intentionally deforms with
+        // Surface geometry so its full circular face follows curved walls and
+        // linked ceilings instead of cutting through them as one flat plane.
+        return isWallFixture(block);
     }
 
     public static BlockState roundLampState(Direction facing, boolean lit) {
@@ -321,7 +325,7 @@ public final class Sl2FacilityPropsModule {
         private RoundLampBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(0.8F, 8.0F)
-                    .lightLevel(state -> state.getValue(LIT) ? 15 : 0)
+                    .lightLevel(state -> state.getValue(LIT) ? 13 : 0)
                     .noOcclusion()
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any()
@@ -443,14 +447,30 @@ public final class Sl2FacilityPropsModule {
     }
 
     private static VoxelShape roundLampShape(Direction facing) {
+        // The visible 10x10 plate was reduced by 15% around its own centre.
+        // Keep collision aligned with the resized model on every mount face.
         return switch (facing) {
-            case DOWN -> Block.box(3, 15.5, 3, 13, 16, 13);
-            case NORTH -> Block.box(3, 3, 15.5, 13, 13, 16);
-            case SOUTH -> Block.box(3, 3, 0, 13, 13, 0.5);
-            case WEST -> Block.box(15.5, 3, 3, 16, 13, 13);
-            case EAST -> Block.box(0, 3, 3, 0.5, 13, 13);
-            default -> Block.box(3, 0, 3, 13, 0.5, 13);
+            case DOWN -> Block.box(3.75, 15.5, 3.75, 12.25, 16, 12.25);
+            case NORTH -> Block.box(3.75, 3.75, 15.5, 12.25, 12.25, 16);
+            case SOUTH -> Block.box(3.75, 3.75, 0, 12.25, 12.25, 0.5);
+            case WEST -> Block.box(15.5, 3.75, 3.75, 16, 12.25, 12.25);
+            case EAST -> Block.box(0, 3.75, 3.75, 0.5, 12.25, 12.25);
+            default -> Block.box(3.75, 0, 3.75, 12.25, 0.5, 12.25);
         };
+    }
+
+    /**
+     * One real block-light source for a Surface-mounted lamp. Collision can be
+     * tessellated over several world cells on a curve; using every collision
+     * fragment as a light source creates the unnatural bright stripe seen on
+     * curved walls. Keep geometry deformed but lighting point-like and let
+     * Minecraft's normal block-light propagation illuminate every surface.
+     */
+    public static Vec3 surfaceLampLightPosition(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            boolean overlay) {
+        return TransformSurfaceGeometry.logicalPoint(surface, slot, true,
+                normalSign, overlay, 0.5D, 0.5D, 0.08D);
     }
 
     private static VoxelShape rotateNorthShape(VoxelShape source,

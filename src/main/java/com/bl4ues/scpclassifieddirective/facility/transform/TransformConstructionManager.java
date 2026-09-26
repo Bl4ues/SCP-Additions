@@ -1427,9 +1427,16 @@ public final class TransformConstructionManager {
                 SURFACE_SELECTION_THICKNESS);
         addWorldBox(index, owner, selection, true, false, 0);
         if (attachment != null && !attachment.state().isAir()) {
+            boolean roundLamp = Sl2FacilityPropsModule.isRoundLamp(
+                    attachment.state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, attachment)) {
                 addWorldBox(index, owner, collision, false, true,
+                        roundLamp ? 0 : attachment.state().getLightEmission());
+            }
+            if (roundLamp && attachment.state().getLightEmission() > 0) {
+                addSurfaceLampLight(index, owner, surface, slot,
+                        TransformSurfaceGeometry.MAIN_SIDE, false,
                         attachment.state().getLightEmission());
             }
         }
@@ -1437,13 +1444,34 @@ public final class TransformConstructionManager {
                 SurfaceAttachment> overlay : surface.overlays().entrySet()) {
             if (!overlay.getKey().slot().equals(slot)
                     || overlay.getValue().state().isAir()) continue;
+            boolean roundLamp = Sl2FacilityPropsModule.isRoundLamp(
+                    overlay.getValue().state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, overlay.getValue(),
                     overlay.getKey().normalSign(), true)) {
                 addWorldBox(index, owner, collision, false, true,
+                        roundLamp ? 0
+                                : overlay.getValue().state().getLightEmission());
+            }
+            if (roundLamp && overlay.getValue().state().getLightEmission() > 0) {
+                addSurfaceLampLight(index, owner, surface, slot,
+                        overlay.getKey().normalSign(), true,
                         overlay.getValue().state().getLightEmission());
             }
         }
+    }
+
+    private static void addSurfaceLampLight(SpatialIndex index, OwnerKey owner,
+            ConstructionSurface surface, SurfaceSlot slot, int normalSign,
+            boolean overlay, int light) {
+        Vec3 world = Sl2FacilityPropsModule.surfaceLampLightPosition(surface,
+                slot, normalSign, overlay);
+        BlockPos pos = BlockPos.containing(world);
+        // No selection/collision contribution. This proxy exists solely for
+        // vanilla block-light propagation and remains transparent to movement.
+        index.add(owner, pos,
+                new AABB(0.48D, 0.48D, 0.48D, 0.52D, 0.52D, 0.52D),
+                false, false, light);
     }
 
     private static AABB transformedBounds(TransformGroup group, AABB local) {

@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionClientBridge;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
@@ -1151,7 +1152,7 @@ public final class TransformConstructionClientState {
                 surface.dimension(), surface.bottomStart(), surface.bottomEnd(),
                 surface.topStart(), surface.topEnd(), surface.curveOffset(),
                 surface.heightCurveOffset(), attachments, overlays,
-                surface.flipped());
+                surface.flipped(), surface.topCurveOffset(), surface.bridge());
         Map<Long, MutableProxyCell> mutable = new LinkedHashMap<>();
         addSurfaceSlot(mutable, single, slot);
         return freezeContribution(mutable);
@@ -1331,9 +1332,16 @@ public final class TransformConstructionClientState {
                         SURFACE_SELECTION_THICKNESS),
                 null, surface.id(), true, false, 0);
         if (attachment != null && !attachment.state().isAir()) {
+            boolean roundLamp = Sl2FacilityPropsModule.isRoundLamp(
+                    attachment.state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, attachment)) {
                 addWorldBox(index, collision, null, surface.id(), false, true,
+                        roundLamp ? 0 : attachment.state().getLightEmission());
+            }
+            if (roundLamp && attachment.state().getLightEmission() > 0) {
+                addSurfaceLampLight(index, surface, slot,
+                        TransformSurfaceGeometry.MAIN_SIDE, false,
                         attachment.state().getLightEmission());
             }
         }
@@ -1342,13 +1350,34 @@ public final class TransformConstructionClientState {
                 : surface.overlays().entrySet()) {
             if (!overlay.getKey().slot().equals(slot)
                     || overlay.getValue().state().isAir()) continue;
+            boolean roundLamp = Sl2FacilityPropsModule.isRoundLamp(
+                    overlay.getValue().state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, overlay.getValue(),
                     overlay.getKey().normalSign(), true)) {
                 addWorldBox(index, collision, null, surface.id(), false, true,
+                        roundLamp ? 0
+                                : overlay.getValue().state().getLightEmission());
+            }
+            if (roundLamp && overlay.getValue().state().getLightEmission() > 0) {
+                addSurfaceLampLight(index, surface, slot,
+                        overlay.getKey().normalSign(), true,
                         overlay.getValue().state().getLightEmission());
             }
         }
+    }
+
+    private static void addSurfaceLampLight(
+            Map<Long, MutableProxyCell> index, ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            boolean overlay, int light) {
+        Vec3 world = Sl2FacilityPropsModule.surfaceLampLightPosition(surface,
+                slot, normalSign, overlay);
+        BlockPos pos = BlockPos.containing(world);
+        index.computeIfAbsent(pos.asLong(), ignored -> new MutableProxyCell())
+                .add(new AABB(0.48D, 0.48D, 0.48D,
+                                0.52D, 0.52D, 0.52D),
+                        null, surface.id(), false, false, light);
     }
 
     private static AABB transformedBounds(TransformGroup group, AABB local) {

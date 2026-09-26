@@ -529,5 +529,8 @@
   "subtitles.scp_classified_directive.ceiling_ventilation": "Ceiling ventilation hums",
   "block.scp_classified_directive.alarm": "Alarm",
   "tooltip.scp_classified_directive.alarm": "Activated by redstone or nearby open electric doors",
-  "subtitles.scp_classified_directive.alarm": "Facility alarm sounds"
+  "subtitles.scp_classified_directive.alarm": "Facility alarm sounds",
+  "block.scp_classified_directive.pneumatic_panel": "Pneumatic Panel",
+  "block.scp_classified_directive.sl2_round_lamp": "Round Lamp",
+  "block.scp_classified_directive.outlet": "Outlet"
 }

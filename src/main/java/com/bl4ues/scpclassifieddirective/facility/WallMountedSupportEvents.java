@@ -186,6 +186,7 @@ public final class WallMountedSupportEvents {
                 || block == FacilityModule.CORE_ROOM_SIGN.get()
                 || block == FacilityModule.DOOR_SIGN.get()
                 || block == FacilityModule.TV.get()
+                || Sl2FacilityPropsModule.isWallFixture(block)
                 || isDoorButton(block)
                 || isKeycardReader(block);
     }

@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.WallMountedSupportEvents;
+import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityPipeModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmMountStructure;
@@ -110,6 +111,12 @@ public final class TransformPlacementStateRuntime {
         Vec3 safeHit = hit == null ? group.cellCenter(cell) : hit;
         Vec3 localHit = TransformMath.worldToLocal(group.origin(), safeHit,
                 group.rotationX(), group.rotationY(), group.rotationZ());
+
+        // Round Lamp is authored flat on a floor. In a transformed group its
+        // facing follows the actual local face instead of world cardinal axes.
+        if (Sl2FacilityPropsModule.isRoundLamp(item.getBlock())) {
+            return Sl2FacilityPropsModule.roundLampState(outwardLocal, true);
+        }
 
         // Pipe models are authored on the local SOUTH edge for FACING NORTH.
         // The parent-world clicked face must not reverse them on rotated grids.
@@ -241,6 +248,13 @@ public final class TransformPlacementStateRuntime {
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 safeHit = hit == null ? surface.gridPoint(u, v) : hit;
+
+        // Surface payloads are rendered in their tangent/vertical/normal
+        // frame. SOUTH is canonical local +Z, keeping the rigid lamp flush to
+        // curved walls and linked ceilings without distorting the model.
+        if (Sl2FacilityPropsModule.isRoundLamp(item.getBlock())) {
+            return Sl2FacilityPropsModule.roundLampState(Direction.SOUTH, true);
+        }
 
         // The pipe mesh is authored at the +Z edge with NORTH facing.
         // A Surface wall starts at local Z=0, so reverse the pipe model into

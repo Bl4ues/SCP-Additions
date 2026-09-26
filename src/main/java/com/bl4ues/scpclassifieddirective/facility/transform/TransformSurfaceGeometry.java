@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
 import net.minecraft.core.BlockPos;
@@ -39,6 +40,7 @@ public final class TransformSurfaceGeometry {
             return false;
         }
         return !FacilityModule.isFacilityDoor(state)
+                && !Sl2FacilityPropsModule.isRigidFixture(state.getBlock())
                 && !AlarmModule.isController(state)
                 && !TransformWallFixturePlacement.isDoorButton(state)
                 && KeycardReaderLevels.describe(state) == null

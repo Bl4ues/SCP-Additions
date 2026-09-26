@@ -30,6 +30,7 @@ import com.bl4ues.scpclassifieddirective.entity.Scp173TargetConfig;
 import com.bl4ues.scpclassifieddirective.facility.AreaUnderConstructionSignModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityDecorativePropsModule;
+import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.TeslaGateTerminalTableModule;
@@ -113,6 +114,7 @@ public class ScpClassifiedDirectiveMod {
         UBlocksModule.register(bus);
         FacilityModule.register(bus);
         FacilityDecorativePropsModule.register(bus);
+        Sl2FacilityPropsModule.register(bus);
         AlarmModule.register(bus);
         BlastDoorModule.register(bus);
         TeslaGateTerminalTableModule.register(bus);

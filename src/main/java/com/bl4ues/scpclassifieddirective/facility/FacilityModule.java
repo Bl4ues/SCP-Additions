@@ -359,6 +359,8 @@ public final class FacilityModule {
                 FacilityDecorativePropsModule.highVoltageElectricalBoxItem());
         addExternalCreativeItem(props,
                 FacilityDecorativePropsModule.electricalCabinetItem());
+        addExternalCreativeItem(props, Sl2FacilityPropsModule.pneumaticPanelItem());
+        addExternalCreativeItem(props, Sl2FacilityPropsModule.outletItem());
         addFacilityCreativeItem(props, "emergency_button");
         addFacilityCreativeItem(props, "fire_extinguisher");
         addFacilityCreativeItem(props, "water_faucet");
@@ -431,6 +433,7 @@ public final class FacilityModule {
         addUBlockCreativeItem(sublevel2, "sl_2_wall_bot");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_mid");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_top");
+        addExternalCreativeItem(sublevel2, Sl2FacilityPropsModule.roundLampItem());
         for (Item pipe : FacilityPipeModule.creativeItems()) {
             addExternalCreativeItem(sublevel2, pipe);
         }

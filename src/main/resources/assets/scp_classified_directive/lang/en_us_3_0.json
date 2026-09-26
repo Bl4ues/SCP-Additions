@@ -208,5 +208,8 @@
   "block.scp_classified_directive.sl_1_kitchen_floor": "Kitchen Corner Floor",
   "block.scp_classified_directive.vent_open": "Vent",
   "tooltip.scp_classified_directive.sl1_resting_floor_connection": "Connects automatically with Metal Floor",
-  "tooltip.scp_classified_directive.sl1_kitchen_floor_connection": "Connects automatically with Blue Floor"
+  "tooltip.scp_classified_directive.sl1_kitchen_floor_connection": "Connects automatically with Blue Floor",
+  "block.scp_classified_directive.pneumatic_panel": "Pneumatic Panel",
+  "block.scp_classified_directive.sl2_round_lamp": "Round Lamp",
+  "block.scp_classified_directive.outlet": "Outlet"
 }

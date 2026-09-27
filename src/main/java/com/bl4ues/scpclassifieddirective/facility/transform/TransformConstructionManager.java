@@ -23,8 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -34,7 +32,6 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -42,7 +39,6 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -69,9 +65,6 @@ public final class TransformConstructionManager {
             new WeakHashMap<>();
     private static final Map<MinecraftServer, Map<UUID, PendingSurface>>
             PENDING_SURFACES = new WeakHashMap<>();
-    private static final Map<ServerLevel, List<PendingLightRepair>>
-            PENDING_LIGHT_REPAIRS = new WeakHashMap<>();
-    private record PendingLightRepair(BlockPos pos, long dueTick, int radius) { }
 
     private TransformConstructionManager() {
     }
@@ -860,34 +853,8 @@ public final class TransformConstructionManager {
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-        int chunkX = event.getChunk().getPos().x;
-        int chunkZ = event.getChunk().getPos().z;
-        reconcileChunkProxies(level, chunkX, chunkZ);
-        ensureChunkProxies(level, chunkX, chunkZ);
-    }
-
-    @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END
-                || !(event.level instanceof ServerLevel level)) return;
-        List<PendingLightRepair> snapshot;
-        synchronized (PENDING_LIGHT_REPAIRS) {
-            List<PendingLightRepair> live = PENDING_LIGHT_REPAIRS.get(level);
-            if (live == null || live.isEmpty()) return;
-            snapshot = new ArrayList<>(live);
-        }
-        long tick = level.getGameTime();
-        for (PendingLightRepair repair : snapshot) {
-            if (repair.dueTick() > tick) continue;
-            checkLightArea(level, repair.pos(), repair.radius());
-            synchronized (PENDING_LIGHT_REPAIRS) {
-                List<PendingLightRepair> live = PENDING_LIGHT_REPAIRS.get(level);
-                if (live != null) {
-                    live.remove(repair);
-                    if (live.isEmpty()) PENDING_LIGHT_REPAIRS.remove(level);
-                }
-            }
-        }
+        ensureChunkProxies(level, event.getChunk().getPos().x,
+                event.getChunk().getPos().z);
     }
 
     public static synchronized void refresh(MinecraftServer server) {
@@ -1204,7 +1171,7 @@ public final class TransformConstructionManager {
     private static void materializeProxyCell(ServerLevel level, BlockPos pos,
             ProxyCell cell) {
         BlockState current = level.getBlockState(pos);
-        int flags = net.minecraft.world.level.block.Block.UPDATE_ALL
+        int flags = net.minecraft.world.level.block.Block.UPDATE_CLIENTS
                 | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
         if (cell == null || !materialize(cell)) {
             if (current.is(TransformConstructionModule.getProxy())) {
@@ -1227,85 +1194,16 @@ public final class TransformConstructionManager {
     }
 
     private static void refreshProxyLighting(ServerLevel level, BlockPos pos) {
-        // Light propagation is queued. Rapid placement/removal/blackout changes
-        // can overtake one another, so repair the source now and after the
-        // light graph has had time to settle.
-        checkLightArea(level, pos, 1);
-        scheduleLightRepair(level, pos, 2L, 2);
-        scheduleLightRepair(level, pos, 10L, 3);
-        scheduleLightRepair(level, pos, 30L, 4);
-    }
-
-    private static void checkLightArea(ServerLevel level, BlockPos pos,
-            int radius) {
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > radius) {
+        // LightBlockEngine propagation is asynchronous. Rechecking a compact
+        // two-block diamond clears both old and new frontier values reliably
+        // without turning ordinary Surface edits into a server-tick work queue.
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 2) {
                         continue;
                     }
                     level.getLightEngine().checkBlock(pos.offset(dx, dy, dz));
-                }
-            }
-        }
-    }
-
-    private static void scheduleLightRepair(ServerLevel level, BlockPos pos,
-            long delay, int radius) {
-        PendingLightRepair repair = new PendingLightRepair(pos.immutable(),
-                level.getGameTime() + delay, radius);
-        synchronized (PENDING_LIGHT_REPAIRS) {
-            List<PendingLightRepair> pending = PENDING_LIGHT_REPAIRS
-                    .computeIfAbsent(level, ignored -> new ArrayList<>());
-            pending.removeIf(existing -> existing.pos().equals(repair.pos())
-                    && existing.radius() == repair.radius()
-                    && Math.abs(existing.dueTick() - repair.dueTick()) <= 1L);
-            pending.add(repair);
-        }
-    }
-
-    /**
-     * Development builds persist invisible light proxies in chunks. If their
-     * logical owner disappears before a restart, a freshly rebuilt index no
-     * longer knows the old position unless the chunk is explicitly reconciled.
-     * Scan only sections that actually contain our proxy and delete or repair
-     * those cells against the current logical index.
-     */
-    private static void reconcileChunkProxies(ServerLevel level, int chunkX,
-            int chunkZ) {
-        LevelChunk chunk = level.getChunk(chunkX, chunkZ);
-        LevelChunkSection[] sections = chunk.getSections();
-        SpatialIndex spatial = index(level.getServer());
-        ResourceLocation dimension = level.dimension().location();
-        for (int sectionIndex = 0; sectionIndex < sections.length;
-                sectionIndex++) {
-            LevelChunkSection section = sections[sectionIndex];
-            if (section == null || section.hasOnlyAir()
-                    || !section.maybeHas(state ->
-                            state.is(TransformConstructionModule.getProxy()))) {
-                continue;
-            }
-            int baseY = (level.getMinSection() + sectionIndex) << 4;
-            for (int localY = 0; localY < 16; localY++) {
-                for (int localZ = 0; localZ < 16; localZ++) {
-                    for (int localX = 0; localX < 16; localX++) {
-                        BlockState state = section.getBlockState(
-                                localX, localY, localZ);
-                        if (!state.is(TransformConstructionModule.getProxy())) {
-                            continue;
-                        }
-                        BlockPos pos = new BlockPos((chunkX << 4) + localX,
-                                baseY + localY,
-                                (chunkZ << 4) + localZ);
-                        ProxyCell cell = spatial.cell(dimension, pos);
-                        if (cell == null || !materialize(cell)) {
-                            level.setBlock(pos, Blocks.AIR.defaultBlockState(),
-                                    net.minecraft.world.level.block.Block.UPDATE_ALL);
-                            refreshProxyLighting(level, pos);
-                        } else {
-                            materializeProxyCell(level, pos, cell);
-                        }
-                    }
                 }
             }
         }

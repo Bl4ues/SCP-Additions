@@ -119,8 +119,9 @@ public final class FacilityPipeModule {
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
             super.appendHoverText(stack, level, tooltip, flag);
-            tooltip.add(Component.literal("Decorative Only")
-                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable(
+                    "tooltip.scp_classified_directive.sublevel_2")
+                    .withStyle(ChatFormatting.BLUE));
         }
     }
 

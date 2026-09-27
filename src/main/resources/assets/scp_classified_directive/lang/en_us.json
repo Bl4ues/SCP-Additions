@@ -477,7 +477,6 @@
   "subtitles.page": "Page Flipping",
   "block.scp_classified_directive.sl_1_wall_detail_2": "Wall Pillar",
   "block.scp_classified_directive.sl_1_wall_detail_lamp": "Wall Pillar with Light",
-  "tooltip.scp_classified_directive.sl1_wall_detail_lamp": "Integrated light; turns off during SCP-079 Blackouts",
   "block.scp_classified_directive.sl_1_wall_detail_1_bot": "Wall Corner",
   "block.scp_classified_directive.sl1_lamp": "Ceiling Lamp",
   "block.scp_classified_directive.vent_open": "Vent",

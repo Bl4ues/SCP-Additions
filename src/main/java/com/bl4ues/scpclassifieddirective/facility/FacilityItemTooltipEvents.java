@@ -27,10 +27,10 @@ public final class FacilityItemTooltipEvents {
         }
         if (event.getItemStack().is(HazardSignModule.ITEM.get())) {
             event.getToolTip().add(Component.literal(
-                            "Displays one selectable Anomaly Trait pictogram as a facility hazard warning")
+                            "Displays a configurable Anomaly Trait hazard pictogram")
                     .withStyle(ChatFormatting.GRAY));
             event.getToolTip().add(Component.literal(
-                            "Choose the pictogram when placed; use a Screwdriver to edit it later")
+                            "Use a Screwdriver to configure after placement")
                     .withStyle(ChatFormatting.AQUA));
         }
     }

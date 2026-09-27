@@ -379,7 +379,8 @@
 - Increased the natural Roomba encounter rate from its previous multi-hour single-player average while keeping encounters sparse through a Facility Mapping floor-density budget: normal spawns reserve only their mapped room, adjacent/consecutive eligible rooms may each contain a Roomba, and the existing rare second-Roomba behavior can deliberately place a pair in one eligible SL1 room;
 - Natural Roomba population is budgeted per mapped floor from that floor's number of eligible rooms and spawn-frequency weight, giving common floors roughly one slot per five eligible rooms and progressively lower density on rarer floors; the budget continues scaling on very large authored floors instead of stopping at an arbitrary absolute cap;
 - Standard LCZ mappings strongly favor Sublevel 1 over Sublevel 2 and exclude Sublevel 3, while **Entrance Zone uses the same normal spawn-frequency weight as SL1**; Heavy Containment Zone and Super Heavy Containment Zone are excluded, the rare second-Roomba spawn remains specific to eligible LCZ Sublevel 1 rooms, and other custom layouts favor higher eligible mapped floors;
-- Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters.
+- Added the `roombaSpawn` gamerule to enable or disable natural Roomba encounters;
+- Added a default-disabled server-side **Disable Vanilla Hostile Mobs** module that blocks vanilla hostile mob spawning from natural, spawner, spawn-egg, command, and other insertion paths, removes existing unnamed vanilla hostiles when enabled, and preserves named existing mobs.
 
 ## Audio and presentation
 

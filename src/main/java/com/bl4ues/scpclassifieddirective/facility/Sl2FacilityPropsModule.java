@@ -447,15 +447,18 @@ public final class Sl2FacilityPropsModule {
     }
 
     private static VoxelShape roundLampShape(Direction facing) {
-        // The visible 10x10 plate was reduced by 15% around its own centre.
-        // Keep collision aligned with the resized model on every mount face.
+        // Match the model's 25% centre-anchored reduction. The same centred
+        // local footprint is then rotated for vanilla placement or deformed by
+        // a curved Surface, so the lamp never shrinks toward one edge.
+        final double min = 4.8125D;
+        final double max = 11.1875D;
         return switch (facing) {
-            case DOWN -> Block.box(3.75, 15.5, 3.75, 12.25, 16, 12.25);
-            case NORTH -> Block.box(3.75, 3.75, 15.5, 12.25, 12.25, 16);
-            case SOUTH -> Block.box(3.75, 3.75, 0, 12.25, 12.25, 0.5);
-            case WEST -> Block.box(15.5, 3.75, 3.75, 16, 12.25, 12.25);
-            case EAST -> Block.box(0, 3.75, 3.75, 0.5, 12.25, 12.25);
-            default -> Block.box(3.75, 0, 3.75, 12.25, 0.5, 12.25);
+            case DOWN -> Block.box(min, 15.5, min, max, 16, max);
+            case NORTH -> Block.box(min, min, 15.5, max, max, 16);
+            case SOUTH -> Block.box(min, min, 0, max, max, 0.5);
+            case WEST -> Block.box(15.5, min, min, 16, max, max);
+            case EAST -> Block.box(0, min, min, 0.5, max, max);
+            default -> Block.box(min, 0, min, max, 0.5, max);
         };
     }
 

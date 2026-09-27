@@ -247,7 +247,8 @@ public final class TransformConstructionClientRenderer {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
         double safeRadius = Math.max(1.0D, radius);
-        invalidateLightingAroundNow(minecraft, source, safeRadius);
+        invalidateLightingAroundNow(minecraft, source, safeRadius,
+                settleLightEngine);
         if (!settleLightEngine) return;
         long tick = minecraft.level.getGameTime();
         PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
@@ -269,12 +270,12 @@ public final class TransformConstructionClientRenderer {
             if (refresh.dueTick() > tick) continue;
             PENDING_LIGHTING_REFRESHES.remove(index);
             invalidateLightingAroundNow(minecraft, refresh.source(),
-                    refresh.radius());
+                    refresh.radius(), true);
         }
     }
 
     private static void invalidateLightingAroundNow(Minecraft minecraft,
-            Vec3 source, double radius) {
+            Vec3 source, double radius, boolean rebuildCurved) {
         var dimension = minecraft.level.dimension().location();
         for (ConstructionSurface surface :
                 TransformConstructionClientState.surfaces(dimension)) {
@@ -297,9 +298,12 @@ public final class TransformConstructionClientRenderer {
             // already schedule this method again after propagation settles, so
             // a curved Surface is rebuilt immediately and then resampled from
             // the final vanilla light grid without preserving stale vertex UV2.
-            if (isCurvedSurface(surface)) {
+            if (rebuildCurved && isCurvedSurface(surface)) {
                 invalidateSurfaceMesh(surface.id());
             } else {
+                // Non-emissive edits do not change the vanilla light graph.
+                // Keep their inexpensive light-only reconciliation so normal
+                // building does not turn every click into a whole-arc rebuild.
                 DIRTY_SURFACE_LIGHTING.add(surface.id());
             }
         }

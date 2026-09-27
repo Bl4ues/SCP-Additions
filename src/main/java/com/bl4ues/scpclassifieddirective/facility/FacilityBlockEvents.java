@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.BlockEvent;
@@ -49,10 +48,6 @@ public final class FacilityBlockEvents {
             FacilityLargePropStructure.removeParts(level, event.getPos(),
                     FacilityLargePropStructure.Kind.SIGN_SUPPORT,
                     state.getValue(HorizontalDirectionalBlock.FACING));
-        } else if (block == FacilityModule.TV.get()) {
-            FacilityLargePropStructure.removeParts(level, event.getPos(),
-                    FacilityLargePropStructure.Kind.TV,
-                    state.getValue(DirectionalBlock.FACING));
         }
 
         if (block == FacilityModule.WALLLIGHT_2.get()) {

@@ -209,6 +209,15 @@ public final class TransformConstructionClientRenderer {
         // A changed border block can turn a previously unused matched seam on
         // in its neighbour. Rebuild only that neighbour, not every Surface.
         ConstructionSurface owner = TransformConstructionClientState.surface(id);
+        // Rebuilding one curved slot also rebuilds its immediate neighbours for
+        // exposed-face topology. Those rebuilt vertices must not keep a newer
+        // light sample than the untouched cached remainder of the Surface.
+        // Relight the cached Surface atomically in the same render pass; later
+        // vanilla chunk-light packets still perform the authoritative relight
+        // once propagation itself changes.
+        if (owner != null && isCurvedSurface(owner)) {
+            DIRTY_SURFACE_LIGHTING.add(id);
+        }
         if (owner != null && (slot.column() == 0
                 || slot.column() == owner.columns() - 1
                 || slot.row() == 0 || slot.row() == owner.rows() - 1)) {

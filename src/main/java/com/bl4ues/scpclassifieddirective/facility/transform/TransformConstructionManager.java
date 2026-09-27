@@ -32,6 +32,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -60,11 +61,22 @@ public final class TransformConstructionManager {
     private static final double SURFACE_SELECTION_THICKNESS = 0.055D;
     private static final int MAX_GROUP_CELLS = 16_384;
     private static final int MAX_SURFACE_SLOTS = 65_536;
+    private static final int LIGHT_REPAIR_BUDGET_PER_TICK = 8_192;
 
     private static final Map<MinecraftServer, SpatialIndex> INDEXES =
             new WeakHashMap<>();
     private static final Map<MinecraftServer, Map<UUID, PendingSurface>>
             PENDING_SURFACES = new WeakHashMap<>();
+    /**
+     * Vanilla block-light propagation is keyed to voxel block changes. Surface
+     * lights live in the transformed logical grid, so their tiny invisible
+     * proxy can disappear before the decrease wave has reached every voxel
+     * that previously inherited its light. Keep a deduplicated end-of-tick
+     * repair set containing the complete old/new emission volume. This never
+     * materializes collision proxies and therefore stays out of Surface input.
+     */
+    private static final Map<ServerLevel, LinkedHashSet<Long>>
+            LIGHT_REPAIR_QUEUES = new WeakHashMap<>();
 
     private TransformConstructionManager() {
     }
@@ -857,6 +869,24 @@ public final class TransformConstructionManager {
                 event.getChunk().getPos().z);
     }
 
+    @SubscribeEvent
+    public static void onLevelTick(TickEvent.LevelTickEvent event) {
+        if (event.phase != TickEvent.Phase.END
+                || !(event.level instanceof ServerLevel level)) return;
+        LinkedHashSet<Long> queue = LIGHT_REPAIR_QUEUES.get(level);
+        if (queue == null || queue.isEmpty()) return;
+        int budget = LIGHT_REPAIR_BUDGET_PER_TICK;
+        java.util.Iterator<Long> iterator = queue.iterator();
+        while (iterator.hasNext() && budget-- > 0) {
+            BlockPos pos = BlockPos.of(iterator.next());
+            iterator.remove();
+            if (level.hasChunkAt(pos)) {
+                level.getLightEngine().checkBlock(pos);
+            }
+        }
+        if (queue.isEmpty()) LIGHT_REPAIR_QUEUES.remove(level);
+    }
+
     public static synchronized void refresh(MinecraftServer server) {
         if (server == null) return;
         // Structural edits can add/remove transformed redstone sources.
@@ -1171,12 +1201,15 @@ public final class TransformConstructionManager {
     private static void materializeProxyCell(ServerLevel level, BlockPos pos,
             ProxyCell cell) {
         BlockState current = level.getBlockState(pos);
+        int oldLight = current.is(TransformConstructionModule.getProxy())
+                ? current.getValue(TransformConstructionModule.LIGHT) : 0;
+        int newLight = cell != null && materialize(cell) ? cell.light() : 0;
         int flags = net.minecraft.world.level.block.Block.UPDATE_CLIENTS
                 | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
-        if (cell == null || !materialize(cell)) {
+        if (newLight <= 0) {
             if (current.is(TransformConstructionModule.getProxy())) {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
-                refreshProxyLighting(level, pos);
+                refreshProxyLighting(level, pos, oldLight);
             }
             return;
         }
@@ -1185,25 +1218,34 @@ public final class TransformConstructionManager {
                 || current.canBeReplaced()) {
             BlockState wanted = TransformConstructionModule.getProxy()
                     .defaultBlockState()
-                    .setValue(TransformConstructionModule.LIGHT, cell.light());
+                    .setValue(TransformConstructionModule.LIGHT, newLight);
             if (!current.equals(wanted)) {
                 level.setBlock(pos, wanted, flags);
-                refreshProxyLighting(level, pos);
+                refreshProxyLighting(level, pos,
+                        Math.max(oldLight, newLight));
             }
         }
     }
 
-    private static void refreshProxyLighting(ServerLevel level, BlockPos pos) {
-        // LightBlockEngine propagation is asynchronous. Rechecking a compact
-        // two-block diamond clears both old and new frontier values reliably
-        // without turning ordinary Surface edits into a server-tick work queue.
-        for (int dx = -2; dx <= 2; dx++) {
-            for (int dy = -2; dy <= 2; dy++) {
-                for (int dz = -2; dz <= 2; dz++) {
-                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 2) {
-                        continue;
+    private static void refreshProxyLighting(ServerLevel level, BlockPos pos,
+            int affectedEmission) {
+        // Always notify the actual source immediately. More importantly, queue
+        // the entire radius that the old OR new source could influence. The
+        // end-of-tick pass sees the final state after rapid place/remove or a
+        // multi-lamp blackout and deduplicates overlapping rooms.
+        level.getLightEngine().checkBlock(pos);
+        int radius = Math.max(1, Math.min(15, affectedEmission));
+        LinkedHashSet<Long> queue = LIGHT_REPAIR_QUEUES.computeIfAbsent(level,
+                ignored -> new LinkedHashSet<>());
+        for (int dx = -radius; dx <= radius; dx++) {
+            int xRemaining = radius - Math.abs(dx);
+            for (int dy = -xRemaining; dy <= xRemaining; dy++) {
+                int zRemaining = xRemaining - Math.abs(dy);
+                for (int dz = -zRemaining; dz <= zRemaining; dz++) {
+                    BlockPos affected = pos.offset(dx, dy, dz);
+                    if (level.hasChunkAt(affected)) {
+                        queue.add(affected.asLong());
                     }
-                    level.getLightEngine().checkBlock(pos.offset(dx, dy, dz));
                 }
             }
         }

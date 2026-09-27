@@ -239,8 +239,11 @@ public final class TransformConstructionClientRenderer {
         if (minecraft.level == null) return;
         double safeRadius = Math.max(1.0D, radius);
         invalidateLightingAroundNow(minecraft, source, safeRadius);
+        long tick = minecraft.level.getGameTime();
         PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
-                minecraft.level.getGameTime() + 3L));
+                tick + 2L));
+        PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
+                tick + 8L));
     }
 
     private static void flushLightingRefreshes(Minecraft minecraft) {
@@ -269,8 +272,27 @@ public final class TransformConstructionClientRenderer {
                     + surface.heightCurveOffset().length()
                     + surface.topCurveOffset().length() + 3.0D;
             double reach = radius + surfaceRadius;
-            if (center.distanceToSqr(source) <= reach * reach) {
-                invalidateSurfaceMesh(surface.id());
+            if (center.distanceToSqr(source) > reach * reach) continue;
+            double slotReach = radius + 1.75D;
+            double slotReachSqr = slotReach * slotReach;
+            Set<ConstructionSurface.SurfaceSlot> dirty =
+                    DIRTY_SURFACE_SLOTS.computeIfAbsent(surface.id(),
+                            ignored -> new java.util.LinkedHashSet<>());
+            for (ConstructionSurface.SurfaceSlot slot
+                    : surface.attachments().keySet()) {
+                Vec3 slotCenter = TransformSurfaceGeometry.cellCenter(surface,
+                        slot, TransformSurfaceGeometry.MAIN_SIDE, false);
+                if (slotCenter.distanceToSqr(source) <= slotReachSqr) {
+                    dirty.add(slot);
+                }
+            }
+            for (ConstructionSurface.SurfaceOverlaySlot overlay
+                    : surface.overlays().keySet()) {
+                Vec3 slotCenter = TransformSurfaceGeometry.cellCenter(surface,
+                        overlay.slot(), overlay.normalSign(), true);
+                if (slotCenter.distanceToSqr(source) <= slotReachSqr) {
+                    dirty.add(overlay.slot());
+                }
             }
         }
         for (TransformGroup group :
@@ -758,22 +780,28 @@ public final class TransformConstructionClientRenderer {
 
         Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
         BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
-        RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
-        List<PreparedVertex> output = layers.computeIfAbsent(renderType,
-                ignored -> new ArrayList<>());
         Vec3 center = group.cellCenter(cell);
         BlockPos lightPos = BlockPos.containing(center);
         int packedLight = minecraft.level.hasChunkAt(lightPos)
-                ? LevelRenderer.getLightColor(minecraft.level, state, lightPos)
+                ? LevelRenderer.getLightColor(minecraft.level, lightPos)
                 : 0x00F000F0;
         long seed = 42L ^ cell.hashCode() * 31L;
         RandomSource random = RandomSource.create(seed);
-        for (Direction side : SIDES) {
-            random.setSeed(seed);
-            for (BakedQuad quad : model.getQuads(state, side,
-                    random, ModelData.EMPTY, null)) {
-                appendGroupQuad(minecraft, output, group, cell,
-                        state, quad, lightPos, packedLight);
+        List<RenderType> renderTypes = model.getRenderTypes(state, random,
+                ModelData.EMPTY).asList();
+        if (renderTypes.isEmpty()) {
+            renderTypes = List.of(ItemBlockRenderTypes.getChunkRenderType(state));
+        }
+        for (RenderType renderType : renderTypes) {
+            List<PreparedVertex> output = layers.computeIfAbsent(renderType,
+                    ignored -> new ArrayList<>());
+            for (Direction side : SIDES) {
+                random.setSeed(seed);
+                for (BakedQuad quad : model.getQuads(state, side,
+                        random, ModelData.EMPTY, renderType)) {
+                    appendGroupQuad(minecraft, output, group, cell,
+                            state, quad, lightPos, packedLight);
+                }
             }
         }
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
@@ -831,11 +859,13 @@ public final class TransformConstructionClientRenderer {
         if (cached == null) {
             cached = buildSurfaceMesh(minecraft, surface);
             SURFACE_MESHES.put(surface.id(), cached);
-        } else if (cached.surface() != surface
+        } else if ((cached.surface() != surface
+                || DIRTY_SURFACE_SLOTS.containsKey(surface.id()))
                 && !TransformConstructionClientControls.previewingSurface(
                         surface.id())) {
             CachedSurface previous = cached;
-            if (!sameSurfaceGeometry(cached.surface(), surface)) {
+            if (cached.surface() != surface
+                    && !sameSurfaceGeometry(cached.surface(), surface)) {
                 cached = buildSurfaceMesh(minecraft, surface);
             } else {
                 cached = updateSurfaceMesh(minecraft, surface, cached);
@@ -1302,11 +1332,19 @@ public final class TransformConstructionClientRenderer {
         if (state == null || state.isAir()
                 || state.getRenderShape() != RenderShape.MODEL) return null;
         Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
-        RenderType renderType = ItemBlockRenderTypes.getChunkRenderType(state);
-        List<PreparedVertex> output = layers.computeIfAbsent(renderType,
-                ignored -> new ArrayList<>());
-        appendSurfaceBlock(minecraft, output, surface, slot, attachment,
-                normalSign, overlay);
+        BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
+        RandomSource renderTypeRandom = RandomSource.create(42L);
+        List<RenderType> renderTypes = model.getRenderTypes(state,
+                renderTypeRandom, ModelData.EMPTY).asList();
+        if (renderTypes.isEmpty()) {
+            renderTypes = List.of(ItemBlockRenderTypes.getChunkRenderType(state));
+        }
+        for (RenderType renderType : renderTypes) {
+            List<PreparedVertex> output = layers.computeIfAbsent(renderType,
+                    ignored -> new ArrayList<>());
+            appendSurfaceBlock(minecraft, model, renderType, output, surface,
+                    slot, attachment, normalSign, overlay);
+        }
         Map<RenderType, List<PreparedVertex>> immutable = new LinkedHashMap<>();
         layers.forEach((type, vertices) ->
                 immutable.put(type, List.copyOf(vertices)));
@@ -1323,17 +1361,17 @@ public final class TransformConstructionClientRenderer {
     }
 
     private static void appendSurfaceBlock(Minecraft minecraft,
+            BakedModel model, RenderType renderType,
             List<PreparedVertex> output, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot,
             ConstructionSurface.SurfaceAttachment attachment,
             int normalSign, boolean overlay) {
         BlockState state = attachment.state();
-        BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
         RandomSource random = RandomSource.create(42L);
         BlockPos lightPos = BlockPos.containing(surface.gridPoint(
                 (slot.column() + 0.5D) / surface.columns(),
                 (slot.row() + 0.5D) / surface.rows()));
-        int packedLight = LevelRenderer.getLightColor(minecraft.level, state,
+        int packedLight = LevelRenderer.getLightColor(minecraft.level,
                 lightPos);
         // The authored local grid has its own neighbours; the parent-world
         // BlockPos is not a valid source of vanilla face-culling information.
@@ -1345,7 +1383,7 @@ public final class TransformConstructionClientRenderer {
                     normalSign, overlay, side)) continue;
             random.setSeed(42L);
             for (BakedQuad quad : model.getQuads(state, side, random,
-                    ModelData.EMPTY, null)) {
+                    ModelData.EMPTY, renderType)) {
                 if (side == null && solidCell && internalSurfaceFace(
                         surface, slot, normalSign, overlay,
                         quad.getDirection())) continue;
@@ -2024,7 +2062,7 @@ public final class TransformConstructionClientRenderer {
         if (minecraft.level == null || !minecraft.level.hasChunkAt(pos)) {
             return fallback;
         }
-        return LevelRenderer.getLightColor(minecraft.level, state, pos);
+        return LevelRenderer.getLightColor(minecraft.level, pos);
     }
 
     private static void emitSurfaceVertex(List<PreparedVertex> output,

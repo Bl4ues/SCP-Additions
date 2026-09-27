@@ -1176,6 +1176,7 @@ public final class TransformConstructionManager {
         if (cell == null || !materialize(cell)) {
             if (current.is(TransformConstructionModule.getProxy())) {
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
+                refreshProxyLighting(level, pos);
             }
             return;
         }
@@ -1185,7 +1186,17 @@ public final class TransformConstructionManager {
             BlockState wanted = TransformConstructionModule.getProxy()
                     .defaultBlockState()
                     .setValue(TransformConstructionModule.LIGHT, cell.light());
-            if (!current.equals(wanted)) level.setBlock(pos, wanted, flags);
+            if (!current.equals(wanted)) {
+                level.setBlock(pos, wanted, flags);
+                refreshProxyLighting(level, pos);
+            }
+        }
+    }
+
+    private static void refreshProxyLighting(ServerLevel level, BlockPos pos) {
+        level.getLightEngine().checkBlock(pos);
+        for (Direction direction : Direction.values()) {
+            level.getLightEngine().checkBlock(pos.relative(direction));
         }
     }
 
@@ -1368,7 +1379,11 @@ public final class TransformConstructionManager {
                 cell.y() - 0.5D, cell.z() - 0.5D,
                 cell.x() + 0.5D, cell.y() + 0.5D, cell.z() + 0.5D);
         addWorldBox(index, owner, transformedBounds(group, selection),
-                true, false, state.getLightEmission());
+                true, false, 0);
+        int emission = state.getLightEmission();
+        if (emission > 0) {
+            addPointLight(index, owner, group.cellCenter(cell), emission);
+        }
 
         VoxelShape collision = FacilityModule.isFacilityDoor(state)
                 && FacilityModule.isDoorPassable(state)
@@ -1400,7 +1415,7 @@ public final class TransformConstructionManager {
                                         + boxZ * (sz + 1) * inv);
                         addWorldBox(index, owner,
                                 transformedBounds(group, local),
-                                false, true, state.getLightEmission());
+                                false, true, 0);
                     }
                 }
             }
@@ -1427,48 +1442,49 @@ public final class TransformConstructionManager {
                 SURFACE_SELECTION_THICKNESS);
         addWorldBox(index, owner, selection, true, false, 0);
         if (attachment != null && !attachment.state().isAir()) {
-            boolean roundLamp = Sl2FacilityPropsModule.isRoundLamp(
-                    attachment.state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, attachment)) {
-                addWorldBox(index, owner, collision, false, true,
-                        roundLamp ? 0 : attachment.state().getLightEmission());
+                addWorldBox(index, owner, collision, false, true, 0);
             }
-            if (roundLamp && attachment.state().getLightEmission() > 0) {
-                addSurfaceLampLight(index, owner, surface, slot,
-                        TransformSurfaceGeometry.MAIN_SIDE, false,
-                        attachment.state().getLightEmission());
+            int emission = attachment.state().getLightEmission();
+            if (emission > 0) {
+                addSurfaceLight(index, owner, surface, slot,
+                        attachment.state(),
+                        TransformSurfaceGeometry.MAIN_SIDE, false, emission);
             }
         }
         for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
                 SurfaceAttachment> overlay : surface.overlays().entrySet()) {
             if (!overlay.getKey().slot().equals(slot)
                     || overlay.getValue().state().isAir()) continue;
-            boolean roundLamp = Sl2FacilityPropsModule.isRoundLamp(
-                    overlay.getValue().state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, overlay.getValue(),
                     overlay.getKey().normalSign(), true)) {
-                addWorldBox(index, owner, collision, false, true,
-                        roundLamp ? 0
-                                : overlay.getValue().state().getLightEmission());
+                addWorldBox(index, owner, collision, false, true, 0);
             }
-            if (roundLamp && overlay.getValue().state().getLightEmission() > 0) {
-                addSurfaceLampLight(index, owner, surface, slot,
-                        overlay.getKey().normalSign(), true,
-                        overlay.getValue().state().getLightEmission());
+            int emission = overlay.getValue().state().getLightEmission();
+            if (emission > 0) {
+                addSurfaceLight(index, owner, surface, slot,
+                        overlay.getValue().state(),
+                        overlay.getKey().normalSign(), true, emission);
             }
         }
     }
 
-    private static void addSurfaceLampLight(SpatialIndex index, OwnerKey owner,
-            ConstructionSurface surface, SurfaceSlot slot, int normalSign,
-            boolean overlay, int light) {
-        Vec3 world = Sl2FacilityPropsModule.surfaceLampLightPosition(surface,
-                slot, normalSign, overlay);
+    private static void addSurfaceLight(SpatialIndex index, OwnerKey owner,
+            ConstructionSurface surface, SurfaceSlot slot, BlockState state,
+            int normalSign, boolean overlay, int light) {
+        Vec3 world = TransformSurfaceGeometry.lightPosition(surface, slot,
+                state, normalSign, overlay);
+        addPointLight(index, owner, world, light);
+    }
+
+    private static void addPointLight(SpatialIndex index, OwnerKey owner,
+            Vec3 world, int light) {
         BlockPos pos = BlockPos.containing(world);
-        // No selection/collision contribution. This proxy exists solely for
-        // vanilla block-light propagation and remains transparent to movement.
+        // Light is a property of the logical transformed block, not of every
+        // collision fragment its curved/rotated geometry happens to touch.
+        // One tiny invisible proxy therefore mirrors one vanilla block source.
         index.add(owner, pos,
                 new AABB(0.48D, 0.48D, 0.48D, 0.52D, 0.52D, 0.52D),
                 false, false, light);

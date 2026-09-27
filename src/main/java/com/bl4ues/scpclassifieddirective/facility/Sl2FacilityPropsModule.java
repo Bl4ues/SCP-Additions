@@ -469,13 +469,8 @@ public final class Sl2FacilityPropsModule {
     public static Vec3 surfaceLampLightPosition(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, int normalSign,
             boolean overlay) {
-        int side = normalSign < 0 ? -1 : 1;
-        double u = (slot.column() + 0.5D) / surface.columns();
-        double v = (slot.row() + 0.5D) / surface.rows();
-        double depth = TransformSurfaceGeometry.attachmentDepthOffset(
+        return TransformSurfaceGeometry.lightPosition(surface, slot,
                 roundLampState(Direction.SOUTH, true), normalSign, overlay);
-        return surface.gridPoint(u, v).add(
-                surface.gridNormal(u, v).scale(side * (depth + 0.5D)));
     }
 
     private static VoxelShape rotateNorthShape(VoxelShape source,

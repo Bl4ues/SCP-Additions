@@ -230,6 +230,24 @@ public final class TransformSurfaceGeometry {
                 .add(normal.scale(z + depthOffset));
     }
 
+    /**
+     * World-space position used by Minecraft's ordinary block-light engine for
+     * one logical Surface payload. Geometry may curve through several voxel
+     * cells, but its light source must remain point-like just as a vanilla
+     * block contributes one source.
+     */
+    public static Vec3 lightPosition(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, BlockState state,
+            int normalSign, boolean overlay) {
+        if (surface == null || slot == null) return Vec3.ZERO;
+        int side = normalSign < 0 ? -1 : 1;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        double depthOffset = attachmentDepthOffset(state, normalSign, overlay);
+        return surface.gridPoint(u, v).add(
+                surface.gridNormal(u, v).scale(side * (depthOffset + 0.5D)));
+    }
+
     public static Vec3 cellCenter(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, int normalSign,
             boolean overlay) {

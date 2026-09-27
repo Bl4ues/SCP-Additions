@@ -1,7 +1,6 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
-import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionClientBridge;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
@@ -416,14 +415,6 @@ public final class TransformConstructionClientState {
                     current.attachments().get(slot);
             next.set(index, current.withAttachment(slot, state, deform));
             surfaces = List.copyOf(next);
-            boolean roundLampLight = Sl2FacilityPropsModule.isRoundLamp(state)
-                    || previous != null
-                    && Sl2FacilityPropsModule.isRoundLamp(previous.state());
-            Vec3 roundLampLightPos = roundLampLight
-                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
-                            next.get(index), slot,
-                            TransformSurfaceGeometry.MAIN_SIDE, false)
-                    : null;
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
                     next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
@@ -433,10 +424,9 @@ public final class TransformConstructionClientState {
                 rebuildSurfaceSlotProxyCells(surfaceId, slot);
             }
             TransformAlarmAudioClient.surfaceChanged(surfaceId, slot, 0, state);
-            if (roundLampLightPos != null) {
-                TransformConstructionClientRenderer.invalidateLightingAround(
-                        roundLampLightPos, 16.0D);
-            }
+            refreshSurfaceLighting(next.get(index), slot,
+                    previous == null ? null : previous.state(), state,
+                    TransformSurfaceGeometry.MAIN_SIDE, false);
             return;
         }
     }
@@ -454,13 +444,6 @@ public final class TransformConstructionClientState {
             next.set(index, current.withOverlay(slot, normalSign,
                     state, deform));
             surfaces = List.copyOf(next);
-            boolean roundLampLight = Sl2FacilityPropsModule.isRoundLamp(state)
-                    || previous != null
-                    && Sl2FacilityPropsModule.isRoundLamp(previous.state());
-            Vec3 roundLampLightPos = roundLampLight
-                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
-                            next.get(index), slot, normalSign, true)
-                    : null;
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
                     next.get(index));
             TransformConstructionClientRenderer.markSurfaceSlotDirty(
@@ -471,10 +454,9 @@ public final class TransformConstructionClientState {
             }
             TransformAlarmAudioClient.surfaceChanged(surfaceId, slot,
                     normalSign < 0 ? -1 : 1, state);
-            if (roundLampLightPos != null) {
-                TransformConstructionClientRenderer.invalidateLightingAround(
-                        roundLampLightPos, 16.0D);
-            }
+            refreshSurfaceLighting(next.get(index), slot,
+                    previous == null ? null : previous.state(), state,
+                    normalSign, true);
             return;
         }
     }
@@ -488,10 +470,6 @@ public final class TransformConstructionClientState {
             if (!surfaceId.equals(current.id())) continue;
             ConstructionSurface.SurfaceAttachment removed =
                     current.overlay(slot, normalSign);
-            Vec3 removedLightPos = removed != null
-                    && Sl2FacilityPropsModule.isRoundLamp(removed.state())
-                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
-                            current, slot, normalSign, true) : null;
             next.set(index, current.withoutOverlay(slot, normalSign));
             surfaces = List.copyOf(next);
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
@@ -501,10 +479,9 @@ public final class TransformConstructionClientState {
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
             TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot,
                     normalSign < 0 ? -1 : 1);
-            if (removedLightPos != null) {
-                TransformConstructionClientRenderer.invalidateLightingAround(
-                        removedLightPos, 16.0D);
-            }
+            refreshSurfaceLighting(next.get(index), slot,
+                    removed == null ? null : removed.state(), null,
+                    normalSign, true);
             return;
         }
     }
@@ -539,11 +516,6 @@ public final class TransformConstructionClientState {
             if (!surfaceId.equals(current.id())) continue;
             ConstructionSurface.SurfaceAttachment removed =
                     current.attachments().get(slot);
-            Vec3 removedLightPos = removed != null
-                    && Sl2FacilityPropsModule.isRoundLamp(removed.state())
-                    ? Sl2FacilityPropsModule.surfaceLampLightPosition(
-                            current, slot,
-                            TransformSurfaceGeometry.MAIN_SIDE, false) : null;
             next.set(index, current.withoutAttachment(slot));
             surfaces = List.copyOf(next);
             TransformAlarmClientRenderer.surfaceSlotChanged(surfaceId, slot,
@@ -552,12 +524,31 @@ public final class TransformConstructionClientState {
                     surfaceId, slot);
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
             TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot, 0);
-            if (removedLightPos != null) {
-                TransformConstructionClientRenderer.invalidateLightingAround(
-                        removedLightPos, 16.0D);
-            }
+            refreshSurfaceLighting(next.get(index), slot,
+                    removed == null ? null : removed.state(), null,
+                    TransformSurfaceGeometry.MAIN_SIDE, false);
             return;
         }
+    }
+
+    private static void refreshSurfaceLighting(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, BlockState previous,
+            BlockState next, int normalSign, boolean overlay) {
+        if (surface == null || slot == null) return;
+        int previousLight = previous == null ? 0 : previous.getLightEmission();
+        int nextLight = next == null ? 0 : next.getLightEmission();
+        BlockState sourceState = nextLight > 0 ? next
+                : previousLight > 0 ? previous : null;
+        Vec3 source = sourceState == null
+                ? TransformSurfaceGeometry.cellCenter(surface, slot,
+                        normalSign, overlay)
+                : TransformSurfaceGeometry.lightPosition(surface, slot,
+                        sourceState, normalSign, overlay);
+        // Ordinary edits only need the immediate cached neighbourhood rebaked.
+        // A real light source can affect the normal 15-block vanilla range.
+        double radius = Math.max(previousLight, nextLight) > 0 ? 16.0D : 3.0D;
+        TransformConstructionClientRenderer.invalidateLightingAround(
+                source, radius);
     }
 
     private static boolean physicsChanged(BlockState previous,

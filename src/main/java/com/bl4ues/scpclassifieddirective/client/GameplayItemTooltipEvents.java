@@ -39,21 +39,18 @@ public final class GameplayItemTooltipEvents {
         }
 
         switch (path) {
-            case "tesla_gate" -> addPair(tooltip,
-                    "tooltip.scp_classified_directive.tesla_gate_primary",
-                    "tooltip.scp_classified_directive.tesla_gate_secondary");
+            case "tesla_gate" -> tooltip.add(Component.translatable(
+                            "tooltip.scp_classified_directive.tesla_gate_secondary")
+                    .withStyle(ChatFormatting.GRAY));
             case "button_closed" -> addPair(tooltip,
                     "tooltip.scp_classified_directive.button_functional_primary",
                     "tooltip.scp_classified_directive.button_functional_secondary");
             case "button_locked" -> addPair(tooltip,
                     "tooltip.scp_classified_directive.button_locked_primary",
                     "tooltip.scp_classified_directive.button_locked_secondary");
-            case "default_door", "yellow_closed", "black_closed" -> addPair(tooltip,
-                    "tooltip.scp_classified_directive.heavy_door_primary",
-                    "tooltip.scp_classified_directive.heavy_door_secondary");
             case "tesla_terminal_block" -> {
                 tooltip.add(Component.literal(
-                                "Controls the connected Tesla Gate network")
+                                "Controls the Tesla Gate network")
                         .withStyle(ChatFormatting.GRAY));
                 tooltip.add(Component.literal(
                                 "Use a Screwdriver to cycle the terminal on or off")

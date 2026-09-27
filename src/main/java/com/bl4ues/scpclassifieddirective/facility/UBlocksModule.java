@@ -224,9 +224,6 @@ public final class UBlocksModule {
         public void appendHoverText(ItemStack stack, @Nullable Level level,
                 List<Component> tooltip, TooltipFlag flag) {
             appendZoneTooltip("sl_1_wall_detail_lamp", tooltip);
-            tooltip.add(Component.translatable(
-                    "tooltip.scp_classified_directive.sl1_wall_detail_lamp")
-                    .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }
     }

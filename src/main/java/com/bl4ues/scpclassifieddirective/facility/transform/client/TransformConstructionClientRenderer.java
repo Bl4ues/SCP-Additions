@@ -36,6 +36,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -250,9 +251,11 @@ public final class TransformConstructionClientRenderer {
         if (!settleLightEngine) return;
         long tick = minecraft.level.getGameTime();
         PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
-                tick + 2L));
+                tick + 3L));
         PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
-                tick + 8L));
+                tick + 12L));
+        PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
+                tick + 32L));
     }
 
     private static void flushLightingRefreshes(Minecraft minecraft) {
@@ -1439,6 +1442,11 @@ public final class TransformConstructionClientRenderer {
             ConstructionSurface.SurfaceSlot slot, int normalSign,
             boolean overlay, Direction face) {
         if (face == null || face.getAxis() == Direction.Axis.Z) return false;
+        // Curvature makes neighbouring deformed cubes meet on a non-planar
+        // boundary. Culling that local side face creates a real slit when the
+        // shell is viewed at a grazing angle. Keep the optimisation only for
+        // genuinely flat Surfaces.
+        if (isCurvedSurface(surface)) return false;
         int side = normalSign < 0 ? -1 : 1;
         int frameSign = (surface.flipped() ? -1 : 1) * side;
         int dc = face == Direction.EAST ? frameSign
@@ -2080,28 +2088,66 @@ public final class TransformConstructionClientRenderer {
     private static int surfaceVertexLight(Minecraft minecraft,
             ConstructionSurface surface, Vec3 position, Vec3 faceNormal,
             int fallback) {
-        boolean curved = surface.curveOffset().lengthSqr() > 1.0E-8D
-                || surface.heightCurveOffset().lengthSqr() > 1.0E-8D
-                || surface.topCurveOffset().lengthSqr() > 1.0E-8D
-                || surface.bridge() != null;
-        if (!curved || minecraft.level == null) return fallback;
-        Vec3 normal = TransformMath.safeNormalize(faceNormal, Vec3.ZERO);
-        if (normal.lengthSqr() < 1.0E-10D) return fallback;
-
-        // Vanilla face lighting samples the neighbouring cell on the visible
-        // side. The previous second probe was over half a block away and could
-        // cross a curved shell into sky/another lit cell, producing the huge
-        // white crosses seen after lamp edits.
-        return lightAt(minecraft, position.add(normal.scale(0.0625D)),
-                fallback);
-    }
-
-    private static int lightAt(Minecraft minecraft, Vec3 world, int fallback) {
-        BlockPos pos = BlockPos.containing(world);
-        if (minecraft.level == null || !minecraft.level.hasChunkAt(pos)) {
+        if (!isCurvedSurface(surface) || minecraft.level == null) {
             return fallback;
         }
-        return LevelRenderer.getLightColor(minecraft.level, pos);
+        Vec3 normal = TransformMath.safeNormalize(faceNormal, Vec3.ZERO);
+        if (normal.lengthSqr() < 1.0E-10D) return fallback;
+        // Curved geometry moves continuously while Minecraft's light grid is
+        // discrete. A single BlockPos sample stamps squares/crosses onto long
+        // quads. Interpolate the eight neighbouring light cells instead.
+        return interpolatedLight(minecraft,
+                position.add(normal.scale(0.1875D)), fallback);
+    }
+
+    private static boolean isCurvedSurface(ConstructionSurface surface) {
+        return surface != null && (surface.curveOffset().lengthSqr() > 1.0E-8D
+                || surface.heightCurveOffset().lengthSqr() > 1.0E-8D
+                || surface.topCurveOffset().lengthSqr() > 1.0E-8D
+                || surface.bridge() != null);
+    }
+
+    private static int interpolatedLight(Minecraft minecraft, Vec3 world,
+            int fallback) {
+        if (minecraft.level == null) return fallback;
+        double sx = world.x - 0.5D;
+        double sy = world.y - 0.5D;
+        double sz = world.z - 0.5D;
+        int x0 = (int) Math.floor(sx);
+        int y0 = (int) Math.floor(sy);
+        int z0 = (int) Math.floor(sz);
+        double fx = sx - x0;
+        double fy = sy - y0;
+        double fz = sz - z0;
+        double block = 0.0D;
+        double sky = 0.0D;
+        int fallbackBlock = net.minecraft.client.renderer.LightTexture.block(
+                fallback);
+        int fallbackSky = net.minecraft.client.renderer.LightTexture.sky(
+                fallback);
+        for (int dx = 0; dx <= 1; dx++) {
+            double wx = dx == 0 ? 1.0D - fx : fx;
+            for (int dy = 0; dy <= 1; dy++) {
+                double wy = dy == 0 ? 1.0D - fy : fy;
+                for (int dz = 0; dz <= 1; dz++) {
+                    double wz = dz == 0 ? 1.0D - fz : fz;
+                    double weight = wx * wy * wz;
+                    BlockPos pos = new BlockPos(x0 + dx, y0 + dy, z0 + dz);
+                    if (!minecraft.level.hasChunkAt(pos)) {
+                        block += fallbackBlock * weight;
+                        sky += fallbackSky * weight;
+                    } else {
+                        block += minecraft.level.getBrightness(
+                                LightLayer.BLOCK, pos) * weight;
+                        sky += minecraft.level.getBrightness(
+                                LightLayer.SKY, pos) * weight;
+                    }
+                }
+            }
+        }
+        return net.minecraft.client.renderer.LightTexture.pack(
+                Math.max(0, Math.min(15, (int) Math.round(block))),
+                Math.max(0, Math.min(15, (int) Math.round(sky))));
     }
 
     private static void emitSurfaceVertex(List<PreparedVertex> output,

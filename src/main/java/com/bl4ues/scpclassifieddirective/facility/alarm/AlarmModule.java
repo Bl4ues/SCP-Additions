@@ -687,7 +687,7 @@ public final class AlarmModule {
                     .withStyle(ChatFormatting.GRAY));
             tooltip.add(Component.literal(
                     "Use a Screwdriver to toggle alarm sound.")
-                    .withStyle(ChatFormatting.GRAY));
+                    .withStyle(ChatFormatting.AQUA));
             super.appendHoverText(stack, level, tooltip, flag);
         }
 

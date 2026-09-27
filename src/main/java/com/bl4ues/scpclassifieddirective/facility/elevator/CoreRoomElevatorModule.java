@@ -369,7 +369,7 @@ public final class CoreRoomElevatorModule {
             if (getBlock() == STATION.get()) {
                 tooltip.add(Component.literal(
                         "Use a Screwdriver to edit this floor's arrival display.")
-                        .withStyle(ChatFormatting.DARK_GRAY));
+                        .withStyle(ChatFormatting.AQUA));
             }
         }
     }

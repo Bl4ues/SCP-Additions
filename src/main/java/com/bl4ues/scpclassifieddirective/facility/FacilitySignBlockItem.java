@@ -36,6 +36,6 @@ public final class FacilitySignBlockItem extends BlockItem {
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable(
                 "tooltip.scp_classified_directive." + prefix + "_secondary")
-                .withStyle(ChatFormatting.DARK_GRAY));
+                .withStyle(ChatFormatting.AQUA));
     }
 }

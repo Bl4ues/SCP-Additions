@@ -234,11 +234,17 @@ public final class TransformConstructionClientRenderer {
      * has had a few ticks to settle.
      */
     public static void invalidateLightingAround(Vec3 source, double radius) {
+        invalidateLightingAround(source, radius, true);
+    }
+
+    public static void invalidateLightingAround(Vec3 source, double radius,
+            boolean settleLightEngine) {
         if (source == null) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) return;
         double safeRadius = Math.max(1.0D, radius);
         invalidateLightingAroundNow(minecraft, source, safeRadius);
+        if (!settleLightEngine) return;
         long tick = minecraft.level.getGameTime();
         PENDING_LIGHTING_REFRESHES.add(new LightingRefresh(source, safeRadius,
                 tick + 2L));
@@ -858,6 +864,7 @@ public final class TransformConstructionClientRenderer {
         CachedSurface cached = SURFACE_MESHES.get(surface.id());
         if (cached == null) {
             cached = buildSurfaceMesh(minecraft, surface);
+            DIRTY_SURFACE_SLOTS.remove(surface.id());
             SURFACE_MESHES.put(surface.id(), cached);
         } else if ((cached.surface() != surface
                 || DIRTY_SURFACE_SLOTS.containsKey(surface.id()))
@@ -867,6 +874,7 @@ public final class TransformConstructionClientRenderer {
             if (cached.surface() != surface
                     && !sameSurfaceGeometry(cached.surface(), surface)) {
                 cached = buildSurfaceMesh(minecraft, surface);
+                DIRTY_SURFACE_SLOTS.remove(surface.id());
             } else {
                 cached = updateSurfaceMesh(minecraft, surface, cached);
             }

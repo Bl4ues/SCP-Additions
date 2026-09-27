@@ -546,9 +546,10 @@ public final class TransformConstructionClientState {
                         sourceState, normalSign, overlay);
         // Ordinary edits only need the immediate cached neighbourhood rebaked.
         // A real light source can affect the normal 15-block vanilla range.
-        double radius = Math.max(previousLight, nextLight) > 0 ? 16.0D : 3.0D;
+        boolean lightChanged = Math.max(previousLight, nextLight) > 0;
+        double radius = lightChanged ? 16.0D : 3.0D;
         TransformConstructionClientRenderer.invalidateLightingAround(
-                source, radius);
+                source, radius, lightChanged);
     }
 
     private static boolean physicsChanged(BlockState previous,

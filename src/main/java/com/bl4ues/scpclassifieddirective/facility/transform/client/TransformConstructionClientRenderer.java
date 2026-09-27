@@ -237,6 +237,36 @@ public final class TransformConstructionClientRenderer {
     }
 
     /**
+     * Reconcile cached curved Surface lightmaps from the same chunk-light
+     * updates that drive vanilla terrain. Surface geometry lives outside the
+     * chunk mesh, so Minecraft cannot invalidate these cached UV2 values for us.
+     *
+     * The one-block padding matters because curved vertex lighting interpolates
+     * the eight neighbouring voxel samples around each visible point.
+     */
+    public static void invalidateLightingChunk(int chunkX, int chunkZ) {
+        if (SURFACE_MESHES.isEmpty()) return;
+        double minX = (chunkX << 4) - 1.0D;
+        double minZ = (chunkZ << 4) - 1.0D;
+        double maxX = (chunkX << 4) + 17.0D;
+        double maxZ = (chunkZ << 4) + 17.0D;
+        for (Map.Entry<UUID, CachedSurface> entry
+                : SURFACE_MESHES.entrySet()) {
+            CachedSurface cached = entry.getValue();
+            if (cached == null || !isCurvedSurface(cached.surface())) continue;
+            for (CachedSurfaceBatch batch : cached.batches()) {
+                AABB bounds = batch.bounds();
+                if (bounds == null
+                        || (bounds.maxX >= minX && bounds.minX <= maxX
+                        && bounds.maxZ >= minZ && bounds.minZ <= maxZ)) {
+                    DIRTY_SURFACE_LIGHTING.add(entry.getKey());
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
      * Prepared transformed vertices contain packed block light. If a Surface
      * lamp changes while only its logical slot is rebuilt, that slot and its
      * four neighbours can retain a visibly different light sample from the

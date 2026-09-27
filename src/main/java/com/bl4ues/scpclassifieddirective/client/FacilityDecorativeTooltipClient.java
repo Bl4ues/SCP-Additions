@@ -21,8 +21,7 @@ public final class FacilityDecorativeTooltipClient {
     public static void onItemTooltip(ItemTooltipEvent event) {
         Item item = event.getItemStack().getItem();
         if (item != FacilityModule.WALLLIGHT.get().asItem()
-                && item != FacilityModule.WALLLIGHT_2.get().asItem()
-                && item != FacilityModule.TV.get().asItem()) {
+                && item != FacilityModule.WALLLIGHT_2.get().asItem()) {
             return;
         }
 

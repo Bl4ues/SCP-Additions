@@ -873,9 +873,14 @@ public final class TransformConstructionClientRenderer {
             releaseSurfaceGpu(previous);
             SURFACE_MESHES.put(surface.id(), cached);
         }
-        if (DIRTY_SURFACE_LIGHTING.remove(surface.id())
-                && !TransformConstructionClientControls.previewingSurface(
-                        surface.id())) {
+        // Never consume the pending relight while the Surface editor owns
+        // the preview. Lamp/block edits can arrive during that preview, but
+        // mesh updates are deliberately deferred until it ends. Removing the
+        // dirty flag first used to discard the full-surface relight while the
+        // five locally dirty slots survived, so leaving the tool rebuilt only
+        // that plus-shaped neighbourhood with newer light values.
+        if (!TransformConstructionClientControls.previewingSurface(surface.id())
+                && DIRTY_SURFACE_LIGHTING.remove(surface.id())) {
             CachedSurface previous = cached;
             cached = relightSurfaceMesh(minecraft, surface, cached);
             releaseSurfaceGpu(previous);

@@ -122,7 +122,7 @@ public final class OffsetKeycardReaderItem extends BlockItem {
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable(
                 "tooltip.scp_classified_directive.keycard_reader_configure")
-                .withStyle(ChatFormatting.DARK_GRAY));
+                .withStyle(ChatFormatting.AQUA));
     }
 
     @Override

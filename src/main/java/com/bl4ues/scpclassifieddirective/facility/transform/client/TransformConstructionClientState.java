@@ -424,9 +424,6 @@ public final class TransformConstructionClientState {
                 rebuildSurfaceSlotProxyCells(surfaceId, slot);
             }
             TransformAlarmAudioClient.surfaceChanged(surfaceId, slot, 0, state);
-            refreshSurfaceLighting(next.get(index), slot,
-                    previous == null ? null : previous.state(), state,
-                    TransformSurfaceGeometry.MAIN_SIDE, false);
             return;
         }
     }
@@ -454,9 +451,6 @@ public final class TransformConstructionClientState {
             }
             TransformAlarmAudioClient.surfaceChanged(surfaceId, slot,
                     normalSign < 0 ? -1 : 1, state);
-            refreshSurfaceLighting(next.get(index), slot,
-                    previous == null ? null : previous.state(), state,
-                    normalSign, true);
             return;
         }
     }
@@ -479,9 +473,6 @@ public final class TransformConstructionClientState {
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
             TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot,
                     normalSign < 0 ? -1 : 1);
-            refreshSurfaceLighting(next.get(index), slot,
-                    removed == null ? null : removed.state(), null,
-                    normalSign, true);
             return;
         }
     }
@@ -524,32 +515,8 @@ public final class TransformConstructionClientState {
                     surfaceId, slot);
             rebuildSurfaceSlotProxyCells(surfaceId, slot);
             TransformAlarmAudioClient.surfaceRemoved(surfaceId, slot, 0);
-            refreshSurfaceLighting(next.get(index), slot,
-                    removed == null ? null : removed.state(), null,
-                    TransformSurfaceGeometry.MAIN_SIDE, false);
             return;
         }
-    }
-
-    private static void refreshSurfaceLighting(ConstructionSurface surface,
-            ConstructionSurface.SurfaceSlot slot, BlockState previous,
-            BlockState next, int normalSign, boolean overlay) {
-        if (surface == null || slot == null) return;
-        int previousLight = previous == null ? 0 : previous.getLightEmission();
-        int nextLight = next == null ? 0 : next.getLightEmission();
-        BlockState sourceState = nextLight > 0 ? next
-                : previousLight > 0 ? previous : null;
-        Vec3 source = sourceState == null
-                ? TransformSurfaceGeometry.cellCenter(surface, slot,
-                        normalSign, overlay)
-                : TransformSurfaceGeometry.lightPosition(surface, slot,
-                        sourceState, normalSign, overlay);
-        // Ordinary edits only need the immediate cached neighbourhood rebaked.
-        // A real light source can affect the normal 15-block vanilla range.
-        boolean lightChanged = Math.max(previousLight, nextLight) > 0;
-        double radius = lightChanged ? 16.0D : 3.0D;
-        TransformConstructionClientRenderer.invalidateLightingAround(
-                source, radius, lightChanged);
     }
 
     private static boolean physicsChanged(BlockState previous,

@@ -1442,11 +1442,6 @@ public final class TransformConstructionClientRenderer {
             ConstructionSurface.SurfaceSlot slot, int normalSign,
             boolean overlay, Direction face) {
         if (face == null || face.getAxis() == Direction.Axis.Z) return false;
-        // Curvature makes neighbouring deformed cubes meet on a non-planar
-        // boundary. Culling that local side face creates a real slit when the
-        // shell is viewed at a grazing angle. Keep the optimisation only for
-        // genuinely flat Surfaces.
-        if (isCurvedSurface(surface)) return false;
         int side = normalSign < 0 ? -1 : 1;
         int frameSign = (surface.flipped() ? -1 : 1) * side;
         int dc = face == Direction.EAST ? frameSign

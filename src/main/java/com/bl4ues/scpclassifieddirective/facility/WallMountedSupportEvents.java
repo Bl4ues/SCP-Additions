@@ -130,12 +130,6 @@ public final class WallMountedSupportEvents {
                     framedSign.framedSignKind(), facing,
                     state.getValue(AbstractFramedSignBlock.POSITION));
         }
-        if (block == FacilityModule.TV.get()) {
-            return hasLargePropWallSupport(level, pos,
-                    FacilityLargePropStructure.Kind.TV, facing,
-                    FramedSignPosition.CENTER);
-        }
-
         if (isDoorButton(block)) {
             Direction screenLeft = facing.getClockWise();
             Direction visualOffset = LeftDoorButtons.isAny(block)
@@ -185,7 +179,6 @@ public final class WallMountedSupportEvents {
                 || block instanceof AbstractFramedSignBlock
                 || block == FacilityModule.CORE_ROOM_SIGN.get()
                 || block == FacilityModule.DOOR_SIGN.get()
-                || block == FacilityModule.TV.get()
                 || Sl2FacilityPropsModule.isWallFixture(block)
                 || isDoorButton(block)
                 || isKeycardReader(block);

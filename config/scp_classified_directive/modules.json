@@ -35,6 +35,9 @@
   "hunger": {
     "disabled": true
   },
+  "vanilla_hostile_mobs": {
+    "enabled": false
+  },
   "blink": {
     "enabled": true
   },

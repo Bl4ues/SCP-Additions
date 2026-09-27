@@ -81,6 +81,10 @@ public final class ScpClassifiedDirectiveModulesConfig {
 		public Hud hud = new Hud();
 		public Vitals vitals = new Vitals();
 		public Hunger hunger = new Hunger();
+
+		@SerializedName("vanilla_hostile_mobs")
+		public DisabledToggle vanillaHostileMobs = new DisabledToggle();
+
 		public Toggle blink = new Toggle();
 		public Audio audio = new Audio();
 		public Accessibility accessibility = new Accessibility();
@@ -106,6 +110,9 @@ public final class ScpClassifiedDirectiveModulesConfig {
 			if (hud == null) hud = new Hud();
 			if (vitals == null) vitals = new Vitals();
 			if (hunger == null) hunger = new Hunger();
+			if (vanillaHostileMobs == null) {
+				vanillaHostileMobs = new DisabledToggle();
+			}
 			if (blink == null) blink = new Toggle();
 			if (audio == null) audio = new Audio();
 			if (accessibility == null) accessibility = new Accessibility();
@@ -150,6 +157,13 @@ public final class ScpClassifiedDirectiveModulesConfig {
 
 	public static class Toggle {
 		public boolean enabled = true;
+	}
+
+	/** Toggle whose safe/default state is disabled. */
+	public static final class DisabledToggle extends Toggle {
+		public DisabledToggle() {
+			enabled = false;
+		}
 	}
 
 	public static final class Hud extends Toggle {

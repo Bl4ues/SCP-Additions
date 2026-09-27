@@ -325,7 +325,7 @@ public final class Sl2FacilityPropsModule {
         private RoundLampBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
                     .strength(0.8F, 8.0F)
-                    .lightLevel(state -> state.getValue(LIT) ? 13 : 0)
+                    .lightLevel(state -> state.getValue(LIT) ? 10 : 0)
                     .noOcclusion()
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any()

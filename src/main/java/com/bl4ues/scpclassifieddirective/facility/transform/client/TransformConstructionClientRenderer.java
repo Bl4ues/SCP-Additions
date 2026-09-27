@@ -21,6 +21,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -154,6 +155,10 @@ public final class TransformConstructionClientRenderer {
             new java.util.LinkedHashSet<>();
     private static final List<LightingRefresh> PENDING_LIGHTING_REFRESHES =
             new ArrayList<>();
+    private static final Map<UUID, Long> LIVE_SURFACE_LIGHTING_UNTIL =
+            new HashMap<>();
+    private static final Long2IntOpenHashMap FRAME_LIGHT_SAMPLES =
+            new Long2IntOpenHashMap();
     private record LightingRefresh(Vec3 source, double radius, long dueTick) { }
 
     private TransformConstructionClientRenderer() {
@@ -175,6 +180,8 @@ public final class TransformConstructionClientRenderer {
         DIRTY_SURFACE_SLOTS.clear();
         DIRTY_SURFACE_LIGHTING.clear();
         PENDING_LIGHTING_REFRESHES.clear();
+        LIVE_SURFACE_LIGHTING_UNTIL.clear();
+        FRAME_LIGHT_SAMPLES.clear();
         editorWorldPose = null;
         editorWorldNormal = null;
     }
@@ -298,12 +305,19 @@ public final class TransformConstructionClientRenderer {
             // already schedule this method again after propagation settles, so
             // a curved Surface is rebuilt immediately and then resampled from
             // the final vanilla light grid without preserving stale vertex UV2.
-            if (rebuildCurved && isCurvedSurface(surface)) {
-                invalidateSurfaceMesh(surface.id());
+            if (isCurvedSurface(surface)) {
+                // Curved Surface lightmap UVs are cached with the mesh. During
+                // a source transition Minecraft updates the underlying voxel
+                // light graph over several client frames, so rebaking one
+                // generation into the edited cells creates the exact dark/
+                // bright plus seen in the captured video. Temporarily render
+                // every visible vertex from the current light graph instead.
+                long liveFor = rebuildCurved ? 20L : 4L;
+                long until = minecraft.level.getGameTime() + liveFor;
+                LIVE_SURFACE_LIGHTING_UNTIL.merge(surface.id(), until,
+                        Math::max);
+                DIRTY_SURFACE_LIGHTING.remove(surface.id());
             } else {
-                // Non-emissive edits do not change the vanilla light graph.
-                // Keep their inexpensive light-only reconciliation so normal
-                // building does not turn every click into a whole-arc rebuild.
                 DIRTY_SURFACE_LIGHTING.add(surface.id());
             }
         }
@@ -325,6 +339,33 @@ public final class TransformConstructionClientRenderer {
             }
             if (nearby) invalidateGroup(group.id());
         }
+    }
+
+    private static void flushLiveSurfaceLighting(Minecraft minecraft) {
+        if (minecraft.level == null || LIVE_SURFACE_LIGHTING_UNTIL.isEmpty()) {
+            return;
+        }
+        long tick = minecraft.level.getGameTime();
+        var iterator = LIVE_SURFACE_LIGHTING_UNTIL.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, Long> entry = iterator.next();
+            if (entry.getValue() > tick) continue;
+            if (TransformConstructionClientControls.previewingSurface(
+                    entry.getKey())) {
+                entry.setValue(tick + 1L);
+                continue;
+            }
+            iterator.remove();
+            // Freeze one coherent final generation only after propagation
+            // settles. Geometry remains cached; this is a UV2-only relight.
+            DIRTY_SURFACE_LIGHTING.add(entry.getKey());
+        }
+    }
+
+    private static boolean liveSurfaceLighting(Minecraft minecraft, UUID id) {
+        if (minecraft.level == null || id == null) return false;
+        Long until = LIVE_SURFACE_LIGHTING_UNTIL.get(id);
+        return until != null && until > minecraft.level.getGameTime();
     }
 
     @SubscribeEvent
@@ -370,7 +411,9 @@ public final class TransformConstructionClientRenderer {
         }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) return;
+        FRAME_LIGHT_SAMPLES.clear();
         flushLightingRefreshes(minecraft);
+        flushLiveSurfaceLighting(minecraft);
         var dimension = minecraft.level.dimension().location();
         var groups = TransformConstructionClientState.groups(dimension);
         var surfaces = TransformConstructionClientState.surfaces(dimension);
@@ -912,19 +955,22 @@ public final class TransformConstructionClientRenderer {
                 if (batch.bounds().getCenter().distanceToSqr(camera)
                         > reach * reach) continue;
             }
-            renderSurfaceBatch(pose, buffers, batch);
+            renderSurfaceBatch(minecraft, pose, buffers, surface, batch,
+                    liveSurfaceLighting(minecraft, surface.id()));
         }
     }
 
-    private static void renderSurfaceBatch(PoseStack pose,
-            MultiBufferSource.BufferSource buffers, CachedSurfaceBatch batch) {
+    private static void renderSurfaceBatch(Minecraft minecraft, PoseStack pose,
+            MultiBufferSource.BufferSource buffers, ConstructionSurface surface,
+            CachedSurfaceBatch batch, boolean liveLighting) {
         for (Map.Entry<RenderType, List<PreparedVertex>> layer
                 : batch.layers().entrySet()) {
             RenderType type = layer.getKey();
             List<PreparedVertex> vertices = layer.getValue();
             // Transparent and custom render types must preserve their normal
             // sorting and shader state. Never bake their draw order into a VBO.
-            if (USE_SURFACE_VBO && type == RenderType.solid()
+            if (USE_SURFACE_VBO && !liveLighting
+                    && type == RenderType.solid()
                     && vertices.size() >= MIN_SURFACE_VBO_VERTICES
                     && vertices.size() % 4 == 0
                     && vertices.size() <= MAX_SURFACE_VBO_VERTICES) {
@@ -936,18 +982,25 @@ public final class TransformConstructionClientRenderer {
                     continue;
                 }
             }
-            renderSurfaceLayer(pose, buffers, type, vertices);
+            renderSurfaceLayer(minecraft, pose, buffers, surface, type,
+                    vertices, liveLighting);
         }
     }
 
-    private static void renderSurfaceLayer(PoseStack pose,
-            MultiBufferSource.BufferSource buffers, RenderType type,
-            List<PreparedVertex> vertices) {
+    private static void renderSurfaceLayer(Minecraft minecraft,
+            PoseStack pose, MultiBufferSource.BufferSource buffers,
+            ConstructionSurface surface, RenderType type,
+            List<PreparedVertex> vertices, boolean liveLighting) {
         VertexConsumer consumer = buffers.getBuffer(type);
         // PoseStack matrices never change within the immutable batch.
         org.joml.Matrix4f model = pose.last().pose();
         org.joml.Matrix3f normals = pose.last().normal();
         for (PreparedVertex vertex : vertices) {
+            int light = liveLighting
+                    ? surfaceVertexLight(minecraft, surface,
+                            vertex.position(), vertex.normal(),
+                            vertex.fallbackLight())
+                    : vertex.fallbackLight();
             consumer.vertex(model,
                             (float) vertex.position().x,
                             (float) vertex.position().y,
@@ -956,7 +1009,7 @@ public final class TransformConstructionClientRenderer {
                             vertex.blue(), 255)
                     .uv(vertex.u(), vertex.v())
                     .overlayCoords(OverlayTexture.NO_OVERLAY)
-                    .uv2(vertex.fallbackLight())
+                    .uv2(light)
                     .normal(normals,
                             (float) vertex.normal().x,
                             (float) vertex.normal().y,
@@ -2156,10 +2209,11 @@ public final class TransformConstructionClientRenderer {
                         block += fallbackBlock * weight;
                         sky += fallbackSky * weight;
                     } else {
-                        block += minecraft.level.getBrightness(
-                                LightLayer.BLOCK, pos) * weight;
-                        sky += minecraft.level.getBrightness(
-                                LightLayer.SKY, pos) * weight;
+                        int packed = sampledLight(minecraft, pos);
+                        block += net.minecraft.client.renderer.LightTexture.block(
+                                packed) * weight;
+                        sky += net.minecraft.client.renderer.LightTexture.sky(
+                                packed) * weight;
                     }
                 }
             }
@@ -2167,6 +2221,18 @@ public final class TransformConstructionClientRenderer {
         return net.minecraft.client.renderer.LightTexture.pack(
                 Math.max(0, Math.min(15, (int) Math.round(block))),
                 Math.max(0, Math.min(15, (int) Math.round(sky))));
+    }
+
+    private static int sampledLight(Minecraft minecraft, BlockPos pos) {
+        long key = pos.asLong();
+        if (FRAME_LIGHT_SAMPLES.containsKey(key)) {
+            return FRAME_LIGHT_SAMPLES.get(key);
+        }
+        int packed = net.minecraft.client.renderer.LightTexture.pack(
+                minecraft.level.getBrightness(LightLayer.BLOCK, pos),
+                minecraft.level.getBrightness(LightLayer.SKY, pos));
+        FRAME_LIGHT_SAMPLES.put(key, packed);
+        return packed;
     }
 
     private static void emitSurfaceVertex(List<PreparedVertex> output,

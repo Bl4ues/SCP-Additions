@@ -1194,9 +1194,19 @@ public final class TransformConstructionManager {
     }
 
     private static void refreshProxyLighting(ServerLevel level, BlockPos pos) {
-        level.getLightEngine().checkBlock(pos);
-        for (Direction direction : Direction.values()) {
-            level.getLightEngine().checkBlock(pos.relative(direction));
+        // LightBlockEngine propagation is asynchronous. Rechecking a compact
+        // two-block diamond clears both old and new frontier values reliably
+        // when an invisible transformed light source moves or disappears.
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 2) {
+                        continue;
+                    }
+                    level.getLightEngine().checkBlock(
+                            pos.offset(dx, dy, dz));
+                }
+            }
         }
     }
 

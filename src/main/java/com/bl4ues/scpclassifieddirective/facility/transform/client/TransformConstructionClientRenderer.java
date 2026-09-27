@@ -149,6 +149,8 @@ public final class TransformConstructionClientRenderer {
             DIRTY_GROUP_CELLS = new HashMap<>();
     private static final Map<UUID, Set<ConstructionSurface.SurfaceSlot>>
             DIRTY_SURFACE_SLOTS = new HashMap<>();
+    private static final Set<UUID> DIRTY_SURFACE_LIGHTING =
+            new java.util.LinkedHashSet<>();
     private static final List<LightingRefresh> PENDING_LIGHTING_REFRESHES =
             new ArrayList<>();
     private record LightingRefresh(Vec3 source, double radius, long dueTick) { }
@@ -170,6 +172,7 @@ public final class TransformConstructionClientRenderer {
         GROUP_MESHES.clear();
         DIRTY_GROUP_CELLS.clear();
         DIRTY_SURFACE_SLOTS.clear();
+        DIRTY_SURFACE_LIGHTING.clear();
         PENDING_LIGHTING_REFRESHES.clear();
         editorWorldPose = null;
         editorWorldNormal = null;
@@ -279,27 +282,13 @@ public final class TransformConstructionClientRenderer {
                     + surface.topCurveOffset().length() + 3.0D;
             double reach = radius + surfaceRadius;
             if (center.distanceToSqr(source) > reach * reach) continue;
-            double slotReach = radius + 1.75D;
-            double slotReachSqr = slotReach * slotReach;
-            Set<ConstructionSurface.SurfaceSlot> dirty =
-                    DIRTY_SURFACE_SLOTS.computeIfAbsent(surface.id(),
-                            ignored -> new java.util.LinkedHashSet<>());
-            for (ConstructionSurface.SurfaceSlot slot
-                    : surface.attachments().keySet()) {
-                Vec3 slotCenter = TransformSurfaceGeometry.cellCenter(surface,
-                        slot, TransformSurfaceGeometry.MAIN_SIDE, false);
-                if (slotCenter.distanceToSqr(source) <= slotReachSqr) {
-                    dirty.add(slot);
-                }
-            }
-            for (ConstructionSurface.SurfaceOverlaySlot overlay
-                    : surface.overlays().keySet()) {
-                Vec3 slotCenter = TransformSurfaceGeometry.cellCenter(surface,
-                        overlay.slot(), overlay.normalSign(), true);
-                if (slotCenter.distanceToSqr(source) <= slotReachSqr) {
-                    dirty.add(overlay.slot());
-                }
-            }
+            // Light is encoded in the cached vertex lightmap UV. Updating only
+            // the edited slots leaves a visible bright/dark patch boundary,
+            // because every other slot still carries the previous light field.
+            // Mark the whole nearby Surface for a cheap *relight* pass instead:
+            // positions/UVs/tessellation stay cached and only lightmap values
+            // are recomputed.
+            DIRTY_SURFACE_LIGHTING.add(surface.id());
         }
         for (TransformGroup group :
                 TransformConstructionClientState.groups(dimension)) {
@@ -881,6 +870,14 @@ public final class TransformConstructionClientRenderer {
             releaseSurfaceGpu(previous);
             SURFACE_MESHES.put(surface.id(), cached);
         }
+        if (DIRTY_SURFACE_LIGHTING.remove(surface.id())
+                && !TransformConstructionClientControls.previewingSurface(
+                        surface.id())) {
+            CachedSurface previous = cached;
+            cached = relightSurfaceMesh(minecraft, surface, cached);
+            releaseSurfaceGpu(previous);
+            SURFACE_MESHES.put(surface.id(), cached);
+        }
         // One huge Surface can span several rooms: a surface-level frustum
         // check previously submitted its entire mesh when only one corner was
         // visible. Keep immutable 8x8 logical-region batches and cull each
@@ -1214,6 +1211,43 @@ public final class TransformConstructionClientRenderer {
                 buildSurfaceBatches(frozenSlots, frozenOverlays));
     }
 
+    private static CachedSurface relightSurfaceMesh(Minecraft minecraft,
+            ConstructionSurface surface, CachedSurface cached) {
+        Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots =
+                new LinkedHashMap<>();
+        cached.slots().forEach((slot, value) ->
+                slots.put(slot, relightSurfaceSlot(minecraft, surface, value)));
+        Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot> overlays =
+                new LinkedHashMap<>();
+        cached.overlays().forEach((slot, value) ->
+                overlays.put(slot,
+                        relightSurfaceSlot(minecraft, surface, value)));
+        Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> frozenSlots =
+                Map.copyOf(slots);
+        Map<ConstructionSurface.SurfaceOverlaySlot, CachedSurfaceSlot>
+                frozenOverlays = Map.copyOf(overlays);
+        return new CachedSurface(surface, frozenSlots, frozenOverlays,
+                buildSurfaceBatches(frozenSlots, frozenOverlays));
+    }
+
+    private static CachedSurfaceSlot relightSurfaceSlot(Minecraft minecraft,
+            ConstructionSurface surface, CachedSurfaceSlot cached) {
+        Map<RenderType, List<PreparedVertex>> layers = new LinkedHashMap<>();
+        cached.layers().forEach((type, vertices) -> {
+            List<PreparedVertex> relit = new ArrayList<>(vertices.size());
+            for (PreparedVertex vertex : vertices) {
+                int light = surfaceVertexLight(minecraft, surface,
+                        vertex.position(), vertex.normal(),
+                        vertex.fallbackLight());
+                relit.add(new PreparedVertex(vertex.state(), vertex.position(),
+                        vertex.normal(), vertex.u(), vertex.v(),
+                        vertex.red(), vertex.green(), vertex.blue(), light));
+            }
+            layers.put(type, List.copyOf(relit));
+        });
+        return new CachedSurfaceSlot(Map.copyOf(layers), cached.bounds());
+    }
+
     private static CachedSurface buildSurfaceMesh(Minecraft minecraft,
             ConstructionSurface surface) {
         Map<ConstructionSurface.SurfaceSlot, CachedSurfaceSlot> slots =
@@ -1526,14 +1560,12 @@ public final class TransformConstructionClientRenderer {
         // Tessellate ALONG an exposed border, not 12x12 across every block
         // merely touching any border. The old cross-product made even short
         // two-axis curved corridors generate thousands of redundant quads.
-        boolean horizontalEdge = perimeter && (slot.row() == 0
-                || slot.row() == surface.rows() - 1);
-        boolean verticalEdge = perimeter && (slot.column() == 0
-                || slot.column() == surface.columns() - 1);
         int[] linkedSteps = LINKED_PARENT_EDGE_STEPS.get(surface.id());
-        // ALL mother rows/columns inherit contact-edge knots. Limiting the
-        // dense grid to the topmost row left T-junctions where that row met
-        // the next coarse row: the apparent cut ran THROUGH the mother wall.
+        // Every ordinary curved cell uses the same edge subdivision count.
+        // A 24-step perimeter beside a 2-step interior cell creates a real
+        // T-junction: both cells share endpoints but not the chord between
+        // them, which becomes a visible horizontal slit at grazing angles.
+        // Linked parent/child seams still use their exact inherited knot count.
         int linkedHorizontal = linkedSteps == null ? 0
                 : Math.max(linkedSteps[2], linkedSteps[3]);
         int linkedVertical = linkedSteps == null ? 0
@@ -1542,12 +1574,11 @@ public final class TransformConstructionClientRenderer {
                 || surface.topCurveOffset().lengthSqr() > 1.0E-8D;
         int xSteps = deform && maxX - minX > 0.20D
                 ? curvedPipe ? 12 : linkedHorizontal > 0
-                        ? linkedHorizontal : curvedAcross
-                                ? horizontalEdge ? 24 : 2 : 1 : 1;
+                        ? linkedHorizontal : curvedAcross ? 4 : 1 : 1;
         int ySteps = deform && maxY - minY > 0.20D
                 ? linkedVertical > 0 ? linkedVertical
                         : surface.heightCurveOffset().lengthSqr() > 1.0E-8D
-                                ? verticalEdge ? 24 : 2 : 1 : 1;
+                                ? 4 : 1 : 1;
         // A linked roof is split at the ridge and at the authored cell
         // boundaries of EACH parent, not only at its own rectangular slot
         // boundaries. Both halves can thus contain different longitudinal
@@ -2042,30 +2073,30 @@ public final class TransformConstructionClientRenderer {
      */
     private static int surfaceVertexLight(ConstructionSurface surface,
             BlockState state, VertexFrame frame, int fallback) {
+        return surfaceVertexLight(Minecraft.getInstance(), surface,
+                frame.position(), frame.normal(), fallback);
+    }
+
+    private static int surfaceVertexLight(Minecraft minecraft,
+            ConstructionSurface surface, Vec3 position, Vec3 faceNormal,
+            int fallback) {
         boolean curved = surface.curveOffset().lengthSqr() > 1.0E-8D
                 || surface.heightCurveOffset().lengthSqr() > 1.0E-8D
                 || surface.topCurveOffset().lengthSqr() > 1.0E-8D
                 || surface.bridge() != null;
-        if (!curved) return fallback;
-
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) return fallback;
-        Vec3 normal = TransformMath.safeNormalize(frame.normal(), Vec3.ZERO);
+        if (!curved || minecraft.level == null) return fallback;
+        Vec3 normal = TransformMath.safeNormalize(faceNormal, Vec3.ZERO);
         if (normal.lengthSqr() < 1.0E-10D) return fallback;
 
-        int first = lightAt(minecraft, state,
-                frame.position().add(normal.scale(0.10D)), fallback);
-        int second = lightAt(minecraft, state,
-                frame.position().add(normal.scale(0.52D)), first);
-        return net.minecraft.client.renderer.LightTexture.pack(
-                Math.max(net.minecraft.client.renderer.LightTexture.block(first),
-                        net.minecraft.client.renderer.LightTexture.block(second)),
-                Math.max(net.minecraft.client.renderer.LightTexture.sky(first),
-                        net.minecraft.client.renderer.LightTexture.sky(second)));
+        // Vanilla face lighting samples the neighbouring cell on the visible
+        // side. The previous second probe was over half a block away and could
+        // cross a curved shell into sky/another lit cell, producing the huge
+        // white crosses seen after lamp edits.
+        return lightAt(minecraft, position.add(normal.scale(0.0625D)),
+                fallback);
     }
 
-    private static int lightAt(Minecraft minecraft, BlockState state,
-            Vec3 world, int fallback) {
+    private static int lightAt(Minecraft minecraft, Vec3 world, int fallback) {
         BlockPos pos = BlockPos.containing(world);
         if (minecraft.level == null || !minecraft.level.hasChunkAt(pos)) {
             return fallback;

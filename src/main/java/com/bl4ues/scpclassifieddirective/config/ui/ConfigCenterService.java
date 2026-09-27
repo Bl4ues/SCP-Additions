@@ -221,7 +221,8 @@ public final class ConfigCenterService {
 
     private static void validateModules(JsonObject root, List<String> errors) {
         for (String group : List.of("inventory", "interactions", "hud", "vitals",
-                "hunger", "blink", "audio", "accessibility", "debug", "scp_173")) {
+                "hunger", "vanilla_hostile_mobs", "blink", "audio",
+                "accessibility", "debug", "scp_173")) {
             if (root.has(group) && !root.get(group).isJsonObject()) errors.add(group + " must be an object");
         }
         checkBoolean(root, "inventory", "enabled", errors);
@@ -234,6 +235,7 @@ public final class ConfigCenterService {
         checkBoolean(root, "vitals", "stamina_enabled", errors);
         checkBoolean(root, "vitals", "horror_movement_enabled", errors);
         checkBoolean(root, "hunger", "disabled", errors);
+        checkBoolean(root, "vanilla_hostile_mobs", "enabled", errors);
         checkBoolean(root, "blink", "enabled", errors);
         checkBoolean(root, "audio", "enter_sound_enabled", errors);
         checkBoolean(root, "audio", "save_game_sound_enabled", errors);

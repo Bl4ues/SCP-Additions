@@ -244,19 +244,19 @@ public final class FacilityPropPartBlock extends Block
 
         TV_LEFT_LOWER("tv_left_lower",
                 FacilityLargePropStructure.Kind.TV, -1, -1,
-                null, false),
+                null, true),
         TV_CENTER_LOWER("tv_center_lower",
                 FacilityLargePropStructure.Kind.TV, 0, -1,
-                null, false),
+                null, true),
         TV_RIGHT_LOWER("tv_right_lower",
                 FacilityLargePropStructure.Kind.TV, 1, -1,
-                null, false),
+                null, true),
         TV_LEFT_CURRENT("tv_left_current",
                 FacilityLargePropStructure.Kind.TV, -1, 0,
-                null, false),
+                null, true),
         TV_RIGHT_CURRENT("tv_right_current",
                 FacilityLargePropStructure.Kind.TV, 1, 0,
-                null, false);
+                null, true);
 
         private final String serializedName;
         private final FacilityLargePropStructure.Kind kind;

@@ -1,21 +1,81 @@
 {
   "parent": "scp_classified_directive:block/sl_1_wall_detail_2",
   "display": {
-    "thirdperson": {
-      "rotation": [
-        10,
-        -45,
-        170
-      ],
+    "thirdperson_righthand": {
       "translation": [
         0,
-        1.5,
-        -2.75
+        0,
+        -1.75
       ],
       "scale": [
-        0.375,
-        0.375,
-        0.375
+        0.31,
+        0.31,
+        0.31
+      ]
+    },
+    "thirdperson_lefthand": {
+      "translation": [
+        0,
+        0,
+        -1.75
+      ],
+      "scale": [
+        0.31,
+        0.31,
+        0.31
+      ]
+    },
+    "firstperson_righthand": {
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "firstperson_lefthand": {
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.28,
+        0.28,
+        0.28
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        2.5,
+        -1.25
+      ],
+      "scale": [
+        0.46,
+        0.46,
+        0.46
+      ]
+    },
+    "gui": {
+      "rotation": [
+        15,
+        -157,
+        0
+      ],
+      "translation": [
+        1.25,
+        -0.75,
+        0
+      ],
+      "scale": [
+        0.78,
+        0.78,
+        0.78
       ]
     }
   }

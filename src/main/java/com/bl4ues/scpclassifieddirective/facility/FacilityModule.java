@@ -141,7 +141,6 @@ public final class FacilityModule {
             "core_room_sign", FacilitySignBlock.SignType.CORE_ROOM);
     public static final RegistryObject<Block> DOOR_SIGN = registerSign(
             "door_sign", FacilitySignBlock.SignType.DOOR);
-    public static final RegistryObject<Block> TV = registerBlock("tv", TvBlock::new, true);
     public static final RegistryObject<Block> ARCHIVISTS_TABLE = registerBlock(
             "archivists_table", ArchivistsTableBlock::new, true);
     public static final RegistryObject<Block> ARCHIVISTS_CHAIR =
@@ -367,7 +366,6 @@ public final class FacilityModule {
         addFacilityCreativeItem(props, "wet_floor");
         addFacilityCreativeItem(props, "trashbin");
         addFacilityCreativeItem(props, "scp_914_usage_notice");
-        addFacilityCreativeItem(props, "tv");
         addExternalCreativeItem(props, TeslaGateTerminalTableModule.ITEM.get());
         addFacilityCreativeItem(props, "archivists_table");
         addFacilityCreativeItem(props, "archivists_chair");
@@ -1101,120 +1099,6 @@ public final class FacilityModule {
             super.onRemove(state, level, pos, newState, moving);
         }
     }
-
-    private static final class TvBlock extends HorizontalDirectionalBlock {
-        private TvBlock() {
-            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
-                    .strength(1.0F, 10.0F).noOcclusion().randomTicks()
-                    .isRedstoneConductor((state, level, pos) -> false));
-            registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
-        }
-
-        @Override
-        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(FACING);
-        }
-
-        @Override
-        public BlockState getStateForPlacement(BlockPlaceContext context) {
-            Direction clickedFace = context.getClickedFace();
-            if (clickedFace.getAxis() == Direction.Axis.Y
-                    || !FacilityLargePropStructure.canPlace(context.getLevel(),
-                    context.getClickedPos(),
-                    FacilityLargePropStructure.Kind.TV, clickedFace)) {
-                return null;
-            }
-            BlockState state = defaultBlockState().setValue(FACING, clickedFace);
-            return state.canSurvive(context.getLevel(), context.getClickedPos())
-                    ? state : null;
-        }
-
-        @Override
-        public boolean canSurvive(BlockState state, LevelReader level,
-                BlockPos pos) {
-            return WallMountedSupportEvents.hasLargePropWallSupport(level, pos,
-                    FacilityLargePropStructure.Kind.TV,
-                    state.getValue(FACING));
-        }
-
-        @Override
-        public BlockState rotate(BlockState state, Rotation rotation) {
-            return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
-        }
-
-        @Override
-        public BlockState mirror(BlockState state, Mirror mirror) {
-            return state.rotate(mirror.getRotation(state.getValue(FACING)));
-        }
-
-        @Override
-        public VoxelShape getVisualShape(BlockState state, BlockGetter level,
-                BlockPos pos, CollisionContext context) {
-            return Shapes.empty();
-        }
-
-        @Override
-        public VoxelShape getShape(BlockState state, BlockGetter level,
-                BlockPos pos, CollisionContext context) {
-            return FacilityLargePropStructure.controllerShape(
-                    FacilityLargePropStructure.Kind.TV,
-                    state.getValue(FACING));
-        }
-
-        @Override
-        public VoxelShape getCollisionShape(BlockState state,
-                BlockGetter level, BlockPos pos, CollisionContext context) {
-            return getShape(state, level, pos, context);
-        }
-
-        @Override
-        public void onPlace(BlockState state, Level level, BlockPos pos,
-                BlockState oldState, boolean moving) {
-            super.onPlace(state, level, pos, oldState, moving);
-            if (level.isClientSide || oldState.getBlock() == this) return;
-            Direction facing = state.getValue(FACING);
-            if (!FacilityLargePropStructure.placeParts(level, pos,
-                    FacilityLargePropStructure.Kind.TV, facing)) {
-                level.destroyBlock(pos, true);
-                return;
-            }
-            level.scheduleTick(pos, this, 1);
-        }
-
-        @Override
-        public void tick(BlockState state, ServerLevel level, BlockPos pos,
-                RandomSource random) {
-            FacilityLargePropStructure.ensureParts(level, pos,
-                    FacilityLargePropStructure.Kind.TV,
-                    state.getValue(FACING));
-        }
-
-        @Override
-        public void randomTick(BlockState state, ServerLevel level,
-                BlockPos pos, RandomSource random) {
-            FacilityLargePropStructure.ensureParts(level, pos,
-                    FacilityLargePropStructure.Kind.TV,
-                    state.getValue(FACING));
-        }
-
-        @Override
-        public void onRemove(BlockState state, Level level, BlockPos pos,
-                BlockState newState, boolean moving) {
-            if (state.getBlock() != newState.getBlock()
-                    && !level.isClientSide) {
-                FacilityLargePropStructure.removeParts(level, pos,
-                        FacilityLargePropStructure.Kind.TV,
-                        state.getValue(FACING));
-            }
-            super.onRemove(state, level, pos, newState, moving);
-        }
-
-        @Override
-        public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
-            return Collections.singletonList(new ItemStack(this));
-        }
-    }
-
 
     private static final class ArchivistsTableBlock extends HorizontalDirectionalBlock {
         public static final EnumProperty<Part> PART = EnumProperty.create(

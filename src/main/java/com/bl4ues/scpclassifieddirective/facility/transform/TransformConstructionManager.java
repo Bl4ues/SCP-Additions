@@ -876,13 +876,23 @@ public final class TransformConstructionManager {
         LinkedHashSet<Long> queue = LIGHT_REPAIR_QUEUES.get(level);
         if (queue == null || queue.isEmpty()) return;
         int budget = LIGHT_REPAIR_BUDGET_PER_TICK;
+        int checked = 0;
         java.util.Iterator<Long> iterator = queue.iterator();
         while (iterator.hasNext() && budget-- > 0) {
             BlockPos pos = BlockPos.of(iterator.next());
             iterator.remove();
             if (level.hasChunkAt(pos)) {
                 level.getLightEngine().checkBlock(pos);
+                checked++;
             }
+        }
+        // checkBlock() only schedules vanilla light work. If the proxy source
+        // was just removed, leaving that work queued can send the client an
+        // intermediate decrease pattern and the cached curved Surface may keep
+        // that generation. Finish this repair batch now so the final vanilla
+        // light sections are what get synchronized to clients.
+        if (checked > 0 && level.getLightEngine().hasLightWork()) {
+            level.getLightEngine().runLightUpdates();
         }
         if (queue.isEmpty()) LIGHT_REPAIR_QUEUES.remove(level);
     }

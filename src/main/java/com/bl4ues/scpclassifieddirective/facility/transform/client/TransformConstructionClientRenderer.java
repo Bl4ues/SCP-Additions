@@ -285,13 +285,23 @@ public final class TransformConstructionClientRenderer {
                     + surface.topCurveOffset().length() + 3.0D;
             double reach = radius + surfaceRadius;
             if (center.distanceToSqr(source) > reach * reach) continue;
-            // Light is encoded in the cached vertex lightmap UV. Updating only
-            // the edited slots leaves a visible bright/dark patch boundary,
-            // because every other slot still carries the previous light field.
-            // Mark the whole nearby Surface for a cheap *relight* pass instead:
-            // positions/UVs/tessellation stay cached and only lightmap values
-            // are recomputed.
-            DIRTY_SURFACE_LIGHTING.add(surface.id());
+            // Curved Surfaces cannot safely use the cheap light-only rebake.
+            // Their startup/full-build path is known to sample the light field
+            // correctly, while a slot edit followed by relightSurfaceMesh can
+            // leave exactly the plus-shaped patch around the edited cell. A
+            // parent-border edit fixes that artifact only because it invalidates
+            // the linked child mesh entirely. Do the same deliberately for
+            // nearby curved geometry whenever lighting may have changed.
+            //
+            // Flat Surfaces keep the cheaper relight path. Light-source changes
+            // already schedule this method again after propagation settles, so
+            // a curved Surface is rebuilt immediately and then resampled from
+            // the final vanilla light grid without preserving stale vertex UV2.
+            if (isCurvedSurface(surface)) {
+                invalidateSurfaceMesh(surface.id());
+            } else {
+                DIRTY_SURFACE_LIGHTING.add(surface.id());
+            }
         }
         for (TransformGroup group :
                 TransformConstructionClientState.groups(dimension)) {
@@ -1048,6 +1058,11 @@ public final class TransformConstructionClientRenderer {
     private static void invalidateSurfaceMesh(UUID id) {
         releaseSurfaceGpu(SURFACE_MESHES.remove(id));
         DIRTY_SURFACE_SLOTS.remove(id);
+        // A full mesh rebuild supersedes any queued light-only rebake. Leaving
+        // this flag behind would build the mesh and immediately relight it from
+        // the same frame, doubling work and reintroducing two generations of
+        // cached light values during rapid edits.
+        DIRTY_SURFACE_LIGHTING.remove(id);
     }
 
     private static void clearSurfaceGpuCache() {

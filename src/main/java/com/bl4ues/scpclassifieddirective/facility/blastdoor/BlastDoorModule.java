@@ -805,14 +805,6 @@ public final class BlastDoorModule {
         }
 
         @Override
-        public void appendHoverText(ItemStack stack, @Nullable Level level,
-                List<Component> tooltip, TooltipFlag flag) {
-            tooltip.add(Component.literal("Heavy redstone-operated security door")
-                    .withStyle(ChatFormatting.GRAY));
-            super.appendHoverText(stack, level, tooltip, flag);
-        }
-
-        @Override
         public void initializeClient(Consumer<IClientItemExtensions> consumer) {
             consumer.accept(new IClientItemExtensions() {
                 private BlastDoorClient.ItemRenderer renderer;

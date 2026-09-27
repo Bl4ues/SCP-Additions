@@ -530,7 +530,6 @@ public final class UBlocksModule {
         private WallDetailLampBlock() {
             super(BlockBehaviour.Properties.of().sound(SoundType.STONE)
                     .strength(1.5F, 10.0F).noOcclusion()
-                    .lightLevel(state -> state.getValue(LIT) ? 6 : 0)
                     .isRedstoneConductor((state, level, pos) -> false));
             registerDefaultState(stateDefinition.any()
                     .setValue(FACING, Direction.NORTH).setValue(LIT, true));

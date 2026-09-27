@@ -217,7 +217,9 @@ public final class FacilityLargePropStructure {
             case SCP_914_NOTICE -> FacilityModule.SCP_914_USAGE_NOTICE.get();
             case UNDER_CONSTRUCTION_NOTICE ->
                     AreaUnderConstructionSignModule.BLOCK.get();
-            case TV -> FacilityModule.TV.get();
+            // Legacy enum value retained so old saved prop-part states decode
+            // and self-remove cleanly after the decorative TV was retired.
+            case TV -> Blocks.AIR;
         };
     }
 
@@ -325,31 +327,6 @@ public final class FacilityLargePropStructure {
             }
         }
 
-        EnumMap<Direction, VoxelShape> tvShapes =
-                new EnumMap<>(Direction.class);
-        tvShapes.put(Direction.NORTH,
-                Block.box(-16.0D, -13.05D, 13.5D,
-                        32.0D, 13.3D, 16.0D));
-        tvShapes.put(Direction.EAST,
-                Block.box(0.0D, -13.05D, -16.0D,
-                        2.5D, 13.3D, 32.0D));
-        tvShapes.put(Direction.SOUTH,
-                Block.box(-16.0D, -13.05D, 0.0D,
-                        32.0D, 13.3D, 2.5D));
-        tvShapes.put(Direction.WEST,
-                Block.box(13.5D, -13.05D, -16.0D,
-                        16.0D, 13.3D, 32.0D));
-        tvShapes.put(Direction.UP,
-                Block.box(-16.0D, 0.0D, -13.05D,
-                        32.0D, 2.5D, 13.3D));
-        tvShapes.put(Direction.DOWN,
-                Block.box(-16.0D, 13.5D, 2.7D,
-                        32.0D, 16.0D, 29.05D));
-
-        for (Map.Entry<Direction, VoxelShape> entry : tvShapes.entrySet()) {
-            split(result, Kind.TV, entry.getKey(),
-                    FramedSignPosition.CENTER, entry.getValue());
-        }
         return Map.copyOf(result);
     }
 

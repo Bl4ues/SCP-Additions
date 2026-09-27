@@ -331,7 +331,8 @@ public final class Scp079RoomAbilityManager {
             }
             boolean powered = blockState.hasProperty(BlockStateProperties.POWERED)
                     && blockState.getValue(BlockStateProperties.POWERED);
-            boolean intrinsic = Sl2FacilityPropsModule.isRoundLamp(blockState);
+            boolean intrinsic = Sl2FacilityPropsModule.isRoundLamp(blockState)
+                    || UBlocksModule.isWallDetailLamp(blockState);
             if (!intrinsic && !powered && !level.hasNeighborSignal(cursor)) {
                 continue;
             }
@@ -416,6 +417,11 @@ public final class Scp079RoomAbilityManager {
                     false, true);
             return;
         }
+        if (UBlocksModule.isWallDetailLamp(state)) {
+            UBlocksModule.setWallDetailLampLit(level, target.pos,
+                    false, true);
+            return;
+        }
         BlockState off = state;
         if (off.hasProperty(BlockStateProperties.LIT)
                 && off.getValue(BlockStateProperties.LIT)) {
@@ -442,6 +448,11 @@ public final class Scp079RoomAbilityManager {
         if (state.getBlock() != target.block) return;
         if (Sl2FacilityPropsModule.isRoundLamp(state)) {
             Sl2FacilityPropsModule.setWorldLampLit(level, target.pos,
+                    true, true);
+            return;
+        }
+        if (UBlocksModule.isWallDetailLamp(state)) {
+            UBlocksModule.setWallDetailLampLit(level, target.pos,
                     true, true);
             return;
         }

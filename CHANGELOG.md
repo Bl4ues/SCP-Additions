@@ -305,6 +305,7 @@
 - Added SL1 Ceiling and SL1 Ceiling Alt construction blocks;
 - Added an SL1 Ceiling Lamp that emits light while powered by redstone, with subtle positional startup, shutdown, and electrical-loop audio;
 - Added an SL1 Flickering Ceiling Lamp with the same redstone control and irregular defective-light flickering;
+- Added an illuminated SL1 Wall Pillar Detail variant that is lit by default, participates in SCP-079 room Blackouts, and reuses the facility lamp audio at reduced volume;
 - Added decorations:
   - Emergency Button;
   - Fire Extinguisher;

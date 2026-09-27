@@ -100,6 +100,8 @@ public final class UBlocksModule {
             LEGACY_WALL_DETAIL_TOP, DirectionalShape.WALL_DECOR, SoundType.STONE);
     public static final RegistryObject<Block> SL_1_WALL_DETAIL_2 = directional(
             "sl_1_wall_detail_2", DirectionalShape.PILLAR, SoundType.STONE);
+    public static final RegistryObject<Block> SL_1_WALL_DETAIL_LAMP = registerBlock(
+            "sl_1_wall_detail_lamp", WallDetailLampBlock::new, true);
 
     // Sector 2 structural set.
     public static final RegistryObject<Block> SL_2_FLOOR = structure("sl_2_floor");
@@ -173,6 +175,8 @@ public final class UBlocksModule {
                 ? new CeilingLampBlockItem(block.get(), new Item.Properties(), path)
                 : isDecorativePropPath(path)
                 ? new DecorativePropBlockItem(block.get(), new Item.Properties())
+                : "sl_1_wall_detail_lamp".equals(path)
+                ? new WallDetailLampBlockItem(block.get(), new Item.Properties())
                 : zoneTooltipKey(path) != null
                 ? new FacilityZoneBlockItem(block.get(), new Item.Properties(), path)
                 : new BlockItem(block.get(), new Item.Properties()));
@@ -206,6 +210,22 @@ public final class UBlocksModule {
                 List<Component> tooltip, TooltipFlag flag) {
             appendZoneTooltip(path, tooltip);
             tooltip.add(Component.translatable(tooltipKey)
+                    .withStyle(ChatFormatting.GRAY));
+            super.appendHoverText(stack, level, tooltip, flag);
+        }
+    }
+
+    private static final class WallDetailLampBlockItem extends BlockItem {
+        private WallDetailLampBlockItem(Block block, Properties properties) {
+            super(block, properties);
+        }
+
+        @Override
+        public void appendHoverText(ItemStack stack, @Nullable Level level,
+                List<Component> tooltip, TooltipFlag flag) {
+            appendZoneTooltip("sl_1_wall_detail_lamp", tooltip);
+            tooltip.add(Component.translatable(
+                    "tooltip.scp_classified_directive.sl1_wall_detail_lamp")
                     .withStyle(ChatFormatting.GRAY));
             super.appendHoverText(stack, level, tooltip, flag);
         }
@@ -501,6 +521,113 @@ public final class UBlocksModule {
                         ? ScpClassifiedDirectiveModSounds.LAMP_ON.get()
                         : ScpClassifiedDirectiveModSounds.LAMP_OFF.get(),
                 net.minecraft.sounds.SoundSource.BLOCKS, volume, pitch);
+    }
+
+    private static final class WallDetailLampBlock
+            extends HorizontalDirectionalBlock {
+        private static final BooleanProperty LIT = BlockStateProperties.LIT;
+
+        private WallDetailLampBlock() {
+            super(BlockBehaviour.Properties.of().sound(SoundType.STONE)
+                    .strength(1.5F, 10.0F).noOcclusion()
+                    .lightLevel(state -> state.getValue(LIT) ? 13 : 0)
+                    .isRedstoneConductor((state, level, pos) -> false));
+            registerDefaultState(stateDefinition.any()
+                    .setValue(FACING, Direction.NORTH).setValue(LIT, true));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING, LIT);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState()
+                    .setValue(FACING,
+                            context.getHorizontalDirection().getOpposite())
+                    .setValue(LIT, true);
+        }
+
+        @Override
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            return state.setValue(FACING,
+                    rotation.rotate(state.getValue(FACING)));
+        }
+
+        @Override
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return state.rotate(mirror.getRotation(state.getValue(FACING)));
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return DirectionalShape.PILLAR.outline(state.getValue(FACING));
+        }
+
+        @Override
+        public VoxelShape getCollisionShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return getShape(state, level, pos, context);
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean movedByPiston) {
+            super.onPlace(state, level, pos, oldState, movedByPiston);
+            if (level.isClientSide) {
+                if (state.getValue(LIT)) {
+                    CeilingLampAudioClient.ensureLoop(level, pos);
+                }
+                return;
+            }
+            if (oldState.getBlock() != this && state.getValue(LIT)) {
+                playWallDetailLampTransition(level, pos, true);
+            }
+        }
+
+        @Override
+        public void animateTick(BlockState state, Level level, BlockPos pos,
+                RandomSource random) {
+            if (state.getValue(LIT)) {
+                CeilingLampAudioClient.ensureLoop(level, pos);
+            }
+        }
+
+        @Override
+        public List<ItemStack> getDrops(BlockState state,
+                LootParams.Builder builder) {
+            return Collections.singletonList(new ItemStack(this));
+        }
+    }
+
+    public static boolean isWallDetailLamp(BlockState state) {
+        return state != null && state.is(SL_1_WALL_DETAIL_LAMP.get());
+    }
+
+    public static boolean setWallDetailLampLit(ServerLevel level, BlockPos pos,
+            boolean lit, boolean transitionSound) {
+        if (level == null || pos == null || !level.hasChunkAt(pos)) return false;
+        BlockState state = level.getBlockState(pos);
+        if (!isWallDetailLamp(state)
+                || state.getValue(BlockStateProperties.LIT) == lit) {
+            return false;
+        }
+        level.setBlock(pos, state.setValue(BlockStateProperties.LIT, lit),
+                Block.UPDATE_CLIENTS);
+        if (transitionSound) playWallDetailLampTransition(level, pos, lit);
+        return true;
+    }
+
+    private static void playWallDetailLampTransition(Level level, BlockPos pos,
+            boolean turningOn) {
+        if (level == null || pos == null || level.isClientSide) return;
+        level.playSound(null, pos, turningOn
+                        ? ScpClassifiedDirectiveModSounds.LAMP_ON.get()
+                        : ScpClassifiedDirectiveModSounds.LAMP_OFF.get(),
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.22F, 1.0F);
     }
 
     private abstract static class ConnectedFloorBlock extends UBlockStructureBlock {

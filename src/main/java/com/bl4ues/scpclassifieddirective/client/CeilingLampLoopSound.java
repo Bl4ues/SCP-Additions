@@ -72,6 +72,10 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
         this.x += (targetX - this.x) * POSITION_LERP;
         this.y += (targetY - this.y) * POSITION_LERP;
         this.z += (targetZ - this.z) * POSITION_LERP;
+        BlockState targetState = level.getBlockState(
+                BlockPos.containing(target));
+        this.volume = UBlocksModule.isWallDetailLamp(targetState)
+                ? 0.0464F : 0.116F;
     }
 
     static boolean shouldPlayFor(BlockState state) {
@@ -82,6 +86,10 @@ public final class CeilingLampLoopSound extends AbstractTickableSoundInstance {
         if (state.is(UBlocksModule.SL1_FLICKERING_LAMP.get())) {
             return state.hasProperty(BlockStateProperties.POWERED)
                     && state.getValue(BlockStateProperties.POWERED);
+        }
+        if (UBlocksModule.isWallDetailLamp(state)) {
+            return state.hasProperty(BlockStateProperties.LIT)
+                    && state.getValue(BlockStateProperties.LIT);
         }
         return Sl2FacilityPropsModule.isRoundLamp(state)
                 && state.hasProperty(BlockStateProperties.LIT)

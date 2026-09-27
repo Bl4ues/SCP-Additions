@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,lit=true": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_on"},
+    "facing=east,lit=true": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_on","y":90},
+    "facing=south,lit=true": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_on","y":180},
+    "facing=west,lit=true": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_on","y":270},
+    "facing=north,lit=false": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_off"},
+    "facing=east,lit=false": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_off","y":90},
+    "facing=south,lit=false": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_off","y":180},
+    "facing=west,lit=false": {"model":"scp_classified_directive:block/sl_1_wall_detail_lamp_off","y":270}
+  }
+}

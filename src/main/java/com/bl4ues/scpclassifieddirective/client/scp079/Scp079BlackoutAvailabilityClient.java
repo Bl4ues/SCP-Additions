@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.client.scp079;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
+import com.bl4ues.scpclassifieddirective.facility.UBlocksModule;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityFloorPatch;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
@@ -192,6 +193,7 @@ public final class Scp079BlackoutAvailabilityClient {
         boolean powered = state.hasProperty(BlockStateProperties.POWERED)
                 && state.getValue(BlockStateProperties.POWERED);
         return Sl2FacilityPropsModule.isRoundLamp(state)
+                || UBlocksModule.isWallDetailLamp(state)
                 || powered || minecraft.level.hasNeighborSignal(pos);
     }
 

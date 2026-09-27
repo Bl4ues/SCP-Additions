@@ -410,6 +410,7 @@ public final class FacilityModule {
         addUBlockCreativeItem(sublevel1, "sl_1_floor_detail_big");
         addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_1_bot");
         addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_2");
+        addUBlockCreativeItem(sublevel1, "sl_1_wall_detail_lamp");
         addFacilityCreativeItem(sublevel1, "archival_bottom");
         addFacilityCreativeItem(sublevel1, "archival_mid");
         addFacilityCreativeItem(sublevel1, "archival_top");

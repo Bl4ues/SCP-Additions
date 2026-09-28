@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.facility.surveillance;
 
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -35,6 +36,24 @@ public final class SurveillanceCameraViewGeometry {
                         + OPTICAL_CLEARANCE))
                 .subtract(baseUp.scale(PIVOT_TO_LENS_UP));
         return lensFromPivot(pivot, yaw, pitch);
+    }
+
+    public static Vec3 lensFromSurfaceFrame(
+            TransformCameraGeometry.Frame frame, float localYaw,
+            float physicalLocalPitch) {
+        if (frame == null) return Vec3.ZERO;
+        Vec3 pivot = frame.eye()
+                .subtract(frame.zAxis().scale(PIVOT_TO_LENS_FORWARD
+                        + OPTICAL_CLEARANCE))
+                .subtract(frame.yAxis().scale(PIVOT_TO_LENS_UP));
+        Vec3 forward = frame.worldDirection(localYaw, physicalLocalPitch);
+        Vec3 right = frame.worldDirection(localYaw + 90.0F, 0.0F);
+        Vec3 up = right.cross(forward);
+        up = up.lengthSqr() < 1.0E-8D
+                ? frame.yAxis() : up.normalize();
+        return pivot.add(forward.scale(PIVOT_TO_LENS_FORWARD
+                        + OPTICAL_CLEARANCE))
+                .add(up.scale(PIVOT_TO_LENS_UP));
     }
 
     public static Vec3 lensFromPivot(Vec3 pivot, float yaw, float pitch) {

@@ -4,6 +4,8 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraViewGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformBlockEntityClientRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -94,18 +96,33 @@ public final class SurveillanceCameraClient {
             Minecraft minecraft = Minecraft.getInstance();
             long now = System.nanoTime();
             if (isLocallyControlled(animatable, minecraft)) {
-                BlockState state = animatable.getBlockState();
-                Direction facing = state.hasProperty(
-                        SurveillanceCameraPlaceholderModule.FACING)
-                        ? state.getValue(SurveillanceCameraPlaceholderModule.FACING)
-                        : Direction.NORTH;
-                yawDegrees = Mth.clamp(Mth.wrapDegrees(
-                                minecraft.player.getYRot() - facing.toYRot()),
-                        -SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT,
-                        SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT);
-                pitchDegrees = Mth.clamp(minecraft.player.getXRot(),
-                        SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH,
-                        SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH);
+                TransformCameraGeometry.Frame transformed =
+                        TransformBlockEntityClientRenderer.activeCameraFrame();
+                if (transformed != null && !transformed.ceiling()) {
+                    TransformCameraGeometry.Angles local =
+                            transformed.localAngles(minecraft.player.getLookAngle());
+                    yawDegrees = Mth.clamp(Mth.wrapDegrees(local.yaw()),
+                            -SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT,
+                            SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT);
+                    pitchDegrees = Mth.clamp(local.pitch(),
+                            SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH,
+                            SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH);
+                } else {
+                    BlockState state = animatable.getBlockState();
+                    Direction facing = state.hasProperty(
+                            SurveillanceCameraPlaceholderModule.FACING)
+                            ? state.getValue(
+                                    SurveillanceCameraPlaceholderModule.FACING)
+                            : Direction.NORTH;
+                    yawDegrees = Mth.clamp(Mth.wrapDegrees(
+                                    minecraft.player.getYRot()
+                                            - facing.toYRot()),
+                            -SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT,
+                            SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT);
+                    pitchDegrees = Mth.clamp(minecraft.player.getXRot(),
+                            SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH,
+                            SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH);
+                }
                 ReleasePose pose = releasePoses.computeIfAbsent(animatable,
                         ignored -> new ReleasePose());
                 pose.yaw = yawDegrees;
@@ -151,8 +168,12 @@ public final class SurveillanceCameraClient {
                     || minecraft.level == null || camera.getLevel() != minecraft.level) {
                 return false;
             }
-            Vec3 baseEye = SurveillanceCameraPlaceholderModule.eyePosition(
-                    camera.getBlockPos(), camera.getBlockState());
+            TransformCameraGeometry.Frame transformed =
+                    TransformBlockEntityClientRenderer.activeCameraFrame();
+            Vec3 baseEye = transformed != null && !transformed.ceiling()
+                    ? transformed.eye()
+                    : SurveillanceCameraPlaceholderModule.eyePosition(
+                            camera.getBlockPos(), camera.getBlockState());
             return Scp079PlayableClient.viewPosition().distanceToSqr(baseEye)
                     <= 0.64D;
         }

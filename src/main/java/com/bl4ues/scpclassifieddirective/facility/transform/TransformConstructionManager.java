@@ -963,6 +963,28 @@ public final class TransformConstructionManager {
         }
     }
 
+    /**
+     * Structural edits can create or fill an authored empty wall cell. Rotated
+     * AABBs from the horizontal neighbours are cached by logical owner, so
+     * those neighbours must be rebuilt when the opening topology changes.
+     */
+    private static void refreshOpeningNeighbours(MinecraftServer server,
+            UUID groupId, GridPos editedCell) {
+        if (server == null || groupId == null || editedCell == null) return;
+        TransformGroup group = TransformConstructionSavedData.get(server)
+                .group(groupId);
+        if (group == null) return;
+        for (Direction direction : new Direction[]{
+                Direction.NORTH, Direction.SOUTH,
+                Direction.WEST, Direction.EAST}) {
+            GridPos neighbor = editedCell.offset(direction.getStepX(), 0,
+                    direction.getStepZ());
+            if (group.cells().containsKey(neighbor)) {
+                refreshGroupCell(server, groupId, neighbor, false);
+            }
+        }
+    }
+
     public static synchronized void refreshSurfaceSlot(MinecraftServer server,
             UUID surfaceId, SurfaceSlot slot) {
         refreshSurfaceSlot(server, surfaceId, slot, true);
@@ -1115,6 +1137,7 @@ public final class TransformConstructionManager {
         }
         materializeAffected(server, index, affected);
         if (invalidatePower) {
+            refreshOpeningNeighbours(server, id, cell);
             TransformDoorRuntime.structuralCellChanged(server, id, cell);
             TransformAlarmRuntime.structuralGroupCellChanged(server, id, cell);
             TransformPoweredBlockRuntime.structuralGroupCellChanged(
@@ -1467,8 +1490,15 @@ public final class TransformConstructionManager {
         // cells. Door passages are still clipped once after owner aggregation;
         // these void passages must stay owner-local so one group's opening can
         // never erase collision from another overlapping transformed group.
-        List<AABB> openPassages =
-                TransformOpenCellCollision.nearbyPassages(group, cell);
+        List<AABB> openPassages = new ArrayList<>();
+        openPassages.addAll(
+                TransformOpenCellCollision.nearbyPassages(group, cell));
+        // Restore the local doorway relief that originally made rotated doors
+        // passable. The final aggregate mask remains as a safety net, but a
+        // neighbouring wall contribution should never enter the index with a
+        // doorway-spanning AABB in the first place.
+        openPassages.addAll(
+                TransformDoorwayCollision.nearbyPassages(group, cell));
         int subdivisionsX = collisionSubdivisions(group,
                 new Vec3(1.0D, 0.0D, 0.0D));
         int subdivisionsY = collisionSubdivisions(group,

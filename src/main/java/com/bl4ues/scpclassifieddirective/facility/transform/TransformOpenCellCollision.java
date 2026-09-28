@@ -3,7 +3,12 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
@@ -49,24 +54,85 @@ public final class TransformOpenCellCollision {
         return result.isEmpty() ? List.of() : List.copyOf(result);
     }
 
-    private static void addCandidate(TransformGroup group, GridPos source,
-            GridPos gap, List<AABB> result) {
-        if (hasCollision(group, gap)) return;
+    /**
+     * World-cell indexed passage masks for all authored empty cells that form
+     * bounded wall openings. This mirrors TransformDoorwayCollision's final
+     * aggregate clipping so incremental edits cannot leave stale neighbour
+     * AABBs inside a newly-created opening.
+     */
+    public static Map<Long, List<AABB>> indexPassages(
+            Collection<TransformGroup> groups) {
+        if (groups == null || groups.isEmpty()) return Map.of();
 
+        Map<Long, List<AABB>> indexed = new HashMap<>();
+        for (TransformGroup group : groups) {
+            if (group == null || group.cells().isEmpty()) continue;
+            Set<GridPos> gaps = new LinkedHashSet<>();
+            for (Map.Entry<GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                if (!hasCollision(group, entry.getKey())) continue;
+                GridPos source = entry.getKey();
+                for (GridPos gap : List.of(
+                        source.offset(-1, 0, 0),
+                        source.offset(1, 0, 0),
+                        source.offset(0, 0, -1),
+                        source.offset(0, 0, 1))) {
+                    if (!hasCollision(group, gap)
+                            && boundedOpening(group, gap)) {
+                        gaps.add(gap);
+                    }
+                }
+            }
+
+            for (GridPos gap : gaps) {
+                List<AABB> passages = passagesForGap(group, gap);
+                for (AABB passage : passages) {
+                    int x0 = (int) Math.floor(passage.minX);
+                    int x1 = (int) Math.floor(passage.maxX - EPSILON);
+                    int y0 = (int) Math.floor(passage.minY);
+                    int y1 = (int) Math.floor(passage.maxY - EPSILON);
+                    int z0 = (int) Math.floor(passage.minZ);
+                    int z1 = (int) Math.floor(passage.maxZ - EPSILON);
+                    for (int x = x0; x <= x1; x++) {
+                        for (int y = y0; y <= y1; y++) {
+                            for (int z = z0; z <= z1; z++) {
+                                indexed.computeIfAbsent(
+                                        BlockPos.asLong(x, y, z),
+                                        ignored -> new ArrayList<>())
+                                        .add(passage);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Map<Long, List<AABB>> result = new HashMap<>();
+        indexed.forEach((key, value) ->
+                result.put(key, List.copyOf(value)));
+        return Map.copyOf(result);
+    }
+
+    private static boolean boundedOpening(TransformGroup group, GridPos gap) {
+        boolean boundedX = distanceToSolid(group, gap, -1, 0) > 0
+                && distanceToSolid(group, gap, 1, 0) > 0;
+        boolean boundedZ = distanceToSolid(group, gap, 0, -1) > 0
+                && distanceToSolid(group, gap, 0, 1) > 0;
+        return boundedX || boundedZ;
+    }
+
+    private static List<AABB> passagesForGap(TransformGroup group,
+            GridPos gap) {
         int xNeg = distanceToSolid(group, gap, -1, 0);
         int xPos = distanceToSolid(group, gap, 1, 0);
         int zNeg = distanceToSolid(group, gap, 0, -1);
         int zPos = distanceToSolid(group, gap, 0, 1);
         boolean boundedX = xNeg > 0 && xPos > 0;
         boolean boundedZ = zNeg > 0 && zPos > 0;
-        if (!boundedX && !boundedZ) return;
+        if (!boundedX && !boundedZ) return List.of();
 
         boolean widthAlongX;
-        if (gap.x() != source.x() && boundedX) {
-            widthAlongX = true;
-        } else if (gap.z() != source.z() && boundedZ) {
-            widthAlongX = false;
-        } else if (boundedX && boundedZ) {
+        if (boundedX && boundedZ) {
             widthAlongX = xNeg + xPos <= zNeg + zPos;
         } else {
             widthAlongX = boundedX;
@@ -85,11 +151,20 @@ public final class TransformOpenCellCollision {
         width = new Vec3(width.x, 0.0D, width.z);
         through = new Vec3(through.x, 0.0D, through.z);
         if (width.lengthSqr() < EPSILON || through.lengthSqr() < EPSILON) {
-            return;
+            return List.of();
         }
-        width = width.normalize();
-        through = through.normalize();
-        addOrientedPassage(group.cellCenter(gap), width, through, result);
+
+        List<AABB> result = new ArrayList<>(WIDTH_TILES * DEPTH_TILES);
+        addOrientedPassage(group.cellCenter(gap), width.normalize(),
+                through.normalize(), result);
+        return List.copyOf(result);
+    }
+
+    private static void addCandidate(TransformGroup group, GridPos source,
+            GridPos gap, List<AABB> result) {
+        if (hasCollision(group, gap)) return;
+
+        result.addAll(passagesForGap(group, gap));
     }
 
     private static int distanceToSolid(TransformGroup group, GridPos start,

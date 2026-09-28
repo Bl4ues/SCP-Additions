@@ -32,7 +32,9 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -61,23 +63,37 @@ public final class FacilityPipeModule {
     }
 
     public static List<Item> creativeItems() {
-        List<Item> result = new ArrayList<>(FINISHES.length);
+        List<Item> result = new ArrayList<>(FINISHES.length + 1);
         for (String finish : FINISHES) {
             Item item = ForgeRegistries.ITEMS.getValue(id(finish, "both"));
             if (item != null) result.add(item);
         }
+        Item ceiling = ForgeRegistries.ITEMS.getValue(ceilingId("both"));
+        if (ceiling != null) result.add(ceiling);
         return List.copyOf(result);
     }
 
     public static ItemStack pick(BlockState state) {
-        if (!(state.getBlock() instanceof PipeBlock pipe)) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(id(pipe.finish, "both"));
-        return item == null ? ItemStack.EMPTY : item.getDefaultInstance();
+        if (state == null) return ItemStack.EMPTY;
+        if (state.getBlock() instanceof PipeBlock pipe) {
+            Item item = ForgeRegistries.ITEMS.getValue(id(pipe.finish, "both"));
+            return item == null ? ItemStack.EMPTY : item.getDefaultInstance();
+        }
+        if (state.getBlock() instanceof CeilingPipeBlock) {
+            Item item = ForgeRegistries.ITEMS.getValue(ceilingId("both"));
+            return item == null ? ItemStack.EMPTY : item.getDefaultInstance();
+        }
+        return ItemStack.EMPTY;
     }
 
     private static ResourceLocation id(String finish, String supports) {
         return new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
                 "wall_pipe_" + finish + "_" + supports);
+    }
+
+    private static ResourceLocation ceilingId(String supports) {
+        return new ResourceLocation(ScpClassifiedDirectiveMod.MODID,
+                "ceiling_pipe_" + supports);
     }
 
     private static String displayName(String finish) {
@@ -99,6 +115,14 @@ public final class FacilityPipeModule {
                         new PipeItem(ForgeRegistries.BLOCKS.getValue(id),
                                 displayName(finish)));
             }
+        }
+        for (String supports : SUPPORTS) {
+            ResourceLocation id = ceilingId(supports);
+            event.register(ForgeRegistries.Keys.BLOCKS, id,
+                    () -> new CeilingPipeBlock(supports));
+            event.register(ForgeRegistries.Keys.ITEMS, id, () ->
+                    new PipeItem(ForgeRegistries.BLOCKS.getValue(id),
+                            "Ceiling Pipe"));
         }
     }
 
@@ -125,20 +149,58 @@ public final class FacilityPipeModule {
         }
     }
 
+    public static boolean isPipe(BlockState state) {
+        return state != null && isPipeBlock(state.getBlock());
+    }
+
+    public static boolean isPipeBlock(Block block) {
+        return block instanceof PipeBlock || block instanceof CeilingPipeBlock;
+    }
+
+    public static boolean isCeilingPipe(BlockState state) {
+        return state != null && state.getBlock() instanceof CeilingPipeBlock;
+    }
+
     private static boolean sameRun(BlockState first, BlockState next) {
-        return first != null && next != null
-                && first.getBlock() instanceof PipeBlock
-                && next.getBlock() instanceof PipeBlock
+        if (first == null || next == null || !isPipe(first) || !isPipe(next)) {
+            return false;
+        }
+        boolean firstCeiling = first.getBlock() instanceof CeilingPipeBlock;
+        boolean nextCeiling = next.getBlock() instanceof CeilingPipeBlock;
+        return firstCeiling == nextCeiling
                 && first.getValue(HorizontalDirectionalBlock.FACING)
                 == next.getValue(HorizontalDirectionalBlock.FACING);
     }
 
     private static int supportsAt(int index, int length) {
+        if (length <= 1) return BOTH;
         boolean start = index == 0;
-        boolean end = (length == 1 && index == 0)
-                || (length == 2 && index == 1)
-                || (index > 0 && index % 3 == 2);
+        boolean end = index == length - 1;
         return (start ? START : NONE) | (end ? END : NONE);
+    }
+
+    public static boolean isCeilingSurface(ConstructionSurface surface) {
+        if (surface == null) return false;
+        if (surface.bridge() != null) return true;
+        Vec3 normal = surface.gridNormal(0.5D, 0.5D).normalize();
+        return Math.abs(normal.y) >= 0.60D;
+    }
+
+    public static ConstructionSurface.SurfaceSlot centeredCeilingPipeSlot(
+            ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot requested) {
+        if (surface == null || requested == null || !isCeilingSurface(surface)) {
+            return requested;
+        }
+        int row = surface.rows() % 2 == 0
+                ? Math.max(0, surface.rows() / 2 - 1)
+                : surface.rows() / 2;
+        return new ConstructionSurface.SurfaceSlot(requested.column(), row);
+    }
+
+    public static double ceilingPipeModelYOffset(ConstructionSurface surface) {
+        return isCeilingSurface(surface) && surface.rows() % 2 != 0
+                ? -0.5D : 0.0D;
     }
 
     private static void refreshWorld(Level level, BlockPos changed,
@@ -150,7 +212,7 @@ public final class FacilityPipeModule {
                 changed.relative(along), changed.relative(along.getOpposite())}) {
             if (seed.equals(changed) && removed || visited.contains(seed)) continue;
             BlockState seedState = level.getBlockState(seed);
-            if (!(seedState.getBlock() instanceof PipeBlock)
+            if (!(isPipe(seedState))
                     || seedState.getValue(HorizontalDirectionalBlock.FACING)
                     != facing) continue;
             BlockPos first = seed;
@@ -194,7 +256,7 @@ public final class FacilityPipeModule {
         for (var entry : group.cells().entrySet()) {
             TransformGroup.GridPos seed = entry.getKey();
             BlockState seedState = entry.getValue();
-            if (!(seedState.getBlock() instanceof PipeBlock)
+            if (!(isPipe(seedState))
                     || visited.contains(seed)) continue;
             Direction along = seedState.getValue(
                     HorizontalDirectionalBlock.FACING).getClockWise();
@@ -254,7 +316,7 @@ public final class FacilityPipeModule {
                             ? surface.attachments().get(seed)
                             : surface.overlay(seed, layer);
                     if (initial == null
-                            || !(initial.state().getBlock() instanceof PipeBlock)
+                            || !(isPipe(initial.state()))
                             || visited.contains(seed)) continue;
                     BlockState state = initial.state();
                     // Pipe axes on Surface must follow its local X direction.
@@ -404,4 +466,101 @@ public final class FacilityPipeModule {
             return state.rotate(mirror.getRotation(state.getValue(FACING)));
         }
     }
+
+    public static final class CeilingPipeBlock extends HorizontalDirectionalBlock {
+        public static final DirectionProperty MOUNT =
+                DirectionProperty.create("mount");
+
+        private static final VoxelShape UP =
+                Block.box(0.0D, 14.0D, 13.5D, 16.0D, 16.0D, 16.0D);
+        private static final VoxelShape DOWN =
+                Block.box(0.0D, 0.0D, 0.0D, 16.0D, 2.0D, 2.5D);
+        private static final VoxelShape NORTH =
+                Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 2.0D);
+        private static final VoxelShape SOUTH =
+                Block.box(0.0D, 0.0D, 14.0D, 16.0D, 16.0D, 16.0D);
+        private static final VoxelShape WEST =
+                Block.box(0.0D, 0.0D, 0.0D, 2.0D, 16.0D, 16.0D);
+        private static final VoxelShape EAST =
+                Block.box(14.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
+
+        private CeilingPipeBlock(String originalSupports) {
+            super(BlockBehaviour.Properties.of().sound(SoundType.METAL)
+                    .strength(1.0F, 10.0F).noOcclusion()
+                    .isRedstoneConductor((state, level, pos) -> false));
+            int initial = switch (originalSupports) {
+                case "right" -> START;
+                case "left" -> END;
+                case "none" -> NONE;
+                default -> BOTH;
+            };
+            registerDefaultState(stateDefinition.any()
+                    .setValue(FACING, Direction.NORTH)
+                    .setValue(MOUNT, Direction.UP)
+                    .setValue(BRACKETS, initial));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(
+                StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(FACING, MOUNT, BRACKETS);
+        }
+
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            Direction mount = context.getClickedFace();
+            Direction facing = mount.getAxis().isHorizontal()
+                    ? mount
+                    : context.getHorizontalDirection().getOpposite();
+            return defaultBlockState().setValue(MOUNT, mount)
+                    .setValue(FACING, facing);
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos,
+                BlockState oldState, boolean moving) {
+            super.onPlace(state, level, pos, oldState, moving);
+            if (!oldState.is(this)) {
+                refreshWorld(level, pos, state.getValue(FACING), false);
+            }
+        }
+
+        @Override
+        public void onRemove(BlockState state, Level level, BlockPos pos,
+                BlockState next, boolean moving) {
+            if (!next.is(this)) {
+                refreshWorld(level, pos, state.getValue(FACING), true);
+            }
+            super.onRemove(state, level, pos, next, moving);
+        }
+
+        @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            return switch (state.getValue(MOUNT)) {
+                case DOWN -> DOWN;
+                case NORTH -> NORTH;
+                case SOUTH -> SOUTH;
+                case WEST -> WEST;
+                case EAST -> EAST;
+                default -> UP;
+            };
+        }
+
+        @Override
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            Direction mount = state.getValue(MOUNT);
+            if (mount.getAxis().isHorizontal()) mount = rotation.rotate(mount);
+            return state.setValue(FACING,
+                            rotation.rotate(state.getValue(FACING)))
+                    .setValue(MOUNT, mount);
+        }
+
+        @Override
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return rotate(state,
+                    mirror.getRotation(state.getValue(FACING)));
+        }
+    }
+
 }

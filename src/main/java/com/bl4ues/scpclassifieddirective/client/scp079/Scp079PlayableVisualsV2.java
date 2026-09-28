@@ -86,6 +86,18 @@ public final class Scp079PlayableVisualsV2 {
 
     private Scp079PlayableVisualsV2() { }
 
+    /**
+     * Camera topology is delivered asynchronously from the server. Do not let
+     * the low-rate room target cache hide a freshly registered transformed
+     * camera for another scan interval after that authoritative update arrives.
+     */
+    public static void invalidateCameraTargets() {
+        lastTargetScanTick = Long.MIN_VALUE;
+        lastTargetViewpoint = null;
+        cachedTargets = List.of();
+        PROMPTS.clear();
+    }
+
     public static void handleInventoryKey(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.START
                 || !Scp079PlayableClient.active()) return;

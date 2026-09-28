@@ -82,7 +82,7 @@ public final class Scp079ModulesScreenExtension {
             new Row("vanilla_hostile_mobs", "enabled",
                     "Disable Vanilla Hostile Mobs",
                     "Prevents vanilla hostile mobs from spawning and removes existing unnamed ones.",
-                    false, true, null),
+                    false),
             Row.section("Preferences"),
             new Row("inventory", "remember_ui_state", "Remember UI State",
                     "Remembers the selected panel, document and scroll positions until leaving the world.", true),

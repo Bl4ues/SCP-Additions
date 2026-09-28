@@ -53,7 +53,21 @@ public final class TransformConstructionClientState {
             TransformConstructionManager.ProxyCell masked) { }
 
     private static void refreshDoorPassages() {
-        doorPassages = TransformDoorwayCollision.indexPassages(groups);
+        Map<Long, List<AABB>> doors =
+                TransformDoorwayCollision.indexPassages(groups);
+        Map<Long, List<AABB>> openings =
+                TransformOpenCellCollision.indexPassages(groups);
+        Map<Long, List<AABB>> combined = new LinkedHashMap<>();
+        doors.forEach((key, value) ->
+                combined.computeIfAbsent(key, ignored -> new ArrayList<>())
+                        .addAll(value));
+        openings.forEach((key, value) ->
+                combined.computeIfAbsent(key, ignored -> new ArrayList<>())
+                        .addAll(value));
+        Map<Long, List<AABB>> frozen = new LinkedHashMap<>();
+        combined.forEach((key, value) ->
+                frozen.put(key, List.copyOf(value)));
+        doorPassages = Map.copyOf(frozen);
         maskedProxyCells.clear();
     }
     private static final Map<UUID,
@@ -382,6 +396,11 @@ public final class TransformConstructionClientState {
             if (physicsChanged(previous, state)) {
                 rebuildGroupCellProxyCells(groupId, cell);
             }
+            boolean openingTopologyChanged = previous == null
+                    || previous.isAir() != state.isAir();
+            if (openingTopologyChanged) {
+                refreshDoorPassages();
+            }
             if (FacilityModule.isFacilityDoor(previous)
                     && FacilityModule.isFacilityDoor(state)
                     && FacilityModule.isDoorPassable(previous)
@@ -494,6 +513,10 @@ public final class TransformConstructionClientState {
             TransformConstructionClientRenderer.markGroupCellDirty(
                     groupId, cell);
             rebuildGroupCellProxyCells(groupId, cell);
+            // Missing local cells can become walkable wall openings; update the
+            // final aggregate mask immediately rather than waiting for a full
+            // snapshot/reload.
+            refreshDoorPassages();
             TransformAlarmAudioClient.groupCellRemoved(groupId, cell);
             return;
         }

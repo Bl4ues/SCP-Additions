@@ -412,7 +412,7 @@ public final class TransformConstructionManager {
         refreshGroupCell(level.getServer(), groupId, target);
         TransformConstructionNetwork.broadcastGroupCell(level, groupId,
                 target, payload);
-        if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+        if (FacilityPipeModule.isPipe(payload)) {
             FacilityPipeModule.refreshGroup(level, groupId);
         }
         playConstructionSound(level, payload, group.cellCenter(target), true);
@@ -464,7 +464,10 @@ public final class TransformConstructionManager {
         Vec3 center = surface.gridPoint(u, v);
         if (center.distanceToSqr(hit) > 2.25D) return false;
 
-        SurfaceSlot targetSlot = slot;
+        SurfaceSlot targetSlot = blockItem.getBlock()
+                instanceof FacilityPipeModule.CeilingPipeBlock
+                ? FacilityPipeModule.centeredCeilingPipeSlot(surface, slot)
+                : slot;
         Vec3 tangent = surface.gridFrameTangent(u, v).normalize();
         Vec3 normal = surface.gridNormal(u, v).normalize();
         Vec3 delta = hit.subtract(center);
@@ -488,7 +491,7 @@ public final class TransformConstructionManager {
             payload = special.state();
         } else {
             payload = TransformPlacementStateRuntime.surfacePlacementState(
-                    player, blockItem, surface, slot, hit);
+                    player, blockItem, surface, targetSlot, hit);
         }
 
         if (surface.attachments().containsKey(targetSlot)) {
@@ -510,7 +513,7 @@ public final class TransformConstructionManager {
         refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceSlot(level, surfaceId,
                 targetSlot, payload, deform);
-        if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+        if (FacilityPipeModule.isPipe(payload)) {
             FacilityPipeModule.refreshSurface(level, surfaceId);
         }
         playConstructionSound(level, payload, center, true);
@@ -541,7 +544,10 @@ public final class TransformConstructionManager {
         Vec3 center = surface.gridPoint(u, v);
         if (player.getEyePosition().distanceToSqr(hit) > 36.0D * 36.0D
                 || center.distanceToSqr(hit) > 2.25D) return false;
-        SurfaceSlot targetSlot = slot;
+        SurfaceSlot targetSlot = blockItem.getBlock()
+                instanceof FacilityPipeModule.CeilingPipeBlock
+                ? FacilityPipeModule.centeredCeilingPipeSlot(surface, slot)
+                : slot;
         Vec3 tangent = surface.gridFrameTangent(u, v).scale(side).normalize();
         Vec3 normal = surface.gridNormal(u, v).scale(side).normalize();
         Vec3 delta = hit.subtract(center);
@@ -565,7 +571,7 @@ public final class TransformConstructionManager {
             payload = special.state();
         } else {
             payload = TransformPlacementStateRuntime.surfacePlacementState(
-                    player, blockItem, surface, slot, hit, side);
+                    player, blockItem, surface, targetSlot, hit, side);
         }
 
         if (surface.overlay(targetSlot, side) != null) {
@@ -590,7 +596,7 @@ public final class TransformConstructionManager {
             Sl2FacilityPropsModule.playTransition(level,
                     BlockPos.containing(soundCenter), true);
         }
-        if (payload.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+        if (FacilityPipeModule.isPipe(payload)) {
             FacilityPipeModule.refreshSurface(level, surfaceId);
         }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
@@ -650,7 +656,7 @@ public final class TransformConstructionManager {
         refreshGroupCell(level.getServer(), id, cell);
         TransformConstructionNetwork.broadcastGroupCellRemoved(level, id, cell);
         playConstructionSound(level, state, group.cellCenter(cell), false);
-        if (state.getBlock() instanceof FacilityPipeModule.PipeBlock) {
+        if (FacilityPipeModule.isPipe(state)) {
             FacilityPipeModule.refreshGroup(level, id);
         }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());

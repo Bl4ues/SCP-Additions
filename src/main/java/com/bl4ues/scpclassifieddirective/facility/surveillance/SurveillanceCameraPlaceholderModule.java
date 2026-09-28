@@ -123,6 +123,13 @@ public final class SurveillanceCameraPlaceholderModule {
                 facing.getStepZ() * 0.10D);
     }
 
+    public static void tickVirtualClient(Level level, BlockPos pos,
+            BlockState state, SurveillanceCameraBlockEntity camera) {
+        if (level != null && level.isClientSide && camera != null) {
+            SurveillanceCameraBlockEntity.clientTick(level, pos, state, camera);
+        }
+    }
+
     static UUID cameraId(ServerLevel level, BlockPos pos) {
         String key = ScpClassifiedDirectiveMod.MODID + ":camera:"
                 + level.dimension().location() + ":" + pos.asLong();

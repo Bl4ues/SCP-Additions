@@ -167,9 +167,17 @@ public final class FacilityPipeModule {
         }
         boolean firstCeiling = first.getBlock() instanceof CeilingPipeBlock;
         boolean nextCeiling = next.getBlock() instanceof CeilingPipeBlock;
-        return firstCeiling == nextCeiling
-                && first.getValue(HorizontalDirectionalBlock.FACING)
-                == next.getValue(HorizontalDirectionalBlock.FACING);
+        if (firstCeiling != nextCeiling
+                || first.getValue(HorizontalDirectionalBlock.FACING)
+                        != next.getValue(HorizontalDirectionalBlock.FACING)) {
+            return false;
+        }
+        // Ceiling pipes may be mounted on any of the six faces. Adjacent pieces
+        // on different planes are not one physical run and must keep their own
+        // endpoint supports instead of culling brackets through a corner.
+        return !firstCeiling
+                || first.getValue(CeilingPipeBlock.MOUNT)
+                        == next.getValue(CeilingPipeBlock.MOUNT);
     }
 
     private static int supportsAt(int index, int length) {

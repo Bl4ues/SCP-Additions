@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructio
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformDoorwayCollision;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformOpenCellCollision;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
@@ -1288,8 +1289,10 @@ public final class TransformConstructionClientState {
                     : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
                             BlockPos.ZERO, CollisionContext.empty());
             if (collision.isEmpty()) continue;
-            // Match the server: clip the combined spatial index exactly once,
-            // after contributions from every transformed owner are merged.
+            // Match the server's owner-local relief for authored empty wall
+            // cells. The global open-door mask remains a separate final pass.
+            List<AABB> openPassages =
+                    TransformOpenCellCollision.nearbyPassages(group, cell);
             int subdivisionsX = collisionSubdivisions(group,
                     new Vec3(1.0D, 0.0D, 0.0D));
             int subdivisionsY = collisionSubdivisions(group,
@@ -1313,9 +1316,20 @@ public final class TransformConstructionClientState {
                                     cell.x() - 0.5D + minX + boxX * (sx + 1) * invX,
                                     cell.y() - 0.5D + minY + boxY * (sy + 1) * invY,
                                     cell.z() - 0.5D + minZ + boxZ * (sz + 1) * invZ);
-                            addWorldBox(index,
-                                    transformedBounds(group, local),
-                                    group.id(), null, false, true, 0);
+                            AABB worldBox =
+                                    transformedBounds(group, local);
+                            if (openPassages.isEmpty()) {
+                                addWorldBox(index, worldBox, group.id(), null,
+                                        false, true, 0);
+                            } else {
+                                for (AABB remaining :
+                                        TransformDoorwayCollision.clip(
+                                                worldBox, openPassages)) {
+                                    addWorldBox(index, remaining,
+                                            group.id(), null,
+                                            false, true, 0);
+                                }
+                            }
                         }
                     }
                 }

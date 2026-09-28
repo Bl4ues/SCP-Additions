@@ -367,10 +367,19 @@ public final class Scp079PlayableVisualsV2 {
                 Scp079PlayableClient.hostDimension());
         List<FacilityRoomSnapshot> activeRooms = new ArrayList<>();
         Set<UUID> activeIds = new HashSet<>();
+        // The active surveillance node owns the feed. A transformed lens can
+        // legitimately sit just outside the integer room column after Surface
+        // deformation, so topology must outrank a BlockPos containment guess.
+        FacilityRoomSnapshot topologyRoom =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (topologyRoom != null) {
+            activeRooms.add(topologyRoom);
+            activeIds.add(topologyRoom.id());
+        }
         for (FacilityRoomSnapshot room : allRooms) {
-            if (withinExpandedFloor(room, viewpoint, ROOM_CAMERA_BORDER)) {
+            if (withinExpandedFloor(room, viewpoint, ROOM_CAMERA_BORDER)
+                    && activeIds.add(room.id())) {
                 activeRooms.add(room);
-                activeIds.add(room.id());
             }
         }
         if (activeRooms.isEmpty()) {

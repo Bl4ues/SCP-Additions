@@ -54,7 +54,8 @@ public final class TransformCameraGeometry {
             Vec3 eye = center.add(xAxis.scale(localEye.x))
                     .add(yAxis.scale(localEye.y))
                     .add(zAxis.scale(localEye.z));
-            return new Frame(center, xAxis, yAxis, zAxis, eye, true);
+            return new Frame(center, xAxis, yAxis, zAxis, eye, true,
+                    false);
         }
 
         net.minecraft.core.Direction facing = state.hasProperty(
@@ -71,7 +72,8 @@ public final class TransformCameraGeometry {
                 new Vec3(1.0D, 0.0D, 0.0D));
         Vec3 eye = center.add(zAxis.scale(0.10D))
                 .add(yAxis.scale(0.03D));
-        return new Frame(center, xAxis, yAxis, zAxis, eye, false);
+        return new Frame(center, xAxis, yAxis, zAxis, eye, false,
+                false);
     }
 
     public static Frame frame(ConstructionSurface surface,
@@ -81,14 +83,27 @@ public final class TransformCameraGeometry {
         int side = normalSign < 0 ? -1 : 1;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
-        Vec3 tangent = TransformMath.safeNormalize(
-                surface.gridFrameTangent(u, v).scale(side),
-                new Vec3(1.0D, 0.0D, 0.0D));
         Vec3 normal = TransformMath.safeNormalize(
                 surface.gridNormal(u, v).scale(side),
                 new Vec3(0.0D, 0.0D, 1.0D));
-        Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
-                surface.gridVertical(u, v));
+        // A doubly-curved Surface can have a grid tangent that is not perfectly
+        // perpendicular to its vertical spline derivative. The visible mesh's
+        // vertical direction is the physical "up" for mounted equipment, so
+        // make it authoritative and derive an orthonormal horizontal tangent
+        // from vertical x normal. This exact basis is then shared by model,
+        // tracking and playable feed.
+        Vec3 verticalHint = TransformMath.safeNormalize(
+                surface.gridVertical(u, v),
+                new Vec3(0.0D, 1.0D, 0.0D));
+        Vec3 tangent = TransformMath.safeNormalize(
+                verticalHint.cross(normal),
+                surface.gridFrameTangent(u, v).scale(side));
+        Vec3 vertical = TransformMath.safeNormalize(
+                normal.cross(tangent), verticalHint);
+        if (vertical.dot(verticalHint) < 0.0D) {
+            tangent = tangent.scale(-1.0D);
+            vertical = vertical.scale(-1.0D);
+        }
         Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot,
                 normalSign, overlay);
 
@@ -105,14 +120,16 @@ public final class TransformCameraGeometry {
             Vec3 eye = center.add(xAxis.scale(localEye.x))
                     .add(yAxis.scale(localEye.y))
                     .add(zAxis.scale(localEye.z));
-            return new Frame(center, xAxis, yAxis, zAxis, eye, true);
+            return new Frame(center, xAxis, yAxis, zAxis, eye, true,
+                    true);
         }
 
         // Wall camera is authored in the same canonical tangent/up/outward
         // basis used by rigid Surface fixtures.
         Vec3 eye = center.add(normal.scale(0.10D))
                 .add(vertical.scale(0.03D));
-        return new Frame(center, tangent, vertical, normal, eye, false);
+        return new Frame(center, tangent, vertical, normal, eye, false,
+                true);
     }
 
     public static Angles worldAngles(Vec3 direction) {
@@ -126,7 +143,7 @@ public final class TransformCameraGeometry {
     }
 
     public record Frame(Vec3 center, Vec3 xAxis, Vec3 yAxis, Vec3 zAxis,
-                        Vec3 eye, boolean ceiling) {
+                        Vec3 eye, boolean ceiling, boolean surfaceMounted) {
         private float baseLocalYaw() {
             // CeilingCameraBlockEntity stores yaw relative to BASE_YAW
             // (NORTH/180 degrees). Wall Surface cameras are authored SOUTH,

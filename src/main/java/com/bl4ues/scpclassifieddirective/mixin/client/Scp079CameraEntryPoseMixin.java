@@ -3,6 +3,9 @@ package com.bl4ues.scpclassifieddirective.mixin.client;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformBlockEntityClientRenderer;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -68,9 +71,24 @@ public abstract class Scp079CameraEntryPoseMixin {
             yaw = baseYaw + ceilingCamera.visualYaw(1.0F);
             pitch = ceilingCamera.visualPitch(1.0F);
         } else {
-            // The camera chunk can arrive a frame after the role-state packet.
-            // Keep waiting rather than baking a neutral-angle snap into the handoff.
-            return;
+            TransformCameraGeometry.Frame frame =
+                    TransformConstructionClientState.cameraFrame(cameraId);
+            TransformCameraGeometry.Angles virtualPose =
+                    TransformBlockEntityClientRenderer.virtualCameraPose(
+                            cameraId);
+            if (frame == null || virtualPose == null) {
+                // Ordinary camera chunks can arrive a frame after the role
+                // state packet. Keep waiting in that case.
+                return;
+            }
+            // Transformed cameras have no real BlockEntity at cameraPosition.
+            // Their synchronized virtual pose is already expressed in the
+            // camera's local mechanical frame, so convert that exact pose back
+            // to the world-space look inherited by the player.
+            TransformCameraGeometry.Angles world = frame.worldAngles(
+                    virtualPose.yaw(), virtualPose.pitch());
+            yaw = world.yaw();
+            pitch = world.pitch();
         }
 
         yaw = Mth.wrapDegrees(yaw);

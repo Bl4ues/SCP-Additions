@@ -1208,8 +1208,22 @@ public final class TransformConstructionManager {
                 | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
         if (newLight <= 0) {
             if (current.is(TransformConstructionModule.getProxy())) {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
-                refreshProxyLighting(level, pos, oldLight);
+                if (oldLight > 0) {
+                    // Make the emission decrease an explicit vanilla block-state
+                    // transition before removing the technical proxy. Removing
+                    // an emitting proxy in the same update can leave the
+                    // threaded block-light engine with the old source value,
+                    // especially when several Surface lamps are suppressed by
+                    // one Blackout.
+                    BlockState dark = current.setValue(
+                            TransformConstructionModule.LIGHT, 0);
+                    level.setBlock(pos, dark, flags);
+                    refreshProxyLighting(level, pos, oldLight);
+                    level.scheduleTick(pos,
+                            TransformConstructionModule.getProxy(), 1);
+                } else {
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
+                }
             }
             return;
         }

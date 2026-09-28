@@ -96,7 +96,10 @@ public final class TransformSurfaceGeometry {
         for (AABB original : shape.toAabbs()) {
             AABB box = ceilingPipeY == 0.0D ? original
                     : original.move(0.0D, ceilingPipeY, 0.0D);
-            if (effectiveDeform(attachment)) {
+            if (TransformCameraGeometry.isCamera(attachment.state())) {
+                addCameraRigid(surface, slot, attachment.state(), box,
+                        normalSign, overlay, result);
+            } else if (effectiveDeform(attachment)) {
                 addDeformed(surface, slot, box, side, depthOffset, result);
             } else {
                 addRigid(surface, slot, box, side, depthOffset, result);
@@ -134,6 +137,41 @@ public final class TransformSurfaceGeometry {
                 output.add(deformedBounds(surface, slot,
                         new AABB(minX, minY, box.minZ,
                                 maxX, maxY, box.maxZ), side, depthOffset));
+            }
+        }
+    }
+
+    private static void addCameraRigid(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, BlockState state, AABB box,
+            int normalSign, boolean overlay, List<AABB> output) {
+        TransformCameraGeometry.Frame frame = TransformCameraGeometry.frame(
+                surface, slot, state, normalSign, overlay);
+        if (frame == null) return;
+        int subdivisions = cardinal(frame.xAxis())
+                && cardinal(frame.yAxis()) && cardinal(frame.zAxis())
+                ? 1 : RIGID_SUBDIVISIONS;
+        double dx = box.getXsize() / subdivisions;
+        double dy = box.getYsize() / subdivisions;
+        double dz = box.getZsize() / subdivisions;
+        for (int sx = 0; sx < subdivisions; sx++) {
+            for (int sy = 0; sy < subdivisions; sy++) {
+                for (int sz = 0; sz < subdivisions; sz++) {
+                    double minX = box.minX + dx * sx;
+                    double minY = box.minY + dy * sy;
+                    double minZ = box.minZ + dz * sz;
+                    double maxX = sx == subdivisions - 1 ? box.maxX
+                            : box.minX + dx * (sx + 1);
+                    double maxY = sy == subdivisions - 1 ? box.maxY
+                            : box.minY + dy * (sy + 1);
+                    double maxZ = sz == subdivisions - 1 ? box.maxZ
+                            : box.minZ + dz * (sz + 1);
+                    AABB local = new AABB(minX, minY, minZ,
+                            maxX, maxY, maxZ);
+                    output.add(bounds((x, y, z) -> frame.center()
+                            .add(frame.xAxis().scale(x - 0.5D))
+                            .add(frame.yAxis().scale(y - 0.5D))
+                            .add(frame.zAxis().scale(z - 0.5D)), local));
+                }
             }
         }
     }

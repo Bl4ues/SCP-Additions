@@ -14,6 +14,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.ButtonBlock;
@@ -280,6 +282,16 @@ public final class TransformPlacementStateRuntime {
         if (item.getBlock() instanceof FacilityPipeModule.PipeBlock) {
             return item.getBlock().defaultBlockState().setValue(
                     BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH);
+        }
+
+        if (item.getBlock() == SurveillanceCameraPlaceholderModule.BLOCK.get()) {
+            return SurveillanceCameraPlaceholderModule.BLOCK.get()
+                    .defaultBlockState()
+                    .setValue(SurveillanceCameraPlaceholderModule.FACING,
+                            Direction.SOUTH);
+        }
+        if (item.getBlock() == CeilingCameraModule.BLOCK.get()) {
+            return CeilingCameraModule.BLOCK.get().defaultBlockState();
         }
 
         // Surface payloads use a canonical local cell: wall plane at local Z=0,

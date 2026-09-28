@@ -622,8 +622,8 @@ public final class TransformConstructionManager {
         TransformConstructionNetwork.broadcastSurfaceOverlayRemoved(level, id,
                 slot, side);
         playConstructionSound(level, surface.overlay(slot, side).state(), center, false);
-        if (surface.overlay(slot, side).state().getBlock()
-                instanceof FacilityPipeModule.PipeBlock) {
+        if (FacilityPipeModule.isPipe(
+                surface.overlay(slot, side).state())) {
             FacilityPipeModule.refreshSurface(level, id);
         }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());
@@ -684,8 +684,7 @@ public final class TransformConstructionManager {
         TransformConstructionNetwork.broadcastSurfaceSlotRemoved(
                 level, id, slot);
         playConstructionSound(level, attachment.state(), center, false);
-        if (attachment.state().getBlock()
-                instanceof FacilityPipeModule.PipeBlock) {
+        if (FacilityPipeModule.isPipe(attachment.state())) {
             FacilityPipeModule.refreshSurface(level, id);
         }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());

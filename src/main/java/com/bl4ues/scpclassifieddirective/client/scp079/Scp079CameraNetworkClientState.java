@@ -30,11 +30,13 @@ public final class Scp079CameraNetworkClientState {
 
     public static void update(List<CameraNode> next) {
         nodes = next == null ? List.of() : List.copyOf(next);
+        Scp079PlayableVisualsV2.invalidateCameraTargets();
     }
 
     public static void clear() {
         nodes = List.of();
         refreshTicks = 0;
+        Scp079PlayableVisualsV2.invalidateCameraTargets();
     }
 
     public static List<CameraNode> nodes() {

@@ -91,6 +91,13 @@ public final class Scp079NightVisionPostProcessor {
     }
 
     private static boolean shouldEnhance(ClientLevel level, BlockPos pos) {
+        // Blackout is an authored room override. Do not second-guess it with a
+        // brightness threshold: stray skylight or residual light from outside
+        // the mapped room must not disable the camera's night vision.
+        if (Scp079BlackoutAvailabilityClient
+                .blackoutActiveInCurrentRoom()) {
+            return true;
+        }
         int localBrightness = level.getMaxLocalRawBrightness(pos);
         int blockLight = level.getBrightness(LightLayer.BLOCK, pos);
         long timeOfDay = Math.floorMod(level.getDayTime(), 24_000L);

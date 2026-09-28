@@ -10,6 +10,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformDoorwayColl
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformOpenCellCollision;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurveillanceRuntime;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import net.minecraft.client.Minecraft;
@@ -43,8 +44,10 @@ public final class TransformConstructionClientState {
     private static ResourceLocation dimension;
     private static List<TransformGroup> groups = List.of();
     private static List<ConstructionSurface> surfaces = List.of();
-    private static List<ConstructionSurface> cameraFrameSource = null;
-    private static List<TransformCameraGeometry.Frame> cameraFrames = List.of();
+    private static List<TransformGroup> cameraFrameGroupSource = null;
+    private static List<ConstructionSurface> cameraFrameSurfaceSource = null;
+    private static Map<UUID, TransformCameraGeometry.Frame> cameraFrames =
+            Map.of();
     private static Map<Long, TransformConstructionManager.ProxyCell> proxyCells =
             new LinkedHashMap<>();
     private static Map<Long, List<AABB>> doorPassages = Map.of();
@@ -337,40 +340,74 @@ public final class TransformConstructionClientState {
         return masked;
     }
 
-    public static TransformCameraGeometry.Frame cameraFrameAtEye(
-            Vec3 eye) {
-        if (eye == null) return null;
-        if (cameraFrameSource != surfaces) {
-            ArrayList<TransformCameraGeometry.Frame> rebuilt =
-                    new ArrayList<>();
-            for (ConstructionSurface surface : surfaces) {
-                for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                        ConstructionSurface.SurfaceAttachment> entry
-                        : surface.attachments().entrySet()) {
-                    TransformCameraGeometry.Frame frame =
-                            TransformCameraGeometry.frame(surface,
-                                    entry.getKey(), entry.getValue().state(),
-                                    TransformSurfaceGeometry.MAIN_SIDE, false);
-                    if (frame != null) rebuilt.add(frame);
-                }
-                for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
-                        ConstructionSurface.SurfaceAttachment> entry
-                        : surface.overlays().entrySet()) {
-                    TransformCameraGeometry.Frame frame =
-                            TransformCameraGeometry.frame(surface,
-                                    entry.getKey().slot(),
-                                    entry.getValue().state(),
-                                    entry.getKey().normalSign(), true);
-                    if (frame != null) rebuilt.add(frame);
+    private static void rebuildCameraFramesIfNeeded() {
+        if (cameraFrameGroupSource == groups
+                && cameraFrameSurfaceSource == surfaces) {
+            return;
+        }
+        Map<UUID, TransformCameraGeometry.Frame> rebuilt =
+                new LinkedHashMap<>();
+        for (TransformGroup group : groups) {
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                TransformCameraGeometry.Frame frame =
+                        TransformCameraGeometry.frame(group, entry.getKey(),
+                                entry.getValue());
+                if (frame != null) {
+                    rebuilt.put(TransformSurveillanceRuntime.groupCameraId(
+                            group.id(), entry.getKey()), frame);
                 }
             }
-            cameraFrames = List.copyOf(rebuilt);
-            cameraFrameSource = surfaces;
         }
+        for (ConstructionSurface surface : surfaces) {
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                TransformCameraGeometry.Frame frame =
+                        TransformCameraGeometry.frame(surface,
+                                entry.getKey(), entry.getValue().state(),
+                                TransformSurfaceGeometry.MAIN_SIDE, false);
+                if (frame != null) {
+                    rebuilt.put(TransformSurveillanceRuntime.cameraId(
+                            surface.id(), entry.getKey(), 0), frame);
+                }
+            }
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.overlays().entrySet()) {
+                int layer = entry.getKey().normalSign();
+                TransformCameraGeometry.Frame frame =
+                        TransformCameraGeometry.frame(surface,
+                                entry.getKey().slot(),
+                                entry.getValue().state(), layer, true);
+                if (frame != null) {
+                    rebuilt.put(TransformSurveillanceRuntime.cameraId(
+                            surface.id(), entry.getKey().slot(), layer), frame);
+                }
+            }
+        }
+        cameraFrames = Map.copyOf(rebuilt);
+        cameraFrameGroupSource = groups;
+        cameraFrameSurfaceSource = surfaces;
+    }
 
+    public static TransformCameraGeometry.Frame cameraFrame(UUID cameraId) {
+        if (cameraId == null) return null;
+        rebuildCameraFramesIfNeeded();
+        return cameraFrames.get(cameraId);
+    }
+
+    /**
+     * Legacy proximity lookup retained for callers that only have an eye
+     * position. Exact camera-id lookup is preferred because transformed cameras
+     * can legitimately be mounted very close to each other.
+     */
+    public static TransformCameraGeometry.Frame cameraFrameAtEye(Vec3 eye) {
+        if (eye == null) return null;
+        rebuildCameraFramesIfNeeded();
         TransformCameraGeometry.Frame best = null;
         double bestDistance = 0.36D;
-        for (TransformCameraGeometry.Frame frame : cameraFrames) {
+        for (TransformCameraGeometry.Frame frame : cameraFrames.values()) {
             double distance = frame.eye().distanceToSqr(eye);
             if (distance < bestDistance) {
                 bestDistance = distance;

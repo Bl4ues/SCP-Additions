@@ -75,23 +75,36 @@ public final class TransformCameraGeometry {
 
     public record Frame(Vec3 center, Vec3 xAxis, Vec3 yAxis, Vec3 zAxis,
                         Vec3 eye, boolean ceiling) {
+        private float baseLocalYaw() {
+            // CeilingCameraBlockEntity stores yaw relative to BASE_YAW
+            // (NORTH/180 degrees). Wall Surface cameras are authored SOUTH,
+            // whose vanilla base yaw is zero. Keeping that same convention
+            // here makes the physical dome, playable feed and autonomous
+            // target all consume the exact same yaw value.
+            return ceiling ? CeilingCameraModule.BASE_YAW : 0.0F;
+        }
+
         public Vec3 worldDirection(float localYaw, float localPitch) {
-            Vec3 local = Vec3.directionFromRotation(localPitch, localYaw);
+            Vec3 local = Vec3.directionFromRotation(localPitch,
+                    localYaw + baseLocalYaw());
             return TransformMath.safeNormalize(
                     xAxis.scale(local.x)
                             .add(yAxis.scale(local.y))
                             .add(zAxis.scale(local.z)),
-                    zAxis);
+                    zAxis.scale(-1.0D));
         }
 
         public Angles localAngles(Vec3 worldDirection) {
-            Vec3 value = TransformMath.safeNormalize(worldDirection, zAxis);
+            Vec3 value = TransformMath.safeNormalize(worldDirection,
+                    zAxis.scale(-1.0D));
             double x = value.dot(xAxis);
             double y = value.dot(yAxis);
             double z = value.dot(zAxis);
             double horizontal = Math.sqrt(x * x + z * z);
+            float absoluteYaw = (float) Math.toDegrees(Math.atan2(-x, z));
             return new Angles(
-                    (float) Math.toDegrees(Math.atan2(-x, z)),
+                    net.minecraft.util.Mth.wrapDegrees(
+                            absoluteYaw - baseLocalYaw()),
                     (float) -Math.toDegrees(Math.atan2(y, horizontal)));
         }
 

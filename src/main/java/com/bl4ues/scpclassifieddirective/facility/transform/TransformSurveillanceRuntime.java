@@ -93,7 +93,7 @@ public final class TransformSurveillanceRuntime {
         }
 
         TransformCameraGeometry.Angles neutral = frame.ceiling()
-                ? frame.worldAngles(180.0F,
+                ? frame.worldAngles(0.0F,
                         com.bl4ues.scpclassifieddirective.facility.surveillance
                                 .CeilingCameraViewGeometry.DEFAULT_DOWN_PITCH)
                 : frame.worldAngles(0.0F, 0.0F);

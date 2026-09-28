@@ -45,7 +45,7 @@ public final class CeilingCameraViewGeometry {
             TransformCameraGeometry.Frame frame, float localYaw,
             float localPitch) {
         if (frame == null) return Vec3.ZERO;
-        Vec3 neutral = frame.worldDirection(180.0F, DEFAULT_DOWN_PITCH);
+        Vec3 neutral = frame.worldDirection(0.0F, DEFAULT_DOWN_PITCH);
         Vec3 pivot = frame.eye().subtract(neutral.scale(PIVOT_TO_LENS));
         return pivot.add(frame.worldDirection(localYaw, localPitch)
                 .scale(PIVOT_TO_LENS));

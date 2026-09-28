@@ -18,6 +18,9 @@ import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.mapping.client.FacilityMappingClientState;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
+import com.bl4ues.scpclassifieddirective.network.Scp079CameraNavigationNetwork;
 import com.bl4ues.scpclassifieddirective.network.Scp079PlayableNetwork;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -266,8 +269,15 @@ public final class Scp079PlayableVisualsV2 {
         if (prompt == null) return false;
         if (prompt.kind == TargetKind.CAMERA) {
             if (attack || use) {
-                FacilityRoomSnapshot room = roomForDevice(prompt.pos, 1);
-                if (room != null) Scp079PlayableNetwork.requestRoom(room.id());
+                if (prompt.cameraId != null) {
+                    Scp079CameraNavigationNetwork.requestCamera(
+                            prompt.cameraId);
+                } else {
+                    FacilityRoomSnapshot room = roomForDevice(prompt.pos, 1);
+                    if (room != null) {
+                        Scp079PlayableNetwork.requestRoom(room.id());
+                    }
+                }
             }
             return true;
         }
@@ -330,7 +340,8 @@ public final class Scp079PlayableVisualsV2 {
             int margin = Scp079UiTheme.FRAME_MARGIN + 8;
             if (point.x < margin || point.x > context.width - margin
                     || point.y < margin || point.y > context.height - margin) continue;
-            PROMPTS.add(new InteractionPrompt(target.kind, target.pos, point));
+            PROMPTS.add(new InteractionPrompt(target.kind, target.pos,
+                    point, target.cameraId, target.ceiling));
         }
     }
 
@@ -390,7 +401,37 @@ public final class Scp079PlayableVisualsV2 {
                 if (budget[0] <= 0) break;
             }
         }
+        addTopologyCameras(minecraft, result);
         cachedTargets = List.copyOf(result);
+    }
+
+    /**
+     * Physical prompts must come from the surveillance topology, not just
+     * vanilla world BlockStates. Transformed Surface/Off-Grid cameras have no
+     * real camera block at their authored anchor, but they are first-class
+     * FacilitySurveillanceRegistry entries and therefore appear here.
+     */
+    private static void addTopologyCameras(Minecraft minecraft,
+            List<WorldTarget> result) {
+        UUID current = Scp079PlayableClient.cameraId();
+        for (Scp079CameraNavigationNetwork.CameraNode node
+                : Scp079CameraNetworkClientState.nodes()) {
+            if (node == null || node.cameraId() == null
+                    || node.cameraId().equals(current)) {
+                continue;
+            }
+            TransformCameraGeometry.Frame frame =
+                    TransformConstructionClientState.cameraFrame(
+                            node.cameraId());
+            Vec3 anchor = frame != null ? frame.center()
+                    : new Vec3(node.x(), node.y(), node.z());
+            boolean ceiling = frame != null ? frame.ceiling()
+                    : minecraft.level != null
+                    && minecraft.level.getBlockState(node.anchorPos())
+                            .is(CeilingCameraModule.BLOCK.get());
+            addTarget(result, new WorldTarget(TargetKind.CAMERA,
+                    node.anchorPos(), node.cameraId(), anchor, ceiling));
+        }
     }
 
     private static void scanRoom(Minecraft minecraft, FacilityRoomSnapshot room,
@@ -438,12 +479,25 @@ public final class Scp079PlayableVisualsV2 {
         }
     }
 
-    private static void addTarget(List<WorldTarget> targets, WorldTarget next) {
-        for (WorldTarget existing : targets) {
-            if (existing.kind == next.kind
-                    && existing.pos.distSqr(next.pos) <= (next.kind == TargetKind.DOOR ? 3.0D : 1.0D)) {
-                return;
+    private static void addTarget(List<WorldTarget> targets,
+            WorldTarget next) {
+        for (int index = 0; index < targets.size(); index++) {
+            WorldTarget existing = targets.get(index);
+            if (existing.kind != next.kind) continue;
+            boolean same = next.kind == TargetKind.CAMERA
+                    && next.cameraId != null && existing.cameraId != null
+                    ? next.cameraId.equals(existing.cameraId)
+                    : existing.pos.distSqr(next.pos)
+                            <= (next.kind == TargetKind.DOOR ? 3.0D : 1.0D);
+            if (!same) continue;
+            // The block scan can discover an ordinary camera before the
+            // topology pass. Prefer the topology-enriched target so exact
+            // camera switching and transformed anchors are retained.
+            if (next.kind == TargetKind.CAMERA
+                    && next.cameraId != null && existing.cameraId == null) {
+                targets.set(index, next);
             }
+            return;
         }
         targets.add(next);
     }
@@ -494,8 +548,9 @@ public final class Scp079PlayableVisualsV2 {
             int y = Math.round(prompt.screen.y) - size / 2;
             ResourceLocation icon = switch (prompt.kind) {
                 case TESLA -> TESLA_ICON;
-                case CAMERA -> minecraft.level.getBlockState(prompt.pos)
-                        .is(CeilingCameraModule.BLOCK.get())
+                case CAMERA -> prompt.ceiling
+                        || minecraft.level.getBlockState(prompt.pos)
+                                .is(CeilingCameraModule.BLOCK.get())
                         ? CAMERA_DOME_ICON : CAMERA_ICON;
                 case DOOR -> doorIcon(minecraft, prompt.pos);
             };
@@ -585,6 +640,7 @@ public final class Scp079PlayableVisualsV2 {
     }
 
     private static Vec3 anchor(WorldTarget target) {
+        if (target.anchor != null) return target.anchor;
         Vec3 center = Vec3.atCenterOf(target.pos);
         if (target.kind != TargetKind.DOOR) return center;
         if (Minecraft.getInstance().level != null
@@ -710,7 +766,12 @@ public final class Scp079PlayableVisualsV2 {
     private record ScreenPoint(float x, float y) { }
     private record RecognitionBox(int x1, int y1, int x2, int y2,
             String label, int color) { }
-    private record WorldTarget(TargetKind kind, BlockPos pos) { }
+    private record WorldTarget(TargetKind kind, BlockPos pos,
+            UUID cameraId, Vec3 anchor, boolean ceiling) {
+        private WorldTarget(TargetKind kind, BlockPos pos) {
+            this(kind, pos, null, null, false);
+        }
+    }
     private record InteractionPrompt(TargetKind kind, BlockPos pos,
-            ScreenPoint screen) { }
+            ScreenPoint screen, UUID cameraId, boolean ceiling) { }
 }

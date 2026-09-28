@@ -4,6 +4,7 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionClientBridge;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformConstructionManager;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformDoorwayCollision;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
@@ -332,6 +333,45 @@ public final class TransformConstructionClientState {
                         raw.groupIds(), raw.surfaceIds());
         maskedProxyCells.put(key, new MaskedProxyCell(raw, masked));
         return masked;
+    }
+
+    public static TransformCameraGeometry.Frame cameraFrameAtEye(
+            Vec3 eye) {
+        if (eye == null) return null;
+        TransformCameraGeometry.Frame best = null;
+        double bestDistance = 0.36D;
+        for (ConstructionSurface surface : surfaces) {
+            for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.attachments().entrySet()) {
+                TransformCameraGeometry.Frame frame =
+                        TransformCameraGeometry.frame(surface, entry.getKey(),
+                                entry.getValue().state(),
+                                TransformSurfaceGeometry.MAIN_SIDE, false);
+                if (frame == null) continue;
+                double distance = frame.eye().distanceToSqr(eye);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = frame;
+                }
+            }
+            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                    ConstructionSurface.SurfaceAttachment> entry
+                    : surface.overlays().entrySet()) {
+                TransformCameraGeometry.Frame frame =
+                        TransformCameraGeometry.frame(surface,
+                                entry.getKey().slot(),
+                                entry.getValue().state(),
+                                entry.getKey().normalSign(), true);
+                if (frame == null) continue;
+                double distance = frame.eye().distanceToSqr(eye);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    best = frame;
+                }
+            }
+        }
+        return best;
     }
 
     public static void previewGroup(TransformGroup replacement) {

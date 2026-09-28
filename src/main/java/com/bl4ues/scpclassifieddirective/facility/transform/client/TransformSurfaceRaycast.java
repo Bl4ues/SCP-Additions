@@ -187,7 +187,13 @@ public final class TransformSurfaceRaycast {
         Target negativePipe = targetOverlayLane(surface, slot, -2,
                 eye, ray, Math.min(limit, bestDistance));
         best = nearer(best, negativePipe);
-        if (best != null) bestDistance = best.distance();
+        if (best != null) {
+            // Lane 2 is shape-accurate while the legacy fixture lane uses a
+            // generous logical-cell target. A ray that actually touches the
+            // thin pipe must select the pipe instead of the lamp/camera sharing
+            // the same cell simply because the cell boundary is closer.
+            return best;
+        }
 
         VisualAttachment positive =
                 visualAttachment(surface, slot, 1, true);

@@ -716,6 +716,11 @@ public final class TransformConstructionManager {
                 return false;
             }
         }
+        ConstructionSurface removed = data.surface(id);
+        if (removed != null) {
+            TransformSurveillanceRuntime.unregisterSurface(
+                    player.getServer(), removed);
+        }
         boolean changed = data.removeSurface(id);
         if (changed) refreshSurface(player.getServer(), id);
         return changed;
@@ -912,6 +917,10 @@ public final class TransformConstructionManager {
                         next.cell(dimension, pos));
             }
         }
+        for (ConstructionSurface surface
+                : TransformConstructionSavedData.get(server).surfaces()) {
+            TransformSurveillanceRuntime.refreshSurface(server, surface.id());
+        }
     }
 
     public static synchronized void refreshGroup(MinecraftServer server,
@@ -1076,6 +1085,7 @@ public final class TransformConstructionManager {
             TransformSurfaceDoorRuntime.structuralSurfaceChanged(server, id);
             TransformAlarmRuntime.structuralSurfaceChanged(server, id);
             TransformPoweredBlockRuntime.structuralSurfaceChanged(server, id);
+            TransformSurveillanceRuntime.refreshSurface(server, id);
             TransformDoorRuntime.acknowledgeStructuralRevision(server);
         } else {
             TransformDoorRuntime.structuralGroupChanged(server, id);
@@ -1205,6 +1215,7 @@ public final class TransformConstructionManager {
             TransformAlarmRuntime.structuralSurfaceSlotChanged(server, id, slot);
             TransformPoweredBlockRuntime.structuralSurfaceSlotChanged(
                     server, id, slot);
+            TransformSurveillanceRuntime.refreshSurfaceSlot(server, id, slot);
             TransformDoorRuntime.acknowledgeStructuralRevision(server);
         }
     }

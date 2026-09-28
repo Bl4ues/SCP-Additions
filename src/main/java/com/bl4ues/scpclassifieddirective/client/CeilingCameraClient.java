@@ -4,6 +4,8 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableClient;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraViewGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformBlockEntityClientRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -88,14 +90,27 @@ public final class CeilingCameraClient {
             Minecraft minecraft = Minecraft.getInstance();
             long now = System.nanoTime();
             if (isLocallyControlled(animatable, minecraft)) {
-                yawDegrees = Mth.clamp(Mth.wrapDegrees(
-                                minecraft.player.getYRot()
-                                        - CeilingCameraModule.BASE_YAW),
-                        -CeilingCameraModule.MANUAL_YAW_LIMIT,
-                        CeilingCameraModule.MANUAL_YAW_LIMIT);
-                pitchDegrees = Mth.clamp(minecraft.player.getXRot(),
-                        CeilingCameraModule.MANUAL_MIN_PITCH,
-                        CeilingCameraModule.MANUAL_MAX_PITCH);
+                TransformCameraGeometry.Frame transformed =
+                        TransformBlockEntityClientRenderer.activeCameraFrame();
+                if (transformed != null && transformed.ceiling()) {
+                    TransformCameraGeometry.Angles local =
+                            transformed.localAngles(minecraft.player.getLookAngle());
+                    yawDegrees = Mth.clamp(Mth.wrapDegrees(local.yaw()),
+                            -CeilingCameraModule.MANUAL_YAW_LIMIT,
+                            CeilingCameraModule.MANUAL_YAW_LIMIT);
+                    pitchDegrees = Mth.clamp(local.pitch(),
+                            CeilingCameraModule.MANUAL_MIN_PITCH,
+                            CeilingCameraModule.MANUAL_MAX_PITCH);
+                } else {
+                    yawDegrees = Mth.clamp(Mth.wrapDegrees(
+                                    minecraft.player.getYRot()
+                                            - CeilingCameraModule.BASE_YAW),
+                            -CeilingCameraModule.MANUAL_YAW_LIMIT,
+                            CeilingCameraModule.MANUAL_YAW_LIMIT);
+                    pitchDegrees = Mth.clamp(minecraft.player.getXRot(),
+                            CeilingCameraModule.MANUAL_MIN_PITCH,
+                            CeilingCameraModule.MANUAL_MAX_PITCH);
+                }
                 ReleasePose pose = releasePoses.computeIfAbsent(animatable,
                         ignored -> new ReleasePose());
                 pose.yaw = yawDegrees;
@@ -143,8 +158,12 @@ public final class CeilingCameraClient {
                     || camera.getLevel() != minecraft.level) {
                 return false;
             }
-            Vec3 baseEye = CeilingCameraModule.eyePosition(
-                    camera.getBlockPos(), camera.getBlockState());
+            TransformCameraGeometry.Frame transformed =
+                    TransformBlockEntityClientRenderer.activeCameraFrame();
+            Vec3 baseEye = transformed != null && transformed.ceiling()
+                    ? transformed.eye()
+                    : CeilingCameraModule.eyePosition(
+                            camera.getBlockPos(), camera.getBlockState());
             return Scp079PlayableClient.viewPosition().distanceToSqr(baseEye)
                     <= 0.64D;
         }

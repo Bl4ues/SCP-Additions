@@ -57,7 +57,7 @@ import java.util.WeakHashMap;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TransformConstructionManager {
-    private static final int GROUP_SUBDIVISIONS = 3;
+    private static final int GROUP_SUBDIVISIONS = 6;
     private static final double SURFACE_SELECTION_THICKNESS = 0.055D;
     private static final int MAX_GROUP_CELLS = 16_384;
     private static final int MAX_SURFACE_SLOTS = 65_536;
@@ -1459,25 +1459,32 @@ public final class TransformConstructionManager {
         // The final, aggregated world-cell collision is clipped once by the
         // shared doorway index. Early per-cell clipping duplicates hundreds of
         // overlapping AABBs and is invalidated whenever a door animates.
-        int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
-        double inv = 1.0D / subdivisions;
+        int subdivisionsX = collisionSubdivisions(group,
+                new Vec3(1.0D, 0.0D, 0.0D));
+        int subdivisionsY = collisionSubdivisions(group,
+                new Vec3(0.0D, 1.0D, 0.0D));
+        int subdivisionsZ = collisionSubdivisions(group,
+                new Vec3(0.0D, 0.0D, 1.0D));
+        double invX = 1.0D / subdivisionsX;
+        double invY = 1.0D / subdivisionsY;
+        double invZ = 1.0D / subdivisionsZ;
         collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
             double boxX = maxX - minX;
             double boxY = maxY - minY;
             double boxZ = maxZ - minZ;
-            for (int sx = 0; sx < subdivisions; sx++) {
-                for (int sy = 0; sy < subdivisions; sy++) {
-                    for (int sz = 0; sz < subdivisions; sz++) {
+            for (int sx = 0; sx < subdivisionsX; sx++) {
+                for (int sy = 0; sy < subdivisionsY; sy++) {
+                    for (int sz = 0; sz < subdivisionsZ; sz++) {
                         AABB local = new AABB(
-                                cell.x() - 0.5D + minX + boxX * sx * inv,
-                                cell.y() - 0.5D + minY + boxY * sy * inv,
-                                cell.z() - 0.5D + minZ + boxZ * sz * inv,
+                                cell.x() - 0.5D + minX + boxX * sx * invX,
+                                cell.y() - 0.5D + minY + boxY * sy * invY,
+                                cell.z() - 0.5D + minZ + boxZ * sz * invZ,
                                 cell.x() - 0.5D + minX
-                                        + boxX * (sx + 1) * inv,
+                                        + boxX * (sx + 1) * invX,
                                 cell.y() - 0.5D + minY
-                                        + boxY * (sy + 1) * inv,
+                                        + boxY * (sy + 1) * invY,
                                 cell.z() - 0.5D + minZ
-                                        + boxZ * (sz + 1) * inv);
+                                        + boxZ * (sz + 1) * invZ);
                         addWorldBox(index, owner,
                                 transformedBounds(group, local),
                                 false, true, 0);
@@ -1657,6 +1664,18 @@ public final class TransformConstructionManager {
         return nearRightAngle(group.rotationX())
                 && nearRightAngle(group.rotationY())
                 && nearRightAngle(group.rotationZ());
+    }
+
+    private static int collisionSubdivisions(TransformGroup group,
+            Vec3 localAxis) {
+        if (nearOrthogonal(group)) return 1;
+        Vec3 worldAxis = TransformMath.rotate(localAxis,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        double ax = Math.abs(worldAxis.x);
+        double ay = Math.abs(worldAxis.y);
+        double az = Math.abs(worldAxis.z);
+        double dominant = Math.max(ax, Math.max(ay, az));
+        return dominant >= 0.9999D ? 1 : GROUP_SUBDIVISIONS;
     }
 
     private static boolean nearRightAngle(float degrees) {

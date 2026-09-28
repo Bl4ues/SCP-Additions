@@ -30,10 +30,17 @@ public final class TransformMath {
         Vec3 y = safeNormalize(yAxis, z.cross(x));
         z = safeNormalize(x.cross(y), z);
         y = safeNormalize(z.cross(x), y);
+        // JOML's nine-float Matrix3f constructor is column-major: the
+        // first three arguments are column 0, then column 1, then column 2.
+        // x/y/z are already the desired WORLD directions of local X/Y/Z, so
+        // they are exactly those three columns. Transposing here used the
+        // inverse rotation for every non-cardinal Surface frame, making rigid
+        // BlockEntities render at the opposite curve angle while collision,
+        // tracking and camera optics used the correct direct basis.
         Matrix3f matrix = new Matrix3f(
                 (float) x.x, (float) x.y, (float) x.z,
                 (float) y.x, (float) y.y, (float) y.z,
-                (float) z.x, (float) z.y, (float) z.z).transpose();
+                (float) z.x, (float) z.y, (float) z.z);
         return new Quaternionf().setFromNormalized(matrix);
     }
 

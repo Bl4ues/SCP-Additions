@@ -182,9 +182,15 @@ public final class FacilityPipeModule {
 
     private static int supportsAt(int index, int length) {
         if (length <= 1) return BOTH;
-        boolean start = index == 0;
-        boolean end = index == length - 1;
-        return (start ? START : NONE) | (end ? END : NONE);
+        // The authored supports overlap at cell seams. Start with the LEFT
+        // support, then place a RIGHT support every third pipe. The current
+        // physical end is always RIGHT as well; when the run grows, that
+        // temporary endpoint disappears unless it also lands on a 3-cell
+        // division. This yields:
+        // left, none, right, none, none, right, ...
+        if (index == 0) return END;
+        if (index == length - 1 || index % 3 == 2) return START;
+        return NONE;
     }
 
     public static boolean isCeilingSurface(ConstructionSurface surface) {
@@ -479,18 +485,23 @@ public final class FacilityPipeModule {
         public static final DirectionProperty MOUNT =
                 DirectionProperty.create("mount");
 
-        private static final VoxelShape UP =
-                Block.box(0.0D, 14.0D, 13.5D, 16.0D, 16.0D, 16.0D);
+        // MOUNT is the clicked/support face. The original model is authored
+        // against the SOUTH edge and the TOP of its block: DOWN therefore is
+        // the unchanged ceiling pose, UP is the floor-flipped pose, and wall
+        // mounts remain flush with the support edge instead of occupying a
+        // full-height phantom column.
         private static final VoxelShape DOWN =
-                Block.box(0.0D, 0.0D, 0.0D, 16.0D, 2.0D, 2.5D);
+                Block.box(0.0D, 14.0D, 13.5D, 16.0D, 16.0D, 16.0D);
+        private static final VoxelShape UP =
+                Block.box(0.0D, 0.0D, 13.5D, 16.0D, 2.0D, 16.0D);
         private static final VoxelShape NORTH =
-                Block.box(0.0D, 0.0D, 0.0D, 16.0D, 16.0D, 2.0D);
+                Block.box(0.0D, 14.0D, 13.5D, 16.0D, 16.0D, 16.0D);
         private static final VoxelShape SOUTH =
-                Block.box(0.0D, 0.0D, 14.0D, 16.0D, 16.0D, 16.0D);
-        private static final VoxelShape WEST =
-                Block.box(0.0D, 0.0D, 0.0D, 2.0D, 16.0D, 16.0D);
+                Block.box(0.0D, 14.0D, 0.0D, 16.0D, 16.0D, 2.5D);
         private static final VoxelShape EAST =
-                Block.box(14.0D, 0.0D, 0.0D, 16.0D, 16.0D, 16.0D);
+                Block.box(0.0D, 14.0D, 0.0D, 2.5D, 16.0D, 16.0D);
+        private static final VoxelShape WEST =
+                Block.box(13.5D, 14.0D, 0.0D, 16.0D, 16.0D, 16.0D);
 
         private CeilingPipeBlock(String originalSupports) {
             super(BlockBehaviour.Properties.of().sound(SoundType.METAL)

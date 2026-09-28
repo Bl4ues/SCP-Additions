@@ -651,6 +651,8 @@ public final class TransformConstructionManager {
 
         TransformGroup next = group.withoutCell(cell);
         if (next.cells().isEmpty()) {
+            TransformSurveillanceRuntime.unregisterGroup(
+                    level.getServer(), group);
             data.removeGroup(id);
             refreshGroup(level.getServer(), id);
             playConstructionSound(level, state, group.cellCenter(cell), false);
@@ -700,8 +702,14 @@ public final class TransformConstructionManager {
         if (!canEdit(player) || id == null || player.getServer() == null) {
             return false;
         }
-        boolean changed = TransformConstructionSavedData.get(player.getServer())
-                .removeGroup(id);
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(player.getServer());
+        TransformGroup removed = data.group(id);
+        if (removed != null) {
+            TransformSurveillanceRuntime.unregisterGroup(
+                    player.getServer(), removed);
+        }
+        boolean changed = data.removeGroup(id);
         if (changed) refreshGroup(player.getServer(), id);
         return changed;
     }
@@ -844,6 +852,8 @@ public final class TransformConstructionManager {
             if (group != null) {
                 TransformGroup next = group.withoutCell(groupHit.cell());
                 if (next.cells().isEmpty()) {
+                    TransformSurveillanceRuntime.unregisterGroup(
+                            level.getServer(), group);
                     data.removeGroup(group.id());
                     refreshGroup(level.getServer(), group.id());
                     // Owner deletion remains a structural revision and will be
@@ -922,8 +932,12 @@ public final class TransformConstructionManager {
                         next.cell(dimension, pos));
             }
         }
-        for (ConstructionSurface surface
-                : TransformConstructionSavedData.get(server).surfaces()) {
+        TransformConstructionSavedData surveillanceData =
+                TransformConstructionSavedData.get(server);
+        for (TransformGroup group : surveillanceData.groups()) {
+            TransformSurveillanceRuntime.refreshGroup(server, group.id());
+        }
+        for (ConstructionSurface surface : surveillanceData.surfaces()) {
             TransformSurveillanceRuntime.refreshSurface(server, surface.id());
         }
     }
@@ -1096,6 +1110,7 @@ public final class TransformConstructionManager {
             TransformDoorRuntime.structuralGroupChanged(server, id);
             TransformAlarmRuntime.structuralGroupChanged(server, id);
             TransformPoweredBlockRuntime.structuralGroupChanged(server, id);
+            TransformSurveillanceRuntime.refreshGroup(server, id);
             TransformSurfaceDoorRuntime.acknowledgeStructuralRevision(server);
         }
     }
@@ -1162,6 +1177,7 @@ public final class TransformConstructionManager {
             TransformAlarmRuntime.structuralGroupCellChanged(server, id, cell);
             TransformPoweredBlockRuntime.structuralGroupCellChanged(
                     server, id, cell);
+            TransformSurveillanceRuntime.refreshGroupCell(server, id, cell);
             TransformSurfaceDoorRuntime.acknowledgeStructuralRevision(server);
         }
     }

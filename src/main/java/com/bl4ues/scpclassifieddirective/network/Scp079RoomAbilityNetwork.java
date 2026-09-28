@@ -1,11 +1,17 @@
 package com.bl4ues.scpclassifieddirective.network;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.Scp079PlayableManager;
 import com.bl4ues.scpclassifieddirective.facility.Scp079RoomAbilityManager;
+import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
 
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /** Client requests for playable SCP-079 room abilities. */
@@ -21,6 +27,9 @@ public final class Scp079RoomAbilityNetwork {
         ScpClassifiedDirectiveMod.addNetworkMessage(AbilityRequest.class,
                 AbilityRequest::encode, AbilityRequest::decode,
                 AbilityRequest::handle);
+        ScpClassifiedDirectiveMod.addNetworkMessage(BlackoutState.class,
+                BlackoutState::encode, BlackoutState::decode,
+                BlackoutState::handle);
     }
 
     public static void request(Scp079RoomAbilityManager.Ability ability) {
@@ -45,6 +54,10 @@ public final class Scp079RoomAbilityNetwork {
             NetworkEvent.Context context = contextSupplier.get();
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
+                FacilityRoomSnapshot blackoutRoom = player != null
+                        && message.ability == Scp079RoomAbilityManager.Ability.BLACKOUT
+                        ? Scp079PlayableManager.currentCameraRoom(player)
+                        : null;
                 if (player == null
                         || !Scp079RoomAbilityManager.use(player, message.ability)) {
                     return;
@@ -53,8 +66,38 @@ public final class Scp079RoomAbilityNetwork {
                         message.ability == Scp079RoomAbilityManager.Ability.BLACKOUT
                                 ? Scp079ActionAudioNetwork.Cue.BLACKOUT
                                 : Scp079ActionAudioNetwork.Cue.LOCKDOWN);
+                if (message.ability == Scp079RoomAbilityManager.Ability.BLACKOUT
+                        && blackoutRoom != null) {
+                    ScpClassifiedDirectiveMod.PACKET_HANDLER.send(
+                            PacketDistributor.PLAYER.with(() -> player),
+                            new BlackoutState(blackoutRoom.id(),
+                                    Scp079RoomAbilityManager.BLACKOUT_DURATION_TICKS));
+                }
             });
             context.setPacketHandled(true);
         }
+    public record BlackoutState(UUID roomId, int durationTicks) {
+        private static void encode(BlackoutState message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.roomId);
+            buffer.writeVarInt(message.durationTicks);
+        }
+
+        private static BlackoutState decode(FriendlyByteBuf buffer) {
+            return new BlackoutState(buffer.readUUID(), buffer.readVarInt());
+        }
+
+        private static void handle(BlackoutState message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.client.scp079
+                            .Scp079BlackoutAvailabilityClient.confirmBlackout(
+                                    message.roomId,
+                                    message.durationTicks)));
+            context.setPacketHandled(true);
+        }
+    }
+
     }
 }

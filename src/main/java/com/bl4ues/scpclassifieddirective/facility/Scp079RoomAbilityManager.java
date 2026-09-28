@@ -325,14 +325,20 @@ public final class Scp079RoomAbilityManager {
             if (!level.hasChunkAt(cursor)) continue;
             BlockState blockState = level.getBlockState(cursor);
             if (!isPotentialLightState(blockState)
-                    || !isLightStateActive(blockState)
-                    || blockState.getLightEmission(level, cursor) <= 0) {
+                    || !isLightStateActive(blockState)) {
                 continue;
             }
             boolean powered = blockState.hasProperty(BlockStateProperties.POWERED)
                     && blockState.getValue(BlockStateProperties.POWERED);
             boolean intrinsic = Sl2FacilityPropsModule.isRoundLamp(blockState)
                     || UBlocksModule.isWallDetailLamp(blockState);
+            // Some authored facility fixtures are emissive-only and therefore
+            // intentionally contribute no vanilla block light. They are still
+            // real Blackout targets and must switch to their unlit model.
+            if (!intrinsic
+                    && blockState.getLightEmission(level, cursor) <= 0) {
+                continue;
+            }
             if (!intrinsic && !powered && !level.hasNeighborSignal(cursor)) {
                 continue;
             }

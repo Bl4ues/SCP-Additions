@@ -1106,6 +1106,12 @@ public final class TransformConstructionManager {
             affected.computeIfAbsent(group.dimension(), ignored ->
                     new LinkedHashSet<>()).addAll(index.ownerPositions(key));
         }
+        if (invalidatePower) {
+            // Structural edits change whether neighbouring missing cells form
+            // real walkable openings. Rebuild only the cheap passage mask; the
+            // owner collision itself remains incremental.
+            index.refreshDoorPassages(data.groups());
+        }
         materializeAffected(server, index, affected);
         if (invalidatePower) {
             TransformDoorRuntime.structuralCellChanged(server, id, cell);
@@ -1860,8 +1866,24 @@ public final class TransformConstructionManager {
 
         private void refreshDoorPassages(
                 java.util.Collection<TransformGroup> groups) {
-            doorPassages = TransformDoorwayCollision.indexPassages(groups);
-            // Other owners' cached collision must be reclipped too.
+            Map<Long, List<AABB>> doors =
+                    TransformDoorwayCollision.indexPassages(groups);
+            Map<Long, List<AABB>> openings =
+                    TransformOpenCellCollision.indexPassages(groups);
+            Map<Long, List<AABB>> combined = new HashMap<>();
+            doors.forEach((key, value) ->
+                    combined.computeIfAbsent(key, ignored -> new ArrayList<>())
+                            .addAll(value));
+            openings.forEach((key, value) ->
+                    combined.computeIfAbsent(key, ignored -> new ArrayList<>())
+                            .addAll(value));
+            Map<Long, List<AABB>> frozenPassages = new HashMap<>();
+            combined.forEach((key, value) ->
+                    frozenPassages.put(key, List.copyOf(value)));
+            doorPassages = Map.copyOf(frozenPassages);
+            // Final aggregate collision depends on this mask, so every cached
+            // world cell must be recomputed when an opening is added/filled or
+            // a door crosses its passability threshold.
             frozen.clear();
         }
 

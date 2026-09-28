@@ -2,9 +2,13 @@ package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,8 +23,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,6 +43,10 @@ public final class TransformBlockEntityClientRenderer {
     private static final Map<CellKey, RenderHost> GROUP_HOSTS = new HashMap<>();
     private static final Map<SurfaceKey, RenderHost> SURFACE_HOSTS =
             new HashMap<>();
+    private static final Map<BlockEntity, Long> VIRTUAL_CAMERA_TICKS =
+            new WeakHashMap<>();
+    private static final ThreadLocal<TransformCameraGeometry.Frame>
+            ACTIVE_CAMERA_FRAME = new ThreadLocal<>();
 
     private TransformBlockEntityClientRenderer() {
     }
@@ -63,8 +73,10 @@ public final class TransformBlockEntityClientRenderer {
         for (TransformGroup group : groups) {
             renderGroup(minecraft, event, pose, buffers, camera, group);
         }
+        Set<SurfaceKey> currentSurfaces = new HashSet<>();
         for (ConstructionSurface surface : surfaces) {
-            renderSurface(minecraft, event, pose, buffers, camera, surface);
+            renderSurface(minecraft, event, pose, buffers, camera, surface,
+                    currentSurfaces);
         }
 
         Set<CellKey> currentGroups = groups.stream().flatMap(group ->
@@ -73,14 +85,6 @@ public final class TransformBlockEntityClientRenderer {
                         .map(entry -> new CellKey(group.id(), entry.getKey())))
                 .collect(Collectors.toSet());
         GROUP_HOSTS.keySet().removeIf(key -> !currentGroups.contains(key));
-
-        Set<SurfaceKey> currentSurfaces = surfaces.stream().flatMap(surface ->
-                surface.attachments().entrySet().stream()
-                        .filter(entry -> renderableEntity(
-                                entry.getValue().state()))
-                        .map(entry -> new SurfaceKey(surface.id(),
-                                entry.getKey())))
-                .collect(Collectors.toSet());
         SURFACE_HOSTS.keySet().removeIf(key -> !currentSurfaces.contains(key));
     }
 
@@ -119,37 +123,102 @@ public final class TransformBlockEntityClientRenderer {
     private static void renderSurface(Minecraft minecraft,
             RenderLevelStageEvent event, PoseStack pose,
             MultiBufferSource.BufferSource buffers, Vec3 camera,
-            ConstructionSurface surface) {
+            ConstructionSurface surface, Set<SurfaceKey> current) {
         for (Map.Entry<ConstructionSurface.SurfaceSlot,
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.attachments().entrySet()) {
-            BlockState state = entry.getValue().state();
-            if (!renderableEntity(state)) continue;
-            EntityBlock entityBlock = (EntityBlock) state.getBlock();
-            ConstructionSurface.SurfaceSlot slot = entry.getKey();
+            renderSurfaceAttachment(minecraft, event, pose, buffers, camera,
+                    surface, entry.getKey(), entry.getValue(),
+                    TransformSurfaceGeometry.MAIN_SIDE, false, current);
+        }
+        for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                ConstructionSurface.SurfaceAttachment> entry
+                : surface.overlays().entrySet()) {
+            renderSurfaceAttachment(minecraft, event, pose, buffers, camera,
+                    surface, entry.getKey().slot(), entry.getValue(),
+                    entry.getKey().normalSign(), true, current);
+        }
+    }
+
+    private static void renderSurfaceAttachment(Minecraft minecraft,
+            RenderLevelStageEvent event, PoseStack pose,
+            MultiBufferSource.BufferSource buffers, Vec3 camera,
+            ConstructionSurface surface, ConstructionSurface.SurfaceSlot slot,
+            ConstructionSurface.SurfaceAttachment attachment, int normalSign,
+            boolean overlay, Set<SurfaceKey> current) {
+        BlockState state = attachment.state();
+        if (!renderableEntity(state)) return;
+        EntityBlock entityBlock = (EntityBlock) state.getBlock();
+        TransformCameraGeometry.Frame cameraFrame =
+                TransformCameraGeometry.frame(surface, slot, state,
+                        normalSign, overlay);
+        Vec3 center = cameraFrame != null ? cameraFrame.center()
+                : TransformSurfaceGeometry.cellCenter(surface, slot,
+                        normalSign, overlay);
+        if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) return;
+
+        SurfaceKey key = new SurfaceKey(surface.id(), slot,
+                normalSign < 0 ? -1 : 1, overlay);
+        current.add(key);
+        RenderHost host = host(minecraft, SURFACE_HOSTS.get(key), entityBlock,
+                state, center);
+        if (host == null) return;
+        SURFACE_HOSTS.put(key, host);
+        tickVirtualCamera(minecraft, host.entity(), state);
+
+        Vec3 xAxis;
+        Vec3 yAxis;
+        Vec3 zAxis;
+        if (cameraFrame != null) {
+            xAxis = cameraFrame.xAxis();
+            yAxis = cameraFrame.yAxis();
+            zAxis = cameraFrame.zAxis();
+        } else {
+            int side = normalSign < 0 ? -1 : 1;
             double u = (slot.column() + 0.5D) / surface.columns();
             double v = (slot.row() + 0.5D) / surface.rows();
-            Vec3 normal = surface.gridNormal(u, v);
-            Vec3 center = surface.gridPoint(u, v).add(normal.scale(0.5D));
-            if (center.distanceToSqr(camera) > MAX_DISTANCE_SQR) continue;
-            SurfaceKey key = new SurfaceKey(surface.id(), slot);
-            RenderHost host = host(minecraft, SURFACE_HOSTS.get(key), entityBlock,
-                    state, center);
-            if (host == null) continue;
-            SURFACE_HOSTS.put(key, host);
-
-            Vec3 tangent = surface.gridFrameTangent(u, v);
-            Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
+            zAxis = surface.gridNormal(u, v).scale(side).normalize();
+            xAxis = surface.gridFrameTangent(u, v).scale(side).normalize();
+            yAxis = TransformMath.safeNormalize(zAxis.cross(xAxis),
                     surface.gridVertical(u, v));
-            pose.pushPose();
-            pose.translate(-camera.x, -camera.y, -camera.z);
-            pose.translate(center.x, center.y, center.z);
-            pose.mulPose(TransformMath.frameQuaternion(tangent, vertical, normal));
-            pose.translate(-0.5D, -0.5D, -0.5D);
+        }
+
+        pose.pushPose();
+        pose.translate(-camera.x, -camera.y, -camera.z);
+        pose.translate(center.x, center.y, center.z);
+        pose.mulPose(TransformMath.frameQuaternion(xAxis, yAxis, zAxis));
+        pose.translate(-0.5D, -0.5D, -0.5D);
+        if (cameraFrame != null) ACTIVE_CAMERA_FRAME.set(cameraFrame);
+        try {
             minecraft.getBlockEntityRenderDispatcher().render(host.entity(),
                     event.getPartialTick(), pose, buffers);
+        } finally {
+            if (cameraFrame != null) ACTIVE_CAMERA_FRAME.remove();
             pose.popPose();
         }
+    }
+
+    private static void tickVirtualCamera(Minecraft minecraft,
+            BlockEntity entity, BlockState state) {
+        long tick = minecraft.level == null ? Long.MIN_VALUE
+                : minecraft.level.getGameTime();
+        if (VIRTUAL_CAMERA_TICKS.getOrDefault(entity, Long.MIN_VALUE) == tick) {
+            return;
+        }
+        VIRTUAL_CAMERA_TICKS.put(entity, tick);
+        if (entity instanceof SurveillanceCameraPlaceholderModule
+                .SurveillanceCameraBlockEntity wall) {
+            SurveillanceCameraPlaceholderModule.tickVirtualClient(
+                    minecraft.level, entity.getBlockPos(), state, wall);
+        } else if (entity instanceof CeilingCameraModule
+                .CeilingCameraBlockEntity ceiling) {
+            CeilingCameraModule.tickVirtualClient(
+                    minecraft.level, entity.getBlockPos(), state, ceiling);
+        }
+    }
+
+    public static TransformCameraGeometry.Frame activeCameraFrame() {
+        return ACTIVE_CAMERA_FRAME.get();
     }
 
     private static RenderHost host(Minecraft minecraft, RenderHost current,
@@ -179,7 +248,8 @@ public final class TransformBlockEntityClientRenderer {
     }
 
     private record SurfaceKey(UUID surfaceId,
-            ConstructionSurface.SurfaceSlot slot) {
+            ConstructionSurface.SurfaceSlot slot, int normalSign,
+            boolean overlay) {
     }
 
     private record RenderHost(BlockState state, BlockEntity entity) {

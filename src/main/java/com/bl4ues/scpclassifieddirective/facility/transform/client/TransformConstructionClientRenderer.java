@@ -1485,8 +1485,8 @@ public final class TransformConstructionClientRenderer {
                     ? Float.intBitsToFloat(vertices[offset + 5]) : 0.0F;
             minX = Math.min(minX, x);
             maxX = Math.max(maxX, x);
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
+            minY = Math.min(minY, points[vertex].y);
+            maxY = Math.max(maxY, points[vertex].y);
         }
 
         // Adjoining pipe end caps lie on the exact same deformed cell seam.

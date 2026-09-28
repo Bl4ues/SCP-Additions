@@ -1,5 +1,6 @@
 package com.bl4ues.scpclassifieddirective.facility.surveillance;
 
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -38,6 +39,16 @@ public final class CeilingCameraViewGeometry {
         Vec3 pivot = baseEye.subtract(forward(baseYaw, basePitch)
                 .scale(PIVOT_TO_LENS));
         return pivot.add(forward(yaw, pitch).scale(PIVOT_TO_LENS));
+    }
+
+    public static Vec3 lensFromSurfaceFrame(
+            TransformCameraGeometry.Frame frame, float localYaw,
+            float localPitch) {
+        if (frame == null) return Vec3.ZERO;
+        Vec3 neutral = frame.worldDirection(180.0F, DEFAULT_DOWN_PITCH);
+        Vec3 pivot = frame.eye().subtract(neutral.scale(PIVOT_TO_LENS));
+        return pivot.add(frame.worldDirection(localYaw, localPitch)
+                .scale(PIVOT_TO_LENS));
     }
 
     private static Vec3 forward(float yaw, float pitch) {

@@ -34,7 +34,7 @@ import java.util.UUID;
 
 /** Client mirror plus transient editor selection for transformed construction. */
 public final class TransformConstructionClientState {
-    private static final int GROUP_SUBDIVISIONS = 3;
+    private static final int GROUP_SUBDIVISIONS = 6;
     private static final double SURFACE_SELECTION_THICKNESS = 0.055D;
 
     private static ResourceLocation dimension;
@@ -1290,22 +1290,29 @@ public final class TransformConstructionClientState {
             if (collision.isEmpty()) continue;
             // Match the server: clip the combined spatial index exactly once,
             // after contributions from every transformed owner are merged.
-            int subdivisions = nearOrthogonal(group) ? 1 : GROUP_SUBDIVISIONS;
-            double inv = 1.0D / subdivisions;
+            int subdivisionsX = collisionSubdivisions(group,
+                    new Vec3(1.0D, 0.0D, 0.0D));
+            int subdivisionsY = collisionSubdivisions(group,
+                    new Vec3(0.0D, 1.0D, 0.0D));
+            int subdivisionsZ = collisionSubdivisions(group,
+                    new Vec3(0.0D, 0.0D, 1.0D));
+            double invX = 1.0D / subdivisionsX;
+            double invY = 1.0D / subdivisionsY;
+            double invZ = 1.0D / subdivisionsZ;
             collision.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
                 double boxX = maxX - minX;
                 double boxY = maxY - minY;
                 double boxZ = maxZ - minZ;
-                for (int sx = 0; sx < subdivisions; sx++) {
-                    for (int sy = 0; sy < subdivisions; sy++) {
-                        for (int sz = 0; sz < subdivisions; sz++) {
+                for (int sx = 0; sx < subdivisionsX; sx++) {
+                    for (int sy = 0; sy < subdivisionsY; sy++) {
+                        for (int sz = 0; sz < subdivisionsZ; sz++) {
                             AABB local = new AABB(
-                                    cell.x() - 0.5D + minX + boxX * sx * inv,
-                                    cell.y() - 0.5D + minY + boxY * sy * inv,
-                                    cell.z() - 0.5D + minZ + boxZ * sz * inv,
-                                    cell.x() - 0.5D + minX + boxX * (sx + 1) * inv,
-                                    cell.y() - 0.5D + minY + boxY * (sy + 1) * inv,
-                                    cell.z() - 0.5D + minZ + boxZ * (sz + 1) * inv);
+                                    cell.x() - 0.5D + minX + boxX * sx * invX,
+                                    cell.y() - 0.5D + minY + boxY * sy * invY,
+                                    cell.z() - 0.5D + minZ + boxZ * sz * invZ,
+                                    cell.x() - 0.5D + minX + boxX * (sx + 1) * invX,
+                                    cell.y() - 0.5D + minY + boxY * (sy + 1) * invY,
+                                    cell.z() - 0.5D + minZ + boxZ * (sz + 1) * invZ);
                             addWorldBox(index,
                                     transformedBounds(group, local),
                                     group.id(), null, false, true, 0);
@@ -1493,6 +1500,18 @@ public final class TransformConstructionClientState {
         return nearRightAngle(group.rotationX())
                 && nearRightAngle(group.rotationY())
                 && nearRightAngle(group.rotationZ());
+    }
+
+    private static int collisionSubdivisions(TransformGroup group,
+            Vec3 localAxis) {
+        if (nearOrthogonal(group)) return 1;
+        Vec3 worldAxis = TransformMath.rotate(localAxis,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        double ax = Math.abs(worldAxis.x);
+        double ay = Math.abs(worldAxis.y);
+        double az = Math.abs(worldAxis.z);
+        double dominant = Math.max(ax, Math.max(ay, az));
+        return dominant >= 0.9999D ? 1 : GROUP_SUBDIVISIONS;
     }
 
     private static boolean nearRightAngle(float degrees) {

@@ -294,7 +294,8 @@ public final class TransformSurveillanceRuntime {
         if (operator) {
             TransformCameraGeometry.Angles local =
                     frame.localAngles(controller.getLookAngle());
-            pose = directedPose(frame, local.yaw(), local.pitch());
+            pose = directedPose(frame, local.yaw(), local.pitch(),
+                    false);
         } else if (definition != null && autonomous) {
             ServerPlayer target = trackingTarget(level, definition);
             if (target != null) {
@@ -302,7 +303,8 @@ public final class TransformSurveillanceRuntime {
                         .subtract(definition.eyePosition());
                 TransformCameraGeometry.Angles local =
                         frame.localAngles(direction);
-                pose = directedPose(frame, local.yaw(), local.pitch());
+                pose = directedPose(frame, local.yaw(), local.pitch(),
+                        true);
             }
         }
 
@@ -318,7 +320,7 @@ public final class TransformSurveillanceRuntime {
     }
 
     private static CameraPose directedPose(TransformCameraGeometry.Frame frame,
-            float yaw, float physicalPitch) {
+            float yaw, float physicalPitch, boolean autonomous) {
         float limit = frame.ceiling()
                 ? CeilingCameraModule.MANUAL_YAW_LIMIT
                 : SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT;
@@ -328,11 +330,23 @@ public final class TransformSurveillanceRuntime {
         float maxPitch = frame.ceiling()
                 ? CeilingCameraModule.MANUAL_MAX_PITCH
                 : SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH;
-        float logicalPitch = frame.ceiling()
-                ? physicalPitch
-                : physicalPitch - SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH;
+        float logicalYaw = yaw;
+        float logicalPitch = physicalPitch;
+        if (autonomous && frame.ceiling()) {
+            // The authored ceiling dome's procedural Y rotation has opposite
+            // handedness to Minecraft yaw. Playable control already passes
+            // through the client lens frame and must remain unmirrored.
+            logicalYaw = -logicalYaw;
+        } else if (autonomous) {
+            // Wall-camera BlockEntities add the authored fifteen-degree
+            // mechanical tilt while rendering. Autonomous targeting starts
+            // from a physical world direction, so store the corresponding
+            // logical pitch. Human control is already expressed in logical
+            // camera pitch and must not subtract this a second time.
+            logicalPitch -= SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH;
+        }
         return new CameraPose(true,
-                Mth.clamp(Mth.wrapDegrees(yaw), -limit, limit),
+                Mth.clamp(Mth.wrapDegrees(logicalYaw), -limit, limit),
                 Mth.clamp(logicalPitch, minPitch, maxPitch));
     }
 

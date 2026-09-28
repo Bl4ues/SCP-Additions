@@ -104,7 +104,9 @@ public final class SurveillanceCameraClient {
                     yawDegrees = Mth.clamp(Mth.wrapDegrees(local.yaw()),
                             -SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT,
                             SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT);
-                    pitchDegrees = Mth.clamp(local.pitch(),
+                    pitchDegrees = Mth.clamp(local.pitch()
+                                    - SurveillanceCameraViewGeometry
+                                            .DEFAULT_DOWN_PITCH,
                             SurveillanceCameraPlaceholderModule.MANUAL_MIN_PITCH,
                             SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH);
                 } else {

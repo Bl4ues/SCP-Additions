@@ -34,7 +34,7 @@ import java.util.UUID;
 
 /** Client mirror plus transient editor selection for transformed construction. */
 public final class TransformConstructionClientState {
-    private static final int GROUP_SUBDIVISIONS = 6;
+    private static final int GROUP_SUBDIVISIONS = 8;
     private static final double SURFACE_SELECTION_THICKNESS = 0.055D;
 
     private static ResourceLocation dimension;

@@ -365,9 +365,16 @@ public final class TransformConstructionClientState {
 
     public static void commitPreviewGeometry() {
         if (selection == null) {
+            refreshDoorPassages();
             rebuildProxyCells();
         } else if (selection.type() == SelectionType.GROUP) {
             rebuildGroupProxyCells(selection.id());
+            // Group rotation/translation changes the WORLD coordinates of every
+            // authored opening and open-door passage. The collision proxy
+            // geometry was already rebuilt above, but the passage mask used to
+            // remain at the pre-gizmo pose. Authoritative sync can legitimately
+            // be a no-op after preview, so this must happen at commit time.
+            refreshDoorPassages();
         } else {
             rebuildSurfaceProxyCells(selection.id());
         }

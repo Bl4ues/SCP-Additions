@@ -57,7 +57,7 @@ import java.util.WeakHashMap;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TransformConstructionManager {
-    private static final int GROUP_SUBDIVISIONS = 8;
+    private static final int GROUP_SUBDIVISIONS = 3;
     private static final double SURFACE_SELECTION_THICKNESS = 0.055D;
     private static final int MAX_GROUP_CELLS = 16_384;
     private static final int MAX_SURFACE_SLOTS = 65_536;

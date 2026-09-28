@@ -138,6 +138,22 @@ public final class TransformPlacementStateRuntime {
                     outwardLocal.getOpposite());
         }
 
+        // Surveillance fixtures must inherit the Off-Grid LOCAL face. Asking
+        // vanilla to place them against the nearest cardinal world face and
+        // localizing that result afterwards rotates a wall camera around the
+        // wrong wall whenever the group itself is rotated.
+        if (item.getBlock() == SurveillanceCameraPlaceholderModule.BLOCK.get()
+                && outwardLocal.getAxis().isHorizontal()) {
+            return SurveillanceCameraPlaceholderModule.BLOCK.get()
+                    .defaultBlockState()
+                    .setValue(SurveillanceCameraPlaceholderModule.FACING,
+                            outwardLocal);
+        }
+        if (item.getBlock() == CeilingCameraModule.BLOCK.get()
+                && outwardLocal == Direction.DOWN) {
+            return CeilingCameraModule.BLOCK.get().defaultBlockState();
+        }
+
         // Alarm placement uses the clicked sub-cell position as part of its
         // authored state. Its vanilla getStateForPlacement also validates real
         // world support, which is intentionally wrong for a transformed local

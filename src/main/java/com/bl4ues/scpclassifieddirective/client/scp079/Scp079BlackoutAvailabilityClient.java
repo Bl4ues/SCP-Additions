@@ -187,14 +187,16 @@ public final class Scp079BlackoutAvailabilityClient {
                 && state.getValue(BlockStateProperties.LIT)
                 || state.hasProperty(BlockStateProperties.POWERED)
                 && state.getValue(BlockStateProperties.POWERED);
-        if (!active || state.getLightEmission(minecraft.level, pos) <= 0) {
+        if (!active) return false;
+        boolean intrinsic = Sl2FacilityPropsModule.isRoundLamp(state)
+                || UBlocksModule.isWallDetailLamp(state);
+        if (!intrinsic
+                && state.getLightEmission(minecraft.level, pos) <= 0) {
             return false;
         }
         boolean powered = state.hasProperty(BlockStateProperties.POWERED)
                 && state.getValue(BlockStateProperties.POWERED);
-        return Sl2FacilityPropsModule.isRoundLamp(state)
-                || UBlocksModule.isWallDetailLamp(state)
-                || powered || minecraft.level.hasNeighborSignal(pos);
+        return intrinsic || powered || minecraft.level.hasNeighborSignal(pos);
     }
 
 

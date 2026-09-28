@@ -1989,8 +1989,9 @@ public final class TransformConstructionClientRenderer {
                 ? surface.overlay(adjacent, normalSign)
                 : surface.attachments().get(adjacent);
         return other != null
-                && other.state().getBlock()
-                        instanceof FacilityPipeModule.PipeBlock
+                && FacilityPipeModule.isPipe(other.state())
+                && FacilityPipeModule.isCeilingPipe(other.state())
+                        == FacilityPipeModule.isCeilingPipe(state)
                 && other.state().getValue(HorizontalDirectionalBlock.FACING)
                         == state.getValue(HorizontalDirectionalBlock.FACING);
     }

@@ -295,7 +295,7 @@
 - Added Creative-only transformed facility construction tools for off-grid block grids and resizable, tiltable, curved surfaces, preserving block states, collision, lighting, animated doors, Alarm behavior, compatible BlockEntity rendering, and precise Facility Mapping geometry for future procedural room placement;
 - Added parent-linked Surface planes: builders can select an edge on each of two existing Surfaces to create a persistent connecting ceiling/bridge that inherits both parent curves, remains anchored when either parent is edited, and exposes only a snapped center-crown control for smooth arches;
 - Added the Sublevel 2 **Ceiling Pipe**, with automatic endpoint supports, six-face vanilla placement, and centerline-aware placement along curved or parent-linked ceilings;
-- Added **Concrete Wall (Middle, Lower Stripe)** as an alternate Sublevel 2 middle-wall pattern;
+- Added alternate Sublevel 2 middle-wall patterns with single blue, lower-accent, and orange stripe variants;
 - Added full transformed-Surface support for both surveillance camera types, including Surface-aligned models and collision, camera animation, persistent surveillance registration, and playable SCP-079 feeds from the transformed lens position;
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;

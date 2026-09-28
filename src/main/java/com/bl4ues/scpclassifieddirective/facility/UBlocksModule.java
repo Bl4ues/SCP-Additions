@@ -106,8 +106,10 @@ public final class UBlocksModule {
     // Sector 2 structural set.
     public static final RegistryObject<Block> SL_2_FLOOR = structure("sl_2_floor");
     public static final RegistryObject<Block> SL_2_WALL_BOT = structure("sl_2_wall_bot");
+    public static final RegistryObject<Block> SL_2_WALL_MID_NONE = structure("sl_2_wall_mid_none");
     public static final RegistryObject<Block> SL_2_WALL_MID = structure("sl_2_wall_mid");
     public static final RegistryObject<Block> SL_2_WALL_MID_ALT = structure("sl_2_wall_mid_alt");
+    public static final RegistryObject<Block> SL_2_WALL_MID_ORANGE = structure("sl_2_wall_mid_orange");
     public static final RegistryObject<Block> SL_2_WALL_TOP = structure("sl_2_wall_top");
 
     // Props.

@@ -430,8 +430,10 @@ public final class FacilityModule {
         List<ItemStack> sublevel2 = new ArrayList<>();
         addUBlockCreativeItem(sublevel2, "sl_2_floor");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_bot");
+        addUBlockCreativeItem(sublevel2, "sl_2_wall_mid_none");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_mid");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_mid_alt");
+        addUBlockCreativeItem(sublevel2, "sl_2_wall_mid_orange");
         addUBlockCreativeItem(sublevel2, "sl_2_wall_top");
         addExternalCreativeItem(sublevel2, Sl2FacilityPropsModule.roundLampItem());
         for (Item pipe : FacilityPipeModule.creativeItems()) {

@@ -6,10 +6,13 @@ import com.bl4ues.scpclassifieddirective.item.OffGridConstructionToolItem;
 import com.bl4ues.scpclassifieddirective.item.SurfaceConstructionToolItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -130,6 +133,27 @@ public final class TransformConstructionModule {
         public int getLightBlock(BlockState state, BlockGetter level,
                 BlockPos pos) {
             return 0;
+        }
+
+        @Override
+        public void tick(BlockState state, ServerLevel level, BlockPos pos,
+                RandomSource random) {
+            int desired = TransformConstructionManager.proxyLight(level, pos);
+            if (desired <= 0) {
+                if (level.getBlockState(pos).is(this)) {
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(),
+                            Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+                    level.getLightEngine().checkBlock(pos);
+                }
+                return;
+            }
+            int clamped = Math.max(0, Math.min(15, desired));
+            if (state.getValue(LIGHT) != clamped
+                    && level.getBlockState(pos).is(this)) {
+                level.setBlock(pos, state.setValue(LIGHT, clamped),
+                        Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+                level.getLightEngine().checkBlock(pos);
+            }
         }
     }
 }

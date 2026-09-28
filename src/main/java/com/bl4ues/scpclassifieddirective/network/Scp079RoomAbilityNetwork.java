@@ -76,6 +76,8 @@ public final class Scp079RoomAbilityNetwork {
             });
             context.setPacketHandled(true);
         }
+    }
+
     public record BlackoutState(UUID roomId, int durationTicks) {
         private static void encode(BlackoutState message,
                 FriendlyByteBuf buffer) {
@@ -97,7 +99,5 @@ public final class Scp079RoomAbilityNetwork {
                                     message.durationTicks)));
             context.setPacketHandled(true);
         }
-    }
-
     }
 }

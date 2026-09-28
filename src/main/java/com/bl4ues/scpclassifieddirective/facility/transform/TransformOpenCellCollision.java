@@ -27,7 +27,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
  * same source group against an oriented passage through that empty cell.
  */
 public final class TransformOpenCellCollision {
-    private static final double CLEAR_HALF_WIDTH = 0.55D;
+    private static final double CLEAR_HALF_WIDTH = 0.66D;
     private static final double CLEAR_HALF_DEPTH = 0.58D;
     private static final double CLEAR_HALF_HEIGHT = 0.51D;
     private static final int WIDTH_TILES = 7;

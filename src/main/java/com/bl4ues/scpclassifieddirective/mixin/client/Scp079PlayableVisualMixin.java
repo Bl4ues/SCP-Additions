@@ -7,6 +7,8 @@ import com.bl4ues.scpclassifieddirective.client.scp079.Scp079PlayableVisualsV2;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraViewGeometry;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraViewGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -103,6 +105,49 @@ public abstract class Scp079PlayableVisualMixin {
     private static void scpclassifieddirective$cameraLensView(
             Minecraft minecraft, CallbackInfo ci) {
         if (minecraft.player == null || cameraRig == null) return;
+
+        TransformCameraGeometry.Frame transformed =
+                TransformConstructionClientState.cameraFrameAtEye(cameraPosition);
+        if (transformed != null) {
+            float sourceYaw = cursorReleased
+                    ? frozenYaw : minecraft.player.getYRot();
+            float sourcePitch = cursorReleased
+                    ? frozenPitch : minecraft.player.getXRot();
+            TransformCameraGeometry.Angles local = transformed.localAngles(
+                    Vec3.directionFromRotation(sourcePitch, sourceYaw));
+            float localYaw = Mth.clamp(Mth.wrapDegrees(local.yaw()),
+                    -yawLimit, yawLimit);
+            float localPitch = Mth.clamp(local.pitch(), minPitch, maxPitch);
+
+            TransformCameraGeometry.Angles logicalWorld =
+                    transformed.worldAngles(localYaw, localPitch);
+            if (!cursorReleased) {
+                minecraft.player.setYRot(logicalWorld.yaw());
+                minecraft.player.setXRot(logicalWorld.pitch());
+                minecraft.player.yRotO = logicalWorld.yaw();
+                minecraft.player.xRotO = logicalWorld.pitch();
+            }
+
+            float physicalLocalPitch = transformed.ceiling()
+                    ? localPitch
+                    : localPitch
+                            + SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH;
+            TransformCameraGeometry.Angles physicalWorld =
+                    transformed.worldAngles(localYaw, physicalLocalPitch);
+            Vec3 lens = transformed.ceiling()
+                    ? CeilingCameraViewGeometry.lensFromSurfaceFrame(
+                            transformed, localYaw, physicalLocalPitch)
+                    : SurveillanceCameraViewGeometry.lensFromSurfaceFrame(
+                            transformed, localYaw, physicalLocalPitch);
+
+            cameraRig.setPos(lens.x, lens.y, lens.z);
+            cameraRig.setYRot(physicalWorld.yaw());
+            cameraRig.setXRot(physicalWorld.pitch());
+            cameraRig.yRotO = physicalWorld.yaw();
+            cameraRig.xRotO = physicalWorld.pitch();
+            ci.cancel();
+            return;
+        }
 
         float playerYaw = minecraft.player.getYRot();
         float deltaYaw = Mth.wrapDegrees(playerYaw - baseYaw);

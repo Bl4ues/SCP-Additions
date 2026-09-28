@@ -132,6 +132,9 @@ public final class TransformConstructionNetwork {
         CHANNEL.registerMessage(23, CreateLinkedSurface.class,
                 CreateLinkedSurface::encode, CreateLinkedSurface::decode,
                 CreateLinkedSurface::handle);
+        CHANNEL.registerMessage(24, SurfaceCameraPose.class,
+                SurfaceCameraPose::encode, SurfaceCameraPose::decode,
+                SurfaceCameraPose::handle);
     }
 
     public static void updateGroup(UUID id, Vec3 origin, float rotationX,
@@ -303,6 +306,13 @@ public final class TransformConstructionNetwork {
                         overlayLayer(normalSign)));
     }
 
+    public static void broadcastSurfaceCameraPose(ServerLevel level,
+            UUID cameraId, boolean controlled, float yaw, float pitch) {
+        if (level == null || cameraId == null) return;
+        CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
+                new SurfaceCameraPose(cameraId, controlled, yaw, pitch));
+    }
+
     /** Tiny runtime-state packet for one rigid/deformed surface attachment. */
     public static void broadcastSurfaceSlot(ServerLevel level, UUID surfaceId,
             ConstructionSurface.SurfaceSlot slot, BlockState state,
@@ -417,6 +427,35 @@ public final class TransformConstructionNetwork {
                     () -> () -> com.bl4ues.scpclassifieddirective.facility.transform.client.TransformConstructionClientState
                             .sync(message.dimension, message.groups,
                                     message.surfaces)));
+            context.setPacketHandled(true);
+        }
+    }
+
+    public record SurfaceCameraPose(UUID cameraId,
+            boolean controlled, float yaw, float pitch) {
+        private static void encode(SurfaceCameraPose message,
+                FriendlyByteBuf buffer) {
+            buffer.writeUUID(message.cameraId);
+            buffer.writeBoolean(message.controlled);
+            buffer.writeFloat(message.yaw);
+            buffer.writeFloat(message.pitch);
+        }
+
+        private static SurfaceCameraPose decode(FriendlyByteBuf buffer) {
+            return new SurfaceCameraPose(buffer.readUUID(),
+                    buffer.readBoolean(), buffer.readFloat(),
+                    buffer.readFloat());
+        }
+
+        private static void handle(SurfaceCameraPose message,
+                Supplier<NetworkEvent.Context> contextSupplier) {
+            NetworkEvent.Context context = contextSupplier.get();
+            context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                    () -> () -> com.bl4ues.scpclassifieddirective.facility
+                            .transform.client.TransformBlockEntityClientRenderer
+                            .applyVirtualCameraPose(message.cameraId,
+                                    message.controlled, message.yaw,
+                                    message.pitch)));
             context.setPacketHandled(true);
         }
     }

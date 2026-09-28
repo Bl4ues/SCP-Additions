@@ -9,6 +9,7 @@ import com.bl4ues.scpclassifieddirective.facility.transform.TransformCameraGeome
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurfaceGeometry;
+import com.bl4ues.scpclassifieddirective.facility.transform.TransformSurveillanceRuntime;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -45,6 +46,8 @@ public final class TransformBlockEntityClientRenderer {
             new HashMap<>();
     private static final Map<BlockEntity, Long> VIRTUAL_CAMERA_TICKS =
             new WeakHashMap<>();
+    private static final Map<UUID, VirtualCameraPose> VIRTUAL_CAMERA_POSES =
+            new HashMap<>();
     private static final ThreadLocal<TransformCameraGeometry.Frame>
             ACTIVE_CAMERA_FRAME = new ThreadLocal<>();
 
@@ -60,6 +63,7 @@ public final class TransformBlockEntityClientRenderer {
         if (minecraft.level == null || minecraft.player == null) {
             GROUP_HOSTS.clear();
             SURFACE_HOSTS.clear();
+            VIRTUAL_CAMERA_POSES.clear();
             return;
         }
         Vec3 camera = event.getCamera().getPosition();
@@ -171,7 +175,11 @@ public final class TransformBlockEntityClientRenderer {
                 state, center);
         if (host == null) return;
         SURFACE_HOSTS.put(key, host);
-        tickVirtualCamera(minecraft, host.entity(), state);
+        int cameraLayer = !overlay ? 0 : normalSign < 0 ? -1 : 1;
+        UUID cameraId = cameraFrame == null ? null
+                : TransformSurveillanceRuntime.cameraId(
+                        surface.id(), slot, cameraLayer);
+        tickVirtualCamera(minecraft, host.entity(), state, cameraId);
 
         Vec3 xAxis;
         Vec3 yAxis;
@@ -206,22 +214,39 @@ public final class TransformBlockEntityClientRenderer {
     }
 
     private static void tickVirtualCamera(Minecraft minecraft,
-            BlockEntity entity, BlockState state) {
+            BlockEntity entity, BlockState state, UUID cameraId) {
         long tick = minecraft.level == null ? Long.MIN_VALUE
                 : minecraft.level.getGameTime();
         if (VIRTUAL_CAMERA_TICKS.getOrDefault(entity, Long.MIN_VALUE) == tick) {
             return;
         }
         VIRTUAL_CAMERA_TICKS.put(entity, tick);
+        VirtualCameraPose pose = cameraId == null ? null
+                : VIRTUAL_CAMERA_POSES.get(cameraId);
         if (entity instanceof SurveillanceCameraPlaceholderModule
                 .SurveillanceCameraBlockEntity wall) {
+            if (pose != null) {
+                wall.applyVirtualControl(pose.controlled(),
+                        pose.yaw(), pose.pitch());
+            }
             SurveillanceCameraPlaceholderModule.tickVirtualClient(
                     minecraft.level, entity.getBlockPos(), state, wall);
         } else if (entity instanceof CeilingCameraModule
                 .CeilingCameraBlockEntity ceiling) {
+            if (pose != null) {
+                ceiling.applyVirtualControl(pose.controlled(),
+                        pose.yaw(), pose.pitch());
+            }
             CeilingCameraModule.tickVirtualClient(
                     minecraft.level, entity.getBlockPos(), state, ceiling);
         }
+    }
+
+    public static void applyVirtualCameraPose(UUID cameraId,
+            boolean controlled, float yaw, float pitch) {
+        if (cameraId == null) return;
+        VIRTUAL_CAMERA_POSES.put(cameraId,
+                new VirtualCameraPose(controlled, yaw, pitch));
     }
 
     public static TransformCameraGeometry.Frame activeCameraFrame() {
@@ -260,5 +285,9 @@ public final class TransformBlockEntityClientRenderer {
     }
 
     private record RenderHost(BlockState state, BlockEntity entity) {
+    }
+
+    private record VirtualCameraPose(boolean controlled, float yaw,
+            float pitch) {
     }
 }

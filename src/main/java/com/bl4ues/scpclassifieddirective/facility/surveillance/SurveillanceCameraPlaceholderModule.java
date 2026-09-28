@@ -492,6 +492,17 @@ public final class SurveillanceCameraPlaceholderModule {
             return Mth.lerp(eased, from, to);
         }
 
+        public void applyVirtualControl(boolean directed, float yaw,
+                float pitch) {
+            controlled = directed;
+            if (directed) {
+                targetYaw = Mth.clamp(Mth.wrapDegrees(yaw),
+                        -MANUAL_YAW_LIMIT, MANUAL_YAW_LIMIT);
+                targetPitch = Mth.clamp(pitch,
+                        MANUAL_MIN_PITCH, MANUAL_MAX_PITCH);
+            }
+        }
+
         public float visualYaw(float partialTick) {
             return Mth.rotLerp(partialTick, previousVisualYaw, visualYaw);
         }

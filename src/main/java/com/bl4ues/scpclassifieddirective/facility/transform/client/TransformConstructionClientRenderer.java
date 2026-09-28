@@ -1428,7 +1428,7 @@ public final class TransformConstructionClientRenderer {
 
     private static boolean fullSurfaceCell(BlockState state) {
         if (state == null || state.isAir() || state.hasBlockEntity()
-                || state.getBlock() instanceof FacilityPipeModule.PipeBlock) return false;
+                || FacilityPipeModule.isPipe(state)) return false;
         return FULL_SURFACE_CELLS.computeIfAbsent(state,
                 TransformConstructionClientRenderer::computeFullSurfaceCell);
     }
@@ -1474,7 +1474,11 @@ public final class TransformConstructionClientRenderer {
             float x = Float.intBitsToFloat(vertices[offset]);
             float y = Float.intBitsToFloat(vertices[offset + 1]);
             float z = Float.intBitsToFloat(vertices[offset + 2]);
-            points[vertex] = new Vec3(x, y, z);
+            double centeredY = FacilityPipeModule.isCeilingPipe(
+                    attachment.state())
+                    ? FacilityPipeModule.ceilingPipeModelYOffset(surface)
+                    : 0.0D;
+            points[vertex] = new Vec3(x, y + centeredY, z);
             us[vertex] = stride > 4
                     ? Float.intBitsToFloat(vertices[offset + 4]) : 0.0F;
             vs[vertex] = stride > 5
@@ -1489,7 +1493,7 @@ public final class TransformConstructionClientRenderer {
         // Drawing both internal caps there causes flicker, even when the
         // tubular side faces have perfectly matching vertices. Keep the cap
         // only at the exposed end of a run, across all three pipe finishes.
-        if (attachment.state().getBlock() instanceof FacilityPipeModule.PipeBlock
+        if (FacilityPipeModule.isPipe(attachment.state())
                 && maxX - minX < 1.0E-4D
                 && (Math.abs(minX) < 1.0E-4D
                     || Math.abs(minX - 1.0D) < 1.0E-4D)
@@ -1505,7 +1509,7 @@ public final class TransformConstructionClientRenderer {
         // or the entire Surface when one neighbouring cell changes.
         boolean deform = TransformSurfaceGeometry.effectiveDeform(attachment);
         boolean curvedPipe = deform
-                && attachment.state().getBlock() instanceof FacilityPipeModule.PipeBlock
+                && FacilityPipeModule.isPipe(attachment.state())
                 && surface.curveOffset().lengthSqr() > 1.0E-8D;
         // Give only structural perimeter tiles additional curve samples.
         // Two independently gridded quadratic planes need enough vertices on

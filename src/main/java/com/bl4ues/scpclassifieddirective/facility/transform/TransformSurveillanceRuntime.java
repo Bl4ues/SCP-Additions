@@ -299,8 +299,12 @@ public final class TransformSurveillanceRuntime {
         } else if (definition != null && autonomous) {
             ServerPlayer target = trackingTarget(level, definition);
             if (target != null) {
+                // Use the live transformed frame as the mechanical
+                // origin. The registry eye is a navigation snapshot and can
+                // lag behind a Surface geometry edit; aiming from it makes the
+                // virtual model look beside the player on curved walls.
                 Vec3 direction = target.getEyePosition()
-                        .subtract(definition.eyePosition());
+                        .subtract(frame.eye());
                 TransformCameraGeometry.Angles local =
                         frame.localAngles(direction);
                 pose = directedPose(frame, local.yaw(), local.pitch(),

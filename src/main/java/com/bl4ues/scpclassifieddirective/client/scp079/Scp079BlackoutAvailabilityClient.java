@@ -44,6 +44,8 @@ public final class Scp079BlackoutAvailabilityClient {
     private static boolean supported;
     private static boolean available;
     private static long completedAt = Long.MIN_VALUE;
+    private static UUID activeBlackoutRoomId;
+    private static long activeBlackoutUntilTick = Long.MIN_VALUE;
 
     private Scp079BlackoutAvailabilityClient() { }
 
@@ -68,22 +70,56 @@ public final class Scp079BlackoutAvailabilityClient {
         completedAt = Long.MIN_VALUE;
     }
 
+    /** Server-confirmed room override used by the camera sensor itself. */
+    public static void confirmBlackout(UUID confirmedRoomId,
+            int durationTicks) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (confirmedRoomId == null || minecraft.level == null) return;
+        activeBlackoutRoomId = confirmedRoomId;
+        activeBlackoutUntilTick = minecraft.level.getGameTime()
+                + Math.max(1, durationTicks);
+    }
+
+    /**
+     * A Blackout is an authored camera state, not merely "low enough" light.
+     * While the active feed belongs to that room, night vision must remain on
+     * regardless of stray skylight or another weak light source.
+     */
+    public static boolean blackoutActiveInCurrentRoom() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!Scp079PlayableClient.active()
+                || !Scp079PlayableClient.cameraMode()
+                || minecraft.level == null
+                || activeBlackoutRoomId == null) {
+            return false;
+        }
+        if (minecraft.level.getGameTime() >= activeBlackoutUntilTick) {
+            clearBlackout();
+            return false;
+        }
+        FacilityRoomSnapshot current = currentRoom(minecraft);
+        return current != null && activeBlackoutRoomId.equals(current.id());
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
-        if (!Scp079PlayableClient.cameraMode() || minecraft.level == null) {
+        if (!Scp079PlayableClient.active() || minecraft.level == null) {
+            clear();
+            clearBlackout();
+            return;
+        }
+        if (activeBlackoutRoomId != null
+                && minecraft.level.getGameTime() >= activeBlackoutUntilTick) {
+            clearBlackout();
+        }
+        if (!Scp079PlayableClient.cameraMode()) {
             clear();
             return;
         }
 
-        FacilityRoomSnapshot current =
-                Scp079CameraNetworkClientState.activeRoom();
-        if (current == null) {
-            current = FacilityMappingClientState.roomAt(
-                    Scp079PlayableClient.hostDimension(),
-                    BlockPos.containing(Scp079PlayableClient.viewPosition()));
-        }
+        FacilityRoomSnapshot current = currentRoom(minecraft);
         if (current == null) {
             clear();
             return;
@@ -249,6 +285,22 @@ public final class Scp079BlackoutAvailabilityClient {
     }
 
     private record SurfaceLampStatus(boolean supported, boolean available) {
+    }
+
+    private static FacilityRoomSnapshot currentRoom(Minecraft minecraft) {
+        FacilityRoomSnapshot current =
+                Scp079CameraNetworkClientState.activeRoom();
+        if (current == null && minecraft != null && minecraft.level != null) {
+            current = FacilityMappingClientState.roomAt(
+                    Scp079PlayableClient.hostDimension(),
+                    BlockPos.containing(Scp079PlayableClient.viewPosition()));
+        }
+        return current;
+    }
+
+    private static void clearBlackout() {
+        activeBlackoutRoomId = null;
+        activeBlackoutUntilTick = Long.MIN_VALUE;
     }
 
     private static void clear() {

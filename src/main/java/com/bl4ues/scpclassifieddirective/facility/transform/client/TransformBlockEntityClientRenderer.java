@@ -134,6 +134,13 @@ public final class TransformBlockEntityClientRenderer {
         for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.overlays().entrySet()) {
+            // Overlay BlockEntities historically have their own adapters.
+            // Cameras are the deliberate exception introduced here: they need
+            // the generic Surface frame because their physical lens and feed
+            // share that exact transform.
+            if (!TransformCameraGeometry.isCamera(entry.getValue().state())) {
+                continue;
+            }
             renderSurfaceAttachment(minecraft, event, pose, buffers, camera,
                     surface, entry.getKey().slot(), entry.getValue(),
                     entry.getKey().normalSign(), true, current);

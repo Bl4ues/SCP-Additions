@@ -387,6 +387,22 @@ public final class TransformConstructionClientState {
      * Door animation frames and powered-state visuals are deliberately cheap;
      * only passability/light/collision transitions rebuild proxy geometry.
      */
+    private static void rebuildOpeningNeighbours(UUID groupId,
+            TransformGroup.GridPos editedCell) {
+        if (groupId == null || editedCell == null) return;
+        TransformGroup group = group(groupId);
+        if (group == null) return;
+        for (Direction direction : new Direction[]{
+                Direction.NORTH, Direction.SOUTH,
+                Direction.WEST, Direction.EAST}) {
+            TransformGroup.GridPos neighbor = editedCell.offset(
+                    direction.getStepX(), 0, direction.getStepZ());
+            if (group.cells().containsKey(neighbor)) {
+                rebuildGroupCellProxyCells(groupId, neighbor);
+            }
+        }
+    }
+
     public static void applyGroupCellState(UUID groupId,
             TransformGroup.GridPos cell, BlockState state) {
         if (groupId == null || cell == null || state == null) return;
@@ -407,6 +423,7 @@ public final class TransformConstructionClientState {
                     || previous.isAir() != state.isAir();
             if (openingTopologyChanged) {
                 refreshDoorPassages();
+                rebuildOpeningNeighbours(groupId, cell);
             }
             if (FacilityModule.isFacilityDoor(previous)
                     && FacilityModule.isFacilityDoor(state)
@@ -520,10 +537,11 @@ public final class TransformConstructionClientState {
             TransformConstructionClientRenderer.markGroupCellDirty(
                     groupId, cell);
             rebuildGroupCellProxyCells(groupId, cell);
-            // Missing local cells can become walkable wall openings; update the
-            // final aggregate mask immediately rather than waiting for a full
-            // snapshot/reload.
+            // Missing local cells can become walkable wall openings. Rebuild
+            // the horizontal owners whose rotated AABBs used to spill into the
+            // removed cell, then refresh the final aggregate mask as backup.
             refreshDoorPassages();
+            rebuildOpeningNeighbours(groupId, cell);
             TransformAlarmAudioClient.groupCellRemoved(groupId, cell);
             return;
         }
@@ -1321,8 +1339,11 @@ public final class TransformConstructionClientState {
             if (collision.isEmpty()) continue;
             // Match the server's owner-local relief for authored empty wall
             // cells. The global open-door mask remains a separate final pass.
-            List<AABB> openPassages =
-                    TransformOpenCellCollision.nearbyPassages(group, cell);
+            List<AABB> openPassages = new ArrayList<>();
+            openPassages.addAll(
+                    TransformOpenCellCollision.nearbyPassages(group, cell));
+            openPassages.addAll(
+                    TransformDoorwayCollision.nearbyPassages(group, cell));
             int subdivisionsX = collisionSubdivisions(group,
                     new Vec3(1.0D, 0.0D, 0.0D));
             int subdivisionsY = collisionSubdivisions(group,

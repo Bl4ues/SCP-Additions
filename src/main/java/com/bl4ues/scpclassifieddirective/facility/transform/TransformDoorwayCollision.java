@@ -13,6 +13,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -31,6 +33,7 @@ public final class TransformDoorwayCollision {
     private static final int WIDTH_TILES = 7;
     private static final int DEPTH_TILES = 5;
     private static final double CLEAR_HALF_DEPTH = 0.53D;
+    private static final int MAX_WALL_SPAN = 4;
 
     private TransformDoorwayCollision() {
     }
@@ -64,13 +67,16 @@ public final class TransformDoorwayCollision {
         }
         Vec3 center = group.cellCenter(cell);
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        Vec3 localWidth = facing.getAxis() == Direction.Axis.Z
+        boolean widthAlongX = doorwayWidthAlongX(group, cell, facing);
+        Vec3 localWidth = widthAlongX
                 ? new Vec3(1.0D, 0.0D, 0.0D)
                 : new Vec3(0.0D, 0.0D, 1.0D);
+        Vec3 localThrough = widthAlongX
+                ? new Vec3(0.0D, 0.0D, 1.0D)
+                : new Vec3(1.0D, 0.0D, 0.0D);
         Vec3 width = TransformMath.rotate(localWidth,
                 group.rotationX(), group.rotationY(), group.rotationZ());
-        Vec3 through = TransformMath.rotate(
-                Vec3.atLowerCornerOf(facing.getNormal()),
+        Vec3 through = TransformMath.rotate(localThrough,
                 group.rotationX(), group.rotationY(), group.rotationZ());
         width = new Vec3(width.x, 0.0D, width.z).normalize();
         through = new Vec3(through.x, 0.0D, through.z).normalize();
@@ -100,6 +106,43 @@ public final class TransformDoorwayCollision {
             }
         }
         return result;
+    }
+
+    private static boolean doorwayWidthAlongX(TransformGroup group,
+            GridPos cell, Direction fallbackFacing) {
+        int xNeg = distanceToSolid(group, cell, -1, 0);
+        int xPos = distanceToSolid(group, cell, 1, 0);
+        int zNeg = distanceToSolid(group, cell, 0, -1);
+        int zPos = distanceToSolid(group, cell, 0, 1);
+        boolean boundedX = xNeg > 0 && xPos > 0;
+        boolean boundedZ = zNeg > 0 && zPos > 0;
+
+        if (boundedX && !boundedZ) return true;
+        if (boundedZ && !boundedX) return false;
+        if (boundedX && boundedZ) {
+            return xNeg + xPos <= zNeg + zPos;
+        }
+        // Standalone doors have no wall neighbourhood to infer from. Preserve
+        // their authored facing convention as the fallback.
+        return fallbackFacing.getAxis() == Direction.Axis.Z;
+    }
+
+    private static int distanceToSolid(TransformGroup group, GridPos start,
+            int stepX, int stepZ) {
+        for (int distance = 1; distance <= MAX_WALL_SPAN; distance++) {
+            GridPos candidate = start.offset(stepX * distance, 0,
+                    stepZ * distance);
+            if (hasCollision(group.cells().get(candidate))) return distance;
+        }
+        return -1;
+    }
+
+    private static boolean hasCollision(BlockState state) {
+        if (state == null || state.isAir()) return false;
+        if (FacilityModule.isFacilityDoor(state)
+                && FacilityModule.isDoorPassable(state)) return false;
+        return !state.getCollisionShape(EmptyBlockGetter.INSTANCE,
+                BlockPos.ZERO, CollisionContext.empty()).isEmpty();
     }
 
     /** Immutable, world-cell keyed openings for every active transformed door.

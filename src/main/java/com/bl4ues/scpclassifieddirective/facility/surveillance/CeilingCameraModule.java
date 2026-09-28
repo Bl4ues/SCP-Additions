@@ -106,6 +106,13 @@ public final class CeilingCameraModule {
         return CeilingCameraViewGeometry.baseEye(pos);
     }
 
+    public static void tickVirtualClient(Level level, BlockPos pos,
+            BlockState state, CeilingCameraBlockEntity camera) {
+        if (level != null && level.isClientSide && camera != null) {
+            CeilingCameraBlockEntity.clientTick(level, pos, state, camera);
+        }
+    }
+
     public static boolean isCamera(BlockState state) {
         return state != null && state.is(BLOCK.get());
     }

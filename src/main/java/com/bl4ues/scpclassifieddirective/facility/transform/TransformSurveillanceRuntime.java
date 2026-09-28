@@ -7,8 +7,11 @@ import com.bl4ues.scpclassifieddirective.facility.Scp079ProcessingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityMappingManager;
 import com.bl4ues.scpclassifieddirective.facility.mapping.FacilityRoomSnapshot;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraViewGeometry;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilityCameraDefinition;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.FacilitySurveillanceRegistry;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
+import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraViewGeometry;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -30,9 +33,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Server authority for surveillance cameras stored inside transformed Surface
- * cells. A Surface has no real camera BlockEntity in the world, so its registry
- * definition is rebuilt from the same physical frame used by rendering.
+ * Server authority for surveillance cameras stored in transformed construction.
+ *
+ * Both rigid Off-Grid groups and curved Surfaces use the same physical camera
+ * frame for registry, room association, autonomous tracking, playable control
+ * and the virtual BlockEntity rendered on the client.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -50,6 +55,47 @@ public final class TransformSurveillanceRuntime {
             return;
         }
         syncCameraPoses(level);
+    }
+
+    public static void refreshGroupCell(MinecraftServer server, UUID groupId,
+            TransformGroup.GridPos cell) {
+        if (server == null || groupId == null || cell == null) return;
+        TransformGroup group = TransformConstructionSavedData.get(server)
+                .group(groupId);
+        if (group == null) return;
+        ServerLevel level = level(server, group.dimension());
+        if (level == null) return;
+        sync(level, group, cell);
+    }
+
+    public static void refreshGroup(MinecraftServer server, UUID groupId) {
+        if (server == null || groupId == null) return;
+        TransformGroup group = TransformConstructionSavedData.get(server)
+                .group(groupId);
+        if (group == null) return;
+        ServerLevel level = level(server, group.dimension());
+        if (level == null) return;
+        for (TransformGroup.GridPos cell : group.cells().keySet()) {
+            sync(level, group, cell);
+        }
+    }
+
+    public static void unregisterGroup(MinecraftServer server,
+            TransformGroup group) {
+        if (server == null || group == null) return;
+        ServerLevel level = level(server, group.dimension());
+        if (level == null) return;
+        for (TransformGroup.GridPos cell : group.cells().keySet()) {
+            FacilitySurveillanceRegistry.unregister(level,
+                    groupCameraId(group.id(), cell));
+        }
+    }
+
+    public static UUID groupCameraId(UUID groupId,
+            TransformGroup.GridPos cell) {
+        String key = ScpClassifiedDirectiveMod.MODID + ":group_camera:"
+                + groupId + ":" + cell.x() + ":" + cell.y() + ":" + cell.z();
+        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 
     public static void refreshSurfaceSlot(MinecraftServer server,
@@ -103,6 +149,18 @@ public final class TransformSurveillanceRuntime {
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 
+    private static void sync(ServerLevel level, TransformGroup group,
+            TransformGroup.GridPos cell) {
+        UUID id = groupCameraId(group.id(), cell);
+        BlockState state = group.cells().get(cell);
+        if (!TransformCameraGeometry.isCamera(state)) {
+            FacilitySurveillanceRegistry.unregister(level, id);
+            return;
+        }
+        register(level, id, state,
+                TransformCameraGeometry.frame(group, cell, state));
+    }
+
     private static void sync(ServerLevel level, ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, int layer, boolean overlay) {
         int normalSign = layer == 0 ? TransformSurfaceGeometry.MAIN_SIDE : layer;
@@ -115,18 +173,19 @@ public final class TransformSurveillanceRuntime {
             FacilitySurveillanceRegistry.unregister(level, id);
             return;
         }
+        register(level, id, state, TransformCameraGeometry.frame(
+                surface, slot, state, normalSign, overlay));
+    }
 
-        TransformCameraGeometry.Frame frame = TransformCameraGeometry.frame(
-                surface, slot, state, normalSign, overlay);
-        if (frame == null) {
+    private static void register(ServerLevel level, UUID id, BlockState state,
+            TransformCameraGeometry.Frame frame) {
+        if (frame == null || !TransformCameraGeometry.isCamera(state)) {
             FacilitySurveillanceRegistry.unregister(level, id);
             return;
         }
-
         TransformCameraGeometry.Angles neutral = frame.ceiling()
                 ? frame.worldAngles(0.0F,
-                        com.bl4ues.scpclassifieddirective.facility.surveillance
-                                .CeilingCameraViewGeometry.DEFAULT_DOWN_PITCH)
+                        CeilingCameraViewGeometry.DEFAULT_DOWN_PITCH)
                 : frame.worldAngles(0.0F, 0.0F);
         BlockPos anchor = BlockPos.containing(frame.center());
         String name = (frame.ceiling() ? "Ceiling Camera " : "Camera ")
@@ -140,7 +199,6 @@ public final class TransformSurveillanceRuntime {
         float maxPitch = frame.ceiling()
                 ? CeilingCameraModule.MANUAL_MAX_PITCH
                 : SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH;
-
         FacilitySurveillanceRegistry.register(level, id, anchor, frame.eye(),
                 name, neutral.yaw(), neutral.pitch(), yawLimit,
                 minPitch, maxPitch, 2.5F);
@@ -158,9 +216,24 @@ public final class TransformSurveillanceRuntime {
                 level, ignored -> new HashMap<>());
         Set<UUID> seen = new HashSet<>();
         boolean heartbeat = level.getGameTime() % 20L == 0L;
+        TransformConstructionSavedData data =
+                TransformConstructionSavedData.get(server);
 
-        for (ConstructionSurface surface
-                : TransformConstructionSavedData.get(server).surfaces()) {
+        for (TransformGroup group : data.groups()) {
+            if (!group.dimension().equals(level.dimension().location())) continue;
+            for (Map.Entry<TransformGroup.GridPos, BlockState> entry
+                    : group.cells().entrySet()) {
+                BlockState state = entry.getValue();
+                if (!TransformCameraGeometry.isCamera(state)) continue;
+                UUID id = groupCameraId(group.id(), entry.getKey());
+                TransformCameraGeometry.Frame frame =
+                        TransformCameraGeometry.frame(group, entry.getKey(), state);
+                syncCameraPose(level, id, frame, controller, controllerHere,
+                        autonomous, heartbeat, previous, seen);
+            }
+        }
+
+        for (ConstructionSurface surface : data.surfaces()) {
             if (!surface.dimension().equals(level.dimension().location())) {
                 continue;
             }
@@ -193,21 +266,35 @@ public final class TransformSurveillanceRuntime {
         BlockState state = attachment == null ? null : attachment.state();
         if (!TransformCameraGeometry.isCamera(state)) return;
         UUID id = cameraId(surface.id(), slot, layer);
-        seen.add(id);
         int side = layer == 0 ? TransformSurfaceGeometry.MAIN_SIDE : layer;
-        TransformCameraGeometry.Frame frame = TransformCameraGeometry.frame(
-                surface, slot, state, side, overlay);
+        syncCameraPose(level, id, TransformCameraGeometry.frame(
+                        surface, slot, state, side, overlay),
+                controller, controllerHere, autonomous, heartbeat,
+                previous, seen);
+    }
+
+    private static void syncCameraPose(ServerLevel level, UUID id,
+            TransformCameraGeometry.Frame frame, ServerPlayer controller,
+            boolean controllerHere, boolean autonomous, boolean heartbeat,
+            Map<UUID, CameraPose> previous, Set<UUID> seen) {
         if (frame == null) return;
-        var definition = FacilitySurveillanceRegistry.camera(level, id);
+        seen.add(id);
+        FacilityCameraDefinition definition =
+                FacilitySurveillanceRegistry.camera(level, id);
         CameraPose pose = CameraPose.IDLE;
 
+        boolean operator = false;
         if (definition != null && controllerHere
-                && Scp079PlayableManager.isCameraMode(controller)
-                && controller.position().distanceToSqr(
-                        definition.eyePosition()) <= 0.36D) {
+                && Scp079PlayableManager.isCameraMode(controller)) {
+            FacilityCameraDefinition current =
+                    Scp079PlayableManager.currentCamera(controller);
+            operator = current != null && id.equals(current.id());
+        }
+
+        if (operator) {
             TransformCameraGeometry.Angles local =
                     frame.localAngles(controller.getLookAngle());
-            pose = directedPose(frame, local.yaw(), local.pitch(), false);
+            pose = directedPose(frame, local.yaw(), local.pitch());
         } else if (definition != null && autonomous) {
             ServerPlayer target = trackingTarget(level, definition);
             if (target != null) {
@@ -215,7 +302,7 @@ public final class TransformSurveillanceRuntime {
                         .subtract(definition.eyePosition());
                 TransformCameraGeometry.Angles local =
                         frame.localAngles(direction);
-                pose = directedPose(frame, local.yaw(), local.pitch(), true);
+                pose = directedPose(frame, local.yaw(), local.pitch());
             }
         }
 
@@ -231,7 +318,7 @@ public final class TransformSurveillanceRuntime {
     }
 
     private static CameraPose directedPose(TransformCameraGeometry.Frame frame,
-            float yaw, float physicalPitch, boolean autonomous) {
+            float yaw, float physicalPitch) {
         float limit = frame.ceiling()
                 ? CeilingCameraModule.MANUAL_YAW_LIMIT
                 : SurveillanceCameraPlaceholderModule.MANUAL_YAW_LIMIT;
@@ -241,25 +328,16 @@ public final class TransformSurveillanceRuntime {
         float maxPitch = frame.ceiling()
                 ? CeilingCameraModule.MANUAL_MAX_PITCH
                 : SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH;
-        float logicalYaw = yaw;
-        float logicalPitch = physicalPitch;
-        if (autonomous && frame.ceiling()) {
-            // Match the normal CeilingCameraBlockEntity's autonomous-yaw
-            // handedness correction. Playable control stays unmirrored.
-            logicalYaw = -logicalYaw;
-        } else if (autonomous) {
-            logicalPitch -= com.bl4ues.scpclassifieddirective.facility
-                    .surveillance.SurveillanceCameraViewGeometry
-                    .DEFAULT_DOWN_PITCH;
-        }
+        float logicalPitch = frame.ceiling()
+                ? physicalPitch
+                : physicalPitch - SurveillanceCameraViewGeometry.DEFAULT_DOWN_PITCH;
         return new CameraPose(true,
-                Mth.clamp(Mth.wrapDegrees(logicalYaw), -limit, limit),
+                Mth.clamp(Mth.wrapDegrees(yaw), -limit, limit),
                 Mth.clamp(logicalPitch, minPitch, maxPitch));
     }
 
     private static ServerPlayer trackingTarget(ServerLevel level,
-            com.bl4ues.scpclassifieddirective.facility.surveillance
-                    .FacilityCameraDefinition camera) {
+            FacilityCameraDefinition camera) {
         FacilityRoomSnapshot room =
                 FacilityMappingManager.roomSnapshotForCamera(level, camera);
         if (room == null) return null;

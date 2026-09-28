@@ -318,7 +318,7 @@ public final class FacilityPipeModule {
         record Change(ConstructionSurface.SurfaceSlot slot, int layer,
                       BlockState state, boolean deform) { }
         List<Change> changes = new ArrayList<>();
-        for (int layer : new int[]{0, -1, 1}) {
+        for (int layer : new int[]{0, -1, 1, -2, 2}) {
             int side = layer == 0 ? TransformSurfaceGeometry.MAIN_SIDE : layer;
             int frameSign = (surface.flipped() ? -1 : 1) * side;
             Set<ConstructionSurface.SurfaceSlot> visited = new HashSet<>();
@@ -556,13 +556,26 @@ public final class FacilityPipeModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            return switch (state.getValue(MOUNT)) {
-                case DOWN -> DOWN;
-                case NORTH -> NORTH;
+            Direction mount = state.getValue(MOUNT);
+            Direction edge = mount.getAxis().isVertical()
+                    ? state.getValue(FACING) : mount;
+            boolean floor = mount == Direction.UP;
+            if (floor) {
+                return switch (edge) {
+                    case EAST -> Block.box(0.0D, 0.0D, 0.0D,
+                            2.5D, 2.0D, 16.0D);
+                    case SOUTH -> Block.box(0.0D, 0.0D, 0.0D,
+                            16.0D, 2.0D, 2.5D);
+                    case WEST -> Block.box(13.5D, 0.0D, 0.0D,
+                            16.0D, 2.0D, 16.0D);
+                    default -> UP;
+                };
+            }
+            return switch (edge) {
+                case EAST -> EAST;
                 case SOUTH -> SOUTH;
                 case WEST -> WEST;
-                case EAST -> EAST;
-                default -> UP;
+                default -> DOWN;
             };
         }
 

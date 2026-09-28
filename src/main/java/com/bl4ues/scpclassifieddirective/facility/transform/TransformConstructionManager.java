@@ -532,6 +532,9 @@ public final class TransformConstructionManager {
                 || !(player.getMainHandItem().getItem()
                         instanceof BlockItem blockItem)) return false;
         int side = normalSign < 0 ? -1 : 1;
+        boolean ceilingPipe = blockItem.getBlock()
+                instanceof FacilityPipeModule.CeilingPipeBlock;
+        int layer = ceilingPipe ? side * 2 : side;
         TransformConstructionSavedData data =
                 TransformConstructionSavedData.get(level.getServer());
         ConstructionSurface surface = data.surface(surfaceId);
@@ -574,7 +577,7 @@ public final class TransformConstructionManager {
                     player, blockItem, surface, targetSlot, hit, side);
         }
 
-        if (surface.overlay(targetSlot, side) != null) {
+        if (surface.overlay(targetSlot, layer) != null) {
             double tu = (targetSlot.column() + 0.5D) / surface.columns();
             double tv = (targetSlot.row() + 0.5D) / surface.rows();
             TransformConstructionNetwork.sendBlockedPlacement(player,
@@ -584,12 +587,12 @@ public final class TransformConstructionManager {
             return true;
         }
         boolean deform = !payload.hasBlockEntity();
-        ConstructionSurface next = surface.withOverlay(targetSlot, side,
+        ConstructionSurface next = surface.withOverlay(targetSlot, layer,
                 payload, deform);
         data.putSurface(next);
         refreshSurfaceSlot(level.getServer(), surfaceId, targetSlot);
         TransformConstructionNetwork.broadcastSurfaceOverlay(level, surfaceId,
-                targetSlot, side, payload, deform);
+                targetSlot, layer, payload, deform);
         Vec3 soundCenter = center.add(normal.scale(side * 0.5D));
         playConstructionSound(level, payload, soundCenter, true);
         if (Sl2FacilityPropsModule.isRoundLamp(payload)) {
@@ -607,23 +610,25 @@ public final class TransformConstructionManager {
             SurfaceSlot slot, int normalSign) {
         if (!canEdit(player) || id == null || slot == null
                 || !(player.level() instanceof ServerLevel level)) return false;
-        int side = normalSign < 0 ? -1 : 1;
+        int lane = Math.max(1, Math.min(2, Math.abs(normalSign)));
+        int layer = normalSign < 0 ? -lane : lane;
+        int side = layer < 0 ? -1 : 1;
         TransformConstructionSavedData data =
                 TransformConstructionSavedData.get(level.getServer());
         ConstructionSurface surface = data.surface(id);
-        if (surface == null || surface.overlay(slot, side) == null) return false;
+        if (surface == null || surface.overlay(slot, layer) == null) return false;
         double u = (slot.column() + 0.5D) / surface.columns();
         double v = (slot.row() + 0.5D) / surface.rows();
         Vec3 center = surface.gridPoint(u, v)
                 .add(surface.gridNormal(u, v).scale(side * 0.5D));
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
-        data.putSurface(surface.withoutOverlay(slot, side));
+        data.putSurface(surface.withoutOverlay(slot, layer));
         refreshSurfaceSlot(level.getServer(), id, slot);
         TransformConstructionNetwork.broadcastSurfaceOverlayRemoved(level, id,
-                slot, side);
-        playConstructionSound(level, surface.overlay(slot, side).state(), center, false);
+                slot, layer);
+        playConstructionSound(level, surface.overlay(slot, layer).state(), center, false);
         if (FacilityPipeModule.isPipe(
-                surface.overlay(slot, side).state())) {
+                surface.overlay(slot, layer).state())) {
             FacilityPipeModule.refreshSurface(level, id);
         }
         TransformConstructionNetwork.acknowledgeRevision(level.getServer());

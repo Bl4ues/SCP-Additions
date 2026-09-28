@@ -859,7 +859,12 @@ public record ConstructionSurface(UUID id, ResourceLocation dimension,
     public record SurfaceOverlaySlot(SurfaceSlot slot, int normalSign) {
         public SurfaceOverlaySlot {
             slot = slot == null ? new SurfaceSlot(0, 0) : slot;
-            normalSign = normalSign < 0 ? -1 : 1;
+            // Magnitude is an overlay lane, sign is the physical Surface side.
+            // Lane 1 keeps ordinary fixtures; lane 2 is reserved for the
+            // Ceiling Pipe so a lamp/camera and a pipe can occupy the same
+            // logical ceiling cell without pretending they are one block.
+            int lane = Math.max(1, Math.min(2, Math.abs(normalSign)));
+            normalSign = normalSign < 0 ? -lane : lane;
         }
 
         public SurfaceOverlaySlot(int column, int row, int normalSign) {

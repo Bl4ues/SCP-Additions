@@ -268,11 +268,14 @@ public final class TransformPlacementStateRuntime {
         }
 
         if (item.getBlock() instanceof FacilityPipeModule.CeilingPipeBlock) {
+            // Surface payloads are transformed by the Surface itself. Keep the
+            // authored pipe on the local guide plane (z=0) and on the top of
+            // its logical cell; the curve then bends that exact geometry.
             return item.getBlock().defaultBlockState()
                     .setValue(FacilityPipeModule.CeilingPipeBlock.MOUNT,
-                            Direction.UP)
+                            Direction.DOWN)
                     .setValue(BlockStateProperties.HORIZONTAL_FACING,
-                            Direction.NORTH);
+                            Direction.SOUTH);
         }
 
         // The pipe mesh is authored at the +Z edge with NORTH facing.

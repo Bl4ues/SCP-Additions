@@ -55,6 +55,11 @@ public final class TransformConstructionNetwork {
     private TransformConstructionNetwork() {
     }
 
+    private static int overlayLayer(int normalSign) {
+        int lane = Math.max(1, Math.min(2, Math.abs(normalSign)));
+        return normalSign < 0 ? -lane : lane;
+    }
+
     public static synchronized void register() {
         if (registered) return;
         registered = true;
@@ -200,7 +205,7 @@ public final class TransformConstructionNetwork {
             ConstructionSurface.SurfaceSlot slot, int normalSign) {
         if (surfaceId == null || slot == null) return;
         CHANNEL.sendToServer(new UseSurfaceOverlay(surfaceId, slot,
-                normalSign < 0 ? -1 : 1));
+                overlayLayer(normalSign)));
     }
 
     public static void placeSurfaceBlock(UUID surfaceId,
@@ -220,7 +225,7 @@ public final class TransformConstructionNetwork {
             ConstructionSurface.SurfaceSlot slot, int normalSign) {
         if (surfaceId == null || slot == null) return;
         CHANNEL.sendToServer(new BreakSurfaceOverlay(surfaceId, slot,
-                normalSign < 0 ? -1 : 1));
+                overlayLayer(normalSign)));
     }
 
     public static void breakGroupCell(UUID groupId,
@@ -286,7 +291,7 @@ public final class TransformConstructionNetwork {
         }
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
                 new SurfaceOverlayState(surfaceId, slot,
-                        normalSign < 0 ? -1 : 1, state, deform));
+                        overlayLayer(normalSign), state, deform));
     }
 
     public static void broadcastSurfaceOverlayRemoved(ServerLevel level,
@@ -295,7 +300,7 @@ public final class TransformConstructionNetwork {
         if (level == null || surfaceId == null || slot == null) return;
         CHANNEL.send(PacketDistributor.DIMENSION.with(level::dimension),
                 new SurfaceOverlayRemoved(surfaceId, slot,
-                        normalSign < 0 ? -1 : 1));
+                        overlayLayer(normalSign)));
     }
 
     /** Tiny runtime-state packet for one rigid/deformed surface attachment. */
@@ -720,14 +725,14 @@ public final class TransformConstructionNetwork {
             buffer.writeUUID(message.surfaceId);
             buffer.writeVarInt(message.slot.column());
             buffer.writeVarInt(message.slot.row());
-            buffer.writeByte(message.normalSign < 0 ? -1 : 1);
+            buffer.writeByte(overlayLayer(message.normalSign));
         }
 
         private static UseSurfaceOverlay decode(FriendlyByteBuf buffer) {
             return new UseSurfaceOverlay(buffer.readUUID(),
                     new ConstructionSurface.SurfaceSlot(buffer.readVarInt(),
                             buffer.readVarInt()),
-                    buffer.readByte() < 0 ? -1 : 1);
+                    overlayLayer(buffer.readByte()));
         }
 
         private static void handle(UseSurfaceOverlay message,

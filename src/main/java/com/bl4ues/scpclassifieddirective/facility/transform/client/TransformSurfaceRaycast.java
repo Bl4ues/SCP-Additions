@@ -179,6 +179,16 @@ public final class TransformSurfaceRaycast {
         Target best = null;
         double bestDistance = limit + 1.0D;
 
+        Target positivePipe = targetOverlayLane(surface, slot, 2,
+                eye, ray, Math.min(limit, bestDistance));
+        best = nearer(best, positivePipe);
+        if (best != null) bestDistance = best.distance();
+
+        Target negativePipe = targetOverlayLane(surface, slot, -2,
+                eye, ray, Math.min(limit, bestDistance));
+        best = nearer(best, negativePipe);
+        if (best != null) bestDistance = best.distance();
+
         VisualAttachment positive =
                 visualAttachment(surface, slot, 1, true);
         if (positive != null && !positive.attachment().state().isAir()) {
@@ -377,6 +387,27 @@ public final class TransformSurfaceRaycast {
         return best;
     }
 
+    private static Target targetOverlayLane(ConstructionSurface surface,
+            ConstructionSurface.SurfaceSlot slot, int layer,
+            Vec3 eye, Vec3 ray, double limit) {
+        ConstructionSurface.SurfaceAttachment attachment =
+                surface.overlay(slot, layer);
+        if (attachment == null || attachment.state().isAir()) return null;
+        double best = limit + 1.0D;
+        for (AABB box : TransformSurfaceGeometry.collisionBoxes(
+                surface, slot, attachment, layer, true)) {
+            double distance = rayBox(eye, ray, box);
+            if (distance >= 0.0D && distance <= limit && distance < best) {
+                best = distance;
+            }
+        }
+        if (best > limit) return null;
+        int side = layer < 0 ? -1 : 1;
+        return new Target(surface, slot, slot, eye.add(ray.scale(best)), best,
+                layer, side > 0 ? Direction.SOUTH : Direction.NORTH,
+                side > 0 ? Layer.POSITIVE_OVERLAY : Layer.NEGATIVE_OVERLAY);
+    }
+
     private static Target nearer(Target current, Target candidate) {
         if (candidate == null) return current;
         return current == null || candidate.distance() < current.distance()
@@ -497,7 +528,8 @@ public final class TransformSurfaceRaycast {
             Direction faceLocal, Layer layer) {
         public Target {
             visualSlot = visualSlot == null ? slot : visualSlot;
-            normalSign = normalSign < 0 ? -1 : 1;
+            int lane = Math.max(1, Math.min(2, Math.abs(normalSign)));
+            normalSign = normalSign < 0 ? -lane : lane;
             faceLocal = faceLocal == null
                     ? (normalSign > 0 ? Direction.SOUTH : Direction.NORTH)
                     : faceLocal;

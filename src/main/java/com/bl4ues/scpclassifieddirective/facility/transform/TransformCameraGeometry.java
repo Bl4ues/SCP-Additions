@@ -22,6 +22,58 @@ public final class TransformCameraGeometry {
         return state != null && state.is(CeilingCameraModule.BLOCK.get());
     }
 
+    /**
+     * Physical camera frame for a rigid Off-Grid group cell. The block state
+     * remains in GROUP-LOCAL coordinates while the frame exposes the exact
+     * world-space basis used by registry, tracking, rendering and camera feed.
+     */
+    public static Frame frame(TransformGroup group, TransformGroup.GridPos cell,
+            BlockState state) {
+        if (group == null || cell == null || !isCamera(state)) return null;
+        Vec3 center = group.cellCenter(cell);
+        Vec3 localUp = new Vec3(0.0D, 1.0D, 0.0D);
+        Vec3 worldUp = TransformMath.safeNormalize(
+                TransformMath.rotate(localUp, group.rotationX(),
+                        group.rotationY(), group.rotationZ()),
+                new Vec3(0.0D, 1.0D, 0.0D));
+
+        if (isCeiling(state)) {
+            Vec3 xAxis = TransformMath.safeNormalize(
+                    TransformMath.rotate(new Vec3(1.0D, 0.0D, 0.0D),
+                            group.rotationX(), group.rotationY(),
+                            group.rotationZ()),
+                    new Vec3(1.0D, 0.0D, 0.0D));
+            Vec3 yAxis = worldUp;
+            Vec3 zAxis = TransformMath.safeNormalize(
+                    TransformMath.rotate(new Vec3(0.0D, 0.0D, 1.0D),
+                            group.rotationX(), group.rotationY(),
+                            group.rotationZ()),
+                    new Vec3(0.0D, 0.0D, 1.0D));
+            Vec3 localEye = CeilingCameraViewGeometry.baseEye(BlockPos.ZERO)
+                    .subtract(Vec3.atCenterOf(BlockPos.ZERO));
+            Vec3 eye = center.add(xAxis.scale(localEye.x))
+                    .add(yAxis.scale(localEye.y))
+                    .add(zAxis.scale(localEye.z));
+            return new Frame(center, xAxis, yAxis, zAxis, eye, true);
+        }
+
+        net.minecraft.core.Direction facing = state.hasProperty(
+                SurveillanceCameraPlaceholderModule.FACING)
+                ? state.getValue(SurveillanceCameraPlaceholderModule.FACING)
+                : net.minecraft.core.Direction.NORTH;
+        Vec3 localOut = Vec3.atLowerCornerOf(facing.getNormal());
+        Vec3 zAxis = TransformMath.safeNormalize(
+                TransformMath.rotate(localOut, group.rotationX(),
+                        group.rotationY(), group.rotationZ()),
+                new Vec3(0.0D, 0.0D, 1.0D));
+        Vec3 yAxis = worldUp;
+        Vec3 xAxis = TransformMath.safeNormalize(yAxis.cross(zAxis),
+                new Vec3(1.0D, 0.0D, 0.0D));
+        Vec3 eye = center.add(zAxis.scale(0.10D))
+                .add(yAxis.scale(0.03D));
+        return new Frame(center, xAxis, yAxis, zAxis, eye, false);
+    }
+
     public static Frame frame(ConstructionSurface surface,
             ConstructionSurface.SurfaceSlot slot, BlockState state,
             int normalSign, boolean overlay) {

@@ -43,6 +43,8 @@ public final class TransformConstructionClientState {
     private static ResourceLocation dimension;
     private static List<TransformGroup> groups = List.of();
     private static List<ConstructionSurface> surfaces = List.of();
+    private static List<ConstructionSurface> cameraFrameSource = null;
+    private static List<TransformCameraGeometry.Frame> cameraFrames = List.of();
     private static Map<Long, TransformConstructionManager.ProxyCell> proxyCells =
             new LinkedHashMap<>();
     private static Map<Long, List<AABB>> doorPassages = Map.of();
@@ -338,37 +340,41 @@ public final class TransformConstructionClientState {
     public static TransformCameraGeometry.Frame cameraFrameAtEye(
             Vec3 eye) {
         if (eye == null) return null;
-        TransformCameraGeometry.Frame best = null;
-        double bestDistance = 0.36D;
-        for (ConstructionSurface surface : surfaces) {
-            for (Map.Entry<ConstructionSurface.SurfaceSlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.attachments().entrySet()) {
-                TransformCameraGeometry.Frame frame =
-                        TransformCameraGeometry.frame(surface, entry.getKey(),
-                                entry.getValue().state(),
-                                TransformSurfaceGeometry.MAIN_SIDE, false);
-                if (frame == null) continue;
-                double distance = frame.eye().distanceToSqr(eye);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = frame;
+        if (cameraFrameSource != surfaces) {
+            ArrayList<TransformCameraGeometry.Frame> rebuilt =
+                    new ArrayList<>();
+            for (ConstructionSurface surface : surfaces) {
+                for (Map.Entry<ConstructionSurface.SurfaceSlot,
+                        ConstructionSurface.SurfaceAttachment> entry
+                        : surface.attachments().entrySet()) {
+                    TransformCameraGeometry.Frame frame =
+                            TransformCameraGeometry.frame(surface,
+                                    entry.getKey(), entry.getValue().state(),
+                                    TransformSurfaceGeometry.MAIN_SIDE, false);
+                    if (frame != null) rebuilt.add(frame);
+                }
+                for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
+                        ConstructionSurface.SurfaceAttachment> entry
+                        : surface.overlays().entrySet()) {
+                    TransformCameraGeometry.Frame frame =
+                            TransformCameraGeometry.frame(surface,
+                                    entry.getKey().slot(),
+                                    entry.getValue().state(),
+                                    entry.getKey().normalSign(), true);
+                    if (frame != null) rebuilt.add(frame);
                 }
             }
-            for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
-                    ConstructionSurface.SurfaceAttachment> entry
-                    : surface.overlays().entrySet()) {
-                TransformCameraGeometry.Frame frame =
-                        TransformCameraGeometry.frame(surface,
-                                entry.getKey().slot(),
-                                entry.getValue().state(),
-                                entry.getKey().normalSign(), true);
-                if (frame == null) continue;
-                double distance = frame.eye().distanceToSqr(eye);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    best = frame;
-                }
+            cameraFrames = List.copyOf(rebuilt);
+            cameraFrameSource = surfaces;
+        }
+
+        TransformCameraGeometry.Frame best = null;
+        double bestDistance = 0.36D;
+        for (TransformCameraGeometry.Frame frame : cameraFrames) {
+            double distance = frame.eye().distanceToSqr(eye);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = frame;
             }
         }
         return best;

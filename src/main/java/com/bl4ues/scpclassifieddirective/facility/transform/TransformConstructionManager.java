@@ -1456,9 +1456,12 @@ public final class TransformConstructionManager {
                 : state.getCollisionShape(EmptyBlockGetter.INSTANCE,
                         BlockPos.ZERO, CollisionContext.empty());
         if (collision.isEmpty()) return;
-        // The final, aggregated world-cell collision is clipped once by the
-        // shared doorway index. Early per-cell clipping duplicates hundreds of
-        // overlapping AABBs and is invalidated whenever a door animates.
+        // Explicitly trim AABB approximation spill from authored empty wall
+        // cells. Door passages are still clipped once after owner aggregation;
+        // these void passages must stay owner-local so one group's opening can
+        // never erase collision from another overlapping transformed group.
+        List<AABB> openPassages =
+                TransformOpenCellCollision.nearbyPassages(group, cell);
         int subdivisionsX = collisionSubdivisions(group,
                 new Vec3(1.0D, 0.0D, 0.0D));
         int subdivisionsY = collisionSubdivisions(group,
@@ -1485,9 +1488,17 @@ public final class TransformConstructionManager {
                                         + boxY * (sy + 1) * invY,
                                 cell.z() - 0.5D + minZ
                                         + boxZ * (sz + 1) * invZ);
-                        addWorldBox(index, owner,
-                                transformedBounds(group, local),
-                                false, true, 0);
+                        AABB worldBox = transformedBounds(group, local);
+                        if (openPassages.isEmpty()) {
+                            addWorldBox(index, owner, worldBox,
+                                    false, true, 0);
+                        } else {
+                            for (AABB remaining : TransformDoorwayCollision.clip(
+                                    worldBox, openPassages)) {
+                                addWorldBox(index, owner, remaining,
+                                        false, true, 0);
+                            }
+                        }
                     }
                 }
             }

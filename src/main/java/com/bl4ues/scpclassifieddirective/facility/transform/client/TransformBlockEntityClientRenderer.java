@@ -265,6 +265,15 @@ public final class TransformBlockEntityClientRenderer {
         return ACTIVE_CAMERA_FRAME.get();
     }
 
+    public static TransformCameraGeometry.Angles virtualCameraPose(
+            UUID cameraId) {
+        if (cameraId == null) return null;
+        VirtualCameraPose pose = VIRTUAL_CAMERA_POSES.get(cameraId);
+        return pose == null ? null
+                : new TransformCameraGeometry.Angles(
+                        pose.yaw(), pose.pitch());
+    }
+
     private static RenderHost host(Minecraft minecraft, RenderHost current,
             EntityBlock entityBlock, BlockState state, Vec3 center) {
         if (current != null && current.state().equals(state)

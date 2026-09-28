@@ -118,6 +118,15 @@ public final class TransformPlacementStateRuntime {
             return Sl2FacilityPropsModule.roundLampState(outwardLocal, true);
         }
 
+        if (item.getBlock() instanceof FacilityPipeModule.CeilingPipeBlock) {
+            Direction mount = outwardLocal;
+            Direction facing = mount.getAxis().isHorizontal()
+                    ? mount : Direction.NORTH;
+            return item.getBlock().defaultBlockState()
+                    .setValue(FacilityPipeModule.CeilingPipeBlock.MOUNT, mount)
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
+        }
+
         // Pipe models are authored on the local SOUTH edge for FACING NORTH.
         // The parent-world clicked face must not reverse them on rotated grids.
         if (item.getBlock() instanceof FacilityPipeModule.PipeBlock
@@ -254,6 +263,14 @@ public final class TransformPlacementStateRuntime {
         // curved walls and linked ceilings without distorting the model.
         if (Sl2FacilityPropsModule.isRoundLamp(item.getBlock())) {
             return Sl2FacilityPropsModule.roundLampState(Direction.SOUTH, true);
+        }
+
+        if (item.getBlock() instanceof FacilityPipeModule.CeilingPipeBlock) {
+            return item.getBlock().defaultBlockState()
+                    .setValue(FacilityPipeModule.CeilingPipeBlock.MOUNT,
+                            Direction.UP)
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING,
+                            Direction.NORTH);
         }
 
         // The pipe mesh is authored at the +Z edge with NORTH facing.

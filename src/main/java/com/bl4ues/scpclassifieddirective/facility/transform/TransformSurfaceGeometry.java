@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.FacilityPipeModule;
 import com.bl4ues.scpclassifieddirective.facility.Sl2FacilityPropsModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderLevels;
@@ -89,7 +90,12 @@ public final class TransformSurfaceGeometry {
                 CollisionContext.empty());
         if (shape.isEmpty()) return List.of();
         List<AABB> result = new ArrayList<>();
-        for (AABB box : shape.toAabbs()) {
+        double ceilingPipeY = FacilityPipeModule.isCeilingPipe(
+                attachment.state())
+                ? FacilityPipeModule.ceilingPipeModelYOffset(surface) : 0.0D;
+        for (AABB original : shape.toAabbs()) {
+            AABB box = ceilingPipeY == 0.0D ? original
+                    : original.move(0.0D, ceilingPipeY, 0.0D);
             if (effectiveDeform(attachment)) {
                 addDeformed(surface, slot, box, side, depthOffset, result);
             } else {

@@ -110,6 +110,13 @@ public final class TransformBlockEntityClientRenderer {
             if (host == null) continue;
             GROUP_HOSTS.put(key, host);
 
+            TransformCameraGeometry.Frame cameraFrame =
+                    TransformCameraGeometry.frame(group, cell, state);
+            UUID cameraId = cameraFrame == null ? null
+                    : TransformSurveillanceRuntime.groupCameraId(
+                            group.id(), cell);
+            tickVirtualCamera(minecraft, host.entity(), state, cameraId);
+
             pose.pushPose();
             pose.translate(-camera.x, -camera.y, -camera.z);
             pose.translate(group.origin().x, group.origin().y,
@@ -118,9 +125,14 @@ public final class TransformBlockEntityClientRenderer {
                     group.rotationY(), group.rotationZ()));
             pose.translate(cell.x() - 0.5D, cell.y() - 0.5D,
                     cell.z() - 0.5D);
-            minecraft.getBlockEntityRenderDispatcher().render(host.entity(),
-                    event.getPartialTick(), pose, buffers);
-            pose.popPose();
+            if (cameraFrame != null) ACTIVE_CAMERA_FRAME.set(cameraFrame);
+            try {
+                minecraft.getBlockEntityRenderDispatcher().render(host.entity(),
+                        event.getPartialTick(), pose, buffers);
+            } finally {
+                if (cameraFrame != null) ACTIVE_CAMERA_FRAME.remove();
+                pose.popPose();
+            }
         }
     }
 

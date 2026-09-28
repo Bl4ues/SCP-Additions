@@ -16,6 +16,10 @@ public final class CeilingCameraViewGeometry {
     // Keep the optical pivot slightly below that plane so the near clip never
     // samples the support block above the camera.
     private static final double CEILING_VIEW_CLEARANCE = 1.5D / 16.0D;
+    // Virtual transformed cameras have no vanilla near-face culling to hide
+    // the dome around the eye. Push only Surface-mounted feeds a little beyond
+    // the physical lens plane so the near clip starts in open room space.
+    private static final double SURFACE_FEED_CLEARANCE = 1.5D / 16.0D;
 
     private CeilingCameraViewGeometry() {
     }
@@ -47,8 +51,10 @@ public final class CeilingCameraViewGeometry {
         if (frame == null) return Vec3.ZERO;
         Vec3 neutral = frame.worldDirection(0.0F, DEFAULT_DOWN_PITCH);
         Vec3 pivot = frame.eye().subtract(neutral.scale(PIVOT_TO_LENS));
+        double radius = PIVOT_TO_LENS
+                + (frame.surfaceMounted() ? SURFACE_FEED_CLEARANCE : 0.0D);
         return pivot.add(frame.worldDirection(localYaw, localPitch)
-                .scale(PIVOT_TO_LENS));
+                .scale(radius));
     }
 
     private static Vec3 forward(float yaw, float pitch) {

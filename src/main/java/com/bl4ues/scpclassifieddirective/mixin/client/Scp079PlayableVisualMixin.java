@@ -36,6 +36,7 @@ public abstract class Scp079PlayableVisualMixin {
     @Shadow private static float minPitch;
     @Shadow private static float maxPitch;
     @Shadow private static Vec3 cameraPosition;
+    @Shadow private static java.util.UUID cameraId;
     @Shadow private static ArmorStand cameraRig;
 
     @Inject(method = "onClientTickStart", at = @At("HEAD"),
@@ -107,7 +108,11 @@ public abstract class Scp079PlayableVisualMixin {
         if (minecraft.player == null || cameraRig == null) return;
 
         TransformCameraGeometry.Frame transformed =
-                TransformConstructionClientState.cameraFrameAtEye(cameraPosition);
+                TransformConstructionClientState.cameraFrame(cameraId);
+        if (transformed == null) {
+            transformed = TransformConstructionClientState
+                    .cameraFrameAtEye(cameraPosition);
+        }
         if (transformed != null) {
             float sourceYaw = cursorReleased
                     ? frozenYaw : minecraft.player.getYRot();

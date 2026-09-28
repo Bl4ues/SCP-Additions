@@ -241,14 +241,19 @@ public final class TransformSurveillanceRuntime {
         float maxPitch = frame.ceiling()
                 ? CeilingCameraModule.MANUAL_MAX_PITCH
                 : SurveillanceCameraPlaceholderModule.MANUAL_MAX_PITCH;
+        float logicalYaw = yaw;
         float logicalPitch = physicalPitch;
-        if (autonomous && !frame.ceiling()) {
+        if (autonomous && frame.ceiling()) {
+            // Match the normal CeilingCameraBlockEntity's autonomous-yaw
+            // handedness correction. Playable control stays unmirrored.
+            logicalYaw = -logicalYaw;
+        } else if (autonomous) {
             logicalPitch -= com.bl4ues.scpclassifieddirective.facility
                     .surveillance.SurveillanceCameraViewGeometry
                     .DEFAULT_DOWN_PITCH;
         }
         return new CameraPose(true,
-                Mth.clamp(Mth.wrapDegrees(yaw), -limit, limit),
+                Mth.clamp(Mth.wrapDegrees(logicalYaw), -limit, limit),
                 Mth.clamp(logicalPitch, minPitch, maxPitch));
     }
 

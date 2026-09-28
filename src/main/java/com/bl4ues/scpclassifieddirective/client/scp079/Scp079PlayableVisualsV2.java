@@ -410,7 +410,7 @@ public final class Scp079PlayableVisualsV2 {
                 if (budget[0] <= 0) break;
             }
         }
-        addTopologyCameras(minecraft, result);
+        addTopologyCameras(minecraft, result, activeRooms, allRooms);
         cachedTargets = List.copyOf(result);
     }
 
@@ -421,14 +421,31 @@ public final class Scp079PlayableVisualsV2 {
      * FacilitySurveillanceRegistry entries and therefore appear here.
      */
     private static void addTopologyCameras(Minecraft minecraft,
-            List<WorldTarget> result) {
+            List<WorldTarget> result,
+            List<FacilityRoomSnapshot> activeRooms,
+            List<FacilityRoomSnapshot> allRooms) {
         UUID current = Scp079PlayableClient.cameraId();
+        Map<UUID, FacilityRoomSnapshot> roomsById = new HashMap<>();
+        for (FacilityRoomSnapshot room : allRooms) {
+            roomsById.put(room.id(), room);
+        }
         for (Scp079CameraNavigationNetwork.CameraNode node
                 : Scp079CameraNetworkClientState.nodes()) {
             if (node == null || node.cameraId() == null
                     || node.cameraId().equals(current)) {
                 continue;
             }
+            FacilityRoomSnapshot cameraRoom = roomsById.get(node.roomId());
+            if (cameraRoom == null) continue;
+            boolean allowed = false;
+            for (FacilityRoomSnapshot active : activeRooms) {
+                if (active.id().equals(cameraRoom.id())
+                        || adjacent(active, cameraRoom)) {
+                    allowed = true;
+                    break;
+                }
+            }
+            if (!allowed) continue;
             TransformCameraGeometry.Frame frame =
                     TransformConstructionClientState.cameraFrame(
                             node.cameraId());

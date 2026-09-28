@@ -281,6 +281,7 @@
   "block.scp_classified_directive.sl_2_floor": "Floor",
   "block.scp_classified_directive.sl_2_wall_bot": "Concrete Wall (Bottom)",
   "block.scp_classified_directive.sl_2_wall_mid": "Concrete Wall (Middle)",
+  "block.scp_classified_directive.sl_2_wall_mid_alt": "Concrete Wall (Middle, Lower Stripe)",
   "block.scp_classified_directive.sl_2_wall_top": "Concrete Wall (Top)",
   "item.scp_classified_directive.scp_1176honey": "Honey Bottle",
   "tooltip.scp_classified_directive.tesla_gate_room": "Tesla Gate Room",

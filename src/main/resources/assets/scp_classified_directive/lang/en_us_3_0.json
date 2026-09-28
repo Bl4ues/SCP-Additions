@@ -135,6 +135,7 @@
   "block.scp_classified_directive.sl_2_floor": "Concrete Floor",
   "block.scp_classified_directive.sl_2_wall_bot": "Concrete Wall (Bottom)",
   "block.scp_classified_directive.sl_2_wall_mid": "Concrete Wall (Middle)",
+  "block.scp_classified_directive.sl_2_wall_mid_alt": "Concrete Wall (Middle, Lower Stripe)",
   "block.scp_classified_directive.sl_2_wall_top": "Concrete Wall (Top)",
   "block.scp_classified_directive.wet_floor": "Wet Floor Sign",
   "block.scp_classified_directive.scp_914_usage_notice": "SCP-914 Usage Notice",

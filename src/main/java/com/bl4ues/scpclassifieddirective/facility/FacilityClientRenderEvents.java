@@ -43,6 +43,9 @@ public final class FacilityClientRenderEvents {
                     ScpClassifiedDirectiveModBlocks.SCP_079_AUXILIARY_POWER.get(),
                     RenderType.cutout());
 
+            setDoorFamilyRenderLayer(
+                    FacilityModule.WORKSHOP_DOOR, RenderType.translucent());
+
             ItemBlockRenderTypes.setRenderLayer(
                     MirroredDoorButtons.BUTTON_LOCKED.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(
@@ -54,6 +57,16 @@ public final class FacilityClientRenderEvents {
             ItemBlockRenderTypes.setRenderLayer(
                     MirroredDoorButtons.BUTTON_CLOSING.get(), RenderType.cutout());
         });
+    }
+
+    private static void setDoorFamilyRenderLayer(
+            FacilityModule.DoorFamily family, RenderType renderType) {
+        ItemBlockRenderTypes.setRenderLayer(family.closed().get(), renderType);
+        family.opening().forEach(block ->
+                ItemBlockRenderTypes.setRenderLayer(block.get(), renderType));
+        ItemBlockRenderTypes.setRenderLayer(family.open().get(), renderType);
+        family.closing().forEach(block ->
+                ItemBlockRenderTypes.setRenderLayer(block.get(), renderType));
     }
 
     @SubscribeEvent

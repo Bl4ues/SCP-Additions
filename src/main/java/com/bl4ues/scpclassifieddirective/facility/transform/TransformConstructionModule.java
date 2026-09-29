@@ -33,6 +33,8 @@ import net.minecraftforge.registries.RegisterEvent;
         bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class TransformConstructionModule {
     public static final IntegerProperty LIGHT = IntegerProperty.create("light", 0, 15);
+    public static final IntegerProperty LIGHT_BLOCK = IntegerProperty.create(
+            "light_block", 0, 15);
     public static final ResourceLocation PROXY_ID = new ResourceLocation(
             ScpClassifiedDirectiveMod.MODID, "transform_construction_proxy");
     public static final ResourceLocation OFF_GRID_TOOL_ID = new ResourceLocation(
@@ -88,13 +90,14 @@ public final class TransformConstructionModule {
                     .noOcclusion()
                     .lightLevel(state -> state.getValue(LIGHT))
                     .isRedstoneConductor((state, level, pos) -> false));
-            registerDefaultState(stateDefinition.any().setValue(LIGHT, 0));
+            registerDefaultState(stateDefinition.any()
+                    .setValue(LIGHT, 0).setValue(LIGHT_BLOCK, 0));
         }
 
         @Override
         protected void createBlockStateDefinition(
                 StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(LIGHT);
+            builder.add(LIGHT, LIGHT_BLOCK);
         }
 
         @Override
@@ -123,23 +126,32 @@ public final class TransformConstructionModule {
         @Override
         public VoxelShape getOcclusionShape(BlockState state, BlockGetter level,
                 BlockPos pos) {
-            // Invisible technical proxy. Its collision is queried separately;
-            // exposing that collision as occlusion made AO/shaders paint dark
-            // rectangles where a temporary Surface light proxy existed.
+            // Rendering/AO must never see the axis-aligned technical voxel.
+            // Light opacity is carried separately by LIGHT_BLOCK below, so
+            // shaders do not paint rectangular seams over curved Surfaces.
             return Shapes.empty();
         }
 
         @Override
         public int getLightBlock(BlockState state, BlockGetter level,
                 BlockPos pos) {
-            return 0;
+            return state.getValue(LIGHT_BLOCK);
+        }
+
+        @Override
+        public boolean propagatesSkylightDown(BlockState state,
+                BlockGetter level, BlockPos pos) {
+            return state.getValue(LIGHT_BLOCK) == 0;
         }
 
         @Override
         public void tick(BlockState state, ServerLevel level, BlockPos pos,
                 RandomSource random) {
-            int desired = TransformConstructionManager.proxyLight(level, pos);
-            if (desired <= 0) {
+            int desiredLight = Math.max(0, Math.min(15,
+                    TransformConstructionManager.proxyLight(level, pos)));
+            int desiredLightBlock = Math.max(0, Math.min(15,
+                    TransformConstructionManager.proxyLightBlock(level, pos)));
+            if (desiredLight <= 0 && desiredLightBlock <= 0) {
                 if (level.getBlockState(pos).is(this)) {
                     level.setBlock(pos, Blocks.AIR.defaultBlockState(),
                             Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
@@ -147,10 +159,11 @@ public final class TransformConstructionModule {
                 }
                 return;
             }
-            int clamped = Math.max(0, Math.min(15, desired));
-            if (state.getValue(LIGHT) != clamped
+            if ((state.getValue(LIGHT) != desiredLight
+                    || state.getValue(LIGHT_BLOCK) != desiredLightBlock)
                     && level.getBlockState(pos).is(this)) {
-                level.setBlock(pos, state.setValue(LIGHT, clamped),
+                level.setBlock(pos, state.setValue(LIGHT, desiredLight)
+                                .setValue(LIGHT_BLOCK, desiredLightBlock),
                         Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
                 level.getLightEngine().checkBlock(pos);
             }

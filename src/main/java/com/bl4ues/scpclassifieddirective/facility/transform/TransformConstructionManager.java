@@ -53,7 +53,9 @@ import java.util.WeakHashMap;
 /**
  * Server authority and cached physical index for transformed construction.
  * Geometry is authored in doubles. Collision is injected directly from the
- * logical spatial index; vanilla proxy blocks are reserved for emitted light.
+ * logical spatial index; invisible vanilla proxies bridge the parts Minecraft's
+ * light engine still requires as voxel state: emitted light and opaque Surface
+ * light blocking.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -201,6 +203,12 @@ public final class TransformConstructionManager {
     public static int proxyLight(BlockGetter level, BlockPos pos) {
         ProxyCell cell = proxyCell(level, pos);
         return cell == null ? 0 : cell.light();
+    }
+
+    public static int proxyLightBlock(BlockGetter getter, BlockPos pos) {
+        if (!(getter instanceof ServerLevel level) || pos == null) return 0;
+        return index(level.getServer()).lightBlock(
+                level.dimension().location(), pos);
     }
 
     public static List<TransformGroup> groups(ServerLevel level) {
@@ -929,7 +937,8 @@ public final class TransformConstructionManager {
                 BlockPos pos = BlockPos.of(packed);
                 if (!level.hasChunkAt(pos)) continue;
                 materializeProxyCell(level, pos,
-                        next.cell(dimension, pos));
+                        next.cell(dimension, pos),
+                        next.lightBlock(dimension, pos));
             }
         }
         TransformConstructionSavedData surveillanceData =
@@ -1252,7 +1261,8 @@ public final class TransformConstructionManager {
                 BlockPos pos = BlockPos.of(packed);
                 if (!level.hasChunkAt(pos)) continue;
                 materializeProxyCell(level, pos,
-                        index.cell(entry.getKey(), pos));
+                        index.cell(entry.getKey(), pos),
+                        index.lightBlock(entry.getKey(), pos));
             }
         }
     }
@@ -1266,26 +1276,32 @@ public final class TransformConstructionManager {
     }
 
     private static void materializeProxyCell(ServerLevel level, BlockPos pos,
-            ProxyCell cell) {
+            ProxyCell cell, int lightBlock) {
         BlockState current = level.getBlockState(pos);
-        int oldLight = current.is(TransformConstructionModule.getProxy())
+        boolean proxy = current.is(TransformConstructionModule.getProxy());
+        int oldLight = proxy
                 ? current.getValue(TransformConstructionModule.LIGHT) : 0;
-        int newLight = cell != null && materialize(cell) ? cell.light() : 0;
+        int oldLightBlock = proxy
+                ? current.getValue(TransformConstructionModule.LIGHT_BLOCK) : 0;
+        int newLight = cell == null ? 0
+                : Math.max(0, Math.min(15, cell.light()));
+        int newLightBlock = Math.max(0, Math.min(15, lightBlock));
+        boolean needed = cell != null && (newLight > 0 || newLightBlock > 0);
         int flags = net.minecraft.world.level.block.Block.UPDATE_CLIENTS
                 | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
-        if (newLight <= 0) {
-            if (current.is(TransformConstructionModule.getProxy())) {
-                if (oldLight > 0) {
-                    // Make the emission decrease an explicit vanilla block-state
-                    // transition before removing the technical proxy. Removing
-                    // an emitting proxy in the same update can leave the
-                    // threaded block-light engine with the old source value,
-                    // especially when several Surface lamps are suppressed by
-                    // one Blackout.
-                    BlockState dark = current.setValue(
-                            TransformConstructionModule.LIGHT, 0);
+        if (!needed) {
+            if (proxy) {
+                if (oldLight > 0 || oldLightBlock > 0) {
+                    // Expose a real zero-emission/zero-opacity state to the
+                    // threaded light engine before removing the technical
+                    // voxel. This prevents both stale block light and stale
+                    // skylight columns after moving or deleting a Surface.
+                    BlockState dark = current
+                            .setValue(TransformConstructionModule.LIGHT, 0)
+                            .setValue(TransformConstructionModule.LIGHT_BLOCK, 0);
                     level.setBlock(pos, dark, flags);
-                    refreshProxyLighting(level, pos, oldLight);
+                    refreshProxyLighting(level, pos, oldLight,
+                            oldLightBlock > 0);
                     level.scheduleTick(pos,
                             TransformConstructionModule.getProxy(), 1);
                 } else {
@@ -1294,27 +1310,39 @@ public final class TransformConstructionManager {
             }
             return;
         }
-        if (current.isAir()
-                || current.is(TransformConstructionModule.getProxy())
-                || current.canBeReplaced()) {
+        if (current.isAir() || proxy || current.canBeReplaced()) {
             BlockState wanted = TransformConstructionModule.getProxy()
                     .defaultBlockState()
-                    .setValue(TransformConstructionModule.LIGHT, newLight);
+                    .setValue(TransformConstructionModule.LIGHT, newLight)
+                    .setValue(TransformConstructionModule.LIGHT_BLOCK,
+                            newLightBlock);
             if (!current.equals(wanted)) {
                 level.setBlock(pos, wanted, flags);
                 refreshProxyLighting(level, pos,
-                        Math.max(oldLight, newLight));
+                        Math.max(oldLight, newLight),
+                        oldLightBlock != newLightBlock);
             }
         }
     }
 
     private static void refreshProxyLighting(ServerLevel level, BlockPos pos,
-            int affectedEmission) {
-        // Always notify the actual source immediately. More importantly, queue
-        // the entire radius that the old OR new source could influence. The
-        // end-of-tick pass sees the final state after rapid place/remove or a
-        // multi-lamp blackout and deduplicates overlapping rooms.
+            int affectedEmission, boolean occlusionChanged) {
+        // Always notify the actual source immediately. Opaque Surface proxies
+        // keep an empty render-occlusion shape, so explicitly checking their
+        // voxel and neighbours gives the vanilla sky/block light engines the
+        // state transition without creating AO/shader rectangles.
         level.getLightEngine().checkBlock(pos);
+        if (occlusionChanged) {
+            for (Direction direction : Direction.values()) {
+                BlockPos neighbor = pos.relative(direction);
+                if (level.hasChunkAt(neighbor)) {
+                    level.getLightEngine().checkBlock(neighbor);
+                }
+            }
+        }
+        // For emitted light, also queue the complete old/new influence radius.
+        // The end-of-tick pass sees the final state after rapid place/remove or
+        // a multi-lamp blackout and deduplicates overlapping rooms.
         int radius = Math.max(1, Math.min(15, affectedEmission));
         LinkedHashSet<Long> queue = LIGHT_REPAIR_QUEUES.computeIfAbsent(level,
                 ignored -> new LinkedHashSet<>());
@@ -1342,17 +1370,9 @@ public final class TransformConstructionManager {
                 continue;
             }
             materializeProxyCell(level, pos,
-                    index.cell(dimension, pos));
+                    index.cell(dimension, pos),
+                    index.lightBlock(dimension, pos));
         }
-    }
-
-    private static boolean materialize(ProxyCell cell) {
-        // Selection, interaction and collision are resolved directly from the
-        // transformed spatial index. Materializing collision-only proxy blocks
-        // causes chunk/block invalidations on every structural edit and defeats
-        // the whole local-grid model. Keep a vanilla proxy only when Minecraft's
-        // block-light engine actually needs a physical light-emitting cell.
-        return cell != null && cell.light() > 0;
     }
 
     private static boolean canOccupy(ServerLevel level, TransformGroup group,
@@ -1599,9 +1619,13 @@ public final class TransformConstructionManager {
                 SURFACE_SELECTION_THICKNESS);
         addWorldBox(index, owner, selection, true, false, 0);
         if (attachment != null && !attachment.state().isAir()) {
+            int lightBlock = transformedLightBlock(attachment.state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, attachment)) {
                 addWorldBox(index, owner, collision, false, true, 0);
+                if (lightBlock > 0) {
+                    addWorldLightBlock(index, owner, collision, lightBlock);
+                }
             }
             int emission = attachment.state().getLightEmission();
             if (emission > 0) {
@@ -1614,10 +1638,15 @@ public final class TransformConstructionManager {
                 SurfaceAttachment> overlay : surface.overlays().entrySet()) {
             if (!overlay.getKey().slot().equals(slot)
                     || overlay.getValue().state().isAir()) continue;
+            int lightBlock = transformedLightBlock(
+                    overlay.getValue().state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, overlay.getValue(),
                     overlay.getKey().normalSign(), true)) {
                 addWorldBox(index, owner, collision, false, true, 0);
+                if (lightBlock > 0) {
+                    addWorldLightBlock(index, owner, collision, lightBlock);
+                }
             }
             int emission = overlay.getValue().state().getLightEmission();
             if (emission > 0) {
@@ -1626,6 +1655,12 @@ public final class TransformConstructionManager {
                         overlay.getKey().normalSign(), true, emission);
             }
         }
+    }
+
+    private static int transformedLightBlock(BlockState state) {
+        if (state == null || state.isAir()) return 0;
+        return Math.max(0, Math.min(15, state.getLightBlock(
+                EmptyBlockGetter.INSTANCE, BlockPos.ZERO)));
     }
 
     private static void addSurfaceLight(SpatialIndex index, OwnerKey owner,
@@ -1729,6 +1764,25 @@ public final class TransformConstructionManager {
                     if (clipped == null) continue;
                     AABB local = clipped.move(-x, -y, -z);
                     index.add(owner, pos, local, selection, collision, light);
+                }
+            }
+        }
+    }
+
+    private static void addWorldLightBlock(SpatialIndex index,
+            OwnerKey owner, AABB worldBox, int lightBlock) {
+        if (lightBlock <= 0) return;
+        int minX = (int) Math.floor(worldBox.minX);
+        int minY = (int) Math.floor(worldBox.minY);
+        int minZ = (int) Math.floor(worldBox.minZ);
+        int maxX = (int) Math.floor(Math.nextDown(worldBox.maxX));
+        int maxY = (int) Math.floor(Math.nextDown(worldBox.maxY));
+        int maxZ = (int) Math.floor(Math.nextDown(worldBox.maxZ));
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    index.addLightBlock(owner, new BlockPos(x, y, z),
+                            lightBlock);
                 }
             }
         }
@@ -1851,6 +1905,7 @@ public final class TransformConstructionManager {
         private VoxelShape groupCollision = Shapes.empty();
         private VoxelShape surfaceCollision = Shapes.empty();
         private int light;
+        private int lightBlock;
         private ProxyCell frozen;
         private final Set<UUID> groupIds = new LinkedHashSet<>();
         private final Set<UUID> surfaceIds = new LinkedHashSet<>();
@@ -1872,6 +1927,15 @@ public final class TransformConstructionManager {
             if (groupId != null) groupIds.add(groupId);
             if (surfaceId != null) surfaceIds.add(surfaceId);
             frozen = null;
+        }
+
+        private void addLightBlock(int value) {
+            lightBlock = Math.max(lightBlock,
+                    Math.max(0, Math.min(15, value)));
+        }
+
+        private int lightBlock() {
+            return lightBlock;
         }
 
         private void merge(ProxyCell other) {
@@ -1969,6 +2033,36 @@ public final class TransformConstructionManager {
                     .add(owner);
             Map<Long, ProxyCell> cache = frozen.get(owner.dimension());
             if (cache != null) cache.remove(packed);
+        }
+
+        private void addLightBlock(OwnerKey owner, BlockPos pos,
+                int lightBlock) {
+            if (lightBlock <= 0) return;
+            long packed = pos.asLong();
+            owners.computeIfAbsent(owner, ignored -> new LinkedHashMap<>())
+                    .computeIfAbsent(packed, ignored -> new MutableProxyCell())
+                    .addLightBlock(lightBlock);
+            cells.computeIfAbsent(owner.dimension(),
+                            ignored -> new LinkedHashMap<>())
+                    .computeIfAbsent(packed, ignored -> new LinkedHashSet<>())
+                    .add(owner);
+        }
+
+        private int lightBlock(ResourceLocation dimension, BlockPos pos) {
+            Map<Long, Set<OwnerKey>> dimensionCells = cells.get(dimension);
+            if (dimensionCells == null) return 0;
+            Set<OwnerKey> ownerSet = dimensionCells.get(pos.asLong());
+            if (ownerSet == null || ownerSet.isEmpty()) return 0;
+            int result = 0;
+            for (OwnerKey owner : ownerSet) {
+                Map<Long, MutableProxyCell> ownerCells = owners.get(owner);
+                MutableProxyCell contribution = ownerCells == null ? null
+                        : ownerCells.get(pos.asLong());
+                if (contribution != null) {
+                    result = Math.max(result, contribution.lightBlock());
+                }
+            }
+            return result;
         }
 
         private ProxyCell cell(ResourceLocation dimension, BlockPos pos) {

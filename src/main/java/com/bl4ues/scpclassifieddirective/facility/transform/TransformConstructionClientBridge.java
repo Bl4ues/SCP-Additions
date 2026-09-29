@@ -43,6 +43,11 @@ public final class TransformConstructionClientBridge {
                 : current.transformedCollision(pos);
     }
 
+    public static int lightBlock(BlockPos pos) {
+        Provider current = provider;
+        return current == null || pos == null ? 0 : current.lightBlock(pos);
+    }
+
     public interface Provider {
         VoxelShape selection(BlockPos pos);
 
@@ -51,5 +56,7 @@ public final class TransformConstructionClientBridge {
         VoxelShape offGridCollision(BlockPos pos);
 
         VoxelShape transformedCollision(BlockPos pos);
+
+        int lightBlock(BlockPos pos);
     }
 }

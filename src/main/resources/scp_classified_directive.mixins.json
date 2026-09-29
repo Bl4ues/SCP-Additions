@@ -12,6 +12,7 @@
     "ServerPlayerSaveTrackingMixin",
     "TransformConstructionStartupMixin",
     "TransformOffGridCollisionMixin",
+    "TransformLightOcclusionMixin",
     "MineZeroScpBlockJournalMixin",
     "Scp106HuntBehaviorMixin",
     "Scp173ContactFixMixin",

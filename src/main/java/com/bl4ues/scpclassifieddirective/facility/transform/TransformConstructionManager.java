@@ -52,10 +52,9 @@ import java.util.WeakHashMap;
 
 /**
  * Server authority and cached physical index for transformed construction.
- * Geometry is authored in doubles. Collision is injected directly from the
- * logical spatial index; invisible vanilla proxies bridge the parts Minecraft's
- * light engine still requires as voxel state: emitted light and opaque Surface
- * light blocking.
+ * Geometry is authored in doubles. Collision and Surface opacity are injected
+ * directly from the logical spatial index; vanilla proxy blocks are reserved
+ * exclusively for emitted block-light sources.
  */
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -207,8 +206,12 @@ public final class TransformConstructionManager {
 
     public static int proxyLightBlock(BlockGetter getter, BlockPos pos) {
         if (!(getter instanceof ServerLevel level) || pos == null) return 0;
-        return index(level.getServer()).lightBlock(
-                level.dimension().location(), pos);
+        // Light propagation is a hot path. Never construct the transform index
+        // from a BlockState query; startup/structural refresh owns rebuilding.
+        SpatialIndex cached = INDEXES.get(level.getServer());
+        if (cached == null) return 0;
+        ProxyCell cell = cached.cell(level.dimension().location(), pos);
+        return cell == null ? 0 : cell.lightBlock();
     }
 
     public static List<TransformGroup> groups(ServerLevel level) {
@@ -937,8 +940,8 @@ public final class TransformConstructionManager {
                 BlockPos pos = BlockPos.of(packed);
                 if (!level.hasChunkAt(pos)) continue;
                 materializeProxyCell(level, pos,
-                        next.cell(dimension, pos),
-                        next.lightBlock(dimension, pos));
+                        next.cell(dimension, pos));
+                refreshLightOcclusion(level, pos);
             }
         }
         TransformConstructionSavedData surveillanceData =
@@ -1261,8 +1264,8 @@ public final class TransformConstructionManager {
                 BlockPos pos = BlockPos.of(packed);
                 if (!level.hasChunkAt(pos)) continue;
                 materializeProxyCell(level, pos,
-                        index.cell(entry.getKey(), pos),
-                        index.lightBlock(entry.getKey(), pos));
+                        index.cell(entry.getKey(), pos));
+                refreshLightOcclusion(level, pos);
             }
         }
     }
@@ -1276,70 +1279,65 @@ public final class TransformConstructionManager {
     }
 
     private static void materializeProxyCell(ServerLevel level, BlockPos pos,
-            ProxyCell cell, int lightBlock) {
+            ProxyCell cell) {
         BlockState current = level.getBlockState(pos);
         boolean proxy = current.is(TransformConstructionModule.getProxy());
         int oldLight = proxy
                 ? current.getValue(TransformConstructionModule.LIGHT) : 0;
-        int oldLightBlock = proxy
+        int legacyLightBlock = proxy
                 ? current.getValue(TransformConstructionModule.LIGHT_BLOCK) : 0;
         int newLight = cell == null ? 0
                 : Math.max(0, Math.min(15, cell.light()));
-        int newLightBlock = Math.max(0, Math.min(15, lightBlock));
-        boolean needed = cell != null && (newLight > 0 || newLightBlock > 0);
         int flags = net.minecraft.world.level.block.Block.UPDATE_CLIENTS
                 | net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE;
-        if (!needed) {
+
+        if (newLight <= 0) {
             if (proxy) {
-                if (oldLight > 0 || oldLightBlock > 0) {
-                    // Expose a real zero-emission/zero-opacity state to the
-                    // threaded light engine before removing the technical
-                    // voxel. This prevents both stale block light and stale
-                    // skylight columns after moving or deleting a Surface.
-                    BlockState dark = current
-                            .setValue(TransformConstructionModule.LIGHT, 0)
-                            .setValue(TransformConstructionModule.LIGHT_BLOCK, 0);
-                    level.setBlock(pos, dark, flags);
-                    refreshProxyLighting(level, pos, oldLight,
-                            oldLightBlock > 0);
-                    level.scheduleTick(pos,
-                            TransformConstructionModule.getProxy(), 1);
-                } else {
-                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), flags);
+                if (oldLight > 0) {
+                    refreshProxyLighting(level, pos, oldLight);
+                }
+                if (legacyLightBlock > 0) {
+                    // Clean worlds produced by the temporary physical blocker
+                    // implementation and force skylight to revisit the cell.
+                    refreshLightOcclusion(level, pos);
                 }
             }
             return;
         }
+
         if (current.isAir() || proxy || current.canBeReplaced()) {
             BlockState wanted = TransformConstructionModule.getProxy()
                     .defaultBlockState()
                     .setValue(TransformConstructionModule.LIGHT, newLight)
-                    .setValue(TransformConstructionModule.LIGHT_BLOCK,
-                            newLightBlock);
+                    .setValue(TransformConstructionModule.LIGHT_BLOCK, 0);
             if (!current.equals(wanted)) {
                 level.setBlock(pos, wanted, flags);
                 refreshProxyLighting(level, pos,
-                        Math.max(oldLight, newLight),
-                        oldLightBlock != newLightBlock);
+                        Math.max(oldLight, newLight));
+                if (legacyLightBlock > 0) {
+                    refreshLightOcclusion(level, pos);
+                }
+            }
+        }
+    }
+
+    private static void refreshLightOcclusion(ServerLevel level, BlockPos pos) {
+        // The Surface exists only in the logical grid, so a structural edit
+        // must explicitly wake vanilla's light engine at the world cells whose
+        // effective opacity changed. No technical collision block is needed.
+        level.getLightEngine().checkBlock(pos);
+        for (Direction direction : Direction.values()) {
+            BlockPos neighbor = pos.relative(direction);
+            if (level.hasChunkAt(neighbor)) {
+                level.getLightEngine().checkBlock(neighbor);
             }
         }
     }
 
     private static void refreshProxyLighting(ServerLevel level, BlockPos pos,
-            int affectedEmission, boolean occlusionChanged) {
-        // Always notify the actual source immediately. Opaque Surface proxies
-        // keep an empty render-occlusion shape, so explicitly checking their
-        // voxel and neighbours gives the vanilla sky/block light engines the
-        // state transition without creating AO/shader rectangles.
+            int affectedEmission) {
         level.getLightEngine().checkBlock(pos);
-        if (occlusionChanged) {
-            for (Direction direction : Direction.values()) {
-                BlockPos neighbor = pos.relative(direction);
-                if (level.hasChunkAt(neighbor)) {
-                    level.getLightEngine().checkBlock(neighbor);
-                }
-            }
-        }
         // For emitted light, also queue the complete old/new influence radius.
         // The end-of-tick pass sees the final state after rapid place/remove or
         // a multi-lamp blackout and deduplicates overlapping rooms.
@@ -1370,8 +1368,10 @@ public final class TransformConstructionManager {
                 continue;
             }
             materializeProxyCell(level, pos,
-                    index.cell(dimension, pos),
-                    index.lightBlock(dimension, pos));
+                    index.cell(dimension, pos));
+            if (index.lightBlock(dimension, pos) > 0) {
+                refreshLightOcclusion(level, pos);
+            }
         }
     }
 
@@ -1896,7 +1896,8 @@ public final class TransformConstructionManager {
 
     public record ProxyCell(VoxelShape selection, VoxelShape collision,
             VoxelShape groupCollision, VoxelShape surfaceCollision,
-            int light, Set<UUID> groupIds, Set<UUID> surfaceIds) {
+            int light, int lightBlock, Set<UUID> groupIds,
+            Set<UUID> surfaceIds) {
     }
 
     private static final class MutableProxyCell {
@@ -1932,6 +1933,7 @@ public final class TransformConstructionManager {
         private void addLightBlock(int value) {
             lightBlock = Math.max(lightBlock,
                     Math.max(0, Math.min(15, value)));
+            frozen = null;
         }
 
         private int lightBlock() {
@@ -1947,6 +1949,7 @@ public final class TransformConstructionManager {
             this.surfaceCollision = Shapes.or(this.surfaceCollision,
                     other.surfaceCollision());
             this.light = Math.max(this.light, other.light());
+            this.lightBlock = Math.max(this.lightBlock, other.lightBlock());
             this.groupIds.addAll(other.groupIds());
             this.surfaceIds.addAll(other.surfaceIds());
             frozen = null;
@@ -1956,7 +1959,8 @@ public final class TransformConstructionManager {
             if (frozen == null) {
                 frozen = new ProxyCell(selection.optimize(), collision.optimize(),
                         groupCollision.optimize(), surfaceCollision.optimize(),
-                        light, Set.copyOf(groupIds), Set.copyOf(surfaceIds));
+                        light, lightBlock, Set.copyOf(groupIds),
+                        Set.copyOf(surfaceIds));
             }
             return frozen;
         }
@@ -2092,7 +2096,7 @@ public final class TransformConstructionManager {
                 result = new ProxyCell(raw.selection(),
                         Shapes.or(group, raw.surfaceCollision()).optimize(),
                         group, raw.surfaceCollision(), raw.light(),
-                        raw.groupIds(), raw.surfaceIds());
+                        raw.lightBlock(), raw.groupIds(), raw.surfaceIds());
             } else {
                 result = raw;
             }

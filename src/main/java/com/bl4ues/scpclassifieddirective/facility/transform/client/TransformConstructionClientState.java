@@ -146,6 +146,13 @@ public final class TransformConstructionClientState {
                                 proxyCell(pos);
                         return cell == null ? Shapes.empty() : cell.collision();
                     }
+
+                    @Override
+                    public int lightBlock(BlockPos pos) {
+                        TransformConstructionManager.ProxyCell cell =
+                                proxyCell(pos);
+                        return cell == null ? 0 : cell.lightBlock();
+                    }
                 });
     }
 
@@ -335,7 +342,7 @@ public final class TransformConstructionClientState {
                 new TransformConstructionManager.ProxyCell(raw.selection(),
                         Shapes.or(group, raw.surfaceCollision()).optimize(),
                         group, raw.surfaceCollision(), raw.light(),
-                        raw.groupIds(), raw.surfaceIds());
+                        raw.lightBlock(), raw.groupIds(), raw.surfaceIds());
         maskedProxyCells.put(key, new MaskedProxyCell(raw, masked));
         return masked;
     }
@@ -1495,10 +1502,14 @@ public final class TransformConstructionClientState {
                         SURFACE_SELECTION_THICKNESS),
                 null, surface.id(), true, false, 0);
         if (attachment != null && !attachment.state().isAir()) {
+            int lightBlock = transformedLightBlock(attachment.state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, attachment)) {
                 addWorldBox(index, collision, null, surface.id(), false, true,
                         0);
+                if (lightBlock > 0) {
+                    addWorldLightBlock(index, collision, lightBlock);
+                }
             }
             int emission = attachment.state().getLightEmission();
             if (emission > 0) {
@@ -1511,11 +1522,16 @@ public final class TransformConstructionClientState {
                 : surface.overlays().entrySet()) {
             if (!overlay.getKey().slot().equals(slot)
                     || overlay.getValue().state().isAir()) continue;
+            int lightBlock = transformedLightBlock(
+                    overlay.getValue().state());
             for (AABB collision : TransformSurfaceGeometry.collisionBoxes(
                     surface, slot, overlay.getValue(),
                     overlay.getKey().normalSign(), true)) {
                 addWorldBox(index, collision, null, surface.id(), false, true,
                         0);
+                if (lightBlock > 0) {
+                    addWorldLightBlock(index, collision, lightBlock);
+                }
             }
             int emission = overlay.getValue().state().getLightEmission();
             if (emission > 0) {
@@ -1524,6 +1540,12 @@ public final class TransformConstructionClientState {
                         overlay.getKey().normalSign(), true, emission);
             }
         }
+    }
+
+    private static int transformedLightBlock(BlockState state) {
+        if (state == null || state.isAir()) return 0;
+        return Math.max(0, Math.min(15, state.getLightBlock(
+                EmptyBlockGetter.INSTANCE, BlockPos.ZERO)));
     }
 
     private static void addSurfaceLight(
@@ -1634,6 +1656,26 @@ public final class TransformConstructionClientState {
         }
     }
 
+    private static void addWorldLightBlock(
+            Map<Long, MutableProxyCell> index, AABB worldBox, int lightBlock) {
+        if (lightBlock <= 0) return;
+        int minX = (int) Math.floor(worldBox.minX);
+        int minY = (int) Math.floor(worldBox.minY);
+        int minZ = (int) Math.floor(worldBox.minZ);
+        int maxX = (int) Math.floor(Math.nextDown(worldBox.maxX));
+        int maxY = (int) Math.floor(Math.nextDown(worldBox.maxY));
+        int maxZ = (int) Math.floor(Math.nextDown(worldBox.maxZ));
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    index.computeIfAbsent(BlockPos.asLong(x, y, z),
+                                    ignored -> new MutableProxyCell())
+                            .addLightBlock(lightBlock);
+                }
+            }
+        }
+    }
+
     private static AABB intersect(AABB first, AABB second) {
         double minX = Math.max(first.minX, second.minX);
         double minY = Math.max(first.minY, second.minY);
@@ -1681,6 +1723,7 @@ public final class TransformConstructionClientState {
         private VoxelShape groupCollision = Shapes.empty();
         private VoxelShape surfaceCollision = Shapes.empty();
         private int light;
+        private int lightBlock;
         private TransformConstructionManager.ProxyCell frozen;
         private final Set<UUID> groupIds = new LinkedHashSet<>();
         private final Set<UUID> surfaceIds = new LinkedHashSet<>();
@@ -1704,6 +1747,12 @@ public final class TransformConstructionClientState {
             frozen = null;
         }
 
+        private void addLightBlock(int value) {
+            lightBlock = Math.max(lightBlock,
+                    Math.max(0, Math.min(15, value)));
+            frozen = null;
+        }
+
         private void merge(TransformConstructionManager.ProxyCell other) {
             if (other == null) return;
             selection = Shapes.or(selection, other.selection());
@@ -1712,6 +1761,7 @@ public final class TransformConstructionClientState {
             surfaceCollision = Shapes.or(surfaceCollision,
                     other.surfaceCollision());
             light = Math.max(light, other.light());
+            lightBlock = Math.max(lightBlock, other.lightBlock());
             groupIds.addAll(other.groupIds());
             surfaceIds.addAll(other.surfaceIds());
             frozen = null;
@@ -1722,7 +1772,8 @@ public final class TransformConstructionClientState {
                 frozen = new TransformConstructionManager.ProxyCell(
                         selection.optimize(), collision.optimize(),
                         groupCollision.optimize(), surfaceCollision.optimize(),
-                        light, Set.copyOf(groupIds), Set.copyOf(surfaceIds));
+                        light, lightBlock, Set.copyOf(groupIds),
+                        Set.copyOf(surfaceIds));
             }
             return frozen;
         }

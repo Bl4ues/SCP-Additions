@@ -90,6 +90,10 @@ public final class TransformConstructionModule {
                     .noOcclusion()
                     .lightLevel(state -> state.getValue(LIGHT))
                     .isRedstoneConductor((state, level, pos) -> false));
+            // LIGHT_BLOCK remains in the state schema only so worlds saved by
+            // the short-lived physical-occlusion implementation load cleanly.
+            // Transformed opacity is now queried directly from the logical
+            // Surface index and never materialized as a colliding world block.
             registerDefaultState(stateDefinition.any()
                     .setValue(LIGHT, 0).setValue(LIGHT_BLOCK, 0));
         }
@@ -126,32 +130,30 @@ public final class TransformConstructionModule {
         @Override
         public VoxelShape getOcclusionShape(BlockState state, BlockGetter level,
                 BlockPos pos) {
-            // Rendering/AO must never see the axis-aligned technical voxel.
-            // Light opacity is carried separately by LIGHT_BLOCK below, so
-            // shaders do not paint rectangular seams over curved Surfaces.
+            // Technical light sources must never become render/AO occluders.
+            // Curved Surface opacity is supplied independently by
+            // TransformLightOcclusionMixin.
             return Shapes.empty();
         }
 
         @Override
         public int getLightBlock(BlockState state, BlockGetter level,
                 BlockPos pos) {
-            return state.getValue(LIGHT_BLOCK);
+            return 0;
         }
 
         @Override
         public boolean propagatesSkylightDown(BlockState state,
                 BlockGetter level, BlockPos pos) {
-            return state.getValue(LIGHT_BLOCK) == 0;
+            return true;
         }
 
         @Override
         public void tick(BlockState state, ServerLevel level, BlockPos pos,
                 RandomSource random) {
-            int desiredLight = Math.max(0, Math.min(15,
+            int desired = Math.max(0, Math.min(15,
                     TransformConstructionManager.proxyLight(level, pos)));
-            int desiredLightBlock = Math.max(0, Math.min(15,
-                    TransformConstructionManager.proxyLightBlock(level, pos)));
-            if (desiredLight <= 0 && desiredLightBlock <= 0) {
+            if (desired <= 0) {
                 if (level.getBlockState(pos).is(this)) {
                     level.setBlock(pos, Blocks.AIR.defaultBlockState(),
                             Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
@@ -159,11 +161,11 @@ public final class TransformConstructionModule {
                 }
                 return;
             }
-            if ((state.getValue(LIGHT) != desiredLight
-                    || state.getValue(LIGHT_BLOCK) != desiredLightBlock)
+            if ((state.getValue(LIGHT) != desired
+                    || state.getValue(LIGHT_BLOCK) != 0)
                     && level.getBlockState(pos).is(this)) {
-                level.setBlock(pos, state.setValue(LIGHT, desiredLight)
-                                .setValue(LIGHT_BLOCK, desiredLightBlock),
+                level.setBlock(pos, state.setValue(LIGHT, desired)
+                                .setValue(LIGHT_BLOCK, 0),
                         Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
                 level.getLightEngine().checkBlock(pos);
             }

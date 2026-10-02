@@ -58,6 +58,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public final class DoubleWallPanelModule {
+    public static final String REMOVE_FRONT_INTERACTION =
+            "remove_double_wall_panel_front";
+    public static final String REMOVE_BACK_INTERACTION =
+            "remove_double_wall_panel_back";
     public enum Side {
         FRONT,
         BACK
@@ -98,7 +102,8 @@ public final class DoubleWallPanelModule {
         private DoubleWallPanelBlock() {
             super(BlockBehaviour.Properties.of()
                     .strength(1.5F, 6.0F)
-                    .sound(SoundType.METAL));
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
             registerDefaultState(stateDefinition.any()
                     .setValue(HorizontalDirectionalBlock.FACING,
                             Direction.NORTH));
@@ -186,7 +191,7 @@ public final class DoubleWallPanelModule {
             return InteractionResult.CONSUME;
         }
 
-        static Side sideForHit(BlockState state, Direction clickedFace) {
+        public static Side sideForHit(BlockState state, Direction clickedFace) {
             if (state == null || clickedFace == null
                     || clickedFace.getAxis().isVertical()) return null;
             Direction front = state.getValue(

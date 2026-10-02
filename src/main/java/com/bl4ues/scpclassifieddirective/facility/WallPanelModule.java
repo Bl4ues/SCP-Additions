@@ -44,6 +44,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -138,7 +139,7 @@ public final class WallPanelModule {
 
         @Override
         public RenderShape getRenderShape(BlockState state) {
-            return RenderShape.ENTITYBLOCK_ANIMATED;
+            return RenderShape.MODEL;
         }
 
         @Override
@@ -460,6 +461,7 @@ public final class WallPanelModule {
 
             backState = loadBlock(tag, BACK_BLOCK);
             backItem = loadItem(tag, BACK_ITEM, backState);
+            refreshClientModelData();
         }
 
         private static BlockState loadBlock(CompoundTag tag, String key) {
@@ -503,6 +505,20 @@ public final class WallPanelModule {
                 ClientboundBlockEntityDataPacket packet) {
             CompoundTag tag = packet.getTag();
             if (tag != null) load(tag);
+        }
+
+        @Override
+        public @NotNull ModelData getModelData() {
+            return CopycatPanelMaterial.modelData(
+                    frontState, backState, worldPosition);
+        }
+
+        private void refreshClientModelData() {
+            if (level == null || !level.isClientSide) return;
+            requestModelDataUpdate();
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state,
+                    Block.UPDATE_ALL);
         }
 
         @Override

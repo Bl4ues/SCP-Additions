@@ -47,13 +47,6 @@ public final class WallPanelClient {
         return new ResourceLocation(ScpClassifiedDirectiveMod.MODID, path);
     }
 
-    @SubscribeEvent
-    public static void registerRenderers(
-            EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(
-                WallPanelModule.BLOCK_ENTITY.get(), BlockRenderer::new);
-    }
-
     private static final class BlockModel
             extends GeoModel<WallPanelBlockEntity> {
         @Override

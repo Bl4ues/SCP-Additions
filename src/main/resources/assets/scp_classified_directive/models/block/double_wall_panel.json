@@ -1,5 +1,32 @@
 {
+  "parent": "minecraft:block/block",
+  "ambientocclusion": true,
   "textures": {
-    "particle": "scp_classified_directive:block/wall_panel"
-  }
+    "all": "scp_classified_directive:block/wall_panel",
+    "particle": "#all"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 8],
+      "faces": {
+        "north": {"texture": "#all", "cullface": "north"},
+        "west": {"texture": "#all", "cullface": "west"},
+        "east": {"texture": "#all", "cullface": "east"},
+        "up": {"texture": "#all", "cullface": "up"},
+        "down": {"texture": "#all", "cullface": "down"}
+      }
+    },
+    {
+      "from": [0, 0, 8],
+      "to": [16, 16, 16],
+      "faces": {
+        "south": {"texture": "#all", "cullface": "south"},
+        "west": {"texture": "#all", "cullface": "west"},
+        "east": {"texture": "#all", "cullface": "east"},
+        "up": {"texture": "#all", "cullface": "up"},
+        "down": {"texture": "#all", "cullface": "down"}
+      }
+    }
+  ]
 }

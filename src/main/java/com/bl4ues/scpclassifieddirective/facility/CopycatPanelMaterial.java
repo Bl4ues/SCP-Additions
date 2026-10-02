@@ -9,10 +9,30 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public final class CopycatPanelMaterial {
+    public static final ModelProperty<ModelSnapshot> MODEL_PROPERTY =
+            new ModelProperty<>();
+
     private CopycatPanelMaterial() {
+    }
+
+    public static ModelData modelData(BlockState front, BlockState back,
+            BlockPos pos) {
+        return ModelData.builder().with(MODEL_PROPERTY,
+                new ModelSnapshot(safe(front), safe(back),
+                        pos == null ? BlockPos.ZERO : pos.immutable())).build();
+    }
+
+    private static BlockState safe(BlockState state) {
+        return state == null ? Blocks.AIR.defaultBlockState() : state;
+    }
+
+    public record ModelSnapshot(BlockState front, BlockState back,
+            BlockPos pos) {
     }
 
     public static boolean valid(Level level, BlockPos pos, BlockState state,

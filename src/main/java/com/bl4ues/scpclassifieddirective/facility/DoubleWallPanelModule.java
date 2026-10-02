@@ -42,6 +42,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -102,8 +103,7 @@ public final class DoubleWallPanelModule {
         private DoubleWallPanelBlock() {
             super(BlockBehaviour.Properties.of()
                     .strength(1.5F, 6.0F)
-                    .sound(SoundType.METAL)
-                    .noOcclusion());
+                    .sound(SoundType.METAL));
             registerDefaultState(stateDefinition.any()
                     .setValue(HorizontalDirectionalBlock.FACING,
                             Direction.NORTH));
@@ -131,7 +131,7 @@ public final class DoubleWallPanelModule {
 
         @Override
         public RenderShape getRenderShape(BlockState state) {
-            return RenderShape.ENTITYBLOCK_ANIMATED;
+            return RenderShape.MODEL;
         }
 
         @Override
@@ -347,6 +347,7 @@ public final class DoubleWallPanelModule {
         public void load(CompoundTag tag) {
             super.load(tag);
             loadCopycatData(tag);
+            refreshClientModelData();
         }
 
         @Override
@@ -364,6 +365,20 @@ public final class DoubleWallPanelModule {
                 ClientboundBlockEntityDataPacket packet) {
             CompoundTag tag = packet.getTag();
             if (tag != null) load(tag);
+        }
+
+        @Override
+        public @NotNull ModelData getModelData() {
+            return CopycatPanelMaterial.modelData(
+                    front, back, worldPosition);
+        }
+
+        private void refreshClientModelData() {
+            if (level == null || !level.isClientSide) return;
+            requestModelDataUpdate();
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state,
+                    Block.UPDATE_ALL);
         }
 
         @Override

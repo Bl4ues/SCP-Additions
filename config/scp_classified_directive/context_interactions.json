@@ -707,7 +707,7 @@
       "text": {
         "action": "Use",
         "nameMode": "manual",
-        "name": "Normal Door",
+        "name": "Facility Door",
         "showAction": true,
         "showName": false
       },
@@ -736,7 +736,7 @@
       "text": {
         "action": "Use",
         "nameMode": "manual",
-        "name": "Normal Door",
+        "name": "Facility Door",
         "showAction": true,
         "showName": false
       },

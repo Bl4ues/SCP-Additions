@@ -494,14 +494,27 @@ public final class ContextInteractionRegistry {
                 ScpClassifiedDirectiveMod.MODID, "wall_panel");
         count += addIntegratedRule(configuredIdentities,
                 new InteractionIdentity("block", wallId.toString(),
-                        WallPanelModule.REMOVE_INTERACTION),
+                        WallPanelModule.REMOVE_FRONT_INTERACTION),
                 new Rule(Kind.BLOCK, wallId, WallPanelModule.BLOCK.get(), null,
-                        WallPanelModule.REMOVE_INTERACTION, 2.25D, 120,
-                        "Remove", "", true, true, false,
-                        0.5D, 0.5D, 0.03125D,
+                        WallPanelModule.REMOVE_FRONT_INTERACTION,
+                        2.25D, 120, "Remove", "",
+                        true, true, false,
+                        0.5D, 0.5D, 0.0D,
                         0.0D, 0.0D, 0.0D,
                         RotationMode.HORIZONTAL_FACING, true, true,
                         "front", "hand", "config", screwdriver,
+                        1.0D, false));
+        count += addIntegratedRule(configuredIdentities,
+                new InteractionIdentity("block", wallId.toString(),
+                        WallPanelModule.REMOVE_BACK_INTERACTION),
+                new Rule(Kind.BLOCK, wallId, WallPanelModule.BLOCK.get(), null,
+                        WallPanelModule.REMOVE_BACK_INTERACTION,
+                        2.25D, 120, "Remove", "",
+                        true, true, false,
+                        0.5D, 0.5D, 1.0D / 16.0D,
+                        0.0D, 0.0D, 0.0D,
+                        RotationMode.HORIZONTAL_FACING, true, true,
+                        "back", "hand", "config", screwdriver,
                         1.0D, false));
 
         ResourceLocation doubleId = new ResourceLocation(
@@ -962,12 +975,19 @@ public final class ContextInteractionRegistry {
                     || !player.getOffhandItem().isEmpty())) {
                 return false;
             }
-            if (block == WallPanelModule.BLOCK.get()
-                    && WallPanelModule.REMOVE_INTERACTION.equals(
-                            interactionKey)) {
-                return level.getBlockEntity(pos)
-                        instanceof WallPanelModule.WallPanelBlockEntity panel
-                        && panel.hasMaterial();
+            if (block == WallPanelModule.BLOCK.get()) {
+                if (!(level.getBlockEntity(pos)
+                        instanceof WallPanelModule.WallPanelBlockEntity panel)) {
+                    return false;
+                }
+                if (WallPanelModule.REMOVE_FRONT_INTERACTION.equals(
+                        interactionKey)) {
+                    return panel.hasMaterial(WallPanelModule.Side.FRONT);
+                }
+                if (WallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                        interactionKey)) {
+                    return panel.hasMaterial(WallPanelModule.Side.BACK);
+                }
             }
             if (block == DoubleWallPanelModule.BLOCK.get()) {
                 if (!(level.getBlockEntity(pos)
@@ -1066,12 +1086,14 @@ public final class ContextInteractionRegistry {
                 BlockState state) {
             if (level != null && pos != null) {
                 if (block == WallPanelModule.BLOCK.get()
-                        && WallPanelModule.REMOVE_INTERACTION.equals(
-                                interactionKey)
                         && level.getBlockEntity(pos)
-                        instanceof WallPanelModule.WallPanelBlockEntity panel
-                        && panel.hasMaterial()) {
-                    ItemStack copied = panel.storedMaterialItem();
+                        instanceof WallPanelModule.WallPanelBlockEntity panel) {
+                    WallPanelModule.Side side =
+                            WallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                                    interactionKey)
+                                    ? WallPanelModule.Side.BACK
+                                    : WallPanelModule.Side.FRONT;
+                    ItemStack copied = panel.storedMaterialItem(side);
                     if (!copied.isEmpty()) return copied.getHoverName().getString();
                 }
                 if (block == DoubleWallPanelModule.BLOCK.get()

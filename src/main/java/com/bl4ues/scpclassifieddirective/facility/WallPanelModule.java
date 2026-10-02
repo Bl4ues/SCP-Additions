@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -63,8 +64,17 @@ import java.util.function.Consumer;
  * block while retaining its own geometry.
  */
 public final class WallPanelModule {
-    public static final String REMOVE_INTERACTION =
+    public enum Side {
+        FRONT,
+        BACK
+    }
+
+    /** Keep the original interaction id for the front face for config compatibility. */
+    public static final String REMOVE_FRONT_INTERACTION =
             "remove_wall_panel_material";
+    public static final String REMOVE_BACK_INTERACTION =
+            "remove_wall_panel_back";
+    public static final String REMOVE_INTERACTION = REMOVE_FRONT_INTERACTION;
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpClassifiedDirectiveMod.MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(
@@ -153,12 +163,16 @@ public final class WallPanelModule {
                 return InteractionResult.PASS;
             }
 
+            Side side = sideForInteraction(state, pos, player,
+                    hit.getDirection());
+            if (side == null) return InteractionResult.PASS;
+
             ItemStack held = player.getItemInHand(hand);
             if (held.is(UnifiedReaderItems.SCREWDRIVER.get())) {
-                if (!panel.hasMaterial()) return InteractionResult.PASS;
+                if (!panel.hasMaterial(side)) return InteractionResult.PASS;
                 if (level.isClientSide) return InteractionResult.SUCCESS;
 
-                ItemStack returned = panel.removeMaterial();
+                ItemStack returned = panel.removeMaterial(side);
                 if (!returned.isEmpty()
                         && !player.getInventory().add(returned)) {
                     player.drop(returned, false);
@@ -170,9 +184,8 @@ public final class WallPanelModule {
                 return InteractionResult.PASS;
             }
 
-            // A configured panel must be reset with the Screwdriver before a
-            // different material can be installed.
-            if (panel.hasMaterial()) {
+            // Each face owns its material independently.
+            if (panel.hasMaterial(side)) {
                 return level.isClientSide
                         ? InteractionResult.SUCCESS
                         : InteractionResult.CONSUME;
@@ -186,7 +199,7 @@ public final class WallPanelModule {
 
             ItemStack stored = held.copy();
             stored.setCount(1);
-            panel.setMaterial(material, stored);
+            panel.setMaterial(side, material, stored);
             if (!player.isCreative()) held.shrink(1);
 
             SoundType sound = material.getSoundType(level, pos, player);
@@ -195,6 +208,29 @@ public final class WallPanelModule {
                     (sound.getVolume() + 1.0F) / 2.0F,
                     sound.getPitch() * 0.8F);
             return InteractionResult.CONSUME;
+        }
+
+        public static Side sideForHit(BlockState state, Direction clickedFace) {
+            if (state == null || clickedFace == null
+                    || clickedFace.getAxis().isVertical()) return null;
+            Direction front = state.getValue(
+                    HorizontalDirectionalBlock.FACING);
+            if (clickedFace == front) return Side.FRONT;
+            if (clickedFace == front.getOpposite()) return Side.BACK;
+            return null;
+        }
+
+        public static Side sideForInteraction(BlockState state, BlockPos pos,
+                @Nullable Entity entity, Direction clickedFace) {
+            Side direct = sideForHit(state, clickedFace);
+            if (direct != null) return direct;
+            if (state == null || pos == null || entity == null) return null;
+            Direction front = state.getValue(
+                    HorizontalDirectionalBlock.FACING);
+            Vec3 delta = entity.position().subtract(Vec3.atCenterOf(pos));
+            double dot = delta.x * front.getStepX()
+                    + delta.z * front.getStepZ();
+            return dot >= 0.0D ? Side.FRONT : Side.BACK;
         }
 
         private static boolean isValidMaterial(Level level, BlockPos pos,
@@ -207,9 +243,14 @@ public final class WallPanelModule {
         public SoundType getSoundType(BlockState state, LevelReader level,
                 BlockPos pos, @Nullable Entity entity) {
             if (level.getBlockEntity(pos)
-                    instanceof WallPanelBlockEntity panel
-                    && panel.hasMaterial()) {
-                BlockState material = panel.materialState();
+                    instanceof WallPanelBlockEntity panel) {
+                Side side = sideForInteraction(state, pos, entity, null);
+                if (side == null) side = Side.FRONT;
+                BlockState material = panel.materialState(side);
+                if (material.isAir()) {
+                    material = panel.materialState(
+                            side == Side.FRONT ? Side.BACK : Side.FRONT);
+                }
                 if (!material.isAir()) {
                     return material.getSoundType(level, pos, entity);
                 }
@@ -223,13 +264,15 @@ public final class WallPanelModule {
             if (!level.isClientSide && !newState.is(this)
                     && level.getBlockEntity(pos)
                     instanceof WallPanelBlockEntity panel) {
-                ItemStack material = panel.storedMaterialItem();
-                if (!material.isEmpty()) {
-                    Containers.dropItemStack(level,
-                            pos.getX() + 0.5D,
-                            pos.getY() + 0.5D,
-                            pos.getZ() + 0.5D,
-                            material);
+                for (Side side : Side.values()) {
+                    ItemStack material = panel.storedMaterialItem(side);
+                    if (!material.isEmpty()) {
+                        Containers.dropItemStack(level,
+                                pos.getX() + 0.5D,
+                                pos.getY() + 0.5D,
+                                pos.getZ() + 0.5D,
+                                material);
+                    }
                 }
             }
             super.onRemove(state, level, pos, newState, moving);
@@ -272,53 +315,100 @@ public final class WallPanelModule {
 
     public static final class WallPanelBlockEntity extends BlockEntity
             implements GeoBlockEntity {
+        // Legacy keys are still read so existing test worlds keep their copied face.
         private static final String MATERIAL_BLOCK = "MaterialBlock";
         private static final String MATERIAL_ITEM = "MaterialItem";
+        private static final String FRONT_BLOCK = "FrontBlock";
+        private static final String FRONT_ITEM = "FrontItem";
+        private static final String BACK_BLOCK = "BackBlock";
+        private static final String BACK_ITEM = "BackItem";
 
         private final AnimatableInstanceCache animationCache =
                 GeckoLibUtil.createInstanceCache(this);
-        private BlockState materialState = Blocks.AIR.defaultBlockState();
-        private ItemStack materialItem = ItemStack.EMPTY;
+        private BlockState frontState = Blocks.AIR.defaultBlockState();
+        private BlockState backState = Blocks.AIR.defaultBlockState();
+        private ItemStack frontItem = ItemStack.EMPTY;
+        private ItemStack backItem = ItemStack.EMPTY;
 
         public WallPanelBlockEntity(BlockPos pos, BlockState state) {
             super(BLOCK_ENTITY.get(), pos, state);
         }
 
         public boolean hasMaterial() {
-            return !materialState.isAir() && !materialItem.isEmpty();
+            return hasMaterial(Side.FRONT) || hasMaterial(Side.BACK);
         }
 
+        public boolean hasMaterial(Side side) {
+            return !materialState(side).isAir()
+                    && !storedMaterialItem(side).isEmpty();
+        }
+
+        /** Front-face alias retained for compatibility with existing callers. */
         public BlockState materialState() {
-            return materialState;
+            return materialState(Side.FRONT);
         }
 
+        public BlockState materialState(Side side) {
+            return side == Side.BACK ? backState : frontState;
+        }
+
+        /** Front-face alias retained for compatibility with existing callers. */
         public ItemStack storedMaterialItem() {
-            return materialItem.copy();
+            return storedMaterialItem(Side.FRONT);
+        }
+
+        public ItemStack storedMaterialItem(Side side) {
+            return (side == Side.BACK ? backItem : frontItem).copy();
         }
 
         public CompoundTag saveCopycatData() {
             CompoundTag tag = new CompoundTag();
-            CopycatPanelMaterial.writeBlock(tag, MATERIAL_BLOCK, materialState);
+            CopycatPanelMaterial.writeBlock(tag, FRONT_BLOCK, frontState);
+            CopycatPanelMaterial.writeBlock(tag, BACK_BLOCK, backState);
             return tag;
         }
 
         public void loadCopycatData(CompoundTag tag) {
-            materialState = CopycatPanelMaterial.readBlock(tag, MATERIAL_BLOCK);
-            materialItem = CopycatPanelMaterial.item(materialState);
+            frontState = CopycatPanelMaterial.readBlock(tag, FRONT_BLOCK);
+            backState = CopycatPanelMaterial.readBlock(tag, BACK_BLOCK);
+            frontItem = CopycatPanelMaterial.item(frontState);
+            backItem = CopycatPanelMaterial.item(backState);
         }
 
+        /** Front-face alias retained for compatibility with existing callers. */
         public void setMaterial(BlockState state, ItemStack item) {
-            materialState = state == null
+            setMaterial(Side.FRONT, state, item);
+        }
+
+        public void setMaterial(Side side, BlockState state, ItemStack item) {
+            BlockState safeState = state == null
                     ? Blocks.AIR.defaultBlockState() : state;
-            materialItem = item == null ? ItemStack.EMPTY : item.copy();
-            if (!materialItem.isEmpty()) materialItem.setCount(1);
+            ItemStack safeItem = item == null ? ItemStack.EMPTY : item.copy();
+            if (!safeItem.isEmpty()) safeItem.setCount(1);
+            if (side == Side.BACK) {
+                backState = safeState;
+                backItem = safeItem;
+            } else {
+                frontState = safeState;
+                frontItem = safeItem;
+            }
             markUpdated();
         }
 
+        /** Front-face alias retained for compatibility with existing callers. */
         public ItemStack removeMaterial() {
-            ItemStack removed = materialItem.copy();
-            materialState = Blocks.AIR.defaultBlockState();
-            materialItem = ItemStack.EMPTY;
+            return removeMaterial(Side.FRONT);
+        }
+
+        public ItemStack removeMaterial(Side side) {
+            ItemStack removed = storedMaterialItem(side);
+            if (side == Side.BACK) {
+                backState = Blocks.AIR.defaultBlockState();
+                backItem = ItemStack.EMPTY;
+            } else {
+                frontState = Blocks.AIR.defaultBlockState();
+                frontItem = ItemStack.EMPTY;
+            }
             markUpdated();
             return removed;
         }
@@ -335,50 +425,67 @@ public final class WallPanelModule {
         @Override
         protected void saveAdditional(CompoundTag tag) {
             super.saveAdditional(tag);
-            if (!materialState.isAir()) {
+            saveSide(tag, FRONT_BLOCK, FRONT_ITEM, frontState, frontItem);
+            saveSide(tag, BACK_BLOCK, BACK_ITEM, backState, backItem);
+        }
+
+        private static void saveSide(CompoundTag tag, String blockKey,
+                String itemKey, BlockState state, ItemStack item) {
+            if (!state.isAir()) {
                 ResourceLocation id = ForgeRegistries.BLOCKS.getKey(
-                        materialState.getBlock());
-                if (id != null) {
-                    tag.putString(MATERIAL_BLOCK, id.toString());
-                }
+                        state.getBlock());
+                if (id != null) tag.putString(blockKey, id.toString());
             }
-            if (!materialItem.isEmpty()) {
-                tag.put(MATERIAL_ITEM,
-                        materialItem.save(new CompoundTag()));
+            if (!item.isEmpty()) {
+                tag.put(itemKey, item.save(new CompoundTag()));
             }
         }
 
         @Override
         public void load(CompoundTag tag) {
             super.load(tag);
-            materialState = Blocks.AIR.defaultBlockState();
-            materialItem = ItemStack.EMPTY;
+            frontState = Blocks.AIR.defaultBlockState();
+            backState = Blocks.AIR.defaultBlockState();
+            frontItem = ItemStack.EMPTY;
+            backItem = ItemStack.EMPTY;
 
-            if (tag.contains(MATERIAL_BLOCK)) {
-                try {
-                    ResourceLocation id =
-                            new ResourceLocation(tag.getString(MATERIAL_BLOCK));
-                    Block block = ForgeRegistries.BLOCKS.getValue(id);
-                    if (block != null && block != Blocks.AIR
-                            && block != BLOCK.get()) {
-                        materialState = block.defaultBlockState();
-                    }
-                } catch (RuntimeException ignored) {
-                    materialState = Blocks.AIR.defaultBlockState();
+            // Migrate the original one-sided Wall Panel into the front face.
+            if (tag.contains(FRONT_BLOCK) || tag.contains(FRONT_ITEM)) {
+                frontState = loadBlock(tag, FRONT_BLOCK);
+                frontItem = loadItem(tag, FRONT_ITEM, frontState);
+            } else if (tag.contains(MATERIAL_BLOCK) || tag.contains(MATERIAL_ITEM)) {
+                frontState = loadBlock(tag, MATERIAL_BLOCK);
+                frontItem = loadItem(tag, MATERIAL_ITEM, frontState);
+            }
+
+            backState = loadBlock(tag, BACK_BLOCK);
+            backItem = loadItem(tag, BACK_ITEM, backState);
+        }
+
+        private static BlockState loadBlock(CompoundTag tag, String key) {
+            if (!tag.contains(key)) return Blocks.AIR.defaultBlockState();
+            try {
+                ResourceLocation id = new ResourceLocation(tag.getString(key));
+                Block block = ForgeRegistries.BLOCKS.getValue(id);
+                if (block != null && block != Blocks.AIR
+                        && block != BLOCK.get()
+                        && block != DoubleWallPanelModule.BLOCK.get()) {
+                    return block.defaultBlockState();
                 }
+            } catch (RuntimeException ignored) {
             }
+            return Blocks.AIR.defaultBlockState();
+        }
 
-            if (tag.contains(MATERIAL_ITEM)) {
-                materialItem = ItemStack.of(
-                        tag.getCompound(MATERIAL_ITEM));
-            }
-            if (materialState.isAir()) {
-                materialItem = ItemStack.EMPTY;
-            } else if (materialItem.isEmpty()) {
-                materialItem = new ItemStack(materialState.getBlock());
-            } else {
-                materialItem.setCount(1);
-            }
+        private static ItemStack loadItem(CompoundTag tag, String key,
+                BlockState state) {
+            if (state.isAir()) return ItemStack.EMPTY;
+            ItemStack item = tag.contains(key)
+                    ? ItemStack.of(tag.getCompound(key))
+                    : new ItemStack(state.getBlock());
+            if (item.isEmpty()) item = new ItemStack(state.getBlock());
+            item.setCount(1);
+            return item;
         }
 
         @Override

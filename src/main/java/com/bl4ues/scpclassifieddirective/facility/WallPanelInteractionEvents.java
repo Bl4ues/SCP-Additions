@@ -39,13 +39,18 @@ public final class WallPanelInteractionEvents {
         ItemStack returned = ItemStack.EMPTY;
 
         if (state.is(WallPanelModule.BLOCK.get())) {
-            if (!(event.getLevel().getBlockEntity(event.getPos())
-                    instanceof WallPanelModule.WallPanelBlockEntity panel)
-                    || !panel.hasMaterial()) {
+            WallPanelModule.Side side =
+                    WallPanelModule.WallPanelBlock.sideForInteraction(
+                            state, event.getPos(), event.getEntity(),
+                            event.getHitVec().getDirection());
+            if (side == null
+                    || !(event.getLevel().getBlockEntity(event.getPos())
+                        instanceof WallPanelModule.WallPanelBlockEntity panel)
+                    || !panel.hasMaterial(side)) {
                 return;
             }
             if (!event.getLevel().isClientSide) {
-                returned = panel.removeMaterial();
+                returned = panel.removeMaterial(side);
             }
         } else if (state.is(DoubleWallPanelModule.BLOCK.get())) {
             DoubleWallPanelModule.Side side =

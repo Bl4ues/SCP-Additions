@@ -223,14 +223,21 @@ public class ContextInteractPacket {
         }
 
         if (state.is(WallPanelModule.BLOCK.get())
-                && WallPanelModule.REMOVE_INTERACTION.equals(
-                        rule.interactionKey())
                 && level.getBlockEntity(pos)
-                instanceof WallPanelModule.WallPanelBlockEntity panel
-                && panel.hasMaterial()) {
-            giveOrDrop(player, panel.removeMaterial());
-            player.swing(hand, true);
-            return;
+                instanceof WallPanelModule.WallPanelBlockEntity panel) {
+            WallPanelModule.Side side = null;
+            if (WallPanelModule.REMOVE_FRONT_INTERACTION.equals(
+                    rule.interactionKey())) {
+                side = WallPanelModule.Side.FRONT;
+            } else if (WallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                    rule.interactionKey())) {
+                side = WallPanelModule.Side.BACK;
+            }
+            if (side != null && panel.hasMaterial(side)) {
+                giveOrDrop(player, panel.removeMaterial(side));
+                player.swing(hand, true);
+                return;
+            }
         }
 
         if (state.is(DoubleWallPanelModule.BLOCK.get())

@@ -6,25 +6,17 @@ import com.bl4ues.scpclassifieddirective.facility.WallPanelModule.WallPanelBlock
 import com.bl4ues.scpclassifieddirective.facility.WallPanelModule.WallPanelItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
@@ -80,16 +72,6 @@ public final class WallPanelClient {
             return ANIMATION;
         }
 
-        @Override
-        public void setCustomAnimations(WallPanelBlockEntity animatable,
-                long instanceId,
-                AnimationState<WallPanelBlockEntity> state) {
-            super.setCustomAnimations(animatable, instanceId, state);
-            CoreGeoBone frame = getAnimationProcessor().getBone("frame");
-            if (frame != null) {
-                frame.setHidden(animatable.hasMaterial());
-            }
-        }
     }
 
     public static final class BlockRenderer
@@ -103,15 +85,24 @@ public final class WallPanelClient {
                         RenderType renderType, MultiBufferSource bufferSource,
                         VertexConsumer buffer, float partialTick,
                         int packedLight, int packedOverlay) {
-                    if (!panel.hasMaterial()) return;
-
-                    CopycatPanelRenderUtil.render(
-                            panel.materialState(), panel.getLevel(),
-                            panel.getBlockPos(),
-                            panel.getBlockState().getValue(
-                                    HorizontalDirectionalBlock.FACING),
-                            poseStack, bufferSource, packedOverlay,
-                            0.0D, 1.0D / 16.0D, null);
+                    Direction facing = panel.getBlockState().getValue(
+                            HorizontalDirectionalBlock.FACING);
+                    if (panel.hasMaterial(WallPanelModule.Side.FRONT)) {
+                        CopycatPanelRenderUtil.renderFace(
+                                panel.materialState(WallPanelModule.Side.FRONT),
+                                panel.getLevel(), panel.getBlockPos(),
+                                facing, poseStack, bufferSource,
+                                packedOverlay, Direction.NORTH,
+                                -1.0D / 1024.0D);
+                    }
+                    if (panel.hasMaterial(WallPanelModule.Side.BACK)) {
+                        CopycatPanelRenderUtil.renderFace(
+                                panel.materialState(WallPanelModule.Side.BACK),
+                                panel.getLevel(), panel.getBlockPos(),
+                                facing, poseStack, bufferSource,
+                                packedOverlay, Direction.SOUTH,
+                                1.0D / 16.0D + 1.0D / 1024.0D);
+                    }
                 }
             });
         }

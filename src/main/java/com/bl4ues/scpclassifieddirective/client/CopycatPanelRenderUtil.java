@@ -67,6 +67,90 @@ final class CopycatPanelRenderUtil {
         }
     }
 
+    static void renderFace(BlockState state, Level level, BlockPos pos,
+            Direction facing, PoseStack poseStack,
+            MultiBufferSource bufferSource, int packedOverlay,
+            Direction onlyLocalFace, double localZ) {
+        if (state == null || state.isAir() || level == null
+                || onlyLocalFace == null) return;
+
+        Minecraft minecraft = Minecraft.getInstance();
+        BakedModel model = minecraft.getBlockRenderer().getBlockModel(state);
+        ModelData data = model.getModelData(level, pos, state, ModelData.EMPTY);
+        long seed = state.getSeed(pos);
+        RandomSource typeRandom = RandomSource.create(seed);
+        List<RenderType> renderTypes = new ArrayList<>(
+                model.getRenderTypes(state, typeRandom, data).asList());
+        if (renderTypes.isEmpty()) {
+            renderTypes.add(ItemBlockRenderTypes.getChunkRenderType(state));
+        }
+
+        poseStack.pushPose();
+        try {
+            poseStack.translate(-0.5D, 0.0D, -0.5D);
+            for (RenderType renderType : renderTypes) {
+                VertexConsumer consumer = bufferSource.getBuffer(renderType);
+                for (Direction sourceSide : new Direction[]{onlyLocalFace, null}) {
+                    RandomSource random = RandomSource.create(seed);
+                    for (BakedQuad quad : model.getQuads(state, sourceSide,
+                            random, data, renderType)) {
+                        if (quad.getDirection() != onlyLocalFace) continue;
+                        emitFaceQuad(minecraft, state, level, pos, facing,
+                                poseStack.last(), consumer, quad,
+                                packedOverlay, localZ);
+                    }
+                }
+            }
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    private static void emitFaceQuad(Minecraft minecraft, BlockState state,
+            Level level, BlockPos pos, Direction facing, PoseStack.Pose pose,
+            VertexConsumer consumer, BakedQuad quad, int packedOverlay,
+            double localZ) {
+        int[] vertices = quad.getVertices();
+        int stride = vertices.length / 4;
+        int tint = quad.isTinted()
+                ? minecraft.getBlockColors().getColor(
+                        state, level, pos, quad.getTintIndex())
+                : 0xFFFFFF;
+        if (tint < 0) tint = 0xFFFFFF;
+
+        Direction localFace = quad.getDirection();
+        Direction worldFace = rotateLocalDirection(localFace, facing);
+        int light = faceLight(level, pos, worldFace);
+        float shade = level.getShade(worldFace, quad.isShade());
+        int red = Math.max(0, Math.min(255,
+                Math.round(((tint >> 16) & 0xFF) * shade)));
+        int green = Math.max(0, Math.min(255,
+                Math.round(((tint >> 8) & 0xFF) * shade)));
+        int blue = Math.max(0, Math.min(255,
+                Math.round((tint & 0xFF) * shade)));
+
+        for (int vertex = 0; vertex < 4; vertex++) {
+            int offset = vertex * stride;
+            float x = Float.intBitsToFloat(vertices[offset]);
+            float y = Float.intBitsToFloat(vertices[offset + 1]);
+            float u = stride > 4
+                    ? Float.intBitsToFloat(vertices[offset + 4]) : 0.0F;
+            float v = stride > 5
+                    ? Float.intBitsToFloat(vertices[offset + 5]) : 0.0F;
+
+            consumer.vertex(pose.pose(), x, y, (float) localZ)
+                    .color(red, green, blue, 255)
+                    .uv(u, v)
+                    .overlayCoords(packedOverlay)
+                    .uv2(light)
+                    .normal(pose.normal(),
+                            localFace.getStepX(),
+                            localFace.getStepY(),
+                            localFace.getStepZ())
+                    .endVertex();
+        }
+    }
+
     private static void emitQuad(Minecraft minecraft, BlockState state,
             Level level, BlockPos pos, Direction facing, PoseStack.Pose pose,
             VertexConsumer consumer, BakedQuad quad, int packedOverlay,

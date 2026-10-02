@@ -36,7 +36,6 @@ public final class DoubleWallPanelClient {
             "textures/block/wall_panel.png");
     private static final ResourceLocation ANIMATION = id(
             "animations/block/wall_panel.animation.json");
-    private static final double LATERAL_INSET = 1.0D / 1024.0D;
 
     private DoubleWallPanelClient() {
     }
@@ -117,7 +116,7 @@ public final class DoubleWallPanelClient {
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
                                 packedOverlay, 0.0D, 0.5D,
-                                Direction.SOUTH, 1.0F, LATERAL_INSET);
+                                Direction.SOUTH, 1.0F);
                     }
                     if (panel.hasMaterial(Side.BACK)) {
                         CopycatPanelRenderUtil.render(
@@ -125,7 +124,7 @@ public final class DoubleWallPanelClient {
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
                                 packedOverlay, 0.5D, 1.0D,
-                                Direction.NORTH, 0.82F, LATERAL_INSET);
+                                Direction.NORTH, 0.82F);
                     }
                 }
             });
@@ -149,8 +148,7 @@ public final class DoubleWallPanelClient {
                     if (front != null) front.setHidden(true);
                     if (rear != null) rear.setHidden(false);
                     try {
-                        RenderType tinted = RenderType.entityCutoutNoCull(
-                                TEXTURE);
+                        RenderType tinted = RenderType.entityCutout(TEXTURE);
                         getRenderer().reRender(bakedModel, poseStack,
                                 bufferSource, panel, tinted,
                                 bufferSource.getBuffer(tinted), partialTick,
@@ -170,7 +168,12 @@ public final class DoubleWallPanelClient {
         public RenderType getRenderType(DoubleWallPanelBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityCutoutNoCull(texture);
+            /*
+             * The physical block stays exactly 16x16x16. Backface culling is
+             * what prevents the outside West/East/Up/Down faces from being
+             * visible when the camera clips inside an empty half.
+             */
+            return RenderType.entityCutout(texture);
         }
     }
 

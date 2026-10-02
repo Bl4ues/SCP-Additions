@@ -5,6 +5,7 @@ import com.bl4ues.scpclassifieddirective.facility.WallPanelModule;
 import com.bl4ues.scpclassifieddirective.facility.WallPanelModule.WallPanelBlockEntity;
 import com.bl4ues.scpclassifieddirective.facility.WallPanelModule.WallPanelItem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -15,7 +16,11 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
 
@@ -66,39 +71,51 @@ public final class WallPanelClient {
                 WallPanelBlockEntity animatable) {
             return ANIMATION;
         }
+
+        @Override
+        public void setCustomAnimations(WallPanelBlockEntity animatable,
+                long instanceId,
+                AnimationState<WallPanelBlockEntity> state) {
+            super.setCustomAnimations(animatable, instanceId, state);
+            CoreGeoBone frame = getAnimationProcessor().getBone("frame");
+            if (frame != null) {
+                frame.setHidden(animatable.hasMaterial());
+            }
+        }
     }
 
     public static final class BlockRenderer
             extends GeoBlockRenderer<WallPanelBlockEntity> {
         public BlockRenderer(BlockEntityRendererProvider.Context context) {
             super(new BlockModel());
-        }
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        WallPanelBlockEntity panel, BakedGeoModel bakedModel,
+                        RenderType renderType, MultiBufferSource bufferSource,
+                        VertexConsumer buffer, float partialTick,
+                        int packedLight, int packedOverlay) {
+                    if (!panel.hasMaterial()) return;
 
-        @Override
-        public void render(WallPanelBlockEntity panel, float partialTick,
-                PoseStack poseStack, MultiBufferSource bufferSource,
-                int packedLight, int packedOverlay) {
-            if (!panel.hasMaterial()) {
-                super.render(panel, partialTick, poseStack, bufferSource,
-                        packedLight, packedOverlay);
-                return;
-            }
-
-            BlockState copied = panel.materialState();
-            poseStack.pushPose();
-            try {
-                // Match GeoBlockRenderer exactly: rotate around block centre,
-                // then compress a normal full block into the authored 1px slab.
-                poseStack.translate(0.5D, 0.0D, 0.5D);
-                rotateBlock(getFacing(panel), poseStack);
-                poseStack.translate(-0.5D, 0.0D, -0.5D);
-                poseStack.scale(1.0F, 1.0F, 1.0F / 16.0F);
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(
-                        copied, poseStack, bufferSource,
-                        packedLight, packedOverlay);
-            } finally {
-                poseStack.popPose();
-            }
+                    poseStack.pushPose();
+                    try {
+                        /*
+                         * GeoBlockRenderer has already translated to the block
+                         * centre and applied FACING. Return to the north-local
+                         * block corner, then compress the copied full-block
+                         * model into the authored one-pixel panel depth.
+                         */
+                        poseStack.translate(-0.5D, 0.0D, -0.5D);
+                        poseStack.scale(1.0F, 1.0F, 1.0F / 16.0F);
+                        Minecraft.getInstance().getBlockRenderer()
+                                .renderSingleBlock(panel.materialState(),
+                                        poseStack, bufferSource,
+                                        packedLight, packedOverlay);
+                    } finally {
+                        poseStack.popPose();
+                    }
+                }
+            });
         }
 
         @Override

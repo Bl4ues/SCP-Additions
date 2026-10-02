@@ -36,6 +36,7 @@ public final class DoubleWallPanelClient {
             "textures/block/wall_panel.png");
     private static final ResourceLocation ANIMATION = id(
             "animations/block/wall_panel.animation.json");
+    private static final double LATERAL_INSET = 1.0D / 1024.0D;
 
     private DoubleWallPanelClient() {
     }
@@ -115,18 +116,16 @@ public final class DoubleWallPanelClient {
                                 panel.material(Side.FRONT),
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
-                                packedOverlay, 0.0D,
-                                0.5D - 1.0D / 2048.0D,
-                                Direction.SOUTH, 1.0F);
+                                packedOverlay, 0.0D, 0.5D,
+                                Direction.SOUTH, 1.0F, LATERAL_INSET);
                     }
                     if (panel.hasMaterial(Side.BACK)) {
                         CopycatPanelRenderUtil.render(
                                 panel.material(Side.BACK),
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
-                                packedOverlay,
-                                0.5D + 1.0D / 2048.0D, 1.0D,
-                                Direction.NORTH, 0.82F);
+                                packedOverlay, 0.5D, 1.0D,
+                                Direction.NORTH, 0.82F, LATERAL_INSET);
                     }
                 }
             });

@@ -1,0 +1,66 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"closed": {
+			"loop": true,
+			"bones": {
+				"door": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"handle": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"frame": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
+				}
+			}
+		},
+		"opening": {
+			"animation_length": 1.5,
+			"bones": {
+				"door": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"1.5": [0, 100, 0]
+					}
+				},
+				"handle": {
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"open": {
+			"loop": true,
+			"bones": {
+				"door": {
+					"rotation": {
+						"vector": [0, 100, 0],
+						"easing": "easeOutCubic"
+					}
+				}
+			}
+		},
+		"closing": {
+			"animation_length": 1.0417,
+			"bones": {
+				"door": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 100, 0],
+							"easing": "easeOutCubic"
+						},
+						"1.0417": {
+							"vector": [0, 0, 0]
+						}
+					}
+				}
+			}
+		}
+	}
+}

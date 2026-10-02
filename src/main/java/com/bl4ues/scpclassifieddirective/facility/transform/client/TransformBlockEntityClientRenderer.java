@@ -1,6 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.CeilingCameraModule;
 import com.bl4ues.scpclassifieddirective.facility.surveillance.SurveillanceCameraPlaceholderModule;
@@ -150,11 +151,13 @@ public final class TransformBlockEntityClientRenderer {
         for (Map.Entry<ConstructionSurface.SurfaceOverlaySlot,
                 ConstructionSurface.SurfaceAttachment> entry
                 : surface.overlays().entrySet()) {
-            // Overlay BlockEntities historically have their own adapters.
-            // Cameras are the deliberate exception introduced here: they need
-            // the generic Surface frame because their physical lens and feed
-            // share that exact transform.
-            if (!TransformCameraGeometry.isCamera(entry.getValue().state())) {
+            // Most overlay BlockEntities have dedicated adapters. Cameras and
+            // rebuilt Gecko doors deliberately use this generic rigid Surface
+            // frame: neither owns vanilla-world gameplay state here, and both
+            // must visually inherit the exact authored local transform.
+            BlockState overlayState = entry.getValue().state();
+            if (!TransformCameraGeometry.isCamera(overlayState)
+                    && !FacilityGeckoDoorModule.isDoor(overlayState)) {
                 continue;
             }
             renderSurfaceAttachment(minecraft, event, pose, buffers, camera,

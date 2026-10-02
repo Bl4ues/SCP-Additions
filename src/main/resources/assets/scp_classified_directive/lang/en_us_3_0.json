@@ -218,5 +218,8 @@
   "block.scp_classified_directive.outlet": "Outlet",
   "block.scp_classified_directive.wall_panel": "Wall Panel",
   "tooltip.scp_classified_directive.wall_panel.copy": "Copies the texture and sounds of a solid block",
-  "tooltip.scp_classified_directive.wall_panel.reset": "Use a Screwdriver to remove the copied block"
+  "tooltip.scp_classified_directive.wall_panel.reset": "Use a Screwdriver to remove the copied block",
+  "block.scp_classified_directive.double_wall_panel": "Double Wall Panel",
+  "tooltip.scp_classified_directive.double_wall_panel.copy": "Copies a different solid block on each side",
+  "tooltip.scp_classified_directive.double_wall_panel.reset": "Use a Screwdriver on a face to remove its copied block"
 }

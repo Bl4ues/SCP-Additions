@@ -15,6 +15,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
@@ -66,7 +67,7 @@ public final class FacilityGeckoDoorClient {
         } + ".png");
     }
 
-    private abstract static class DoorModel<T>
+    private abstract static class DoorModel<T extends GeoAnimatable>
             extends GeoModel<T> {
         private Family activeFamily;
 
@@ -97,7 +98,7 @@ public final class FacilityGeckoDoorClient {
             prepareBase();
         }
 
-        private void prepareBase() {
+        final void prepareBase() {
             setHidden("door_leaf", false);
             setHidden("body", false);
             setHidden("handle", false);
@@ -105,7 +106,7 @@ public final class FacilityGeckoDoorClient {
             setHidden("workshop_panel", activeFamily == Family.WORKSHOP);
         }
 
-        private void prepareWorkshopPanel() {
+        final void prepareWorkshopPanel() {
             if (activeFamily != Family.WORKSHOP) return;
             setHidden("door_leaf", true);
             setHidden("body", true);

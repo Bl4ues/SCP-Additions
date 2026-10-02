@@ -29,6 +29,8 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityPropPartBlock;
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
+import com.bl4ues.scpclassifieddirective.facility.WallPanelModule;
+import com.bl4ues.scpclassifieddirective.facility.DoubleWallPanelModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorGeometry;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
@@ -196,6 +198,7 @@ public final class ContextInteractionRegistry {
                 configuredIdentities);
         integratedCount += registerScp714ContainmentStandRules(
                 configuredIdentities);
+        integratedCount += registerCopycatPanelRules(configuredIdentities);
         integratedCount += registerNativeScrewdriverRules(configuredIdentities);
         loaded = true;
         ScpClassifiedDirectiveMod.LOGGER.info(
@@ -479,6 +482,57 @@ public final class ContextInteractionRegistry {
         if (isConfiguredIdentity(configuredIdentities, identity)) return 0;
         addRule(rule);
         return 1;
+    }
+
+    private static int registerCopycatPanelRules(
+            Set<InteractionIdentity> configuredIdentities) {
+        ResourceLocation screwdriver = new ResourceLocation(
+                ScpClassifiedDirectiveMod.MODID, "screwdriver");
+        int count = 0;
+
+        ResourceLocation wallId = new ResourceLocation(
+                ScpClassifiedDirectiveMod.MODID, "wall_panel");
+        count += addIntegratedRule(configuredIdentities,
+                new InteractionIdentity("block", wallId.toString(),
+                        WallPanelModule.REMOVE_INTERACTION),
+                new Rule(Kind.BLOCK, wallId, WallPanelModule.BLOCK.get(), null,
+                        WallPanelModule.REMOVE_INTERACTION, 2.25D, 120,
+                        "Remove", "", true, true, false,
+                        0.5D, 0.5D, 0.03125D,
+                        0.0D, 0.0D, 0.0D,
+                        RotationMode.HORIZONTAL_FACING, true, true,
+                        "front", "hand", "config", screwdriver,
+                        1.0D, false));
+
+        ResourceLocation doubleId = new ResourceLocation(
+                ScpClassifiedDirectiveMod.MODID, "double_wall_panel");
+        count += addIntegratedRule(configuredIdentities,
+                new InteractionIdentity("block", doubleId.toString(),
+                        DoubleWallPanelModule.REMOVE_FRONT_INTERACTION),
+                new Rule(Kind.BLOCK, doubleId,
+                        DoubleWallPanelModule.BLOCK.get(), null,
+                        DoubleWallPanelModule.REMOVE_FRONT_INTERACTION,
+                        2.25D, 121, "Remove", "",
+                        true, true, false,
+                        0.5D, 0.5D, 0.03125D,
+                        0.0D, 0.0D, 0.0D,
+                        RotationMode.HORIZONTAL_FACING, true, true,
+                        "front", "hand", "config", screwdriver,
+                        1.0D, false));
+        count += addIntegratedRule(configuredIdentities,
+                new InteractionIdentity("block", doubleId.toString(),
+                        DoubleWallPanelModule.REMOVE_BACK_INTERACTION),
+                new Rule(Kind.BLOCK, doubleId,
+                        DoubleWallPanelModule.BLOCK.get(), null,
+                        DoubleWallPanelModule.REMOVE_BACK_INTERACTION,
+                        2.25D, 121, "Remove", "",
+                        true, true, false,
+                        0.5D, 0.5D, 0.96875D,
+                        0.0D, 0.0D, 0.0D,
+                        RotationMode.HORIZONTAL_FACING, true, true,
+                        "back", "hand", "config", screwdriver,
+                        1.0D, false));
+        return count;
     }
 
     private static int registerNativeScrewdriverRules(
@@ -908,6 +962,27 @@ public final class ContextInteractionRegistry {
                     || !player.getOffhandItem().isEmpty())) {
                 return false;
             }
+            if (block == WallPanelModule.BLOCK.get()
+                    && WallPanelModule.REMOVE_INTERACTION.equals(
+                            interactionKey)) {
+                return level.getBlockEntity(pos)
+                        instanceof WallPanelModule.WallPanelBlockEntity panel
+                        && panel.hasMaterial();
+            }
+            if (block == DoubleWallPanelModule.BLOCK.get()) {
+                if (!(level.getBlockEntity(pos)
+                        instanceof DoubleWallPanelModule.DoubleWallPanelBlockEntity panel)) {
+                    return false;
+                }
+                if (DoubleWallPanelModule.REMOVE_FRONT_INTERACTION.equals(
+                        interactionKey)) {
+                    return panel.hasMaterial(DoubleWallPanelModule.Side.FRONT);
+                }
+                if (DoubleWallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                        interactionKey)) {
+                    return panel.hasMaterial(DoubleWallPanelModule.Side.BACK);
+                }
+            }
             if (block != null && "document_holder".equals(id.getPath())
                     && ScpClassifiedDirectiveMod.MODID.equals(id.getNamespace())) {
                 if (!(level.getBlockEntity(pos)
@@ -985,6 +1060,33 @@ public final class ContextInteractionRegistry {
                 return carriage.canTravel(direction);
             }
             return true;
+        }
+
+        public String blockName(Level level, BlockPos pos,
+                BlockState state) {
+            if (level != null && pos != null) {
+                if (block == WallPanelModule.BLOCK.get()
+                        && WallPanelModule.REMOVE_INTERACTION.equals(
+                                interactionKey)
+                        && level.getBlockEntity(pos)
+                        instanceof WallPanelModule.WallPanelBlockEntity panel
+                        && panel.hasMaterial()) {
+                    ItemStack copied = panel.storedMaterialItem();
+                    if (!copied.isEmpty()) return copied.getHoverName().getString();
+                }
+                if (block == DoubleWallPanelModule.BLOCK.get()
+                        && level.getBlockEntity(pos)
+                        instanceof DoubleWallPanelModule.DoubleWallPanelBlockEntity panel) {
+                    DoubleWallPanelModule.Side side =
+                            DoubleWallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                                    interactionKey)
+                                    ? DoubleWallPanelModule.Side.BACK
+                                    : DoubleWallPanelModule.Side.FRONT;
+                    ItemStack copied = panel.storedMaterialItem(side);
+                    if (!copied.isEmpty()) return copied.getHoverName().getString();
+                }
+            }
+            return blockName(state);
         }
 
         public String blockName(BlockState state) {

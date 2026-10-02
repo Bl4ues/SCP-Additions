@@ -294,22 +294,29 @@ public final class CopycatPanelBakedModels {
     private static BakedQuad transformDoubleHalf(BakedQuad source,
             BlockState material, BlockPos pos, Direction facing,
             float minZ, float maxZ) {
-        int[] vertices = source.getVertices().clone();
-        int stride = vertices.length / 4;
+        int[] original = source.getVertices();
+        int stride = original.length / 4;
+        int[] vertices = original.clone();
         Direction face = source.getDirection();
+
+        /*
+         * A Double Wall Panel half must show the corresponding half of the
+         * copied block texture, not the whole 16x16 face squeezed into 8x16.
+         * Clip the original quad in local Z and interpolate the existing UVs
+         * at the cut edge. This preserves rotated/flipped UV layouts too.
+         */
+        if (face.getAxis() != Direction.Axis.Z) {
+            clipQuadToDepthHalf(vertices, original, stride, face,
+                    minZ, maxZ);
+        }
 
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
             float localX = Float.intBitsToFloat(vertices[offset]);
             float localZ = Float.intBitsToFloat(vertices[offset + 2]);
-            float mappedZ = minZ + localZ * (maxZ - minZ);
-            float[] uv = croppedUv(vertices, stride, vertex, face,
-                    minZ, maxZ);
-            float[] rotated = rotateLocalPosition(localX, mappedZ, facing);
+            float[] rotated = rotateLocalPosition(localX, localZ, facing);
             vertices[offset] = Float.floatToRawIntBits(rotated[0]);
             vertices[offset + 2] = Float.floatToRawIntBits(rotated[1]);
-            vertices[offset + 4] = Float.floatToRawIntBits(uv[0]);
-            vertices[offset + 5] = Float.floatToRawIntBits(uv[1]);
             rotatePackedNormal(vertices, offset, facing);
         }
 
@@ -319,6 +326,86 @@ public final class CopycatPanelBakedModels {
                 rotateLocalDirection(face, facing),
                 source.getSprite(), source.isShade(),
                 source.hasAmbientOcclusion());
+    }
+
+    private static void clipQuadToDepthHalf(int[] target, int[] source,
+            int stride, Direction face, float minZ, float maxZ) {
+        float sourceMinZ = Float.POSITIVE_INFINITY;
+        float sourceMaxZ = Float.NEGATIVE_INFINITY;
+        for (int vertex = 0; vertex < 4; vertex++) {
+            float z = Float.intBitsToFloat(source[vertex * stride + 2]);
+            sourceMinZ = Math.min(sourceMinZ, z);
+            sourceMaxZ = Math.max(sourceMaxZ, z);
+        }
+        if (sourceMaxZ - sourceMinZ < 1.0E-6F) return;
+
+        float clipMin = sourceMinZ
+                + (sourceMaxZ - sourceMinZ) * minZ;
+        float clipMax = sourceMinZ
+                + (sourceMaxZ - sourceMinZ) * maxZ;
+
+        for (int vertex = 0; vertex < 4; vertex++) {
+            int offset = vertex * stride;
+            float z = Float.intBitsToFloat(source[offset + 2]);
+            float clipZ = Math.max(clipMin, Math.min(clipMax, z));
+            if (Math.abs(clipZ - z) < 1.0E-6F) continue;
+
+            int partner = depthPartner(source, stride, face, vertex, z);
+            if (partner < 0) continue;
+
+            int partnerOffset = partner * stride;
+            float partnerZ = Float.intBitsToFloat(
+                    source[partnerOffset + 2]);
+            if (Math.abs(partnerZ - z) < 1.0E-6F) continue;
+
+            float t = (clipZ - z) / (partnerZ - z);
+            t = Math.max(0.0F, Math.min(1.0F, t));
+
+            interpolateFloatAttribute(target, source, offset,
+                    partnerOffset, 0, t);
+            interpolateFloatAttribute(target, source, offset,
+                    partnerOffset, 1, t);
+            target[offset + 2] = Float.floatToRawIntBits(clipZ);
+            interpolateFloatAttribute(target, source, offset,
+                    partnerOffset, 4, t);
+            interpolateFloatAttribute(target, source, offset,
+                    partnerOffset, 5, t);
+        }
+    }
+
+    private static int depthPartner(int[] vertices, int stride,
+            Direction face, int vertex, float z) {
+        int offset = vertex * stride;
+        int fixedAttribute = face.getAxis() == Direction.Axis.X ? 1 : 0;
+        float fixed = Float.intBitsToFloat(
+                vertices[offset + fixedAttribute]);
+
+        int best = -1;
+        float bestScore = Float.POSITIVE_INFINITY;
+        for (int candidate = 0; candidate < 4; candidate++) {
+            if (candidate == vertex) continue;
+            int candidateOffset = candidate * stride;
+            float candidateZ = Float.intBitsToFloat(
+                    vertices[candidateOffset + 2]);
+            if (Math.abs(candidateZ - z) < 1.0E-6F) continue;
+
+            float candidateFixed = Float.intBitsToFloat(
+                    vertices[candidateOffset + fixedAttribute]);
+            float score = Math.abs(candidateFixed - fixed);
+            if (score < bestScore) {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    private static void interpolateFloatAttribute(int[] target, int[] source,
+            int offset, int partnerOffset, int attribute, float t) {
+        float a = Float.intBitsToFloat(source[offset + attribute]);
+        float b = Float.intBitsToFloat(source[partnerOffset + attribute]);
+        target[offset + attribute] = Float.floatToRawIntBits(
+                a + (b - a) * t);
     }
 
     private static int applySourceTint(int[] vertices, int stride,

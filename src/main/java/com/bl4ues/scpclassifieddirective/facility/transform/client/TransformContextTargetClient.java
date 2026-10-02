@@ -1,5 +1,7 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformMath;
@@ -199,6 +201,64 @@ public final class TransformContextTargetClient {
                         : target.normalSign(),
                 target.kind() == Kind.SURFACE_OVERLAY,
                 vanillaLocal.x, vanillaLocal.y, vanillaLocal.z);
+    }
+
+    /**
+     * Exact world-space aim test for transformed Gecko door handles. This uses
+     * the same rigid group/Surface frame as rendering and prompt anchors, then
+     * delegates the final cube test to the shared authored handle geometry.
+     */
+    public static boolean rayHitsDoorHandle(Target target, Vec3 worldStart,
+            Vec3 worldEnd) {
+        if (target == null || worldStart == null || worldEnd == null
+                || !FacilityGeckoDoorModule.isDoor(target.state())) {
+            return false;
+        }
+
+        if (target.kind() == Kind.GROUP) {
+            TransformGroup group =
+                    TransformConstructionClientState.group(target.groupId());
+            if (group == null || target.groupCell() == null) return false;
+            Vec3 start = TransformMath.worldToLocal(group.origin(), worldStart,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            Vec3 end = TransformMath.worldToLocal(group.origin(), worldEnd,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            TransformGroup.GridPos cell = target.groupCell();
+            Vec3 offset = new Vec3(cell.x() - 0.5D,
+                    cell.y() - 0.5D, cell.z() - 0.5D);
+            return FacilityGeckoDoorGeometry.rayHitsHandle(target.state(),
+                    start.subtract(offset), end.subtract(offset));
+        }
+
+        ConstructionSurface surface =
+                TransformConstructionClientState.surface(target.surfaceId());
+        if (surface == null || target.surfaceSlot() == null) return false;
+        boolean overlay = target.kind() == Kind.SURFACE_OVERLAY;
+        int side = overlay
+                ? (target.normalSign() < 0 ? -1 : 1)
+                : TransformSurfaceGeometry.MAIN_SIDE;
+        double u = (target.surfaceSlot().column() + 0.5D)
+                / surface.columns();
+        double v = (target.surfaceSlot().row() + 0.5D)
+                / surface.rows();
+        Vec3 normal = surface.gridNormal(u, v).scale(side);
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
+                surface.gridVertical(u, v));
+        Vec3 center = TransformSurfaceGeometry.cellCenter(surface,
+                target.surfaceSlot(), side, overlay);
+
+        return FacilityGeckoDoorGeometry.rayHitsHandle(target.state(),
+                toSurfaceLocal(worldStart, center, tangent, vertical, normal),
+                toSurfaceLocal(worldEnd, center, tangent, vertical, normal));
+    }
+
+    private static Vec3 toSurfaceLocal(Vec3 world, Vec3 center,
+            Vec3 tangent, Vec3 vertical, Vec3 normal) {
+        Vec3 delta = world.subtract(center);
+        return new Vec3(delta.dot(tangent) + 0.5D,
+                delta.dot(vertical) + 0.5D,
+                delta.dot(normal) + 0.5D);
     }
 
     public static boolean alive(Target target) {

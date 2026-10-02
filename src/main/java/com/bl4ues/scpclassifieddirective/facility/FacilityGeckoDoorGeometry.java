@@ -7,6 +7,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.List;
 
@@ -62,6 +64,93 @@ public final class FacilityGeckoDoorGeometry {
         }
         return rotateFacing(point,
                 state.getValue(FacilityGeckoDoorModule.FACING));
+    }
+
+    /**
+     * Tests an aim segment against the authored handle cubes. Both points are
+     * expressed in the door block's local 0..1 coordinate space before FACING
+     * and the animated leaf rotation are undone here.
+     */
+    public static boolean rayHitsHandle(BlockState state, Vec3 localStart,
+            Vec3 localEnd) {
+        if (!FacilityGeckoDoorModule.isInteractable(state)
+                || localStart == null || localEnd == null) return false;
+        Family family = FacilityGeckoDoorModule.family(state);
+        if (family == null) return false;
+
+        Direction facing = state.getValue(FacilityGeckoDoorModule.FACING);
+        Vec3 start = unrotateFacing(localStart, facing);
+        Vec3 end = unrotateFacing(localEnd, facing);
+        if (FacilityGeckoDoorModule.phase(state) == Phase.OPEN) {
+            double inverse = -openAngle(family);
+            start = rotateLeaf(start, family, inverse);
+            end = rotateLeaf(end, family, inverse);
+        }
+        for (AABB box : closedHandleBoxes(family)) {
+            if (box.contains(start) || box.contains(end)
+                    || box.clip(start, end).isPresent()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean rayHitsHandle(BlockState state, BlockPos pos,
+            Vec3 worldStart, Vec3 worldEnd) {
+        if (pos == null || worldStart == null || worldEnd == null) {
+            return false;
+        }
+        Vec3 origin = Vec3.atLowerCornerOf(pos);
+        return rayHitsHandle(state, worldStart.subtract(origin),
+                worldEnd.subtract(origin));
+    }
+
+    /**
+     * Axis-aligned selection proxy for the exact animated handle. Rotated
+     * handle cubes are conservatively bounded after FACING/leaf transforms.
+     * This is intentionally separate from collision.
+     */
+    public static VoxelShape handleSelectionShape(BlockState state) {
+        if (!FacilityGeckoDoorModule.isInteractable(state)) {
+            return Shapes.empty();
+        }
+        Family family = FacilityGeckoDoorModule.family(state);
+        if (family == null) return Shapes.empty();
+
+        VoxelShape result = Shapes.empty();
+        for (AABB box : closedHandleBoxes(family)) {
+            AABB transformed = transformedBounds(state, box);
+            result = Shapes.or(result, Shapes.box(
+                    transformed.minX, transformed.minY, transformed.minZ,
+                    transformed.maxX, transformed.maxY, transformed.maxZ));
+        }
+        return result.optimize();
+    }
+
+    private static AABB transformedBounds(BlockState state, AABB box) {
+        double minX = Double.POSITIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        for (int xi = 0; xi < 2; xi++) {
+            for (int yi = 0; yi < 2; yi++) {
+                for (int zi = 0; zi < 2; zi++) {
+                    Vec3 point = transformHandlePoint(state, new Vec3(
+                            xi == 0 ? box.minX : box.maxX,
+                            yi == 0 ? box.minY : box.maxY,
+                            zi == 0 ? box.minZ : box.maxZ));
+                    minX = Math.min(minX, point.x);
+                    minY = Math.min(minY, point.y);
+                    minZ = Math.min(minZ, point.z);
+                    maxX = Math.max(maxX, point.x);
+                    maxY = Math.max(maxY, point.y);
+                    maxZ = Math.max(maxZ, point.z);
+                }
+            }
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     public static boolean isHandleHit(BlockState state, BlockPos pos,

@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
@@ -82,7 +81,21 @@ final class CopycatPanelRenderUtil {
 
         Direction localFace = quad.getDirection();
         Direction worldFace = rotateLocalDirection(localFace, facing);
-        int light = faceLight(level, state, pos, worldFace);
+        int light = faceLight(level, pos, worldFace);
+
+        /*
+         * Vanilla's block model renderer applies directional diffuse shading
+         * before writing quad colours. Custom BER vertices do not get that
+         * multiplication automatically. Omitting it was why copied panels
+         * looked washed out/over-bright even with shaders disabled.
+         */
+        float shade = level.getShade(worldFace, quad.isShade());
+        int red = Math.max(0, Math.min(255,
+                Math.round(((tint >> 16) & 0xFF) * shade)));
+        int green = Math.max(0, Math.min(255,
+                Math.round(((tint >> 8) & 0xFF) * shade)));
+        int blue = Math.max(0, Math.min(255,
+                Math.round((tint & 0xFF) * shade)));
 
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
@@ -97,9 +110,7 @@ final class CopycatPanelRenderUtil {
                     + z * (maxZ - minZ));
 
             consumer.vertex(pose.pose(), x, y, compressedZ)
-                    .color((tint >> 16) & 0xFF,
-                            (tint >> 8) & 0xFF,
-                            tint & 0xFF, 255)
+                    .color(red, green, blue, 255)
                     .uv(u, v)
                     .overlayCoords(packedOverlay)
                     .uv2(light)
@@ -111,18 +122,19 @@ final class CopycatPanelRenderUtil {
         }
     }
 
-    private static int faceLight(Level level, BlockState state,
-            BlockPos pos, Direction worldFace) {
-        int source = LevelRenderer.getLightColor(level, state, pos);
+    private static int faceLight(Level level, BlockPos pos,
+            Direction worldFace) {
+        /*
+         * A vanilla full cube lights each visible face from the neighbouring
+         * cell on that face. Taking max(panelCell, neighbour) was wrong for a
+         * thin/non-occluding copycat: the panel cell can carry skylight that a
+         * real wall block would have blocked, making the copied face brighter
+         * than the source material beside it.
+         */
         BlockPos exposedPos = pos.relative(worldFace);
-        int exposed = level.hasChunkAt(exposedPos)
+        return level.hasChunkAt(exposedPos)
                 ? LevelRenderer.getLightColor(level, exposedPos)
-                : source;
-        return LightTexture.pack(
-                Math.max(LightTexture.block(source),
-                        LightTexture.block(exposed)),
-                Math.max(LightTexture.sky(source),
-                        LightTexture.sky(exposed)));
+                : LevelRenderer.getLightColor(level, pos);
     }
 
     private static Direction rotateLocalDirection(Direction local,

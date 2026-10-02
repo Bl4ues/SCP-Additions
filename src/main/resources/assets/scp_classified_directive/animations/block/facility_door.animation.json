@@ -6,17 +6,29 @@
 			"bones": {
 				"door": {
 					"rotation": {
-						"vector": [0, 0, 0]
+						"vector": [
+							0,
+							0,
+							0
+						]
 					}
 				},
 				"handle": {
 					"rotation": {
-						"vector": [0, 0, 0]
+						"vector": [
+							0,
+							0,
+							0
+						]
 					}
 				},
 				"frame": {
 					"rotation": {
-						"vector": [0, 0, 0]
+						"vector": [
+							0,
+							0,
+							0
+						]
 					}
 				}
 			}
@@ -27,11 +39,19 @@
 				"door": {
 					"rotation": {
 						"0.0": {
-							"vector": [0, 0, 0]
+							"vector": [
+								0,
+								0,
+								0
+							]
 						},
 						"1.5": {
-							"vector": [0, 100, 0],
-							"easing": "easeOutCubic"
+							"vector": [
+								0,
+								100,
+								0
+							],
+							"easing": "easeInOutCubic"
 						}
 					}
 				},
@@ -39,19 +59,31 @@
 					"rotation": {
 						"0.0": {
 							"post": {
-								"vector": [0, 0, 0]
+								"vector": [
+									0,
+									0,
+									0
+								]
 							},
 							"lerp_mode": "catmullrom"
 						},
 						"0.2917": {
 							"post": {
-								"vector": [0, 0, -27.5]
+								"vector": [
+									0,
+									0,
+									-27.5
+								]
 							},
 							"lerp_mode": "catmullrom"
 						},
 						"0.6667": {
 							"post": {
-								"vector": [0, 0, 0]
+								"vector": [
+									0,
+									0,
+									0
+								]
 							},
 							"lerp_mode": "catmullrom"
 						}
@@ -64,7 +96,11 @@
 			"bones": {
 				"door": {
 					"rotation": {
-						"vector": [0, 100, 0],
+						"vector": [
+							0,
+							100,
+							0
+						],
 						"easing": "easeOutCubic"
 					}
 				}
@@ -76,11 +112,19 @@
 				"door": {
 					"rotation": {
 						"0.0": {
-							"vector": [0, 100, 0],
-							"easing": "easeOutCubic"
+							"vector": [
+								0,
+								100,
+								0
+							]
 						},
 						"1.0417": {
-							"vector": [0, 0, 0]
+							"vector": [
+								0,
+								0,
+								0
+							],
+							"easing": "easeInOutCubic"
 						}
 					}
 				}

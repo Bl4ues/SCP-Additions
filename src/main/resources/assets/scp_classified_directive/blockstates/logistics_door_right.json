@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "facing=north,stage=closed": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=north,stage=opening": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=north,stage=open": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=north,stage=closing": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=east,stage=closed": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=east,stage=opening": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=east,stage=open": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=east,stage=closing": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=south,stage=closed": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=south,stage=opening": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=south,stage=open": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=south,stage=closing": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=west,stage=closed": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=west,stage=opening": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=west,stage=open": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    },
+    "facing=west,stage=closing": {
+      "model": "scp_classified_directive:block/logistics_door_right_particle"
+    }
+  }
+}

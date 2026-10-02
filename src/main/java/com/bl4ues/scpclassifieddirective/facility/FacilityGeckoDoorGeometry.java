@@ -112,8 +112,11 @@ public final class FacilityGeckoDoorGeometry {
     }
 
     private static double openAngle(Family family) {
-        return Math.toRadians(family == Family.LOGISTICS_RIGHT
-                || family == Family.WORKSHOP ? -100.0D : 100.0D);
+        return Math.toRadians(switch (family) {
+            case LOGISTICS_LEFT -> 100.0D;
+            case FACILITY, OFFICE, BATHROOM, LOGISTICS_RIGHT, WORKSHOP ->
+                    -100.0D;
+        });
     }
 
     private static Vec3 rawPointToModel(Vec3 raw) {

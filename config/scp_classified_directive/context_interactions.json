@@ -700,354 +700,6 @@
     },
     {
       "type": "block",
-      "id": "scp_classified_directive:normal_door",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Facility Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.204,
-          1.08,
-          0.197
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:door_open",
-      "range": 2.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Facility Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.972,
-          1.118,
-          1.003
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:left_log_door",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Left Logistics Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.137,
-          1.077,
-          0.197
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:right_log_door",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Right Logistics Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.836,
-          1.096,
-          0.147
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:left_log_door_open",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Logistics Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.974,
-          1.106,
-          1.103
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:right_log_door_open",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Right Logistics Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          -0.058,
-          0.978,
-          1.003
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:office_door",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Office Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.036,
-          0.949,
-          0.197
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:office_door_open",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Office Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.992,
-          1.033,
-          1.103
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:bath_door",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Bathroom Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.258,
-          1.062,
-          0.147
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:ws_dclosed",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Workshop Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.865,
-          1.076,
-          0.197
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:bath_door_open",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Bathroom Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.944,
-          1.09,
-          -0.603
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
-      "id": "scp_classified_directive:ws_open",
-      "range": 1.25,
-      "priority": 30,
-      "useItem": "hand",
-      "text": {
-        "action": "Use",
-        "nameMode": "manual",
-        "name": "Workshop Door",
-        "showAction": true,
-        "showName": false
-      },
-      "anchor": {
-        "position": [
-          0.018,
-          1.102,
-          1.103
-        ],
-        "rotateWith": "auto"
-      },
-      "input": {
-        "allowE": true,
-        "allowRightClick": true
-      },
-      "click": {
-        "face": "player"
-      }
-    },
-    {
-      "type": "block",
       "id": "scp_classified_directive:button_open",
       "range": 1.25,
       "priority": 30,
@@ -1205,36 +857,7 @@
         "scale": 1,
         "allowOffscreen": false
       }
-    }
-  ],
-  "examples": [
-    {
-      "type": "block",
-      "id": "minecraft:stone_button",
-      "range": 2.25,
-      "action": "Use",
-      "name": "Button",
-      "anchor": {
-        "position": [
-          0.5,
-          0.5,
-          0.05
-        ],
-        "rotateWith": "auto"
-      },
-      "click": {
-        "face": "front"
-      }
     },
-    {
-      "type": "entity",
-      "id": "minecraft:villager",
-      "range": 2,
-      "action": "Talk",
-      "nameMode": "auto"
-    }
-  ],
-  "rules": [
     {
       "type": "block",
       "id": "scp_classified_directive:facility_door",
@@ -1432,6 +1055,33 @@
       "visual": {
         "allowOffscreen": false
       }
+    }
+  ],
+  "examples": [
+    {
+      "type": "block",
+      "id": "minecraft:stone_button",
+      "range": 2.25,
+      "action": "Use",
+      "name": "Button",
+      "anchor": {
+        "position": [
+          0.5,
+          0.5,
+          0.05
+        ],
+        "rotateWith": "auto"
+      },
+      "click": {
+        "face": "front"
+      }
+    },
+    {
+      "type": "entity",
+      "id": "minecraft:villager",
+      "range": 2,
+      "action": "Talk",
+      "nameMode": "auto"
     }
   ]
 }

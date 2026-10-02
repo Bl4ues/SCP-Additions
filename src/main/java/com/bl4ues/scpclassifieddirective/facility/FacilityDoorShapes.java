@@ -67,9 +67,9 @@ final class FacilityDoorShapes {
             case "normal" -> new Geometry(NORMAL_FRAME, NORMAL_LEAF,
                     16.0D, 0.5D, -100.0D, NORMAL_OPAQUE);
             case "left_logistics" -> new Geometry(LEFT_LOGISTICS_FRAME,
-                    LEFT_LOGISTICS_LEAF, 16.0D, 0.5D, -100.0D, null);
+                    LEFT_LOGISTICS_LEAF, 16.0D, 0.5D, 100.0D, null);
             case "right_logistics" -> new Geometry(RIGHT_LOGISTICS_FRAME,
-                    RIGHT_LOGISTICS_LEAF, 0.0D, 0.5D, 100.0D, null);
+                    RIGHT_LOGISTICS_LEAF, 0.0D, 0.5D, -100.0D, null);
             case "office" -> new Geometry(OFFICE_FRAME, OFFICE_LEAF,
                     16.0D, 0.5D, -100.0D, OFFICE_OPAQUE);
             case "bathroom" -> new Geometry(BATHROOM_FRAME, BATHROOM_LEAF,
@@ -78,10 +78,10 @@ final class FacilityDoorShapes {
              * Workshop has a 180-degree authored model_root. Its symmetric
              * closed slab/frame keep the same envelope, while the door hinge
              * moves from model-right to model-left. The inverted animation is
-             * +100 degrees in Gecko space.
+             * -100 degrees in Gecko space after the inverted swing.
              */
             case "workshop" -> new Geometry(WORKSHOP_FRAME, WORKSHOP_LEAF,
-                    0.0D, 0.5D, 100.0D, null);
+                    0.0D, 0.5D, -100.0D, null);
             default -> null;
         };
     }

@@ -11,6 +11,8 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
@@ -416,10 +418,21 @@ public final class WallPanelModule {
 
         private void markUpdated() {
             setChanged();
-            if (level != null && !level.isClientSide) {
+            if (level instanceof ServerLevel serverLevel) {
                 BlockState state = getBlockState();
-                level.sendBlockUpdated(worldPosition, state, state,
+                serverLevel.sendBlockUpdated(worldPosition, state, state,
                         Block.UPDATE_ALL);
+
+                // sendBlockUpdated with an unchanged blockstate is not enough
+                // to guarantee that clients receive fresh BlockEntity model
+                // data. The copied material lives in ModelData, so explicitly
+                // deliver the vanilla BlockEntity update packet as well.
+                ClientboundBlockEntityDataPacket packet = getUpdatePacket();
+                if (packet != null) {
+                    for (ServerPlayer player : serverLevel.players()) {
+                        player.connection.send(packet);
+                    }
+                }
             }
         }
 
@@ -497,7 +510,8 @@ public final class WallPanelModule {
 
         @Override
         public ClientboundBlockEntityDataPacket getUpdatePacket() {
-            return ClientboundBlockEntityDataPacket.create(this);
+            return ClientboundBlockEntityDataPacket.create(
+                    this, blockEntity -> blockEntity.getUpdateTag());
         }
 
         @Override

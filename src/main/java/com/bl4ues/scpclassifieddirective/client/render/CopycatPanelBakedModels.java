@@ -100,7 +100,8 @@ public final class CopycatPanelBakedModels {
             List<BakedQuad> result = new ArrayList<>();
             for (BakedQuad quad : originalModel.getQuads(state, side, random,
                     modelData, renderType)) {
-                if (!replaceFallbackQuad(quad, facing, snapshot)) {
+                if (!replaceFallbackQuad(
+                        quad, side, facing, snapshot)) {
                     result.add(kind == Kind.DOUBLE
                             && snapshot.back().isAir()
                             && localDepthCenter(quad, facing) > 0.5001F
@@ -141,15 +142,39 @@ public final class CopycatPanelBakedModels {
                     snapshot.pos());
         }
 
-        private boolean replaceFallbackQuad(BakedQuad quad, Direction facing,
+        private boolean replaceFallbackQuad(BakedQuad quad,
+                @Nullable Direction requestedSide, Direction facing,
                 CopycatPanelMaterial.ModelSnapshot snapshot) {
-            if (kind == Kind.THIN) {
-                Direction direction = quad.getDirection();
-                return (!snapshot.front().isAir() && direction == facing)
-                        || (!snapshot.back().isAir()
-                        && direction == facing.getOpposite());
+            Direction frontFace = facing;
+            Direction backFace = facing.getOpposite();
+
+            // The outer copied face must completely replace the authored
+            // wall_panel face. Filtering by the quad's baked direction alone
+            // was not reliable for every rotated blockstate, leaving the
+            // fallback X coplanar with the copied material and making an
+            // opaque block look translucent.
+            if (!snapshot.front().isAir()
+                    && requestedSide == frontFace) {
+                return true;
+            }
+            if (!snapshot.back().isAir()
+                    && requestedSide == backFace) {
+                return true;
             }
 
+            if (kind == Kind.THIN) {
+                if (requestedSide != null) return false;
+                Direction direction = quad.getDirection();
+                return (!snapshot.front().isAir()
+                        && direction == frontFace)
+                        || (!snapshot.back().isAir()
+                        && direction == backFace);
+            }
+
+            // Lateral faces of the Double Wall Panel are split into physical
+            // front/back halves. Keep the untouched half's fallback texture,
+            // but remove the occupied half so its cropped copied quad is the
+            // only surface rendered there.
             float localDepth = localDepthCenter(quad, facing);
             return (!snapshot.front().isAir() && localDepth < 0.4999F)
                     || (!snapshot.back().isAir() && localDepth > 0.5001F);

@@ -357,10 +357,21 @@ public final class DoubleWallPanelModule {
 
         private void markUpdated() {
             setChanged();
-            if (level != null && !level.isClientSide) {
+            if (level instanceof ServerLevel serverLevel) {
                 BlockState state = getBlockState();
-                level.sendBlockUpdated(worldPosition, state, state,
+                serverLevel.sendBlockUpdated(worldPosition, state, state,
                         Block.UPDATE_ALL);
+
+                // sendBlockUpdated with an unchanged blockstate is not enough
+                // to guarantee that clients receive fresh BlockEntity model
+                // data. The copied material lives in ModelData, so explicitly
+                // deliver the vanilla BlockEntity update packet as well.
+                ClientboundBlockEntityDataPacket packet = getUpdatePacket();
+                if (packet != null) {
+                    for (ServerPlayer player : serverLevel.players()) {
+                        player.connection.send(packet);
+                    }
+                }
             }
         }
 
@@ -385,7 +396,8 @@ public final class DoubleWallPanelModule {
 
         @Override
         public ClientboundBlockEntityDataPacket getUpdatePacket() {
-            return ClientboundBlockEntityDataPacket.create(this);
+            return ClientboundBlockEntityDataPacket.create(
+                    this, blockEntity -> blockEntity.getUpdateTag());
         }
 
         @Override

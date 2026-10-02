@@ -2,6 +2,8 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextBlockTargetResolver;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import com.bl4ues.scpclassifieddirective.inventory.network.ContextInteractPacket;
@@ -217,9 +219,17 @@ public final class ContextPromptClient {
         for (TransformContextTargetClient.Target transformed : candidates) {
             BlockState state = transformed.state();
             boolean doorButton = TransformWallFixturePlacement.isDoorButton(state);
+            boolean geckoDoor = FacilityGeckoDoorModule.isDoor(state);
             for (ContextInteractionRegistry.Rule rule
                     : ContextInteractionRegistry.getBlockRules(state.getBlock())) {
                 if (!rule.isHeldItemSatisfied(player)) continue;
+                if (geckoDoor
+                        && (!FacilityGeckoDoorModule.isInteractable(state)
+                        || !TransformContextTargetClient.rayHitsDoorHandle(
+                                transformed, eye,
+                                eye.add(look.scale(rule.range()))))) {
+                    continue;
+                }
                 Vec3 anchor = TransformContextTargetClient.anchor(transformed, rule);
                 if (anchor == null || !Double.isFinite(anchor.x)
                         || !Double.isFinite(anchor.y)
@@ -228,7 +238,7 @@ public final class ContextPromptClient {
                         Math.max(0.16D, rule.range() * 0.13D));
                 boolean offscreen = doorButton || rule.allowOffscreen();
                 double score = scorePoint(anchor, eye, look, rule.range(),
-                        false, rule.priority(), !doorButton,
+                        false, rule.priority(), !doorButton && !geckoDoor,
                         aimRadius * aimRadius, offscreen);
                 if (rule.hasRequiredItem()) score -= 0.12D;
                 if (score >= bestScore) continue;
@@ -285,13 +295,20 @@ public final class ContextPromptClient {
                 if (!rule.isAvailable(player.level(), rulePos, ruleState,
                         player) || !rule.isHeldItemSatisfied(player)) continue;
                 Vec3 anchor = rule.resolveBlockAnchor(rulePos, ruleState);
+                boolean geckoDoor = FacilityGeckoDoorModule.isDoor(ruleState);
+                if (geckoDoor && !FacilityGeckoDoorGeometry.rayHitsHandle(
+                        ruleState, rulePos, eye,
+                        eye.add(look.scale(rule.range())))) {
+                    continue;
+                }
                 if (isElevatorStationButton(rule.interactionKey())
                         && !isStationButtonViewedFromFront(eye, anchor,
                         ruleState)) {
                     continue;
                 }
                 double score = scorePoint(anchor, eye, look, rule.range(),
-                        directHit, rule.priority(), rule.requiresPreciseAim(),
+                        directHit, rule.priority(),
+                        rule.requiresPreciseAim() && !geckoDoor,
                         preciseAimRadiusSqr(rule.interactionKey()),
                         rule.allowOffscreen());
                 if (rule.hasRequiredItem()) score -= 0.12D;

@@ -2,11 +2,8 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.FacilityGeckoDoorClient;
-import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -19,7 +16,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -63,7 +59,6 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Consumer;
 
 /**
@@ -539,14 +534,18 @@ public final class FacilityGeckoDoorModule {
         @Nullable
         @Override
         protected BlockState getPlacementState(BlockPlaceContext context) {
-            Direction facing =
-                    context.getHorizontalDirection().getOpposite();
+            // Choose the authored Left/Right variant from the player's view,
+            // exactly like choosing which side of a vanilla doorway owns the
+            // hinge. The block itself still computes its normal facing from
+            // the placement context afterwards.
+            Direction view = context.getHorizontalDirection();
             Vec3 hit = context.getClickLocation();
             BlockPos pos = context.getClickedPos();
             double dx = hit.x - (pos.getX() + 0.5D);
             double dz = hit.z - (pos.getZ() + 0.5D);
-            Direction right = facing.getClockWise();
-            double side = dx * right.getStepX() + dz * right.getStepZ();
+            Direction screenRight = view.getClockWise();
+            double side = dx * screenRight.getStepX()
+                    + dz * screenRight.getStepZ();
             DoorBlock selected = (DoorBlock) (side < 0.0D
                     ? LOGISTICS_DOOR_LEFT.get()
                     : LOGISTICS_DOOR_RIGHT.get());

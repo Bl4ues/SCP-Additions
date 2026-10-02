@@ -262,7 +262,8 @@ public final class PickupOutlineRenderer {
             }
 
             if (FacilityGeckoDoorModule.isDoor(state)) {
-                renderFacilityDoorHandleLocalMask(state, poseStack);
+                renderFacilityDoorHandleLocalMask(state, poseStack,
+                        null, null);
             } else if (state.getRenderShape()
                     != RenderShape.ENTITYBLOCK_ANIMATED) {
                 minecraft.getBlockRenderer().renderSingleBlock(state,
@@ -336,23 +337,105 @@ public final class PickupOutlineRenderer {
             poseStack.translate(pos.getX() - cameraPosition.x,
                     pos.getY() - cameraPosition.y,
                     pos.getZ() - cameraPosition.z);
-            renderFacilityDoorHandleLocalMask(state, poseStack);
+            Vec3 viewerLocal = cameraPosition.subtract(
+                    pos.getX(), pos.getY(), pos.getZ());
+            Vec3 look = minecraft.player != null
+                    ? minecraft.player.getViewVector(1.0F).normalize()
+                    : Vec3.ZERO;
+            renderFacilityDoorHandleLocalMask(state, poseStack,
+                    viewerLocal, look);
         } finally {
             poseStack.popPose();
         }
     }
 
     private static void renderFacilityDoorHandleLocalMask(BlockState state,
-            PoseStack poseStack) {
+            PoseStack poseStack, Vec3 viewerLocal, Vec3 look) {
         FacilityGeckoDoorModule.Family family =
                 FacilityGeckoDoorModule.family(state);
         if (family == null) return;
         VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
                 RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
+
+        // Bathroom Door intentionally highlights the whole movable leaf plus
+        // its handle, but never the surrounding frame.
+        if (family == FacilityGeckoDoorModule.Family.BATHROOM) {
+            emitFacilityDoorHandleBox(consumer, poseStack.last(), state,
+                    FacilityGeckoDoorGeometry.bathroomDoorLeaf());
+        }
+
         for (FacilityGeckoDoorGeometry.AuthoredBox box
-                : FacilityGeckoDoorGeometry.authoredHandleBoxes(family)) {
+                : visibleHandleSide(state, family, viewerLocal, look)) {
             emitFacilityDoorHandleBox(consumer, poseStack.last(), state, box);
         }
+    }
+
+    private static java.util.List<FacilityGeckoDoorGeometry.AuthoredBox>
+            visibleHandleSide(BlockState state,
+                    FacilityGeckoDoorModule.Family family,
+                    Vec3 viewerLocal, Vec3 look) {
+        java.util.List<FacilityGeckoDoorGeometry.AuthoredBox> all =
+                FacilityGeckoDoorGeometry.authoredHandleBoxes(family);
+        if (all.size() < 2 || viewerLocal == null) return all;
+
+        java.util.List<FacilityGeckoDoorGeometry.AuthoredBox> negative =
+                new java.util.ArrayList<>();
+        java.util.List<FacilityGeckoDoorGeometry.AuthoredBox> positive =
+                new java.util.ArrayList<>();
+        for (FacilityGeckoDoorGeometry.AuthoredBox box : all) {
+            double centerZ = box.originZ() + box.sizeZ() * 0.5D;
+            if (centerZ < -7.5D) {
+                negative.add(box);
+            } else if (centerZ > -7.5D) {
+                positive.add(box);
+            }
+        }
+        if (negative.isEmpty() || positive.isEmpty()) return all;
+
+        Vec3 negativeCenter = handleGroupCenter(state, negative);
+        Vec3 positiveCenter = handleGroupCenter(state, positive);
+        double negativeDistance = viewerLocal.distanceToSqr(negativeCenter);
+        double positiveDistance = viewerLocal.distanceToSqr(positiveCenter);
+
+        // Physical proximity is authoritative. Only when the player is nearly
+        // centred between both sides do we use the aim ray as a fallback.
+        if (Math.abs(negativeDistance - positiveDistance) > 0.035D) {
+            return negativeDistance < positiveDistance
+                    ? negative : positive;
+        }
+
+        if (look != null && look.lengthSqr() > 1.0E-6D) {
+            Vec3 normalized = look.normalize();
+            double negativeAim = distanceToRaySqr(viewerLocal, normalized,
+                    negativeCenter);
+            double positiveAim = distanceToRaySqr(viewerLocal, normalized,
+                    positiveCenter);
+            if (Math.abs(negativeAim - positiveAim) > 1.0E-6D) {
+                return negativeAim < positiveAim ? negative : positive;
+            }
+        }
+        return negativeDistance <= positiveDistance ? negative : positive;
+    }
+
+    private static Vec3 handleGroupCenter(BlockState state,
+            java.util.List<FacilityGeckoDoorGeometry.AuthoredBox> boxes) {
+        Vec3 sum = Vec3.ZERO;
+        for (FacilityGeckoDoorGeometry.AuthoredBox box : boxes) {
+            Vec3 authored = new Vec3(
+                    box.originX() + box.sizeX() * 0.5D,
+                    box.originY() + box.sizeY() * 0.5D,
+                    box.originZ() + box.sizeZ() * 0.5D);
+            sum = sum.add(FacilityGeckoDoorGeometry
+                    .transformAuthoredHandlePoint(state, authored));
+        }
+        return sum.scale(1.0D / boxes.size());
+    }
+
+    private static double distanceToRaySqr(Vec3 origin, Vec3 direction,
+            Vec3 point) {
+        Vec3 delta = point.subtract(origin);
+        double along = Math.max(0.0D, delta.dot(direction));
+        return point.distanceToSqr(origin.add(direction.scale(along)));
     }
 
     private static void emitFacilityDoorHandleBox(VertexConsumer consumer,

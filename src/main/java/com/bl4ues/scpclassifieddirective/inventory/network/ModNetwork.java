@@ -12,7 +12,7 @@ import com.bl4ues.scpclassifieddirective.config.ui.ConfigCenterNetwork;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "21";
+    private static final String PROTOCOL_VERSION = "22";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -45,6 +45,10 @@ public final class ModNetwork {
         CHANNEL.registerMessage(id++, MainUseActionPacket.class, MainUseActionPacket::encode, MainUseActionPacket::decode, MainUseActionPacket::handle);
         CHANNEL.registerMessage(id++, InventoryModuleStatePacket.class, InventoryModuleStatePacket::encode, InventoryModuleStatePacket::decode, InventoryModuleStatePacket::handle);
         CHANNEL.registerMessage(id++, ContextInteractPacket.class, ContextInteractPacket::encode, ContextInteractPacket::decode, ContextInteractPacket::handle);
+        CHANNEL.registerMessage(id++, CopycatPanelRemovePacket.class,
+                CopycatPanelRemovePacket::encode,
+                CopycatPanelRemovePacket::decode,
+                CopycatPanelRemovePacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigSelectPacket.class, ContextConfigSelectPacket::encode, ContextConfigSelectPacket::decode, ContextConfigSelectPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigOpenPacket.class, ContextConfigOpenPacket::encode, ContextConfigOpenPacket::decode, ContextConfigOpenPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigSavePacket.class, ContextConfigSavePacket::encode, ContextConfigSavePacket::decode, ContextConfigSavePacket::handle);

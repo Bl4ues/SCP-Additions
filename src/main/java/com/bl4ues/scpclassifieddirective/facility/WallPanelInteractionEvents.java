@@ -2,6 +2,8 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents;
+import com.bl4ues.scpclassifieddirective.inventory.network.CopycatPanelRemovePacket;
+import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -36,7 +38,7 @@ public final class WallPanelInteractionEvents {
         }
 
         BlockState state = event.getLevel().getBlockState(event.getPos());
-        ItemStack returned = ItemStack.EMPTY;
+        String interactionKey = null;
 
         if (state.is(WallPanelModule.BLOCK.get())) {
             WallPanelModule.Side side =
@@ -49,22 +51,23 @@ public final class WallPanelInteractionEvents {
                     || !panel.hasMaterial(side)) {
                 return;
             }
-            if (!event.getLevel().isClientSide) {
-                returned = panel.removeMaterial(side);
-            }
+            interactionKey = side == WallPanelModule.Side.FRONT
+                    ? WallPanelModule.REMOVE_FRONT_INTERACTION
+                    : WallPanelModule.REMOVE_BACK_INTERACTION;
         } else if (state.is(DoubleWallPanelModule.BLOCK.get())) {
             DoubleWallPanelModule.Side side =
-                    DoubleWallPanelModule.DoubleWallPanelBlock.sideForHit(
-                            state, event.getHitVec().getDirection());
+                    DoubleWallPanelModule.DoubleWallPanelBlock
+                            .sideForInteraction(state, event.getPos(),
+                                    event.getHitVec(), event.getEntity());
             if (side == null
                     || !(event.getLevel().getBlockEntity(event.getPos())
                         instanceof DoubleWallPanelModule.DoubleWallPanelBlockEntity panel)
                     || !panel.hasMaterial(side)) {
                 return;
             }
-            if (!event.getLevel().isClientSide) {
-                returned = panel.removeMaterial(side);
-            }
+            interactionKey = side == DoubleWallPanelModule.Side.FRONT
+                    ? DoubleWallPanelModule.REMOVE_FRONT_INTERACTION
+                    : DoubleWallPanelModule.REMOVE_BACK_INTERACTION;
         } else {
             return;
         }
@@ -75,9 +78,9 @@ public final class WallPanelInteractionEvents {
         event.setCancellationResult(InteractionResult.sidedSuccess(
                 event.getLevel().isClientSide));
 
-        if (!event.getLevel().isClientSide && !returned.isEmpty()
-                && !event.getEntity().getInventory().add(returned)) {
-            event.getEntity().drop(returned, false);
+        if (event.getLevel().isClientSide) {
+            ModNetwork.CHANNEL.sendToServer(new CopycatPanelRemovePacket(
+                    event.getPos(), interactionKey));
         }
     }
 }

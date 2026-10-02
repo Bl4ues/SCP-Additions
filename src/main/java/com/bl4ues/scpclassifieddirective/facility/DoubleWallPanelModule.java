@@ -201,6 +201,34 @@ public final class DoubleWallPanelModule {
             return null;
         }
 
+        public static Side sideForInteraction(BlockState state,
+                BlockPos pos, BlockHitResult hit, @Nullable Entity entity) {
+            Side direct = sideForHit(state,
+                    hit == null ? null : hit.getDirection());
+            if (direct != null) return direct;
+            if (state == null || pos == null) return null;
+
+            Direction facing = state.getValue(
+                    HorizontalDirectionalBlock.FACING);
+            if (hit != null) {
+                Vec3 local = hit.getLocation().subtract(
+                        pos.getX(), pos.getY(), pos.getZ());
+                double depth = switch (facing) {
+                    case EAST -> 1.0D - local.x;
+                    case SOUTH -> 1.0D - local.z;
+                    case WEST -> local.x;
+                    default -> local.z;
+                };
+                return depth < 0.5D ? Side.FRONT : Side.BACK;
+            }
+
+            if (entity == null) return Side.FRONT;
+            Vec3 delta = entity.position().subtract(Vec3.atCenterOf(pos));
+            double dot = delta.x * facing.getStepX()
+                    + delta.z * facing.getStepZ();
+            return dot >= 0.0D ? Side.FRONT : Side.BACK;
+        }
+
         @Override
         public SoundType getSoundType(BlockState state, LevelReader level,
                 BlockPos pos, @Nullable Entity entity) {

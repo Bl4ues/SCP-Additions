@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.facility.DoubleWallPanelModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import com.bl4ues.scpclassifieddirective.inventory.network.ContextInteractPacket;
+import com.bl4ues.scpclassifieddirective.inventory.network.CopycatPanelRemovePacket;
 import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -119,10 +120,8 @@ public final class ContextPromptClient {
             return false;
         }
 
-        ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(
-                target.pos(), 0, false,
-                Screen.hasShiftDown(), Screen.hasControlDown(),
-                target.interactionKey()));
+        ModNetwork.CHANNEL.sendToServer(new CopycatPanelRemovePacket(
+                target.pos(), target.interactionKey()));
         cooldownTicks = CLICK_COOLDOWN_TICKS;
         useWasDown = true;
         clear();

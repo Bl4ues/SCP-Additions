@@ -17,6 +17,8 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
@@ -72,6 +74,25 @@ public final class WallPanelClient {
             return ANIMATION;
         }
 
+        @Override
+        public void setCustomAnimations(WallPanelBlockEntity animatable,
+                long instanceId,
+                AnimationState<WallPanelBlockEntity> state) {
+            super.setCustomAnimations(animatable, instanceId, state);
+            CoreGeoBone front = getAnimationProcessor().getBone(
+                    "front_surface");
+            CoreGeoBone back = getAnimationProcessor().getBone(
+                    "back_surface");
+            if (front != null) {
+                front.setHidden(animatable.hasMaterial(
+                        WallPanelModule.Side.FRONT));
+            }
+            if (back != null) {
+                back.setHidden(animatable.hasMaterial(
+                        WallPanelModule.Side.BACK));
+            }
+        }
+
     }
 
     public static final class BlockRenderer
@@ -92,16 +113,14 @@ public final class WallPanelClient {
                                 panel.materialState(WallPanelModule.Side.FRONT),
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
-                                packedOverlay, Direction.NORTH,
-                                -1.0D / 1024.0D);
+                                packedOverlay, Direction.NORTH, 0.0D);
                     }
                     if (panel.hasMaterial(WallPanelModule.Side.BACK)) {
                         CopycatPanelRenderUtil.renderFace(
                                 panel.materialState(WallPanelModule.Side.BACK),
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
-                                packedOverlay, Direction.SOUTH,
-                                1.0D / 16.0D + 1.0D / 1024.0D);
+                                packedOverlay, Direction.SOUTH, 1.0D / 16.0D);
                     }
                 }
             });

@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
@@ -120,29 +121,32 @@ final class CopycatPanelRenderUtil {
 
         Direction localFace = quad.getDirection();
         Direction worldFace = rotateLocalDirection(localFace, facing);
-        int light = faceLight(level, pos, worldFace);
-        float shade = level.getShade(worldFace, quad.isShade());
-        int red = Math.max(0, Math.min(255,
-                Math.round(((tint >> 16) & 0xFF) * shade)));
-        int green = Math.max(0, Math.min(255,
-                Math.round(((tint >> 8) & 0xFF) * shade)));
-        int blue = Math.max(0, Math.min(255,
-                Math.round((tint & 0xFF) * shade)));
+        float directionalShade = level.getShade(worldFace, quad.isShade());
 
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
             float x = Float.intBitsToFloat(vertices[offset]);
             float y = Float.intBitsToFloat(vertices[offset + 1]);
+            float z = Float.intBitsToFloat(vertices[offset + 2]);
             float u = stride > 4
                     ? Float.intBitsToFloat(vertices[offset + 4]) : 0.0F;
             float v = stride > 5
                     ? Float.intBitsToFloat(vertices[offset + 5]) : 0.0F;
+            VertexLighting lighting = vertexLighting(level, pos, facing,
+                    localFace, worldFace, x, y, z);
+            float shade = directionalShade * lighting.ambientOcclusion();
+            int red = Math.max(0, Math.min(255,
+                    Math.round(((tint >> 16) & 0xFF) * shade)));
+            int green = Math.max(0, Math.min(255,
+                    Math.round(((tint >> 8) & 0xFF) * shade)));
+            int blue = Math.max(0, Math.min(255,
+                    Math.round((tint & 0xFF) * shade)));
 
             consumer.vertex(pose.pose(), x, y, (float) localZ)
                     .color(red, green, blue, 255)
                     .uv(u, v)
                     .overlayCoords(packedOverlay)
-                    .uv2(light)
+                    .uv2(lighting.packedLight())
                     .normal(pose.normal(),
                             localFace.getStepX(),
                             localFace.getStepY(),
@@ -165,21 +169,7 @@ final class CopycatPanelRenderUtil {
 
         Direction localFace = quad.getDirection();
         Direction worldFace = rotateLocalDirection(localFace, facing);
-        int light = faceLight(level, pos, worldFace);
-
-        /*
-         * Vanilla's block model renderer applies directional diffuse shading
-         * before writing quad colours. Custom BER vertices do not get that
-         * multiplication automatically. Omitting it was why copied panels
-         * looked washed out/over-bright even with shaders disabled.
-         */
-        float shade = level.getShade(worldFace, quad.isShade());
-        int red = Math.max(0, Math.min(255,
-                Math.round(((tint >> 16) & 0xFF) * shade)));
-        int green = Math.max(0, Math.min(255,
-                Math.round(((tint >> 8) & 0xFF) * shade)));
-        int blue = Math.max(0, Math.min(255,
-                Math.round((tint & 0xFF) * shade)));
+        float directionalShade = level.getShade(worldFace, quad.isShade());
 
         for (int vertex = 0; vertex < 4; vertex++) {
             int offset = vertex * stride;
@@ -190,12 +180,21 @@ final class CopycatPanelRenderUtil {
                     minZ, maxZ);
             float compressedZ = (float) (minZ
                     + z * (maxZ - minZ));
+            VertexLighting lighting = vertexLighting(level, pos, facing,
+                    localFace, worldFace, x, y, z);
+            float shade = directionalShade * lighting.ambientOcclusion();
+            int red = Math.max(0, Math.min(255,
+                    Math.round(((tint >> 16) & 0xFF) * shade)));
+            int green = Math.max(0, Math.min(255,
+                    Math.round(((tint >> 8) & 0xFF) * shade)));
+            int blue = Math.max(0, Math.min(255,
+                    Math.round((tint & 0xFF) * shade)));
 
             consumer.vertex(pose.pose(), x, y, compressedZ)
                     .color(red, green, blue, 255)
                     .uv(uv[0], uv[1])
                     .overlayCoords(packedOverlay)
-                    .uv2(light)
+                    .uv2(lighting.packedLight())
                     .normal(pose.normal(),
                             localFace.getStepX(),
                             localFace.getStepY(),
@@ -274,19 +273,79 @@ final class CopycatPanelRenderUtil {
         };
     }
 
-    private static int faceLight(Level level, BlockPos pos,
-            Direction worldFace) {
-        /*
-         * A vanilla full cube lights each visible face from the neighbouring
-         * cell on that face. Taking max(panelCell, neighbour) was wrong for a
-         * thin/non-occluding copycat: the panel cell can carry skylight that a
-         * real wall block would have blocked, making the copied face brighter
-         * than the source material beside it.
-         */
-        BlockPos exposedPos = pos.relative(worldFace);
-        return level.hasChunkAt(exposedPos)
-                ? LevelRenderer.getLightColor(level, exposedPos)
-                : LevelRenderer.getLightColor(level, pos);
+    /**
+     * Approximate the same per-vertex ambient occlusion neighborhood sampled by
+     * vanilla's ModelBlockRenderer. One flat light/color for the whole quad is
+     * visibly wrong beside floors and ceilings, and shader packs amplify that
+     * error into a bright vertical sheen.
+     */
+    private static VertexLighting vertexLighting(Level level, BlockPos pos,
+            Direction facing, Direction localFace, Direction worldFace,
+            float x, float y, float z) {
+        BlockPos facePos = pos.relative(worldFace);
+        Direction tangentA;
+        Direction tangentB;
+        switch (localFace.getAxis()) {
+            case X -> {
+                tangentA = z < 0.5F ? Direction.NORTH : Direction.SOUTH;
+                tangentB = y < 0.5F ? Direction.DOWN : Direction.UP;
+            }
+            case Y -> {
+                tangentA = x < 0.5F ? Direction.WEST : Direction.EAST;
+                tangentB = z < 0.5F ? Direction.NORTH : Direction.SOUTH;
+            }
+            case Z -> {
+                tangentA = x < 0.5F ? Direction.WEST : Direction.EAST;
+                tangentB = y < 0.5F ? Direction.DOWN : Direction.UP;
+            }
+            default -> {
+                tangentA = Direction.WEST;
+                tangentB = Direction.DOWN;
+            }
+        }
+        tangentA = rotateLocalDirection(tangentA, facing);
+        tangentB = rotateLocalDirection(tangentB, facing);
+
+        BlockPos sideA = facePos.relative(tangentA);
+        BlockPos sideB = facePos.relative(tangentB);
+        BlockPos corner = sideA.relative(tangentB);
+
+        float ao = (shadeBrightness(level, facePos)
+                + shadeBrightness(level, sideA)
+                + shadeBrightness(level, sideB)
+                + shadeBrightness(level, corner)) * 0.25F;
+        ao = Math.max(0.0F, Math.min(1.0F, ao));
+
+        int packed = averageLight(level, facePos, sideA, sideB, corner);
+        return new VertexLighting(ao, packed);
+    }
+
+    private static float shadeBrightness(Level level, BlockPos pos) {
+        if (!level.hasChunkAt(pos)) return 1.0F;
+        BlockState sample = level.getBlockState(pos);
+        return sample.getShadeBrightness(level, pos);
+    }
+
+    private static int averageLight(Level level, BlockPos... positions) {
+        int block = 0;
+        int sky = 0;
+        int count = 0;
+        for (BlockPos sample : positions) {
+            if (!level.hasChunkAt(sample)) continue;
+            int packed = LevelRenderer.getLightColor(level, sample);
+            block += LightTexture.block(packed);
+            sky += LightTexture.sky(packed);
+            count++;
+        }
+        if (count <= 0) {
+            return LevelRenderer.getLightColor(level, positions[0]);
+        }
+        return LightTexture.pack(
+                Math.round(block / (float) count),
+                Math.round(sky / (float) count));
+    }
+
+    private record VertexLighting(float ambientOcclusion, int packedLight) {
     }
 
     private static Direction rotateLocalDirection(Direction local,

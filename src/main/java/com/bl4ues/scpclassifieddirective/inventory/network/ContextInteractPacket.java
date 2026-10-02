@@ -188,6 +188,10 @@ public class ContextInteractPacket {
         if (resolved == null) return;
         pos = resolved.pos();
         BlockState state = resolved.state();
+        if (handleCopycatPanelRemoval(player, level, pos, state,
+                interactionKey)) {
+            return;
+        }
         List<ContextInteractionRegistry.Rule> rules =
                 ContextInteractionRegistry.getBlockRules(state.getBlock());
         ContextInteractionRegistry.Rule rule = selectedRule(rules,
@@ -295,6 +299,62 @@ public class ContextInteractPacket {
             playDoorSoundForUser(player, level, pos, state, doorBefore,
                     wasOpen);
         }
+    }
+
+    private static boolean handleCopycatPanelRemoval(
+            ServerPlayer player, Level level, BlockPos pos, BlockState state,
+            String interactionKey) {
+        if (interactionKey == null || interactionKey.isBlank()
+                || KeycardReaderInteractionEvents.screwdriver(player).isEmpty()
+                || player.distanceToSqr(Vec3.atCenterOf(pos)) > 16.0D) {
+            return false;
+        }
+
+        if (state.is(WallPanelModule.BLOCK.get())
+                && level.getBlockEntity(pos)
+                instanceof WallPanelModule.WallPanelBlockEntity panel) {
+            WallPanelModule.Side side = null;
+            if (WallPanelModule.REMOVE_FRONT_INTERACTION.equals(
+                    interactionKey)) {
+                side = WallPanelModule.Side.FRONT;
+            } else if (WallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                    interactionKey)) {
+                side = WallPanelModule.Side.BACK;
+            }
+            if (side == null) return false;
+            if (panel.hasMaterial(side)) {
+                giveOrDrop(player, panel.removeMaterial(side));
+                player.swing(ruleHandForScrewdriver(player), true);
+            }
+            return true;
+        }
+
+        if (state.is(DoubleWallPanelModule.BLOCK.get())
+                && level.getBlockEntity(pos)
+                instanceof DoubleWallPanelModule.DoubleWallPanelBlockEntity panel) {
+            DoubleWallPanelModule.Side side = null;
+            if (DoubleWallPanelModule.REMOVE_FRONT_INTERACTION.equals(
+                    interactionKey)) {
+                side = DoubleWallPanelModule.Side.FRONT;
+            } else if (DoubleWallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                    interactionKey)) {
+                side = DoubleWallPanelModule.Side.BACK;
+            }
+            if (side == null) return false;
+            if (panel.hasMaterial(side)) {
+                giveOrDrop(player, panel.removeMaterial(side));
+                player.swing(ruleHandForScrewdriver(player), true);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static InteractionHand ruleHandForScrewdriver(ServerPlayer player) {
+        return player.getMainHandItem().is(
+                com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems
+                        .SCREWDRIVER.get())
+                ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
     }
 
     private static void giveOrDrop(ServerPlayer player,

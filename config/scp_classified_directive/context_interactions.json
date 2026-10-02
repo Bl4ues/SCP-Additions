@@ -862,7 +862,7 @@
       "type": "block",
       "id": "scp_classified_directive:facility_door",
       "interactionId": "facility_door_handle",
-      "range": 1.25,
+      "range": 2.25,
       "priority": 40,
       "useItem": "hand",
       "text": {

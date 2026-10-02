@@ -337,7 +337,7 @@
         "position": [
           0.586,
           1.292,
-          0.0
+          0
         ],
         "rotateWith": "auto"
       },
@@ -564,7 +564,7 @@
         "position": [
           0.517,
           0.261,
-          0.0
+          0
         ],
         "rotateWith": "auto"
       },
@@ -611,7 +611,7 @@
     {
       "type": "block",
       "id": "scp_classified_directive:button_closed",
-      "range": 2.0,
+      "range": 2,
       "priority": 30,
       "useItem": "hand",
       "text": {
@@ -1122,9 +1122,9 @@
       },
       "anchor": {
         "position": [
-          0.0,
+          0,
           0.5,
-          0.0
+          0
         ],
         "rotateWith": "none"
       },
@@ -1154,9 +1154,9 @@
       },
       "anchor": {
         "position": [
-          0.0,
+          0,
           0.5,
-          0.0
+          0
         ],
         "rotateWith": "none"
       },
@@ -1202,7 +1202,7 @@
       },
       "visual": {
         "icon": "hand",
-        "scale": 1.0,
+        "scale": 1,
         "allowOffscreen": false
       }
     }
@@ -1229,9 +1229,209 @@
     {
       "type": "entity",
       "id": "minecraft:villager",
-      "range": 2.0,
+      "range": 2,
       "action": "Talk",
       "nameMode": "auto"
+    }
+  ],
+  "rules": [
+    {
+      "type": "block",
+      "id": "scp_classified_directive:facility_door",
+      "interactionId": "facility_door_handle",
+      "range": 1.25,
+      "priority": 40,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Facility Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          1,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": false
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_classified_directive:logistics_door_left",
+      "interactionId": "facility_door_handle",
+      "range": 1.25,
+      "priority": 40,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          1,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": false
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_classified_directive:logistics_door_right",
+      "interactionId": "facility_door_handle",
+      "range": 1.25,
+      "priority": 40,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Logistics Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          1,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": false
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_classified_directive:office_door",
+      "interactionId": "facility_door_handle",
+      "range": 1.25,
+      "priority": 40,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Office Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          1,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": false
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_classified_directive:bathroom_door",
+      "interactionId": "facility_door_handle",
+      "range": 1.25,
+      "priority": 40,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Bathroom Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          1,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": false
+      }
+    },
+    {
+      "type": "block",
+      "id": "scp_classified_directive:workshop_door",
+      "interactionId": "facility_door_handle",
+      "range": 1.25,
+      "priority": 40,
+      "useItem": "hand",
+      "text": {
+        "action": "Use",
+        "nameMode": "manual",
+        "name": "Workshop Door",
+        "showAction": true,
+        "showName": false
+      },
+      "anchor": {
+        "position": [
+          0.5,
+          1,
+          0.5
+        ],
+        "rotateWith": "none"
+      },
+      "input": {
+        "allowE": true,
+        "allowRightClick": true
+      },
+      "click": {
+        "face": "player"
+      },
+      "visual": {
+        "allowOffscreen": false
+      }
     }
   ]
 }

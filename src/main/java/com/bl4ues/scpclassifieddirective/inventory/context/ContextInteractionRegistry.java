@@ -24,6 +24,8 @@ import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.DocumentHolderBlockEntity;
 import com.bl4ues.scpclassifieddirective.facility.FacilityLargePropStructure;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityPropPartBlock;
 import com.bl4ues.scpclassifieddirective.facility.ObjectContainmentUnitModule;
 import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
@@ -879,7 +881,8 @@ public final class ContextInteractionRegistry {
         public double promptScale() { return promptScale; }
         public boolean allowOffscreen() { return allowOffscreen; }
         public boolean requiresPreciseAim() {
-            return "close_object_containment_unit".equals(interactionKey)
+            return FacilityGeckoDoorModule.isDoorBlock(block)
+                    || "close_object_containment_unit".equals(interactionKey)
                     || Scp714ContainmentStandModule.PLACE_INTERACTION.equals(
                             interactionKey)
                     || Scp714ContainmentStandModule.TAKE_INTERACTION.equals(
@@ -918,6 +921,10 @@ public final class ContextInteractionRegistry {
 
         public boolean isAvailable(Level level, BlockPos pos,
                 BlockState state) {
+            if (FacilityGeckoDoorModule.isDoor(state)
+                    && !FacilityGeckoDoorModule.isInteractable(state)) {
+                return false;
+            }
             if (ObjectContainmentUnitModule.isProtectedContent(level, pos)) {
                 return false;
             }
@@ -1012,6 +1019,10 @@ public final class ContextInteractionRegistry {
         }
 
         public Vec3 resolveBlockAnchor(BlockPos pos, BlockState state) {
+            if (FacilityGeckoDoorModule.isDoor(state)) {
+                return Vec3.atLowerCornerOf(pos)
+                        .add(FacilityGeckoDoorGeometry.handleAnchor(state));
+            }
             if (block == CoreRoomElevatorModule.STATION.get()
                     && interactionKey.startsWith("elevator_station_")) {
                 return CoreRoomElevatorGeometry.stationButtonWorld(pos,

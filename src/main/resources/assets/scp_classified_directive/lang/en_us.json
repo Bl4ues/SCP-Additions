@@ -535,5 +535,10 @@
   "subtitles.scp_classified_directive.alarm": "Facility alarm sounds",
   "block.scp_classified_directive.pneumatic_panel": "Pneumatic Panel",
   "block.scp_classified_directive.sl2_round_lamp": "Round Lamp",
-  "block.scp_classified_directive.outlet": "Outlet"
+  "block.scp_classified_directive.outlet": "Outlet",
+  "block.scp_classified_directive.facility_door": "Facility Door",
+  "block.scp_classified_directive.logistics_door_left": "Logistics Door",
+  "block.scp_classified_directive.logistics_door_right": "Logistics Door",
+  "block.scp_classified_directive.bathroom_door": "Bathroom Door",
+  "block.scp_classified_directive.workshop_door": "Workshop Door"
 }

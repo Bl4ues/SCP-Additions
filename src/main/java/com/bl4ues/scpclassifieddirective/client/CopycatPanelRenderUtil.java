@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
@@ -33,6 +32,15 @@ final class CopycatPanelRenderUtil {
             Direction facing, PoseStack poseStack,
             MultiBufferSource bufferSource, int packedOverlay,
             double minZ, double maxZ, Direction hiddenLocalFace) {
+        render(state, level, pos, facing, poseStack, bufferSource,
+                packedOverlay, minZ, maxZ, hiddenLocalFace, 1.0F);
+    }
+
+    static void render(BlockState state, Level level, BlockPos pos,
+            Direction facing, PoseStack poseStack,
+            MultiBufferSource bufferSource, int packedOverlay,
+            double minZ, double maxZ, Direction hiddenLocalFace,
+            float brightness) {
         if (state == null || state.isAir() || level == null) return;
 
         Minecraft minecraft = Minecraft.getInstance();
@@ -59,7 +67,7 @@ final class CopycatPanelRenderUtil {
                         if (quad.getDirection() == hiddenLocalFace) continue;
                         emitQuad(minecraft, state, level, pos, facing,
                                 poseStack.last(), consumer, quad,
-                                packedOverlay, minZ, maxZ);
+                                packedOverlay, minZ, maxZ, brightness);
                     }
                 }
             }
@@ -158,7 +166,7 @@ final class CopycatPanelRenderUtil {
     private static void emitQuad(Minecraft minecraft, BlockState state,
             Level level, BlockPos pos, Direction facing, PoseStack.Pose pose,
             VertexConsumer consumer, BakedQuad quad, int packedOverlay,
-            double minZ, double maxZ) {
+            double minZ, double maxZ, float brightness) {
         int[] vertices = quad.getVertices();
         int stride = vertices.length / 4;
         int tint = quad.isTinted()
@@ -182,7 +190,8 @@ final class CopycatPanelRenderUtil {
                     + z * (maxZ - minZ));
             VertexLighting lighting = vertexLighting(level, pos, facing,
                     localFace, worldFace, x, y, z);
-            float shade = directionalShade * lighting.ambientOcclusion();
+            float shade = directionalShade * lighting.ambientOcclusion()
+                    * Math.max(0.0F, Math.min(1.0F, brightness));
             int red = Math.max(0, Math.min(255,
                     Math.round(((tint >> 16) & 0xFF) * shade)));
             int green = Math.max(0, Math.min(255,
@@ -310,13 +319,22 @@ final class CopycatPanelRenderUtil {
         BlockPos sideB = facePos.relative(tangentB);
         BlockPos corner = sideA.relative(tangentB);
 
-        float ao = (shadeBrightness(level, facePos)
+        float rawAo = (shadeBrightness(level, facePos)
                 + shadeBrightness(level, sideA)
                 + shadeBrightness(level, sideB)
                 + shadeBrightness(level, corner)) * 0.25F;
-        ao = Math.max(0.0F, Math.min(1.0F, ao));
+        rawAo = Math.max(0.0F, Math.min(1.0F, rawAo));
 
-        int packed = averageLight(level, facePos, sideA, sideB, corner);
+        /*
+         * Full-strength corner AO was substantially stronger than vanilla on
+         * these BER surfaces. Shader packs then amplified the interpolated
+         * lightmap into a pale vertical sheen. Keep only a restrained part of
+         * the corner term and use one stable face light value.
+         */
+        float ao = 1.0F - (1.0F - rawAo) * 0.18F;
+        int packed = level.hasChunkAt(facePos)
+                ? LevelRenderer.getLightColor(level, facePos)
+                : LevelRenderer.getLightColor(level, pos);
         return new VertexLighting(ao, packed);
     }
 
@@ -324,25 +342,6 @@ final class CopycatPanelRenderUtil {
         if (!level.hasChunkAt(pos)) return 1.0F;
         BlockState sample = level.getBlockState(pos);
         return sample.getShadeBrightness(level, pos);
-    }
-
-    private static int averageLight(Level level, BlockPos... positions) {
-        int block = 0;
-        int sky = 0;
-        int count = 0;
-        for (BlockPos sample : positions) {
-            if (!level.hasChunkAt(sample)) continue;
-            int packed = LevelRenderer.getLightColor(level, sample);
-            block += LightTexture.block(packed);
-            sky += LightTexture.sky(packed);
-            count++;
-        }
-        if (count <= 0) {
-            return LevelRenderer.getLightColor(level, positions[0]);
-        }
-        return LightTexture.pack(
-                Math.round(block / (float) count),
-                Math.round(sky / (float) count));
     }
 
     private record VertexLighting(float ambientOcclusion, int packedLight) {

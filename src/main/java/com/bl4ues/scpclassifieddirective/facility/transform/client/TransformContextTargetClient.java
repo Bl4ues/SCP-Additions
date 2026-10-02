@@ -1,6 +1,5 @@
 package com.bl4ues.scpclassifieddirective.facility.transform.client;
 
-import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
 import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup;
@@ -36,16 +35,24 @@ public final class TransformContextTargetClient {
     // when a group/surface snapshot is replaced by its authoritative state.
     private record GroupButtons(TransformGroup source,
             List<TransformGroup.GridPos> addresses) { }
+    private record GroupDoors(TransformGroup source,
+            List<TransformGroup.GridPos> addresses) { }
     private record SurfaceButton(ConstructionSurface.SurfaceSlot slot,
             boolean overlay, int normalSign) { }
     private record SurfaceButtons(ConstructionSurface source,
             List<SurfaceButton> addresses) { }
+    private record SurfaceDoors(ConstructionSurface source,
+            List<SurfaceButton> addresses) { }
     private static final Map<UUID, GroupButtons> GROUP_BUTTONS = new HashMap<>();
     private static final Map<UUID, SurfaceButtons> SURFACE_BUTTONS = new HashMap<>();
+    private static final Map<UUID, GroupDoors> GROUP_DOORS = new HashMap<>();
+    private static final Map<UUID, SurfaceDoors> SURFACE_DOORS = new HashMap<>();
 
     public static void clearButtonCache() {
         GROUP_BUTTONS.clear();
         SURFACE_BUTTONS.clear();
+        GROUP_DOORS.clear();
+        SURFACE_DOORS.clear();
     }
 
     /** Nearby authored buttons share vanilla's proximity/offscreen prompt
@@ -118,6 +125,92 @@ public final class TransformContextTargetClient {
                 if (distanceSqr > 64.0D) continue;
                 found.add(new Target(address.overlay()
                         ? Kind.SURFACE_OVERLAY : Kind.SURFACE_MAIN,
+                        attachment.state(), Math.sqrt(distanceSqr),
+                        null, null, surface.id(), address.slot(),
+                        address.normalSign()));
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Gecko manual doors use proximity interaction rather than an aim ray.
+     * Keep a small cached index so transformed doors can surface their prompt
+     * even while the player is looking away, matching ordinary world doors.
+     */
+    public static List<Target> nearbyGeckoDoors(LocalPlayer player) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (player == null || minecraft.level == null) return List.of();
+        Vec3 eye = player.getEyePosition(1.0F);
+        var dimension = minecraft.level.dimension().location();
+        List<Target> found = new ArrayList<>();
+
+        for (TransformGroup group :
+                TransformConstructionClientState.groups(dimension)) {
+            GroupDoors cached = GROUP_DOORS.get(group.id());
+            if (cached == null || cached.source() != group) {
+                List<TransformGroup.GridPos> addresses = new ArrayList<>();
+                group.cells().forEach((cell, state) -> {
+                    if (FacilityGeckoDoorModule.isDoor(state)) {
+                        addresses.add(cell);
+                    }
+                });
+                cached = new GroupDoors(group, List.copyOf(addresses));
+                GROUP_DOORS.put(group.id(), cached);
+            }
+            if (cached.addresses().isEmpty()) continue;
+
+            Vec3 eyeLocal = TransformMath.worldToLocal(group.origin(), eye,
+                    group.rotationX(), group.rotationY(), group.rotationZ());
+            for (TransformGroup.GridPos cell : cached.addresses()) {
+                BlockState state = group.cells().get(cell);
+                if (state == null || state.isAir()) continue;
+                Vec3 local = new Vec3(cell.x(), cell.y(), cell.z());
+                double distanceSqr = local.distanceToSqr(eyeLocal);
+                // Final prompt scoring applies the exact two-block range.
+                // Four blocks here is only a cheap candidate prefilter.
+                if (distanceSqr > 16.0D) continue;
+                found.add(new Target(Kind.GROUP, state,
+                        Math.sqrt(distanceSqr), group.id(), cell,
+                        null, null, 0));
+            }
+        }
+
+        for (ConstructionSurface surface :
+                TransformConstructionClientState.surfaces(dimension)) {
+            SurfaceDoors cached = SURFACE_DOORS.get(surface.id());
+            if (cached == null || cached.source() != surface) {
+                List<SurfaceButton> addresses = new ArrayList<>();
+                surface.attachments().forEach((slot, attachment) -> {
+                    if (FacilityGeckoDoorModule.isDoor(attachment.state())) {
+                        addresses.add(new SurfaceButton(slot, false,
+                                TransformSurfaceGeometry.MAIN_SIDE));
+                    }
+                });
+                surface.overlays().forEach((slot, attachment) -> {
+                    if (FacilityGeckoDoorModule.isDoor(attachment.state())) {
+                        addresses.add(new SurfaceButton(slot.slot(), true,
+                                slot.normalSign()));
+                    }
+                });
+                cached = new SurfaceDoors(surface, List.copyOf(addresses));
+                SURFACE_DOORS.put(surface.id(), cached);
+            }
+
+            for (SurfaceButton address : cached.addresses()) {
+                ConstructionSurface.SurfaceAttachment attachment =
+                        address.overlay()
+                                ? surface.overlay(address.slot(),
+                                        address.normalSign())
+                                : surface.attachments().get(address.slot());
+                if (attachment == null || attachment.state().isAir()) continue;
+                Vec3 center = TransformSurfaceGeometry.logicalPoint(surface,
+                        address.slot(), false, address.normalSign(),
+                        address.overlay(), 0.5D, 0.5D, 0.5D);
+                double distanceSqr = center.distanceToSqr(eye);
+                if (distanceSqr > 16.0D) continue;
+                found.add(new Target(address.overlay()
+                                ? Kind.SURFACE_OVERLAY : Kind.SURFACE_MAIN,
                         attachment.state(), Math.sqrt(distanceSqr),
                         null, null, surface.id(), address.slot(),
                         address.normalSign()));
@@ -201,64 +294,6 @@ public final class TransformContextTargetClient {
                         : target.normalSign(),
                 target.kind() == Kind.SURFACE_OVERLAY,
                 vanillaLocal.x, vanillaLocal.y, vanillaLocal.z);
-    }
-
-    /**
-     * Exact world-space aim test for transformed Gecko door handles. This uses
-     * the same rigid group/Surface frame as rendering and prompt anchors, then
-     * delegates the final cube test to the shared authored handle geometry.
-     */
-    public static boolean rayHitsDoorHandle(Target target, Vec3 worldStart,
-            Vec3 worldEnd) {
-        if (target == null || worldStart == null || worldEnd == null
-                || !FacilityGeckoDoorModule.isDoor(target.state())) {
-            return false;
-        }
-
-        if (target.kind() == Kind.GROUP) {
-            TransformGroup group =
-                    TransformConstructionClientState.group(target.groupId());
-            if (group == null || target.groupCell() == null) return false;
-            Vec3 start = TransformMath.worldToLocal(group.origin(), worldStart,
-                    group.rotationX(), group.rotationY(), group.rotationZ());
-            Vec3 end = TransformMath.worldToLocal(group.origin(), worldEnd,
-                    group.rotationX(), group.rotationY(), group.rotationZ());
-            TransformGroup.GridPos cell = target.groupCell();
-            Vec3 offset = new Vec3(cell.x() - 0.5D,
-                    cell.y() - 0.5D, cell.z() - 0.5D);
-            return FacilityGeckoDoorGeometry.rayHitsHandle(target.state(),
-                    start.subtract(offset), end.subtract(offset));
-        }
-
-        ConstructionSurface surface =
-                TransformConstructionClientState.surface(target.surfaceId());
-        if (surface == null || target.surfaceSlot() == null) return false;
-        boolean overlay = target.kind() == Kind.SURFACE_OVERLAY;
-        int side = overlay
-                ? (target.normalSign() < 0 ? -1 : 1)
-                : TransformSurfaceGeometry.MAIN_SIDE;
-        double u = (target.surfaceSlot().column() + 0.5D)
-                / surface.columns();
-        double v = (target.surfaceSlot().row() + 0.5D)
-                / surface.rows();
-        Vec3 normal = surface.gridNormal(u, v).scale(side);
-        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
-        Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
-                surface.gridVertical(u, v));
-        Vec3 center = TransformSurfaceGeometry.cellCenter(surface,
-                target.surfaceSlot(), side, overlay);
-
-        return FacilityGeckoDoorGeometry.rayHitsHandle(target.state(),
-                toSurfaceLocal(worldStart, center, tangent, vertical, normal),
-                toSurfaceLocal(worldEnd, center, tangent, vertical, normal));
-    }
-
-    private static Vec3 toSurfaceLocal(Vec3 world, Vec3 center,
-            Vec3 tangent, Vec3 vertical, Vec3 normal) {
-        Vec3 delta = world.subtract(center);
-        return new Vec3(delta.dot(tangent) + 0.5D,
-                delta.dot(vertical) + 0.5D,
-                delta.dot(normal) + 0.5D);
     }
 
     public static boolean alive(Target target) {

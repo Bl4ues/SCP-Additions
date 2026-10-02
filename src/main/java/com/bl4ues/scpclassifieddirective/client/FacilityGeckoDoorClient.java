@@ -7,10 +7,12 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule.DoorIt
 import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule.Family;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -244,6 +246,30 @@ public final class FacilityGeckoDoorClient {
             this.doorModel = model;
             addGlassLayer();
             addWorkshopLayer();
+        }
+
+        @Override
+        public void preRender(PoseStack poseStack, DoorItem animatable,
+                BakedGeoModel model, MultiBufferSource bufferSource,
+                VertexConsumer buffer, boolean isReRender, float partialTick,
+                int packedLight, int packedOverlay, float red, float green,
+                float blue, float alpha) {
+            super.preRender(poseStack, animatable, model, bufferSource, buffer,
+                    isReRender, partialTick, packedLight, packedOverlay,
+                    red, green, blue, alpha);
+            if (!isReRender && animatable.family() == Family.WORKSHOP
+                    && isHandContext(this.renderPerspective)) {
+                // Inventory/display keeps the authored 180-degree workshop
+                // root. Held views get one extra 180 around the model centre.
+                poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+            }
+        }
+
+        private static boolean isHandContext(ItemDisplayContext context) {
+            return context == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+                    || context == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+                    || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                    || context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
         }
 
         private void addGlassLayer() {

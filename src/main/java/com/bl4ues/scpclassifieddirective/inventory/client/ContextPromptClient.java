@@ -2,7 +2,6 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextBlockTargetResolver;
-import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
 import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
@@ -207,6 +206,7 @@ public final class ContextPromptClient {
             LocalPlayer player) {
         List<TransformContextTargetClient.Target> candidates =
                 new ArrayList<>(TransformContextTargetClient.nearbyDoorButtons(player));
+        candidates.addAll(TransformContextTargetClient.nearbyGeckoDoors(player));
         TransformContextTargetClient.Target aimed =
                 TransformContextTargetClient.find(player);
         if (aimed != null) candidates.add(aimed);
@@ -227,10 +227,7 @@ public final class ContextPromptClient {
                         ? FacilityGeckoDoorModule.INTERACTION_RANGE
                         : rule.range();
                 if (geckoDoor
-                        && (!FacilityGeckoDoorModule.isInteractable(state)
-                        || !TransformContextTargetClient.rayHitsDoorHandle(
-                                transformed, eye,
-                                eye.add(look.scale(interactionRange))))) {
+                        && !FacilityGeckoDoorModule.isInteractable(state)) {
                     continue;
                 }
                 Vec3 anchor = TransformContextTargetClient.anchor(transformed, rule);
@@ -239,7 +236,8 @@ public final class ContextPromptClient {
                         || !Double.isFinite(anchor.z)) continue;
                 double aimRadius = Math.min(0.34D,
                         Math.max(0.16D, interactionRange * 0.13D));
-                boolean offscreen = doorButton || rule.allowOffscreen();
+                boolean offscreen = geckoDoor || doorButton
+                        || rule.allowOffscreen();
                 double score = scorePoint(anchor, eye, look, interactionRange,
                         false, rule.priority(), !doorButton && !geckoDoor,
                         aimRadius * aimRadius, offscreen);
@@ -305,9 +303,8 @@ public final class ContextPromptClient {
                 double interactionRange = geckoDoor
                         ? FacilityGeckoDoorModule.INTERACTION_RANGE
                         : rule.range();
-                if (geckoDoor && !FacilityGeckoDoorGeometry.rayHitsHandle(
-                        ruleState, rulePos, eye,
-                        eye.add(look.scale(interactionRange)))) {
+                if (geckoDoor
+                        && !FacilityGeckoDoorModule.isInteractable(ruleState)) {
                     continue;
                 }
                 if (isElevatorStationButton(rule.interactionKey())
@@ -315,11 +312,13 @@ public final class ContextPromptClient {
                         ruleState)) {
                     continue;
                 }
+                boolean offscreen = geckoDoor
+                        || rule.allowOffscreen();
                 double score = scorePoint(anchor, eye, look,
                         interactionRange, directHit, rule.priority(),
                         rule.requiresPreciseAim() && !geckoDoor,
                         preciseAimRadiusSqr(rule.interactionKey()),
-                        rule.allowOffscreen());
+                        offscreen);
                 if (rule.hasRequiredItem()) score -= 0.12D;
                 if (!isElevatorButton(rule.interactionKey())
                         && isCurrentBlockTarget(rulePos,
@@ -345,7 +344,7 @@ public final class ContextPromptClient {
                             rule.interactionKey(), rule.action(), name,
                             showAction, showName, allowUse, icon,
                             (float) rule.promptScale(),
-                            rule.allowOffscreen(), score, null);
+                            offscreen, score, null);
                 }
             }
         }

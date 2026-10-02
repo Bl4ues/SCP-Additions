@@ -318,9 +318,11 @@ public final class PickupOutlineRenderer {
     }
 
     /**
-     * Replays exactly the cubes represented by the authored "handle" bone.
-     * The same local geometry powers prompt targeting and click validation, so
-     * the highlight cannot drift onto the door leaf.
+     * Replays the actual cubes authored inside the Gecko {@code handle} bone.
+     * Coordinates stay in Blockbench space until the last step, where
+     * FacilityGeckoDoorGeometry applies GeckoLib's real X mirror, bone/root
+     * rotations, animation endpoint and FACING transform. No interaction
+     * VoxelShape is used as an outline surrogate.
      */
     private static void renderFacilityDoorHandleMask(Minecraft minecraft,
             BlockPos pos, PoseStack poseStack, Camera camera) {
@@ -347,29 +349,38 @@ public final class PickupOutlineRenderer {
         if (family == null) return;
         VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
                 RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
-        for (AABB box : FacilityGeckoDoorGeometry.closedHandleBoxes(family)) {
+        for (FacilityGeckoDoorGeometry.AuthoredBox box
+                : FacilityGeckoDoorGeometry.authoredHandleBoxes(family)) {
             emitFacilityDoorHandleBox(consumer, poseStack.last(), state, box);
         }
     }
 
     private static void emitFacilityDoorHandleBox(VertexConsumer consumer,
-            PoseStack.Pose pose, BlockState state, AABB box) {
-        Vec3 p000 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.minX, box.minY, box.minZ));
-        Vec3 p001 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.minX, box.minY, box.maxZ));
-        Vec3 p010 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.minX, box.maxY, box.minZ));
-        Vec3 p011 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.minX, box.maxY, box.maxZ));
-        Vec3 p100 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.maxX, box.minY, box.minZ));
-        Vec3 p101 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.maxX, box.minY, box.maxZ));
-        Vec3 p110 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.maxX, box.maxY, box.minZ));
-        Vec3 p111 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
-                new Vec3(box.maxX, box.maxY, box.maxZ));
+            PoseStack.Pose pose, BlockState state,
+            FacilityGeckoDoorGeometry.AuthoredBox box) {
+        double x0 = box.originX();
+        double y0 = box.originY();
+        double z0 = box.originZ();
+        double x1 = x0 + box.sizeX();
+        double y1 = y0 + box.sizeY();
+        double z1 = z0 + box.sizeZ();
+
+        Vec3 p000 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x0, y0, z0));
+        Vec3 p001 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x0, y0, z1));
+        Vec3 p010 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x0, y1, z0));
+        Vec3 p011 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x0, y1, z1));
+        Vec3 p100 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x1, y0, z0));
+        Vec3 p101 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x1, y0, z1));
+        Vec3 p110 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x1, y1, z0));
+        Vec3 p111 = FacilityGeckoDoorGeometry.transformAuthoredHandlePoint(
+                state, new Vec3(x1, y1, z1));
 
         Matrix4f matrix = pose.pose();
         Matrix3f normal = pose.normal();

@@ -888,7 +888,7 @@
         "face": "player"
       },
       "visual": {
-        "allowOffscreen": false
+        "allowOffscreen": true
       },
       "icon": "hand"
     },
@@ -922,7 +922,7 @@
         "face": "player"
       },
       "visual": {
-        "allowOffscreen": false
+        "allowOffscreen": true
       },
       "icon": "hand"
     },
@@ -956,7 +956,7 @@
         "face": "player"
       },
       "visual": {
-        "allowOffscreen": false
+        "allowOffscreen": true
       },
       "icon": "hand"
     },
@@ -990,7 +990,7 @@
         "face": "player"
       },
       "visual": {
-        "allowOffscreen": false
+        "allowOffscreen": true
       },
       "icon": "hand"
     },
@@ -1024,7 +1024,7 @@
         "face": "player"
       },
       "visual": {
-        "allowOffscreen": false
+        "allowOffscreen": true
       },
       "icon": "hand"
     },
@@ -1058,7 +1058,7 @@
         "face": "player"
       },
       "visual": {
-        "allowOffscreen": false
+        "allowOffscreen": true
       },
       "icon": "hand"
     }

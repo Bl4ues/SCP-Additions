@@ -337,11 +337,7 @@ public final class FacilityGeckoDoorModule {
         public InteractionResult use(BlockState state, Level level,
                 BlockPos pos, Player player, InteractionHand hand,
                 BlockHitResult hit) {
-            if (!isInteractable(state)
-                    || !FacilityGeckoDoorGeometry.isHandleHit(
-                            state, pos, hit.getLocation())) {
-                return InteractionResult.PASS;
-            }
+            if (!isInteractable(state)) return InteractionResult.PASS;
             if (level.isClientSide) return InteractionResult.SUCCESS;
             if (!(level instanceof ServerLevel server)) {
                 return InteractionResult.PASS;
@@ -402,12 +398,9 @@ public final class FacilityGeckoDoorModule {
         @Override
         public VoxelShape getShape(BlockState state, BlockGetter level,
                 BlockPos pos, CollisionContext context) {
-            // Collision keeps the established door envelope. Selection also
-            // includes the exact 100-degree Gecko endpoint of the handle so a
-            // raw use click can still acquire the visible handle when open.
-            return Shapes.or(physicalShape(state),
-                    FacilityGeckoDoorGeometry.handleSelectionShape(state))
-                    .optimize();
+            // The handle is a Context Interaction highlight, not a fake
+            // selection box. Selection follows only the real door body/frame.
+            return physicalShape(state);
         }
 
         @Override

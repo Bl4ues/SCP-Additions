@@ -5,6 +5,8 @@ import com.bl4ues.scpclassifieddirective.block.entity.Scp914BlockEntity;
 import com.bl4ues.scpclassifieddirective.client.Scp294PhysicalClient;
 import com.bl4ues.scpclassifieddirective.client.Scp914InteractionClient;
 import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.init.Scp714Items;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.transform.ConstructionSurface;
@@ -41,6 +43,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -132,6 +135,10 @@ public final class PickupOutlineRenderer {
                     && isScp714ContainmentStandControl(
                     context.interactionKey())) {
                 renderScp714ContainmentStandMask(minecraft, context,
+                        poseStack, camera);
+            } else if (context != null && context.isBlock()
+                    && isFacilityGeckoDoor(minecraft, context.blockPos())) {
+                renderFacilityDoorHandleMask(minecraft, context.blockPos(),
                         poseStack, camera);
             } else if (context != null && context.isScp914Control()) {
                 renderScp914ControlMask(minecraft, context, poseStack, camera);
@@ -254,7 +261,10 @@ public final class PickupOutlineRenderer {
                 poseStack.translate(-0.5D, -0.5D, -0.5D);
             }
 
-            if (state.getRenderShape() != RenderShape.ENTITYBLOCK_ANIMATED) {
+            if (FacilityGeckoDoorModule.isDoor(state)) {
+                renderFacilityDoorHandleLocalMask(state, poseStack);
+            } else if (state.getRenderShape()
+                    != RenderShape.ENTITYBLOCK_ANIMATED) {
                 minecraft.getBlockRenderer().renderSingleBlock(state,
                         poseStack, OUTLINE_BUFFER, LightTexture.FULL_BRIGHT,
                         OverlayTexture.NO_OVERLAY);
@@ -298,6 +308,96 @@ public final class PickupOutlineRenderer {
         } finally {
             poseStack.popPose();
         }
+    }
+
+    private static boolean isFacilityGeckoDoor(Minecraft minecraft,
+            BlockPos pos) {
+        return minecraft.level != null && pos != null
+                && FacilityGeckoDoorModule.isDoor(
+                        minecraft.level.getBlockState(pos));
+    }
+
+    /**
+     * Replays exactly the cubes represented by the authored "handle" bone.
+     * The same local geometry powers prompt targeting and click validation, so
+     * the highlight cannot drift onto the door leaf.
+     */
+    private static void renderFacilityDoorHandleMask(Minecraft minecraft,
+            BlockPos pos, PoseStack poseStack, Camera camera) {
+        if (minecraft.level == null || pos == null) return;
+        BlockState state = minecraft.level.getBlockState(pos);
+        if (!FacilityGeckoDoorModule.isDoor(state)) return;
+        Vec3 cameraPosition = camera.getPosition();
+
+        poseStack.pushPose();
+        try {
+            poseStack.translate(pos.getX() - cameraPosition.x,
+                    pos.getY() - cameraPosition.y,
+                    pos.getZ() - cameraPosition.z);
+            renderFacilityDoorHandleLocalMask(state, poseStack);
+        } finally {
+            poseStack.popPose();
+        }
+    }
+
+    private static void renderFacilityDoorHandleLocalMask(BlockState state,
+            PoseStack poseStack) {
+        FacilityGeckoDoorModule.Family family =
+                FacilityGeckoDoorModule.family(state);
+        if (family == null) return;
+        VertexConsumer consumer = OUTLINE_BUFFER.getBuffer(
+                RenderType.entityCutoutNoCull(BUTTON_MASK_TEXTURE));
+        for (AABB box : FacilityGeckoDoorGeometry.closedHandleBoxes(family)) {
+            emitFacilityDoorHandleBox(consumer, poseStack.last(), state, box);
+        }
+    }
+
+    private static void emitFacilityDoorHandleBox(VertexConsumer consumer,
+            PoseStack.Pose pose, BlockState state, AABB box) {
+        Vec3 p000 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.minX, box.minY, box.minZ));
+        Vec3 p001 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.minX, box.minY, box.maxZ));
+        Vec3 p010 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.minX, box.maxY, box.minZ));
+        Vec3 p011 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.minX, box.maxY, box.maxZ));
+        Vec3 p100 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.maxX, box.minY, box.minZ));
+        Vec3 p101 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.maxX, box.minY, box.maxZ));
+        Vec3 p110 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.maxX, box.maxY, box.minZ));
+        Vec3 p111 = FacilityGeckoDoorGeometry.transformHandlePoint(state,
+                new Vec3(box.maxX, box.maxY, box.maxZ));
+
+        Matrix4f matrix = pose.pose();
+        Matrix3f normal = pose.normal();
+        doorQuad(consumer, matrix, normal, p000, p001, p011, p010);
+        doorQuad(consumer, matrix, normal, p101, p100, p110, p111);
+        doorQuad(consumer, matrix, normal, p100, p000, p010, p110);
+        doorQuad(consumer, matrix, normal, p001, p101, p111, p011);
+        doorQuad(consumer, matrix, normal, p010, p011, p111, p110);
+        doorQuad(consumer, matrix, normal, p000, p100, p101, p001);
+    }
+
+    private static void doorQuad(VertexConsumer consumer, Matrix4f matrix,
+            Matrix3f normal, Vec3 a, Vec3 b, Vec3 c, Vec3 d) {
+        Vec3 edgeA = b.subtract(a);
+        Vec3 edgeB = d.subtract(a);
+        Vec3 n = edgeA.cross(edgeB).normalize();
+        vertex(consumer, matrix, normal, (float) a.x, (float) a.y,
+                (float) a.z, 0.0F, 0.0F,
+                (float) n.x, (float) n.y, (float) n.z);
+        vertex(consumer, matrix, normal, (float) b.x, (float) b.y,
+                (float) b.z, 1.0F, 0.0F,
+                (float) n.x, (float) n.y, (float) n.z);
+        vertex(consumer, matrix, normal, (float) c.x, (float) c.y,
+                (float) c.z, 1.0F, 1.0F,
+                (float) n.x, (float) n.y, (float) n.z);
+        vertex(consumer, matrix, normal, (float) d.x, (float) d.y,
+                (float) d.z, 0.0F, 1.0F,
+                (float) n.x, (float) n.y, (float) n.z);
     }
 
     private static boolean isScp714ContainmentStandControl(

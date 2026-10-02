@@ -177,6 +177,9 @@ public final class FacilityGeckoDoorGeometry {
             box(-7.1D, 16.95D, -6.0D, 2.75D, 0.75D, 0.5D),
             box(-7.1D, 16.95D, -9.5D, 2.75D, 0.75D, 0.5D));
 
+    private static final AuthoredBox BATHROOM_DOOR_LEAF =
+            box(-7.75D, 0.0D, -8.0D, 15.5D, 32.0D, 1.0D);
+
     private static final List<AuthoredBox> BATHROOM_HANDLE = List.of(
             box(4.4D, 14.9D, -9.0D, 0.75D, 0.75D, 1.0D),
             box(4.4D, 14.9D, -9.5D, 0.75D, 5.25D, 0.5D),

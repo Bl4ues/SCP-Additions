@@ -14,6 +14,7 @@ public final class ContextPromptClickGuard {
     @SubscribeEvent
     public static void onClick(InputEvent.InteractionKeyMappingTriggered event) {
         if (event.isUseItem() && ContextPromptClient.hasRightClickTarget()) {
+            ContextPromptClient.tryUseImmediateCopycatPanelTarget();
             event.setCanceled(true);
         }
     }

@@ -3,6 +3,8 @@ package com.bl4ues.scpclassifieddirective.inventory.client;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextInteractionRegistry;
 import com.bl4ues.scpclassifieddirective.inventory.context.ContextBlockTargetResolver;
 import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
+import com.bl4ues.scpclassifieddirective.facility.WallPanelModule;
+import com.bl4ues.scpclassifieddirective.facility.DoubleWallPanelModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.client.TransformContextTargetClient;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformWallFixturePlacement;
 import com.bl4ues.scpclassifieddirective.inventory.network.ContextInteractPacket;
@@ -98,6 +100,40 @@ public final class ContextPromptClient {
             cooldownTicks = CLICK_COOLDOWN_TICKS;
             clear();
         }
+    }
+
+    public static boolean tryUseImmediateCopycatPanelTarget() {
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
+        if (player == null || minecraft.level == null
+                || minecraft.screen != null) {
+            return false;
+        }
+        if (target == null || !target.isAlive(minecraft)) {
+            target = findContextTarget(minecraft, player);
+        }
+        if (target == null || target.entity()
+                || target.transformed() != null
+                || !target.allowRightClick()
+                || !isCopycatPanelInteraction(target.interactionKey())) {
+            return false;
+        }
+
+        ModNetwork.CHANNEL.sendToServer(new ContextInteractPacket(
+                target.pos(), 0, false,
+                Screen.hasShiftDown(), Screen.hasControlDown(),
+                target.interactionKey()));
+        cooldownTicks = CLICK_COOLDOWN_TICKS;
+        useWasDown = true;
+        clear();
+        return true;
+    }
+
+    private static boolean isCopycatPanelInteraction(String key) {
+        return WallPanelModule.REMOVE_FRONT_INTERACTION.equals(key)
+                || WallPanelModule.REMOVE_BACK_INTERACTION.equals(key)
+                || DoubleWallPanelModule.REMOVE_FRONT_INTERACTION.equals(key)
+                || DoubleWallPanelModule.REMOVE_BACK_INTERACTION.equals(key);
     }
 
     public static boolean hasRightClickTarget() {

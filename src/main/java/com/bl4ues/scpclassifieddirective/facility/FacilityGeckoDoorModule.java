@@ -210,6 +210,10 @@ public final class FacilityGeckoDoorModule {
         return family(state) != null;
     }
 
+    public static boolean isDoorBlock(Block block) {
+        return block instanceof DoorBlock;
+    }
+
     public static Phase phase(BlockState state) {
         return isDoor(state) && state.hasProperty(STAGE)
                 ? state.getValue(STAGE) : Phase.CLOSED;

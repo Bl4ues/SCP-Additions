@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
 import com.bl4ues.scpclassifieddirective.facility.transform.TransformGroup.GridPos;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;

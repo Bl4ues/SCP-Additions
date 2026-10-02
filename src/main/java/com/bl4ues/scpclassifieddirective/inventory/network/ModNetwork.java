@@ -12,7 +12,7 @@ import com.bl4ues.scpclassifieddirective.config.ui.ConfigCenterNetwork;
 import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 
 public final class ModNetwork {
-    private static final String PROTOCOL_VERSION = "22";
+    private static final String PROTOCOL_VERSION = "23";
     private static boolean registered;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -49,6 +49,10 @@ public final class ModNetwork {
                 CopycatPanelRemovePacket::encode,
                 CopycatPanelRemovePacket::decode,
                 CopycatPanelRemovePacket::handle);
+        CHANNEL.registerMessage(id++, CopycatPanelStateSyncPacket.class,
+                CopycatPanelStateSyncPacket::encode,
+                CopycatPanelStateSyncPacket::decode,
+                CopycatPanelStateSyncPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigSelectPacket.class, ContextConfigSelectPacket::encode, ContextConfigSelectPacket::decode, ContextConfigSelectPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigOpenPacket.class, ContextConfigOpenPacket::encode, ContextConfigOpenPacket::decode, ContextConfigOpenPacket::handle);
         CHANNEL.registerMessage(id++, ContextConfigSavePacket.class, ContextConfigSavePacket::encode, ContextConfigSavePacket::decode, ContextConfigSavePacket::handle);

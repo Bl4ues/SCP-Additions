@@ -3,6 +3,8 @@ package com.bl4ues.scpclassifieddirective.facility;
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.DoubleWallPanelClient;
 import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
+import com.bl4ues.scpclassifieddirective.inventory.network.CopycatPanelStateSyncPacket;
+import com.bl4ues.scpclassifieddirective.inventory.network.ModNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -11,7 +13,6 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
@@ -46,6 +47,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -368,12 +370,11 @@ public final class DoubleWallPanelModule {
                 // to guarantee that clients receive fresh BlockEntity model
                 // data. The copied material lives in ModelData, so explicitly
                 // deliver the vanilla BlockEntity update packet as well.
-                ClientboundBlockEntityDataPacket packet = getUpdatePacket();
-                if (packet != null) {
-                    for (ServerPlayer player : serverLevel.players()) {
-                        player.connection.send(packet);
-                    }
-                }
+                ModNetwork.CHANNEL.send(
+                        PacketDistributor.DIMENSION.with(
+                                serverLevel::dimension),
+                        new CopycatPanelStateSyncPacket(
+                                worldPosition, getUpdateTag()));
             }
         }
 

@@ -447,49 +447,68 @@ public final class CopycatPanelBakedModels {
             return new float[]{originalU, originalV};
         }
 
-        float x = Float.intBitsToFloat(vertices[offset]);
-        float y = Float.intBitsToFloat(vertices[offset + 1]);
-        float z = Float.intBitsToFloat(vertices[offset + 2]);
-        float fixed = face.getAxis() == Direction.Axis.X ? y : x;
-        int fixedIndex = face.getAxis() == Direction.Axis.X ? 1 : 0;
-
-        int low = -1;
-        int high = -1;
-        float lowZ = Float.POSITIVE_INFINITY;
-        float highZ = Float.NEGATIVE_INFINITY;
+        float minSourceZ = Float.POSITIVE_INFINITY;
+        float maxSourceZ = Float.NEGATIVE_INFINITY;
         for (int i = 0; i < 4; i++) {
-            int candidateOffset = i * stride;
-            float candidateFixed = Float.intBitsToFloat(
-                    vertices[candidateOffset + fixedIndex]);
-            if (Math.abs(candidateFixed - fixed) > 1.0E-4F) continue;
             float candidateZ = Float.intBitsToFloat(
-                    vertices[candidateOffset + 2]);
-            if (candidateZ < lowZ) {
-                lowZ = candidateZ;
-                low = i;
-            }
-            if (candidateZ > highZ) {
-                highZ = candidateZ;
-                high = i;
-            }
+                    vertices[i * stride + 2]);
+            minSourceZ = Math.min(minSourceZ, candidateZ);
+            maxSourceZ = Math.max(maxSourceZ, candidateZ);
         }
-        if (low < 0 || high < 0 || Math.abs(highZ - lowZ) < 1.0E-6F) {
+        float sourceSpan = maxSourceZ - minSourceZ;
+        if (sourceSpan < 1.0E-6F) {
             return new float[]{originalU, originalV};
         }
 
-        float targetZ = minZ + z * (maxZ - minZ);
-        float t = (targetZ - lowZ) / (highZ - lowZ);
-        t = Math.max(0.0F, Math.min(1.0F, t));
+        float lowU = 0.0F;
+        float lowV = 0.0F;
+        float highU = 0.0F;
+        float highV = 0.0F;
+        int lowCount = 0;
+        int highCount = 0;
+        for (int i = 0; i < 4; i++) {
+            int candidateOffset = i * stride;
+            float candidateZ = Float.intBitsToFloat(
+                    vertices[candidateOffset + 2]);
+            float candidateU = Float.intBitsToFloat(
+                    vertices[candidateOffset + 4]);
+            float candidateV = Float.intBitsToFloat(
+                    vertices[candidateOffset + 5]);
+            if (Math.abs(candidateZ - minSourceZ) < 1.0E-4F) {
+                lowU += candidateU;
+                lowV += candidateV;
+                lowCount++;
+            }
+            if (Math.abs(candidateZ - maxSourceZ) < 1.0E-4F) {
+                highU += candidateU;
+                highV += candidateV;
+                highCount++;
+            }
+        }
+        if (lowCount == 0 || highCount == 0) {
+            return new float[]{originalU, originalV};
+        }
 
-        int lowOffset = low * stride;
-        int highOffset = high * stride;
-        float lowU = Float.intBitsToFloat(vertices[lowOffset + 4]);
-        float lowV = Float.intBitsToFloat(vertices[lowOffset + 5]);
-        float highU = Float.intBitsToFloat(vertices[highOffset + 4]);
-        float highV = Float.intBitsToFloat(vertices[highOffset + 5]);
+        lowU /= lowCount;
+        lowV /= lowCount;
+        highU /= highCount;
+        highV /= highCount;
+
+        float sourceZ = Float.intBitsToFloat(vertices[offset + 2]);
+        float sourceT = (sourceZ - minSourceZ) / sourceSpan;
+        sourceT = Math.max(0.0F, Math.min(1.0F, sourceT));
+        float croppedT = minZ + sourceT * (maxZ - minZ);
+
+        float deltaU = highU - lowU;
+        float deltaV = highV - lowV;
+        if (Math.abs(deltaU) >= Math.abs(deltaV)) {
+            return new float[]{
+                    lowU + deltaU * croppedT,
+                    originalV
+            };
+        }
         return new float[]{
-                lowU + (highU - lowU) * t,
-                lowV + (highV - lowV) * t
+                originalU,
+                lowV + deltaV * croppedT
         };
-    }
-}
+    }}

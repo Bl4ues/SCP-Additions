@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
 import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
@@ -68,6 +69,10 @@ public final class TransformDoorRuntime {
         TransformDoorStateAdapter.Address address = hit.address();
         if (address.stage() != DoorStage.CLOSED
                 && address.stage() != DoorStage.OPEN) return;
+        if (address.geckoFamily() != null
+                && !geckoHandleHit(hit, event.getHitVec().getLocation())) {
+            return;
+        }
 
         if (address.stage() == DoorStage.CLOSED) {
             start(level, hit.group(), hit.cell(), address, true);
@@ -76,6 +81,18 @@ public final class TransformDoorRuntime {
         }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
+    }
+
+    private static boolean geckoHandleHit(DoorHit hit,
+            Vec3 worldHit) {
+        TransformGroup group = hit.group();
+        Vec3 groupLocal = TransformMath.worldToLocal(group.origin(), worldHit,
+                group.rotationX(), group.rotationY(), group.rotationZ());
+        GridPos cell = hit.cell();
+        Vec3 blockLocal = groupLocal.subtract(
+                cell.x() - 0.5D, cell.y() - 0.5D, cell.z() - 0.5D);
+        return FacilityGeckoDoorGeometry.isHandleHit(
+                group.cells().get(cell), BlockPos.ZERO, blockLocal);
     }
 
     /**

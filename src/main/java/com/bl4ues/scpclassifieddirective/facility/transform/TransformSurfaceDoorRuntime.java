@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorGeometry;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
 import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
@@ -59,10 +60,41 @@ public final class TransformSurfaceDoorRuntime {
         TransformDoorStateAdapter.Address address = hit.address();
         if (address.stage() != DoorStage.CLOSED
                 && address.stage() != DoorStage.OPEN) return;
+        if (address.geckoFamily() != null
+                && !geckoHandleHit(hit, event.getHitVec().getLocation())) {
+            return;
+        }
         start(level, hit.surface(), hit.slot(), hit.normalSign(), address,
                 address.stage() == DoorStage.CLOSED);
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
+    }
+
+    private static boolean geckoHandleHit(DoorHit hit,
+            Vec3 worldHit) {
+        ConstructionSurface surface = hit.surface();
+        ConstructionSurface.SurfaceSlot slot = hit.slot();
+        int sign = hit.normalSign();
+        boolean overlay = sign != 0;
+        int side = overlay ? (sign < 0 ? -1 : 1)
+                : TransformSurfaceGeometry.MAIN_SIDE;
+        double u = (slot.column() + 0.5D) / surface.columns();
+        double v = (slot.row() + 0.5D) / surface.rows();
+        Vec3 normal = surface.gridNormal(u, v).scale(side);
+        Vec3 tangent = surface.gridFrameTangent(u, v).scale(side);
+        Vec3 vertical = TransformMath.safeNormalize(normal.cross(tangent),
+                surface.gridVertical(u, v));
+        Vec3 center = TransformSurfaceGeometry.cellCenter(surface, slot, side,
+                overlay);
+        Vec3 delta = worldHit.subtract(center);
+        Vec3 local = new Vec3(delta.dot(tangent) + 0.5D,
+                delta.dot(vertical) + 0.5D,
+                delta.dot(normal) + 0.5D);
+        ConstructionSurface.SurfaceAttachment attachment =
+                attachment(surface, slot, sign);
+        return attachment != null
+                && FacilityGeckoDoorGeometry.isHandleHit(attachment.state(),
+                        BlockPos.ZERO, local);
     }
 
     /**

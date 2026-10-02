@@ -8,6 +8,8 @@ import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesCon
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.entity.AbstractScp131Entity;
 import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
+import com.bl4ues.scpclassifieddirective.facility.WallPanelModule;
+import com.bl4ues.scpclassifieddirective.facility.DoubleWallPanelModule;
 import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
@@ -220,6 +222,35 @@ public class ContextInteractPacket {
             return;
         }
 
+        if (state.is(WallPanelModule.BLOCK.get())
+                && WallPanelModule.REMOVE_INTERACTION.equals(
+                        rule.interactionKey())
+                && level.getBlockEntity(pos)
+                instanceof WallPanelModule.WallPanelBlockEntity panel
+                && panel.hasMaterial()) {
+            giveOrDrop(player, panel.removeMaterial());
+            player.swing(hand, true);
+            return;
+        }
+
+        if (state.is(DoubleWallPanelModule.BLOCK.get())
+                && level.getBlockEntity(pos)
+                instanceof DoubleWallPanelModule.DoubleWallPanelBlockEntity panel) {
+            DoubleWallPanelModule.Side side = null;
+            if (DoubleWallPanelModule.REMOVE_FRONT_INTERACTION.equals(
+                    rule.interactionKey())) {
+                side = DoubleWallPanelModule.Side.FRONT;
+            } else if (DoubleWallPanelModule.REMOVE_BACK_INTERACTION.equals(
+                    rule.interactionKey())) {
+                side = DoubleWallPanelModule.Side.BACK;
+            }
+            if (side != null && panel.hasMaterial(side)) {
+                giveOrDrop(player, panel.removeMaterial(side));
+                player.swing(hand, true);
+                return;
+            }
+        }
+
         if (KeycardReaderInteractionEvents.tryHandleInteraction(player, pos,
                 shiftDown, controlDown)) {
             player.swing(InteractionHand.MAIN_HAND, true);
@@ -256,6 +287,14 @@ public class ContextInteractPacket {
             playTakePickupSound(player, rule);
             playDoorSoundForUser(player, level, pos, state, doorBefore,
                     wasOpen);
+        }
+    }
+
+    private static void giveOrDrop(ServerPlayer player,
+            ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+        if (!player.getInventory().add(stack)) {
+            player.drop(stack, false);
         }
     }
 

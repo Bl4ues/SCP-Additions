@@ -29,5 +29,7 @@ public final class CopycatPanelClientSync {
 
         BlockState state = minecraft.level.getBlockState(pos);
         minecraft.level.sendBlockUpdated(pos, state, state, Block.UPDATE_ALL);
+        com.bl4ues.scpclassifieddirective.inventory.client.ContextPromptClient
+                .clear();
     }
 }

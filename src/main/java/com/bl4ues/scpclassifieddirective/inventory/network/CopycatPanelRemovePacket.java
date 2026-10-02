@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.keycard.KeycardReaderInteractionEvents;
 import com.bl4ues.scpclassifieddirective.scp330.Scp330Hands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -14,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
 
@@ -65,6 +67,7 @@ public final class CopycatPanelRemovePacket {
 
             BlockState state = level.getBlockState(msg.pos);
             ItemStack returned = ItemStack.EMPTY;
+            CompoundTag updatedTag = null;
 
             if (state.is(WallPanelModule.BLOCK.get())
                     && level.getBlockEntity(msg.pos)
@@ -72,6 +75,7 @@ public final class CopycatPanelRemovePacket {
                 WallPanelModule.Side side = wallSide(msg.interactionKey);
                 if (side != null && panel.hasMaterial(side)) {
                     returned = panel.removeMaterial(side);
+                    updatedTag = panel.getUpdateTag();
                 }
             } else if (state.is(DoubleWallPanelModule.BLOCK.get())
                     && level.getBlockEntity(msg.pos)
@@ -80,10 +84,19 @@ public final class CopycatPanelRemovePacket {
                         doubleSide(msg.interactionKey);
                 if (side != null && panel.hasMaterial(side)) {
                     returned = panel.removeMaterial(side);
+                    updatedTag = panel.getUpdateTag();
                 }
             }
 
             if (returned.isEmpty()) return;
+
+            if (updatedTag != null) {
+                ModNetwork.CHANNEL.send(
+                        PacketDistributor.PLAYER.with(() -> player),
+                        new CopycatPanelStateSyncPacket(
+                                msg.pos, updatedTag));
+            }
+
             if (!player.getInventory().add(returned)) {
                 player.drop(returned, false);
             }

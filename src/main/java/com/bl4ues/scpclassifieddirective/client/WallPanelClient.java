@@ -105,48 +105,15 @@ public final class WallPanelClient {
                         int packedLight, int packedOverlay) {
                     if (!panel.hasMaterial()) return;
 
-                    poseStack.pushPose();
-                    try {
-                        /*
-                         * GeoBlockRenderer has already translated to the block
-                         * centre and applied FACING. Return to the north-local
-                         * block corner, then compress the copied full-block
-                         * model into the authored one-pixel panel depth.
-                         */
-                        poseStack.translate(-0.5D, 0.0D, -0.5D);
-                        poseStack.scale(1.0F, 1.0F, 1.0F / 16.0F);
-                        Minecraft.getInstance().getBlockRenderer()
-                                .renderSingleBlock(panel.materialState(),
-                                        poseStack, bufferSource,
-                                        copiedLight(panel),
-                                        packedOverlay);
-                    } finally {
-                        poseStack.popPose();
-                    }
+                    CopycatPanelRenderUtil.render(
+                            panel.materialState(), panel.getLevel(),
+                            panel.getBlockPos(),
+                            panel.getBlockState().getValue(
+                                    HorizontalDirectionalBlock.FACING),
+                            poseStack, bufferSource, packedOverlay,
+                            0.0D, 1.0D / 16.0D, null);
                 }
             });
-        }
-
-        private static int copiedLight(WallPanelBlockEntity panel) {
-            Level level = panel.getLevel();
-            if (level == null) return LightTexture.FULL_BRIGHT;
-
-            BlockPos sourcePos = panel.getBlockPos();
-            Direction face = panel.getBlockState().getValue(
-                    HorizontalDirectionalBlock.FACING);
-            BlockPos exposedPos = sourcePos.relative(face);
-
-            int source = LevelRenderer.getLightColor(level,
-                    panel.materialState(), sourcePos);
-            int exposed = level.hasChunkAt(exposedPos)
-                    ? LevelRenderer.getLightColor(level, exposedPos)
-                    : source;
-
-            return LightTexture.pack(
-                    Math.max(LightTexture.block(source),
-                            LightTexture.block(exposed)),
-                    Math.max(LightTexture.sky(source),
-                            LightTexture.sky(exposed)));
         }
 
         @Override

@@ -43,6 +43,10 @@ public final class FacilityGeckoDoorGeometry {
         };
     }
 
+    public static AuthoredBox bathroomDoorLeaf() {
+        return BATHROOM_DOOR_LEAF;
+    }
+
     public static Vec3 handleAnchor(BlockState state) {
         Family family = FacilityGeckoDoorModule.family(state);
         if (family == null) return new Vec3(0.5D, 1.0D, 0.5D);
@@ -109,7 +113,7 @@ public final class FacilityGeckoDoorGeometry {
 
     private static double openAngle(Family family) {
         return Math.toRadians(family == Family.LOGISTICS_RIGHT
-                || family == Family.WORKSHOP ? 100.0D : -100.0D);
+                || family == Family.WORKSHOP ? -100.0D : 100.0D);
     }
 
     private static Vec3 rawPointToModel(Vec3 raw) {

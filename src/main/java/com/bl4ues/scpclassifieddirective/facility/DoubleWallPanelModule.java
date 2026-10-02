@@ -2,7 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.DoubleWallPanelClient;
-import com.bl4ues.scpclassifieddirective.item.ScrewdriverItem;
+import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -153,7 +153,7 @@ public final class DoubleWallPanelModule {
             if (side == null) return InteractionResult.PASS;
 
             ItemStack held = player.getItemInHand(hand);
-            if (held.getItem() instanceof ScrewdriverItem) {
+            if (held.is(UnifiedReaderItems.SCREWDRIVER.get())) {
                 if (!panel.hasMaterial(side)) return InteractionResult.PASS;
                 if (level.isClientSide) return InteractionResult.SUCCESS;
                 give(player, panel.removeMaterial(side));

@@ -83,11 +83,6 @@ public final class FacilityGeckoDoorGeometry {
                 authoredPixels.y / 16.0D,
                 authoredPixels.z / 16.0D);
 
-        if (family == Family.BATHROOM) {
-            point = rotateY(point, bathroomHandlePivot(),
-                    Math.toRadians(-180.0D));
-        }
-
         if (FacilityGeckoDoorModule.phase(state) == Phase.OPEN) {
             point = rotateY(point, doorPivot(family), openAngle(family));
         }
@@ -110,10 +105,6 @@ public final class FacilityGeckoDoorGeometry {
 
     private static Vec3 workshopRootPivot() {
         return rawPointToModel(new Vec3(0.0D, 0.0D, -7.5D));
-    }
-
-    private static Vec3 bathroomHandlePivot() {
-        return rawPointToModel(new Vec3(-4.775D, 17.525D, -7.75D));
     }
 
     private static double openAngle(Family family) {
@@ -171,21 +162,21 @@ public final class FacilityGeckoDoorGeometry {
             box(4.65D, 16.5D, -9.5D, 2.75D, 0.75D, 0.5D));
 
     private static final List<AuthoredBox> LEFT_LOGISTICS_HANDLE = List.of(
-            box(6.15D, 16.75D, -9.0D, 0.75D, 0.75D, 1.0D),
-            box(6.15D, 16.75D, -7.0D, 0.75D, 0.75D, 1.0D),
-            box(4.15D, 16.75D, -6.0D, 2.75D, 0.75D, 0.5D),
-            box(4.15D, 16.75D, -9.5D, 2.75D, 0.75D, 0.5D));
+            box(5.9D, 17.25D, -9.0D, 0.75D, 0.75D, 1.0D),
+            box(5.9D, 17.25D, -7.0D, 0.75D, 0.75D, 1.0D),
+            box(3.9D, 17.25D, -6.0D, 2.75D, 0.75D, 0.5D),
+            box(3.9D, 17.25D, -9.5D, 2.75D, 0.75D, 0.5D));
 
     private static final List<AuthoredBox> RIGHT_LOGISTICS_HANDLE = List.of(
-            box(-6.9D, 16.75D, -9.0D, 0.75D, 0.75D, 1.0D),
-            box(-6.9D, 16.75D, -7.0D, 0.75D, 0.75D, 1.0D),
-            box(-6.9D, 16.75D, -6.0D, 2.75D, 0.75D, 0.5D),
-            box(-6.9D, 16.75D, -9.5D, 2.75D, 0.75D, 0.5D));
+            box(-6.65D, 17.25D, -9.0D, 0.75D, 0.75D, 1.0D),
+            box(-6.65D, 17.25D, -7.0D, 0.75D, 0.75D, 1.0D),
+            box(-6.65D, 17.25D, -6.0D, 2.75D, 0.75D, 0.5D),
+            box(-6.65D, 17.25D, -9.5D, 2.75D, 0.75D, 0.5D));
 
     private static final List<AuthoredBox> BATHROOM_HANDLE = List.of(
-            box(-5.15D, 14.9D, -9.0D, 0.75D, 0.75D, 1.0D),
-            box(-5.15D, 14.9D, -9.5D, 0.75D, 5.25D, 0.5D),
-            box(-5.15D, 19.4D, -9.0D, 0.75D, 0.75D, 1.0D));
+            box(4.4D, 14.9D, -9.0D, 0.75D, 0.75D, 1.0D),
+            box(4.4D, 14.9D, -9.5D, 0.75D, 5.25D, 0.5D),
+            box(4.4D, 19.4D, -9.0D, 0.75D, 0.75D, 1.0D));
 
     private static final List<AuthoredBox> WORKSHOP_HANDLE = List.of(
             box(6.65D, 16.75D, -9.0D, 0.75D, 0.75D, 1.0D),

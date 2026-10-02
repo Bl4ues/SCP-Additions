@@ -22,6 +22,16 @@
 						14,
 						-7.5
 					],
+					"cubes": []
+				},
+				{
+					"name": "door_leaf",
+					"parent": "door",
+					"pivot": [
+						0,
+						14,
+						-7.5
+					],
 					"cubes": [
 						{
 							"origin": [

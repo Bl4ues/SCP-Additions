@@ -208,30 +208,6 @@ public final class FacilityModule {
             "black_closed", numbered("black_", 1, 13), "black_open",
             descending("black_c_", 13, 1), 1, false, 9, 4, SoundType.METAL,
             UNITY_DOOR_OPENING, UNITY_DOOR_CLOSING);
-    public static final DoorFamily NORMAL_DOOR = door("normal",
-            "normal_door", numbered("ndoor_", 1, 4), "door_open",
-            numbered("door_c_", 1, 3), 5, true, 4, 0, SoundType.WOOD,
-            UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
-    public static final DoorFamily LEFT_LOG_DOOR = door("left_logistics",
-            "left_log_door", numbered("left_log_door_", 1, 4), "left_log_door_open",
-            numbered("left_log_clo_", 1, 3), 5, true, 4, 0, SoundType.WOOD,
-            UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
-    public static final DoorFamily RIGHT_LOG_DOOR = door("right_logistics",
-            "right_log_door", numbered("right_log_door_", 1, 4), "right_log_door_open",
-            List.of("right_log_clos_1", "right_log_clos_2", "right_clos_3"),
-            5, true, 4, 0, SoundType.WOOD, UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
-    public static final DoorFamily OFFICE_DOOR = door("office",
-            "office_door", numbered("office_door_", 1, 4), "office_door_open",
-            numbered("office_c_", 1, 3), 5, true, 4, 0, SoundType.WOOD,
-            UNITY_OFFICE_OPEN, UNITY_OFFICE_CLOSE);
-    public static final DoorFamily BATH_DOOR = door("bathroom",
-            "bath_door", numbered("bath_door_", 1, 3), "bath_door_open",
-            numbered("bath_c_", 1, 3), 5, true, 3, 0, SoundType.WOOD,
-            UNITY_BATH_OPEN, UNITY_BATH_CLOSE);
-    public static final DoorFamily WORKSHOP_DOOR = door("workshop",
-            "ws_dclosed", numbered("ws_", 1, 4), "ws_open",
-            List.of("w_sc_1", "w_sc_2", "wsc_3"), 5, true, 4, 0, SoundType.WOOD,
-            UNITY_DOOR_OPEN, UNITY_DOOR_CLOSE);
 
     public static final RegistryObject<CreativeModeTab> SCP_FACILITY_BLOCKS =
             TABS.register("scp_unity_blocks", () ->
@@ -249,6 +225,7 @@ public final class FacilityModule {
     }
 
     public static void register(IEventBus modBus) {
+        FacilityGeckoDoorModule.register(modBus);
         SOUNDS.register(modBus);
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
@@ -265,11 +242,16 @@ public final class FacilityModule {
     }
 
     public static boolean isFacilityDoor(BlockState state) {
-        return state != null && state.getBlock() instanceof AnimatedDoorBlock;
+        return state != null && (state.getBlock() instanceof AnimatedDoorBlock
+                || FacilityGeckoDoorModule.isDoor(state));
     }
 
     public static boolean isDoorPassable(BlockState state) {
-        return state != null && state.getBlock() instanceof AnimatedDoorBlock door && door.passable();
+        if (FacilityGeckoDoorModule.isDoor(state)) {
+            return FacilityGeckoDoorModule.isPassable(state);
+        }
+        return state != null && state.getBlock() instanceof AnimatedDoorBlock door
+                && door.passable();
     }
 
     /**
@@ -286,7 +268,13 @@ public final class FacilityModule {
     }
 
     public static boolean isWindowedDoor(BlockState state) {
-        if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)) return false;
+        if (FacilityGeckoDoorModule.isDoor(state)) {
+            return FacilityGeckoDoorModule.isWindowed(state);
+        }
+        if (state == null
+                || !(state.getBlock() instanceof AnimatedDoorBlock door)) {
+            return false;
+        }
         return "normal".equals(door.familyId) || "office".equals(door.familyId);
     }
 
@@ -296,7 +284,18 @@ public final class FacilityModule {
      * observation; frames on the closed side use the model-derived geometry.
      */
     public static VoxelShape doorVisualOcclusionShape(BlockState state) {
-        if (state == null || !(state.getBlock() instanceof AnimatedDoorBlock door)
+        if (FacilityGeckoDoorModule.isDoor(state)) {
+            if (FacilityGeckoDoorModule.isPassable(state)) {
+                return Shapes.empty();
+            }
+            FacilityGeckoDoorModule.Family family =
+                    FacilityGeckoDoorModule.family(state);
+            return FacilityDoorShapes.visualOcclusionShape(
+                    family.shapeId(),
+                    state.getValue(HorizontalDirectionalBlock.FACING));
+        }
+        if (state == null
+                || !(state.getBlock() instanceof AnimatedDoorBlock door)
                 || door.usesOpenVisualState()) {
             return Shapes.empty();
         }
@@ -337,12 +336,16 @@ public final class FacilityModule {
         addExternalCreativeItem(functional, AlarmModule.ITEM.get());
         addFacilityCreativeItem(functional, "sign_support");
         addFacilityCreativeItem(functional, "door_sign");
-        addFacilityCreativeItem(functional, "normal_door");
-        addFacilityCreativeItem(functional, "left_log_door");
-        addFacilityCreativeItem(functional, "right_log_door");
-        addFacilityCreativeItem(functional, "office_door");
-        addFacilityCreativeItem(functional, "bath_door");
-        addFacilityCreativeItem(functional, "ws_dclosed");
+        addExternalCreativeItem(functional,
+                FacilityGeckoDoorModule.FACILITY_DOOR_ITEM.get());
+        addExternalCreativeItem(functional,
+                FacilityGeckoDoorModule.LOGISTICS_DOOR_ITEM.get());
+        addExternalCreativeItem(functional,
+                FacilityGeckoDoorModule.OFFICE_DOOR_ITEM.get());
+        addExternalCreativeItem(functional,
+                FacilityGeckoDoorModule.BATHROOM_DOOR_ITEM.get());
+        addExternalCreativeItem(functional,
+                FacilityGeckoDoorModule.WORKSHOP_DOOR_ITEM.get());
         sections.add(section("functionaltab", functional));
 
         List<ItemStack> props = new ArrayList<>();

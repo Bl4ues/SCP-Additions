@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -76,12 +75,11 @@ public final class WallPanelClient {
         }
 
         @Override
-        public void render(BlockEntity raw, float partialTick,
+        public void render(WallPanelBlockEntity panel, float partialTick,
                 PoseStack poseStack, MultiBufferSource bufferSource,
                 int packedLight, int packedOverlay) {
-            if (!(raw instanceof WallPanelBlockEntity panel)
-                    || !panel.hasMaterial()) {
-                super.render(raw, partialTick, poseStack, bufferSource,
+            if (!panel.hasMaterial()) {
+                super.render(panel, partialTick, poseStack, bufferSource,
                         packedLight, packedOverlay);
                 return;
             }

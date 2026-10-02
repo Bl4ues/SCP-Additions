@@ -197,14 +197,8 @@ public final class WallPanelModule {
 
         private static boolean isValidMaterial(Level level, BlockPos pos,
                 BlockState material) {
-            if (material.isAir()
-                    || material.is(BLOCK.get())
-                    || !material.getFluidState().isEmpty()
-                    || material.getRenderShape() != RenderShape.MODEL) {
-                return false;
-            }
-            return Block.isShapeFullBlock(
-                    material.getCollisionShape(level, pos));
+            return CopycatPanelMaterial.valid(level, pos, material,
+                    BLOCK.get(), DoubleWallPanelModule.BLOCK.get());
         }
 
         @Override
@@ -298,6 +292,17 @@ public final class WallPanelModule {
 
         public ItemStack storedMaterialItem() {
             return materialItem.copy();
+        }
+
+        public CompoundTag saveCopycatData() {
+            CompoundTag tag = new CompoundTag();
+            CopycatPanelMaterial.writeBlock(tag, MATERIAL_BLOCK, materialState);
+            return tag;
+        }
+
+        public void loadCopycatData(CompoundTag tag) {
+            materialState = CopycatPanelMaterial.readBlock(tag, MATERIAL_BLOCK);
+            materialItem = CopycatPanelMaterial.item(materialState);
         }
 
         public void setMaterial(BlockState state, ItemStack item) {

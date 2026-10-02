@@ -2,7 +2,6 @@ package com.bl4ues.scpclassifieddirective.facility.transform;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
-import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorFamily;
 import com.bl4ues.scpclassifieddirective.facility.FacilityModule.DoorStage;
 import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.Scp079ActivityPingManager;
@@ -43,16 +42,6 @@ import java.util.WeakHashMap;
 @Mod.EventBusSubscriber(modid = ScpClassifiedDirectiveMod.MODID,
         bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class TransformDoorRuntime {
-    private static final List<DoorFamily> FAMILIES = List.of(
-            FacilityModule.DEFAULT_DOOR,
-            FacilityModule.YELLOW_DOOR,
-            FacilityModule.BLACK_DOOR,
-            FacilityModule.NORMAL_DOOR,
-            FacilityModule.LEFT_LOG_DOOR,
-            FacilityModule.RIGHT_LOG_DOOR,
-            FacilityModule.OFFICE_DOOR,
-            FacilityModule.BATH_DOOR,
-            FacilityModule.WORKSHOP_DOOR);
     private static final Map<MinecraftServer, Map<CellKey, PendingDoor>> PENDING =
             new WeakHashMap<>();
     private static final Map<MinecraftServer, Integer> LAST_RECOVERY =
@@ -75,15 +64,15 @@ public final class TransformDoorRuntime {
         // where no proxy can exist. Resolve the authored door from the hit
         // location itself so direct-use doors remain functional there too.
         DoorHit hit = nearestDoor(level, event.getHitVec().getLocation(), 4.0D);
-        if (hit == null || !hit.address().family().directUse()) return;
-        DoorAddress address = hit.address();
+        if (hit == null || !hit.address().directUse()) return;
+        TransformDoorStateAdapter.Address address = hit.address();
         if (address.stage() != DoorStage.CLOSED
                 && address.stage() != DoorStage.OPEN) return;
 
         if (address.stage() == DoorStage.CLOSED) {
-            start(level, hit.group(), hit.cell(), address.family(), true);
+            start(level, hit.group(), hit.cell(), address, true);
         } else {
-            start(level, hit.group(), hit.cell(), address.family(), false);
+            start(level, hit.group(), hit.cell(), address, false);
         }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
@@ -105,14 +94,14 @@ public final class TransformDoorRuntime {
         Vec3 center = group.cellCenter(cell);
         if (player.getEyePosition().distanceToSqr(center) > 36.0D) return false;
 
-        DoorAddress address = address(group.cells().get(cell));
-        if (address == null || !address.family().directUse()) return false;
+        TransformDoorStateAdapter.Address address = address(group.cells().get(cell));
+        if (address == null || !address.directUse()) return false;
         if (address.stage() == DoorStage.CLOSED) {
-            start(level, group, cell, address.family(), true);
+            start(level, group, cell, address, true);
             return true;
         }
         if (address.stage() == DoorStage.OPEN) {
-            start(level, group, cell, address.family(), false);
+            start(level, group, cell, address, false);
             return true;
         }
         return true;
@@ -153,7 +142,7 @@ public final class TransformDoorRuntime {
             TransformGroup group = data.group(ref.groupId());
             if (group == null) continue;
             BlockState state = group.cells().get(ref.cell());
-            DoorAddress address = address(state);
+            TransformDoorStateAdapter.Address address = address(state);
             if (address == null) continue;
             ServerLevel level = levelById(server, group.dimension());
             if (level == null) continue;
@@ -163,12 +152,13 @@ public final class TransformDoorRuntime {
                     || address.stage() == DoorStage.CLOSING)
                     && !pending.containsKey(key)) {
                 pending.put(key, new PendingDoor(group.dimension(),
-                        address.family().id(),
+                        address.id(),
                         address.stage() == DoorStage.OPENING,
-                        tick + Math.max(1, address.family().frameDelay())));
+                        tick + TransformDoorStateAdapter.delay(address,
+                                address.stage() == DoorStage.OPENING)));
                 continue;
             }
-            if (address.family().directUse() || pending.containsKey(key)) {
+            if (address.directUse() || pending.containsKey(key)) {
                 continue;
             }
             boolean powered = TransformPowerQuery.powered(level,
@@ -190,9 +180,9 @@ public final class TransformDoorRuntime {
                         HeavyDoorPowerRelay.isHeavyDoorState(state.getBlock()));
             }
             if (address.stage() == DoorStage.CLOSED && powered) {
-                start(level, group, ref.cell(), address.family(), true);
+                start(level, group, ref.cell(), address, true);
             } else if (address.stage() == DoorStage.OPEN && !powered) {
-                start(level, group, ref.cell(), address.family(), false);
+                start(level, group, ref.cell(), address, false);
             }
         }
     }
@@ -223,60 +213,55 @@ public final class TransformDoorRuntime {
         TransformConstructionSavedData data = TransformConstructionSavedData.get(
                 level.getServer());
         TransformGroup group = data.group(key.groupId());
-        if (group == null || !group.dimension().equals(level.dimension().location())) {
-            return false;
-        }
+        if (group == null || !group.dimension().equals(
+                level.dimension().location())) return false;
         BlockState current = group.cells().get(key.cell());
-        DoorAddress address = address(current);
-        if (address == null || !address.family().id().equals(pending.familyId())) {
+        TransformDoorStateAdapter.Address address =
+                TransformDoorStateAdapter.address(current);
+        if (address == null || !address.id().equals(pending.familyId())) {
             return false;
         }
-        DoorFamily family = address.family();
-        if (pending.opening()) {
-            if (address.stage() != DoorStage.OPENING) return false;
-            int nextIndex = address.frame() + 1;
-            Block next = nextIndex < family.opening().size()
-                    ? family.opening().get(nextIndex).get()
-                    : family.open().get();
-            setState(level, group, key.cell(), copyFacing(current, next), false);
-            if (nextIndex >= family.opening().size()) return false;
-        } else {
-            if (address.stage() != DoorStage.CLOSING) return false;
-            int nextIndex = address.frame() + 1;
-            Block next = nextIndex < family.closing().size()
-                    ? family.closing().get(nextIndex).get()
-                    : family.closed().get();
-            boolean becameClosed = nextIndex >= family.closing().size();
-            setState(level, group, key.cell(), copyFacing(current, next),
-                    becameClosed);
-            if (becameClosed) return false;
-        }
+        TransformDoorStateAdapter.Advance advanced =
+                TransformDoorStateAdapter.advance(current, address,
+                        pending.opening());
+        if (advanced == null) return false;
+        boolean becameClosed = advanced.done() && !pending.opening();
+        setState(level, group, key.cell(), advanced.state(), becameClosed);
+        if (advanced.done()) return false;
+        TransformDoorStateAdapter.Address next =
+                TransformDoorStateAdapter.address(advanced.state());
+        if (next == null) return false;
         Map<CellKey, PendingDoor> map = PENDING.get(level.getServer());
         if (map != null) {
-            map.put(key, new PendingDoor(level.dimension().location(), family.id(),
-                    pending.opening(), tick + Math.max(1, family.frameDelay())));
+            map.put(key, new PendingDoor(level.dimension().location(),
+                    next.id(), pending.opening(),
+                    tick + TransformDoorStateAdapter.delay(next,
+                            pending.opening())));
         }
         return true;
     }
 
     private static void start(ServerLevel level, TransformGroup group,
-            GridPos cell, DoorFamily family, boolean opening) {
-        List<net.minecraftforge.registries.RegistryObject<Block>> frames = opening
-                ? family.opening() : family.closing();
-        if (frames.isEmpty()) return;
+            GridPos cell, TransformDoorStateAdapter.Address address,
+            boolean opening) {
         BlockState current = group.cells().get(cell);
-        BlockState first = copyFacing(current, frames.get(0).get());
+        BlockState first = TransformDoorStateAdapter.begin(current, address,
+                opening);
+        if (first == current) return;
         Vec3 center = group.cellCenter(cell);
         Scp079ActivityPingManager.emitDoorAt(level, center);
-        level.playSound(null, center.x, center.y, center.z,
-                (opening ? family.openingSound() : family.closingSound()).get(),
-                SoundSource.BLOCKS, 1.0F, 1.0F);
+        TransformDoorStateAdapter.playSound(level, center, address, opening);
         setState(level, group, cell, first, true);
+        TransformDoorStateAdapter.Address next =
+                TransformDoorStateAdapter.address(first);
+        if (next == null) return;
         CellKey key = new CellKey(group.id(), cell);
         PENDING.computeIfAbsent(level.getServer(), ignored -> new HashMap<>())
-                .put(key, new PendingDoor(level.dimension().location(), family.id(),
-                        opening, level.getServer().getTickCount()
-                                + Math.max(1, family.frameDelay())));
+                .put(key, new PendingDoor(level.dimension().location(),
+                        next.id(), opening,
+                        level.getServer().getTickCount()
+                                + TransformDoorStateAdapter.delay(next,
+                                        opening)));
     }
 
     private static void setState(ServerLevel level, TransformGroup group,
@@ -357,7 +342,7 @@ public final class TransformDoorRuntime {
             Vec3 local = TransformMath.worldToLocal(group.origin(), world,
                     group.rotationX(), group.rotationY(), group.rotationZ());
             for (Map.Entry<GridPos, BlockState> entry : group.cells().entrySet()) {
-                DoorAddress address = address(entry.getValue());
+                TransformDoorStateAdapter.Address address = address(entry.getValue());
                 if (address == null) continue;
                 GridPos cell = entry.getKey();
                 double distance = local.distanceToSqr(
@@ -371,38 +356,9 @@ public final class TransformDoorRuntime {
         return best;
     }
 
-    private static DoorAddress address(BlockState state) {
-        if (state == null || !FacilityModule.isFacilityDoor(state)) return null;
-        Block block = state.getBlock();
-        for (DoorFamily family : FAMILIES) {
-            if (block == family.closed().get()) {
-                return new DoorAddress(family, DoorStage.CLOSED, 0);
-            }
-            if (block == family.open().get()) {
-                return new DoorAddress(family, DoorStage.OPEN, 0);
-            }
-            for (int i = 0; i < family.opening().size(); i++) {
-                if (block == family.opening().get(i).get()) {
-                    return new DoorAddress(family, DoorStage.OPENING, i);
-                }
-            }
-            for (int i = 0; i < family.closing().size(); i++) {
-                if (block == family.closing().get(i).get()) {
-                    return new DoorAddress(family, DoorStage.CLOSING, i);
-                }
-            }
-        }
-        return null;
-    }
-
-    private static BlockState copyFacing(BlockState from, Block target) {
-        BlockState next = target.defaultBlockState();
-        if (from != null && from.hasProperty(HorizontalDirectionalBlock.FACING)
-                && next.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            Direction facing = from.getValue(HorizontalDirectionalBlock.FACING);
-            next = next.setValue(HorizontalDirectionalBlock.FACING, facing);
-        }
-        return next;
+    private static TransformDoorStateAdapter.Address address(
+            BlockState state) {
+        return TransformDoorStateAdapter.address(state);
     }
 
     private static ServerLevel levelById(MinecraftServer server,
@@ -426,10 +382,8 @@ public final class TransformDoorRuntime {
             boolean opening, int nextTick) {
     }
 
-    private record DoorAddress(DoorFamily family, DoorStage stage, int frame) {
-    }
 
     private record DoorHit(TransformGroup group, GridPos cell,
-            DoorAddress address) {
+            TransformDoorStateAdapter.Address address) {
     }
 }

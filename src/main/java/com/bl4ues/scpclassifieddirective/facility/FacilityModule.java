@@ -328,6 +328,7 @@ public final class FacilityModule {
         addExternalCreativeItem(functional, ScpClassifiedDirectiveModBlocks.SCP_079_SYSTEM_CONTROL.get().asItem());
         addExternalCreativeItem(functional, DocumentHolderModule.item());
         addExternalCreativeItem(functional, WallPanelModule.ITEM.get());
+        addExternalCreativeItem(functional, DoubleWallPanelModule.ITEM.get());
         addExternalCreativeItem(functional, ScpClassifiedDirectiveModBlocks.SCP_079_AUXILIARY_POWER.get().asItem());
         addExternalCreativeItem(functional, ScpClassifiedDirectiveModBlocks.SCP_079CONTROLOFF.get().asItem());
         addFacilityCreativeItem(functional, "default_door");

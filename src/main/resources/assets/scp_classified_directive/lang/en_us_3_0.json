@@ -215,5 +215,8 @@
   "tooltip.scp_classified_directive.sl1_kitchen_floor_connection": "Connects automatically with Blue Floor",
   "block.scp_classified_directive.pneumatic_panel": "Pneumatic Panel",
   "block.scp_classified_directive.sl2_round_lamp": "Round Lamp",
-  "block.scp_classified_directive.outlet": "Outlet"
+  "block.scp_classified_directive.outlet": "Outlet",
+  "block.scp_classified_directive.wall_panel": "Wall Panel",
+  "tooltip.scp_classified_directive.wall_panel.copy": "Copies the texture and sounds of a solid block",
+  "tooltip.scp_classified_directive.wall_panel.reset": "Use a Screwdriver to remove the copied block"
 }

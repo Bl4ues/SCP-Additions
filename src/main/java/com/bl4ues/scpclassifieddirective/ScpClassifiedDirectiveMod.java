@@ -41,6 +41,7 @@ import com.bl4ues.scpclassifieddirective.facility.UBlocksModule;
 import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.LeftDoorButtons;
 import com.bl4ues.scpclassifieddirective.facility.MirroredDoorButtons;
+import com.bl4ues.scpclassifieddirective.facility.WallPanelModule;
 import com.bl4ues.scpclassifieddirective.network.ScpEntityNetwork;
 import com.bl4ues.scpclassifieddirective.network.StealthNetwork;
 import com.bl4ues.scpclassifieddirective.scp012.Scp012Module;
@@ -113,6 +114,7 @@ public class ScpClassifiedDirectiveMod {
         ScpClassifiedDirectiveModTabs.REGISTRY.register(bus);
         UBlocksModule.register(bus);
         FacilityModule.register(bus);
+        WallPanelModule.register(bus);
         FacilityDecorativePropsModule.register(bus);
         Sl2FacilityPropsModule.register(bus);
         AlarmModule.register(bus);

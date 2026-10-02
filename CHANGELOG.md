@@ -300,6 +300,7 @@
 - Added full transformed-Surface support for both surveillance camera types, including Surface-aligned models and collision, camera animation, persistent surveillance registration, and playable SCP-079 feeds from the transformed lens position;
 - Added Roombas;
 - Added a wall-mounted **Document Holder** that stores one Document item;
+- Added the functional **Wall Panel**: applying a solid block copies its visual material and block sounds, breaking the panel returns both items, and using a Screwdriver removes the copied block and restores the original panel;
 - Added the **Object Containment Unit**, a keycard-secured containment pedestal with configurable Level 1–6 access;
 - Rebuilt the **Tesla Gate Terminal** as an immersive physical computer: its interface remains rendered on the screen;
 - Added a modular, animated Core Room elevator based on SCP: Unity, with automatic floor discovery, a moving carriage, landing gates, procedural cables, and one-floor-at-a-time travel;

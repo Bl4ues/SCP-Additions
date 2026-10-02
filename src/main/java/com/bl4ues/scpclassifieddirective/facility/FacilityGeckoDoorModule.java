@@ -220,7 +220,10 @@ public final class FacilityGeckoDoorModule {
     }
 
     public static boolean isPassable(BlockState state) {
-        return isDoor(state) && phase(state) != Phase.CLOSED;
+        // Preserve the old manual-door collision contract: the doorway only
+        // becomes passable once the opening animation has fully completed,
+        // and becomes solid again as soon as closing begins.
+        return isDoor(state) && phase(state) == Phase.OPEN;
     }
 
     public static boolean isInteractable(BlockState state) {

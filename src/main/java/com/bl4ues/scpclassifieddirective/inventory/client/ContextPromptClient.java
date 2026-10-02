@@ -329,7 +329,8 @@ public final class ContextPromptClient {
                         anchor, rulePos, directHit)) {
                     bestScore = score;
                     String name = !geckoDoor && rule.showName()
-                            ? rule.blockName(ruleState) : "";
+                            ? rule.blockName(player.level(), rulePos,
+                                    ruleState) : "";
                     boolean showName = !geckoDoor && rule.showName()
                             && !name.isEmpty();
                     boolean showAction = !geckoDoor && rule.showAction()

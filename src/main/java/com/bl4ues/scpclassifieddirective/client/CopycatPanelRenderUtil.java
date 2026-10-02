@@ -41,6 +41,16 @@ final class CopycatPanelRenderUtil {
             MultiBufferSource bufferSource, int packedOverlay,
             double minZ, double maxZ, Direction hiddenLocalFace,
             float brightness) {
+        render(state, level, pos, facing, poseStack, bufferSource,
+                packedOverlay, minZ, maxZ, hiddenLocalFace,
+                brightness, 0.0D);
+    }
+
+    static void render(BlockState state, Level level, BlockPos pos,
+            Direction facing, PoseStack poseStack,
+            MultiBufferSource bufferSource, int packedOverlay,
+            double minZ, double maxZ, Direction hiddenLocalFace,
+            float brightness, double lateralInset) {
         if (state == null || state.isAir() || level == null) return;
 
         Minecraft minecraft = Minecraft.getInstance();
@@ -67,7 +77,8 @@ final class CopycatPanelRenderUtil {
                         if (quad.getDirection() == hiddenLocalFace) continue;
                         emitQuad(minecraft, state, level, pos, facing,
                                 poseStack.last(), consumer, quad,
-                                packedOverlay, minZ, maxZ, brightness);
+                                packedOverlay, minZ, maxZ, brightness,
+                                lateralInset);
                     }
                 }
             }
@@ -166,7 +177,8 @@ final class CopycatPanelRenderUtil {
     private static void emitQuad(Minecraft minecraft, BlockState state,
             Level level, BlockPos pos, Direction facing, PoseStack.Pose pose,
             VertexConsumer consumer, BakedQuad quad, int packedOverlay,
-            double minZ, double maxZ, float brightness) {
+            double minZ, double maxZ, float brightness,
+            double lateralInset) {
         int[] vertices = quad.getVertices();
         int stride = vertices.length / 4;
         int tint = quad.isTinted()
@@ -186,6 +198,10 @@ final class CopycatPanelRenderUtil {
             float z = Float.intBitsToFloat(vertices[offset + 2]);
             float[] uv = croppedUv(vertices, stride, vertex, localFace,
                     minZ, maxZ);
+            float compressedX = (float) (lateralInset
+                    + x * (1.0D - lateralInset * 2.0D));
+            float compressedY = (float) (lateralInset
+                    + y * (1.0D - lateralInset * 2.0D));
             float compressedZ = (float) (minZ
                     + z * (maxZ - minZ));
             VertexLighting lighting = vertexLighting(level, pos, facing,
@@ -199,7 +215,8 @@ final class CopycatPanelRenderUtil {
             int blue = Math.max(0, Math.min(255,
                     Math.round((tint & 0xFF) * shade)));
 
-            consumer.vertex(pose.pose(), x, y, compressedZ)
+            consumer.vertex(pose.pose(), compressedX, compressedY,
+                            compressedZ)
                     .color(red, green, blue, 255)
                     .uv(uv[0], uv[1])
                     .overlayCoords(packedOverlay)
@@ -331,7 +348,12 @@ final class CopycatPanelRenderUtil {
          * lightmap into a pale vertical sheen. Keep only a restrained part of
          * the corner term and use one stable face light value.
          */
-        float ao = 1.0F - (1.0F - rawAo) * 0.18F;
+        // Keep the real corner pattern, but cap the deepest darkening.
+        // A full raw sample was too aggressive on BER copycats, while the
+        // previous 18% blend was too weak and even let shader-side lighting
+        // reverse the floor gradient. This cap matches the real blocks much
+        // more closely in both vanilla and shader rendering.
+        float ao = Math.max(0.78F, rawAo);
         int packed = level.hasChunkAt(facePos)
                 ? LevelRenderer.getLightColor(level, facePos)
                 : LevelRenderer.getLightColor(level, pos);

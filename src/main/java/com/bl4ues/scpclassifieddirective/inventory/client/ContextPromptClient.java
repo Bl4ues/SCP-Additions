@@ -223,11 +223,14 @@ public final class ContextPromptClient {
             for (ContextInteractionRegistry.Rule rule
                     : ContextInteractionRegistry.getBlockRules(state.getBlock())) {
                 if (!rule.isHeldItemSatisfied(player)) continue;
+                double interactionRange = geckoDoor
+                        ? FacilityGeckoDoorModule.INTERACTION_RANGE
+                        : rule.range();
                 if (geckoDoor
                         && (!FacilityGeckoDoorModule.isInteractable(state)
                         || !TransformContextTargetClient.rayHitsDoorHandle(
                                 transformed, eye,
-                                eye.add(look.scale(rule.range()))))) {
+                                eye.add(look.scale(interactionRange))))) {
                     continue;
                 }
                 Vec3 anchor = TransformContextTargetClient.anchor(transformed, rule);
@@ -235,17 +238,20 @@ public final class ContextPromptClient {
                         || !Double.isFinite(anchor.y)
                         || !Double.isFinite(anchor.z)) continue;
                 double aimRadius = Math.min(0.34D,
-                        Math.max(0.16D, rule.range() * 0.13D));
+                        Math.max(0.16D, interactionRange * 0.13D));
                 boolean offscreen = doorButton || rule.allowOffscreen();
-                double score = scorePoint(anchor, eye, look, rule.range(),
+                double score = scorePoint(anchor, eye, look, interactionRange,
                         false, rule.priority(), !doorButton && !geckoDoor,
                         aimRadius * aimRadius, offscreen);
                 if (rule.hasRequiredItem()) score -= 0.12D;
                 if (score >= bestScore) continue;
-                String name = rule.showName() ? rule.blockName(state) : "";
-                boolean showName = rule.showName() && !name.isEmpty();
-                boolean showAction = !doorButton && rule.showAction()
-                        && rule.action() != null && !rule.action().isBlank();
+                String name = !geckoDoor && rule.showName()
+                        ? rule.blockName(state) : "";
+                boolean showName = !geckoDoor && rule.showName()
+                        && !name.isEmpty();
+                boolean showAction = !doorButton && !geckoDoor
+                        && rule.showAction() && rule.action() != null
+                        && !rule.action().isBlank();
                 ResourceLocation icon = ContextPromptIcons.resolve(
                         rule.icon(), rule.id());
                 boolean allowUse = rule.allowRightClick() || rule.allowE();
@@ -296,9 +302,12 @@ public final class ContextPromptClient {
                         player) || !rule.isHeldItemSatisfied(player)) continue;
                 Vec3 anchor = rule.resolveBlockAnchor(rulePos, ruleState);
                 boolean geckoDoor = FacilityGeckoDoorModule.isDoor(ruleState);
+                double interactionRange = geckoDoor
+                        ? FacilityGeckoDoorModule.INTERACTION_RANGE
+                        : rule.range();
                 if (geckoDoor && !FacilityGeckoDoorGeometry.rayHitsHandle(
                         ruleState, rulePos, eye,
-                        eye.add(look.scale(rule.range())))) {
+                        eye.add(look.scale(interactionRange)))) {
                     continue;
                 }
                 if (isElevatorStationButton(rule.interactionKey())
@@ -306,8 +315,8 @@ public final class ContextPromptClient {
                         ruleState)) {
                     continue;
                 }
-                double score = scorePoint(anchor, eye, look, rule.range(),
-                        directHit, rule.priority(),
+                double score = scorePoint(anchor, eye, look,
+                        interactionRange, directHit, rule.priority(),
                         rule.requiresPreciseAim() && !geckoDoor,
                         preciseAimRadiusSqr(rule.interactionKey()),
                         rule.allowOffscreen());
@@ -320,10 +329,11 @@ public final class ContextPromptClient {
                 if (score < bestScore && hasBlockLineOfSight(player, eye,
                         anchor, rulePos, directHit)) {
                     bestScore = score;
-                    String name = rule.showName()
+                    String name = !geckoDoor && rule.showName()
                             ? rule.blockName(ruleState) : "";
-                    boolean showName = rule.showName() && !name.isEmpty();
-                    boolean showAction = rule.showAction()
+                    boolean showName = !geckoDoor && rule.showName()
+                            && !name.isEmpty();
+                    boolean showAction = !geckoDoor && rule.showAction()
                             && rule.action() != null
                             && !rule.action().isBlank();
                     ResourceLocation icon = ContextPromptIcons.resolve(

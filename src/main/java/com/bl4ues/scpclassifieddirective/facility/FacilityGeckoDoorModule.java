@@ -76,6 +76,7 @@ public final class FacilityGeckoDoorModule {
 
     public static final int OPENING_TICKS = 30;
     public static final int CLOSING_TICKS = 21;
+    public static final double INTERACTION_RANGE = 2.0D;
 
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpClassifiedDirectiveMod.MODID);
@@ -264,6 +265,20 @@ public final class FacilityGeckoDoorModule {
         }
     }
 
+    /**
+     * Server-authoritative Context Interaction path. The client has already
+     * selected the physical handle, so do not synthesize a vanilla hit against
+     * an animated handle that may currently sit outside its owning block.
+     */
+    public static InteractionResult handleContextInteraction(ServerLevel level,
+            BlockPos pos, BlockState state) {
+        if (level == null || pos == null || state == null
+                || !(state.getBlock() instanceof DoorBlock door)) {
+            return InteractionResult.PASS;
+        }
+        return door.trigger(level, pos, state);
+    }
+
     public static Item itemFor(Family family) {
         return switch (family) {
             case FACILITY -> FACILITY_DOOR_ITEM.get();
@@ -331,13 +346,19 @@ public final class FacilityGeckoDoorModule {
             if (!(level instanceof ServerLevel server)) {
                 return InteractionResult.PASS;
             }
+            return trigger(server, pos, state);
+        }
+
+        private InteractionResult trigger(ServerLevel level, BlockPos pos,
+                BlockState state) {
+            if (!isInteractable(state)) return InteractionResult.PASS;
             boolean opening = phase(state) == Phase.CLOSED;
             BlockState next = beginTransition(state, opening);
             if (next == state) return InteractionResult.CONSUME;
             level.setBlock(pos, next, Block.UPDATE_ALL);
-            Scp079ActivityPingManager.emitDoorAt(server,
+            Scp079ActivityPingManager.emitDoorAt(level,
                     Vec3.atCenterOf(pos));
-            playTransitionSound(server, Vec3.atCenterOf(pos), family,
+            playTransitionSound(level, Vec3.atCenterOf(pos), family,
                     opening);
             level.scheduleTick(pos, this, transitionTicks(opening));
             return InteractionResult.CONSUME;

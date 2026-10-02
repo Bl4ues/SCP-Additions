@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesCon
 import com.bl4ues.scpclassifieddirective.effect.Scp714ExposureManager;
 import com.bl4ues.scpclassifieddirective.entity.AbstractScp131Entity;
 import com.bl4ues.scpclassifieddirective.facility.Scp714ContainmentStandModule;
+import com.bl4ues.scpclassifieddirective.facility.FacilityGeckoDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorCarriageEntity;
 import com.bl4ues.scpclassifieddirective.facility.elevator.CoreRoomElevatorModule;
 import com.bl4ues.scpclassifieddirective.hacking.HackingDeviceAttachmentManager;
@@ -193,7 +194,10 @@ public class ContextInteractPacket {
         InteractionHand hand = rule.matchingHand(player);
         if (hand == null) return;
         Vec3 anchor = rule.resolveBlockAnchor(pos, state);
-        if (player.getEyePosition().distanceTo(anchor) > rule.range() + 0.75D) {
+        double interactionRange = FacilityGeckoDoorModule.isDoor(state)
+                ? FacilityGeckoDoorModule.INTERACTION_RANGE : rule.range();
+        if (player.getEyePosition().distanceTo(anchor)
+                > interactionRange + 0.75D) {
             return;
         }
 
@@ -219,6 +223,16 @@ public class ContextInteractPacket {
         if (KeycardReaderInteractionEvents.tryHandleInteraction(player, pos,
                 shiftDown, controlDown)) {
             player.swing(InteractionHand.MAIN_HAND, true);
+            return;
+        }
+
+        if (FacilityGeckoDoorModule.isDoor(state)) {
+            InteractionResult result =
+                    FacilityGeckoDoorModule.handleContextInteraction(
+                            (ServerLevel) level, pos, state);
+            if (result.consumesAction()) {
+                player.swing(hand, true);
+            }
             return;
         }
 

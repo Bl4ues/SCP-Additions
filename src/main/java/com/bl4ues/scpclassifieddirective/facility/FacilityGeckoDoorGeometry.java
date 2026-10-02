@@ -14,24 +14,51 @@ import java.util.List;
 
 /**
  * Physical handle geometry shared by contextual targeting, direct use and the
- * handle-only outline. Coordinates are derived from the authored Gecko bones,
- * not from a convenient approximation around the whole door.
+ * handle-only outline.
+ *
+ * <p>Coordinates are derived from the current Gecko bones. The Workshop Door
+ * has an additional authored 180-degree model rotation, which is applied here
+ * before the animated hinge rotation so gameplay and rendering remain in the
+ * same coordinate space.</p>
  */
 public final class FacilityGeckoDoorGeometry {
-    private static final List<AABB> COMMON_HANDLE = List.of(
-            px(14.65, 16.5, 13.5, 15.4, 17.25, 14.5),
+    private static final double WORKSHOP_CENTER_X = 0.5D;
+    private static final double DOOR_CENTER_Z = 13.0D / 16.0D;
+
+    private static final List<AABB> FACILITY_HANDLE = List.of(
+            px(13.65, 16.5, 11.5, 14.4, 17.25, 12.5),
+            px(13.65, 16.5, 13.5, 14.4, 17.25, 14.5),
+            px(11.65, 16.5, 14.5, 14.4, 17.25, 15.0),
+            px(11.65, 16.5, 11.0, 14.4, 17.25, 11.5));
+
+    private static final List<AABB> OFFICE_HANDLE = List.of(
             px(14.65, 16.5, 11.5, 15.4, 17.25, 12.5),
-            px(12.65, 16.5, 11.0, 15.4, 17.25, 11.5),
-            px(12.65, 16.5, 14.5, 15.4, 17.25, 15.0));
+            px(14.65, 16.5, 13.5, 15.4, 17.25, 14.5),
+            px(12.65, 16.5, 14.5, 15.4, 17.25, 15.0),
+            px(12.65, 16.5, 11.0, 15.4, 17.25, 11.5));
+
+    private static final List<AABB> LEFT_LOGISTICS_HANDLE = List.of(
+            px(13.65, 17.25, 11.5, 14.4, 18.0, 12.5),
+            px(13.65, 17.25, 13.5, 14.4, 18.0, 14.5),
+            px(11.65, 17.25, 14.5, 14.4, 18.0, 15.0),
+            px(11.65, 17.25, 11.0, 14.4, 18.0, 11.5));
+
     private static final List<AABB> RIGHT_LOGISTICS_HANDLE = List.of(
-            px(0.6, 16.5, 13.5, 1.35, 17.25, 14.5),
-            px(0.6, 16.5, 11.5, 1.35, 17.25, 12.5),
-            px(0.6, 16.5, 11.0, 3.35, 17.25, 11.5),
-            px(0.6, 16.5, 14.5, 3.35, 17.25, 15.0));
+            px(1.6, 17.25, 11.5, 2.35, 18.0, 12.5),
+            px(1.6, 17.25, 13.5, 2.35, 18.0, 14.5),
+            px(1.6, 17.25, 14.5, 4.35, 18.0, 15.0),
+            px(1.6, 17.25, 11.0, 4.35, 18.0, 11.5));
+
     private static final List<AABB> BATHROOM_HANDLE = List.of(
-            px(12.65, 14.15, 13.5, 13.4, 14.9, 14.5),
-            px(12.65, 14.15, 14.5, 13.4, 19.4, 15.0),
-            px(12.65, 18.65, 13.5, 13.4, 19.4, 14.5));
+            px(11.65, 14.9, 11.5, 12.4, 15.65, 12.5),
+            px(11.65, 14.9, 11.0, 12.4, 20.15, 11.5),
+            px(11.65, 19.4, 11.5, 12.4, 20.15, 12.5));
+
+    private static final List<AABB> WORKSHOP_HANDLE = List.of(
+            px(14.65, 17.25, 11.5, 15.4, 18.0, 12.5),
+            px(14.65, 17.25, 13.5, 15.4, 18.0, 14.5),
+            px(12.65, 17.25, 14.5, 15.4, 18.0, 15.0),
+            px(12.65, 17.25, 11.0, 15.4, 18.0, 11.5));
 
     private FacilityGeckoDoorGeometry() {
     }
@@ -43,13 +70,14 @@ public final class FacilityGeckoDoorGeometry {
     }
 
     public static List<AABB> closedHandleBoxes(Family family) {
-        if (family == Family.LOGISTICS_RIGHT) {
-            return RIGHT_LOGISTICS_HANDLE;
-        }
-        if (family == Family.BATHROOM) {
-            return BATHROOM_HANDLE;
-        }
-        return COMMON_HANDLE;
+        return switch (family) {
+            case FACILITY -> FACILITY_HANDLE;
+            case LOGISTICS_LEFT -> LEFT_LOGISTICS_HANDLE;
+            case LOGISTICS_RIGHT -> RIGHT_LOGISTICS_HANDLE;
+            case OFFICE -> OFFICE_HANDLE;
+            case BATHROOM -> BATHROOM_HANDLE;
+            case WORKSHOP -> WORKSHOP_HANDLE;
+        };
     }
 
     public static Vec3 handleAnchor(BlockState state) {
@@ -59,6 +87,7 @@ public final class FacilityGeckoDoorGeometry {
         Vec3 point = new Vec3((bounds.minX + bounds.maxX) * 0.5D,
                 (bounds.minY + bounds.maxY) * 0.5D,
                 (bounds.minZ + bounds.maxZ) * 0.5D);
+        point = applyStaticModelTransform(point, family);
         if (FacilityGeckoDoorModule.phase(state) == Phase.OPEN) {
             point = rotateLeaf(point, family, openAngle(family));
         }
@@ -66,11 +95,6 @@ public final class FacilityGeckoDoorGeometry {
                 state.getValue(FacilityGeckoDoorModule.FACING));
     }
 
-    /**
-     * Tests an aim segment against the authored handle cubes. Both points are
-     * expressed in the door block's local 0..1 coordinate space before FACING
-     * and the animated leaf rotation are undone here.
-     */
     public static boolean rayHitsHandle(BlockState state, Vec3 localStart,
             Vec3 localEnd) {
         if (!FacilityGeckoDoorModule.isInteractable(state)
@@ -86,6 +110,9 @@ public final class FacilityGeckoDoorGeometry {
             start = rotateLeaf(start, family, inverse);
             end = rotateLeaf(end, family, inverse);
         }
+        start = undoStaticModelTransform(start, family);
+        end = undoStaticModelTransform(end, family);
+
         for (AABB box : closedHandleBoxes(family)) {
             if (box.contains(start) || box.contains(end)
                     || box.clip(start, end).isPresent()) {
@@ -105,11 +132,6 @@ public final class FacilityGeckoDoorGeometry {
                 worldEnd.subtract(origin));
     }
 
-    /**
-     * Axis-aligned selection proxy for the exact animated handle. Rotated
-     * handle cubes are conservatively bounded after FACING/leaf transforms.
-     * This is intentionally separate from collision.
-     */
     public static VoxelShape handleSelectionShape(BlockState state) {
         if (!FacilityGeckoDoorModule.isInteractable(state)) {
             return Shapes.empty();
@@ -158,13 +180,17 @@ public final class FacilityGeckoDoorGeometry {
         if (!FacilityGeckoDoorModule.isInteractable(state)
                 || pos == null || worldHit == null) return false;
         Family family = FacilityGeckoDoorModule.family(state);
+        if (family == null) return false;
+
         Vec3 point = worldHit.subtract(pos.getX(), pos.getY(), pos.getZ());
         point = unrotateFacing(point,
                 state.getValue(FacilityGeckoDoorModule.FACING));
         if (FacilityGeckoDoorModule.phase(state) == Phase.OPEN) {
             point = rotateLeaf(point, family, -openAngle(family));
         }
-        final double epsilon = 0.035D;
+        point = undoStaticModelTransform(point, family);
+
+        final double epsilon = 0.025D;
         for (AABB box : closedHandleBoxes(family)) {
             if (point.x >= box.minX - epsilon
                     && point.x <= box.maxX + epsilon
@@ -181,7 +207,7 @@ public final class FacilityGeckoDoorGeometry {
     public static Vec3 transformHandlePoint(BlockState state, Vec3 point) {
         Family family = FacilityGeckoDoorModule.family(state);
         if (family == null) return point;
-        Vec3 transformed = point;
+        Vec3 transformed = applyStaticModelTransform(point, family);
         if (FacilityGeckoDoorModule.phase(state) == Phase.OPEN) {
             transformed = rotateLeaf(transformed, family, openAngle(family));
         }
@@ -190,15 +216,15 @@ public final class FacilityGeckoDoorGeometry {
     }
 
     public static Vec3 hingePivot(Family family) {
-        return new Vec3(family == Family.LOGISTICS_RIGHT ? 1.0D : 0.0D,
-                14.0D / 16.0D, 13.0D / 16.0D);
+        boolean rightHinge = family == Family.LOGISTICS_RIGHT
+                || family == Family.WORKSHOP;
+        return new Vec3(rightHinge ? 1.0D : 0.0D,
+                14.0D / 16.0D, DOOR_CENTER_Z);
     }
 
     public static double openAngle(Family family) {
-        // Gecko's authored Z basis is mirrored relative to block-local Z.
-        // Therefore +100° in the animation is -100° in block coordinates.
         return Math.toRadians(family == Family.LOGISTICS_RIGHT
-                ? 100.0D : -100.0D);
+                || family == Family.WORKSHOP ? 100.0D : -100.0D);
     }
 
     public static Vec3 rotateLeaf(Vec3 point, Family family, double angle) {
@@ -210,6 +236,16 @@ public final class FacilityGeckoDoorGeometry {
         return new Vec3(pivot.x + dx * cos - dz * sin,
                 point.y,
                 pivot.z + dx * sin + dz * cos);
+    }
+
+    private static Vec3 applyStaticModelTransform(Vec3 point, Family family) {
+        if (family != Family.WORKSHOP) return point;
+        return new Vec3(2.0D * WORKSHOP_CENTER_X - point.x,
+                point.y, 2.0D * DOOR_CENTER_Z - point.z);
+    }
+
+    private static Vec3 undoStaticModelTransform(Vec3 point, Family family) {
+        return applyStaticModelTransform(point, family);
     }
 
     public static Vec3 rotateFacing(Vec3 point, Direction facing) {

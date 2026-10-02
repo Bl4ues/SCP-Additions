@@ -99,19 +99,35 @@ public final class FacilityGeckoDoorClient {
         }
 
         final void prepareBase() {
+            setHidden("door", false);
             setHidden("door_leaf", false);
             setHidden("body", false);
             setHidden("handle", false);
             setHidden("frame", false);
-            setHidden("workshop_panel", activeFamily == Family.WORKSHOP);
+            setHidden("glass", true);
+            setHidden("workshop_panel", true);
         }
 
-        final void prepareWorkshopPanel() {
-            if (activeFamily != Family.WORKSHOP) return;
+        final void prepareGlass() {
+            if (activeFamily != Family.FACILITY
+                    && activeFamily != Family.OFFICE) return;
+            setHidden("door", false);
             setHidden("door_leaf", true);
             setHidden("body", true);
             setHidden("handle", true);
             setHidden("frame", true);
+            setHidden("glass", false);
+            setHidden("workshop_panel", true);
+        }
+
+        final void prepareWorkshopPanel() {
+            if (activeFamily != Family.WORKSHOP) return;
+            setHidden("door", false);
+            setHidden("door_leaf", true);
+            setHidden("body", true);
+            setHidden("handle", true);
+            setHidden("frame", true);
+            setHidden("glass", true);
             setHidden("workshop_panel", false);
         }
 
@@ -147,7 +163,35 @@ public final class FacilityGeckoDoorClient {
         private BlockRenderer(BlockModel model) {
             super(model);
             this.doorModel = model;
+            addGlassLayer();
             addWorkshopLayer();
+        }
+
+        private void addGlassLayer() {
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        DoorBlockEntity animatable, BakedGeoModel bakedModel,
+                        RenderType renderType, MultiBufferSource bufferSource,
+                        VertexConsumer buffer, float partialTick,
+                        int packedLight, int packedOverlay) {
+                    Family family = animatable.family();
+                    if (family != Family.FACILITY
+                            && family != Family.OFFICE) return;
+                    doorModel.prepareGlass();
+                    try {
+                        RenderType glass = RenderType.entityTranslucentCull(
+                                texture(family));
+                        getRenderer().reRender(bakedModel, poseStack,
+                                bufferSource, animatable, glass,
+                                bufferSource.getBuffer(glass), partialTick,
+                                packedLight, packedOverlay,
+                                1.0F, 1.0F, 1.0F, 1.0F);
+                    } finally {
+                        doorModel.prepareBase();
+                    }
+                }
+            });
         }
 
         private void addWorkshopLayer() {
@@ -161,8 +205,8 @@ public final class FacilityGeckoDoorClient {
                     if (animatable.family() != Family.WORKSHOP) return;
                     doorModel.prepareWorkshopPanel();
                     try {
-                        RenderType panel = RenderType.entityTranslucent(
-                                WORKSHOP_PANEL, true);
+                        RenderType panel = RenderType.entityCutoutNoCull(
+                                WORKSHOP_PANEL);
                         getRenderer().reRender(bakedModel, poseStack,
                                 bufferSource, animatable, panel,
                                 bufferSource.getBuffer(panel), partialTick,
@@ -179,7 +223,7 @@ public final class FacilityGeckoDoorClient {
         public RenderType getRenderType(DoorBlockEntity animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucent(texture, true);
+            return RenderType.entityCutoutNoCull(texture);
         }
 
         @Override
@@ -198,6 +242,37 @@ public final class FacilityGeckoDoorClient {
         private ItemRenderer(ItemModel model) {
             super(model);
             this.doorModel = model;
+            addGlassLayer();
+            addWorkshopLayer();
+        }
+
+        private void addGlassLayer() {
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack, DoorItem animatable,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight, int packedOverlay) {
+                    Family family = animatable.family();
+                    if (family != Family.FACILITY
+                            && family != Family.OFFICE) return;
+                    doorModel.prepareGlass();
+                    try {
+                        RenderType glass = RenderType.entityTranslucentCull(
+                                texture(family));
+                        getRenderer().reRender(bakedModel, poseStack,
+                                bufferSource, animatable, glass,
+                                bufferSource.getBuffer(glass), partialTick,
+                                packedLight, packedOverlay,
+                                1.0F, 1.0F, 1.0F, 1.0F);
+                    } finally {
+                        doorModel.prepareBase();
+                    }
+                }
+            });
+        }
+
+        private void addWorkshopLayer() {
             addRenderLayer(new GeoRenderLayer<>(this) {
                 @Override
                 public void render(PoseStack poseStack, DoorItem animatable,
@@ -207,8 +282,8 @@ public final class FacilityGeckoDoorClient {
                     if (animatable.family() != Family.WORKSHOP) return;
                     doorModel.prepareWorkshopPanel();
                     try {
-                        RenderType panel = RenderType.entityTranslucent(
-                                WORKSHOP_PANEL, true);
+                        RenderType panel = RenderType.entityCutoutNoCull(
+                                WORKSHOP_PANEL);
                         getRenderer().reRender(bakedModel, poseStack,
                                 bufferSource, animatable, panel,
                                 bufferSource.getBuffer(panel), partialTick,
@@ -225,7 +300,7 @@ public final class FacilityGeckoDoorClient {
         public RenderType getRenderType(DoorItem animatable,
                 ResourceLocation texture, MultiBufferSource bufferSource,
                 float partialTick) {
-            return RenderType.entityTranslucent(texture, true);
+            return RenderType.entityCutoutNoCull(texture);
         }
     }
 }

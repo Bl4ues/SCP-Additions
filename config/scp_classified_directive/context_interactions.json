@@ -862,14 +862,14 @@
       "type": "block",
       "id": "scp_classified_directive:facility_door",
       "interactionId": "facility_door_handle",
-      "range": 2.25,
+      "range": 2,
       "priority": 40,
       "useItem": "hand",
       "text": {
-        "action": "Use",
+        "action": "",
         "nameMode": "manual",
-        "name": "Facility Door",
-        "showAction": true,
+        "name": "",
+        "showAction": false,
         "showName": false
       },
       "anchor": {
@@ -889,20 +889,21 @@
       },
       "visual": {
         "allowOffscreen": false
-      }
+      },
+      "icon": "hand"
     },
     {
       "type": "block",
       "id": "scp_classified_directive:logistics_door_left",
       "interactionId": "facility_door_handle",
-      "range": 1.25,
+      "range": 2,
       "priority": 40,
       "useItem": "hand",
       "text": {
-        "action": "Use",
+        "action": "",
         "nameMode": "manual",
-        "name": "Logistics Door",
-        "showAction": true,
+        "name": "",
+        "showAction": false,
         "showName": false
       },
       "anchor": {
@@ -922,20 +923,21 @@
       },
       "visual": {
         "allowOffscreen": false
-      }
+      },
+      "icon": "hand"
     },
     {
       "type": "block",
       "id": "scp_classified_directive:logistics_door_right",
       "interactionId": "facility_door_handle",
-      "range": 1.25,
+      "range": 2,
       "priority": 40,
       "useItem": "hand",
       "text": {
-        "action": "Use",
+        "action": "",
         "nameMode": "manual",
-        "name": "Logistics Door",
-        "showAction": true,
+        "name": "",
+        "showAction": false,
         "showName": false
       },
       "anchor": {
@@ -955,20 +957,21 @@
       },
       "visual": {
         "allowOffscreen": false
-      }
+      },
+      "icon": "hand"
     },
     {
       "type": "block",
       "id": "scp_classified_directive:office_door",
       "interactionId": "facility_door_handle",
-      "range": 1.25,
+      "range": 2,
       "priority": 40,
       "useItem": "hand",
       "text": {
-        "action": "Use",
+        "action": "",
         "nameMode": "manual",
-        "name": "Office Door",
-        "showAction": true,
+        "name": "",
+        "showAction": false,
         "showName": false
       },
       "anchor": {
@@ -988,20 +991,21 @@
       },
       "visual": {
         "allowOffscreen": false
-      }
+      },
+      "icon": "hand"
     },
     {
       "type": "block",
       "id": "scp_classified_directive:bathroom_door",
       "interactionId": "facility_door_handle",
-      "range": 1.25,
+      "range": 2,
       "priority": 40,
       "useItem": "hand",
       "text": {
-        "action": "Use",
+        "action": "",
         "nameMode": "manual",
-        "name": "Bathroom Door",
-        "showAction": true,
+        "name": "",
+        "showAction": false,
         "showName": false
       },
       "anchor": {
@@ -1021,20 +1025,21 @@
       },
       "visual": {
         "allowOffscreen": false
-      }
+      },
+      "icon": "hand"
     },
     {
       "type": "block",
       "id": "scp_classified_directive:workshop_door",
       "interactionId": "facility_door_handle",
-      "range": 1.25,
+      "range": 2,
       "priority": 40,
       "useItem": "hand",
       "text": {
-        "action": "Use",
+        "action": "",
         "nameMode": "manual",
-        "name": "Workshop Door",
-        "showAction": true,
+        "name": "",
+        "showAction": false,
         "showName": false
       },
       "anchor": {
@@ -1054,7 +1059,8 @@
       },
       "visual": {
         "allowOffscreen": false
-      }
+      },
+      "icon": "hand"
     }
   ],
   "examples": [

@@ -6,48 +6,78 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Exact manual-door outline/collision shapes ported from the original
- * SCP Unity Extra Blocks block classes. Shapes are authored in the SOUTH
- * orientation and rotated around the owning block for the other facings.
+ * Tight selection/collision geometry for the GeckoLib manual doors.
+ *
+ * <p>The old replacement reused oversized MCreator-era envelopes. These boxes
+ * are derived from the current Gecko geometry itself: model X is shifted by
+ * eight pixels and model Z by 20.5 pixels into the door's authored SOUTH-local
+ * block space. Animated leaves use the exact final 100-degree hinge rotation.
+ * Handles are deliberately excluded here and supplied by
+ * {@link FacilityGeckoDoorGeometry} so targeting and the hand outline share
+ * one source of truth.</p>
  */
 final class FacilityDoorShapes {
+    private static final double WORKSHOP_CENTER_X = 8.0D;
+    private static final double DOOR_CENTER_Z = 13.0D;
+
     private FacilityDoorShapes() {
     }
 
     static VoxelShape shape(String familyId, boolean open, Direction facing) {
-        double[][] boxes = switch (familyId) {
-            case "normal" -> open ? NORMAL_OPEN : NORMAL_CLOSED;
-            case "left_logistics" -> open ? LEFT_LOGISTICS_OPEN : LEFT_LOGISTICS_CLOSED;
-            case "right_logistics" -> open ? RIGHT_LOGISTICS_OPEN : RIGHT_LOGISTICS_CLOSED;
-            case "office" -> open ? OFFICE_OPEN : OFFICE_CLOSED;
-            case "bathroom" -> open ? BATHROOM_OPEN : BATHROOM_CLOSED;
-            case "workshop" -> open ? WORKSHOP_OPEN : WORKSHOP_CLOSED;
-            default -> null;
-        };
-        if (boxes == null) {
-            return Shapes.empty();
-        }
+        Geometry geometry = geometry(familyId);
+        if (geometry == null) return Shapes.empty();
 
         VoxelShape result = Shapes.empty();
-        for (double[] box : boxes) {
-            double[] rotated = rotate(box, facing);
-            result = Shapes.or(result, Block.box(
-                    rotated[0], rotated[1], rotated[2],
-                    rotated[3], rotated[4], rotated[5]));
+        for (double[] source : geometry.frame()) {
+            double[] box = geometry.flipModel()
+                    ? rotate180(source) : source;
+            result = Shapes.or(result, rotatedBox(box, facing));
         }
-        return result;
+        for (double[] source : geometry.leaf()) {
+            double[] box = geometry.flipModel()
+                    ? rotate180(source) : source;
+            if (open) {
+                box = rotateLeaf(box, geometry.hingeX(),
+                        DOOR_CENTER_Z, geometry.openAngleDegrees());
+            }
+            result = Shapes.or(result, rotatedBox(box, facing));
+        }
+        return result.optimize();
     }
 
     /**
-     * Geometry used specifically for sight rays. Both the Normal and Office
-     * doors keep the real window openings already present in their closed
-     * model-derived shapes; only the surrounding frames block observation.
+     * Optical clipping uses the same tight opaque geometry. Window panes are
+     * intentionally absent so Facility and Office door windows remain visible
+     * through rather than behaving like invisible solid rectangles.
      */
     static VoxelShape visualOcclusionShape(String familyId, Direction facing) {
         return shape(familyId, false, facing);
     }
 
-    private static double[] rotate(double[] box, Direction facing) {
+    private static Geometry geometry(String familyId) {
+        return switch (familyId) {
+            case "normal" -> new Geometry(NORMAL_FRAME, NORMAL_LEAF,
+                    0.0D, -100.0D, false);
+            case "left_logistics" -> new Geometry(LEFT_LOGISTICS_FRAME,
+                    LEFT_LOGISTICS_LEAF, 0.0D, -100.0D, false);
+            case "right_logistics" -> new Geometry(RIGHT_LOGISTICS_FRAME,
+                    RIGHT_LOGISTICS_LEAF, 16.0D, 100.0D, false);
+            case "office" -> new Geometry(OFFICE_FRAME, OFFICE_LEAF,
+                    0.0D, -100.0D, false);
+            case "bathroom" -> new Geometry(BATHROOM_FRAME, BATHROOM_LEAF,
+                    0.0D, -100.0D, false);
+            case "workshop" -> new Geometry(WORKSHOP_FRAME, WORKSHOP_LEAF,
+                    16.0D, 100.0D, true);
+            default -> null;
+        };
+    }
+
+    private static VoxelShape rotatedBox(double[] box, Direction facing) {
+        double[] b = rotateFacing(box, facing);
+        return Block.box(b[0], b[1], b[2], b[3], b[4], b[5]);
+    }
+
+    private static double[] rotateFacing(double[] box, Direction facing) {
         return switch (facing) {
             case NORTH -> new double[] {
                     16.0D - box[3], box[1], 16.0D - box[5],
@@ -65,159 +95,114 @@ final class FacilityDoorShapes {
         };
     }
 
-    private static final double[][] NORMAL_CLOSED = {
-            {0.25, 26.25, 12.5, 15.75, 31, 13.5},
-            {10.75, 17, 12.5, 15.75, 26.25, 13.5},
-            {0.25, 17, 12.5, 5.25, 26.25, 13.5},
-            {0.25, 0, 12.5, 15.75, 17, 13.5},
-            {13.75, 16.5, 13.5, 14.5, 17.25, 14.5},
-            {13.75, 16.5, 11.5, 14.5, 17.25, 12.5},
-            {11.75, 16.5, 11, 14.5, 17.25, 11.5},
-            {11.75, 16.5, 14.5, 14.5, 17.25, 15},
-            {15.75, 15.5, 12.75, 16, 16.5, 13.25},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {0.25, 31, 9.75, 15.75, 32, 16.25}
+    private static double[] rotate180(double[] box) {
+        return new double[] {
+                2.0D * WORKSHOP_CENTER_X - box[3],
+                box[1],
+                2.0D * DOOR_CENTER_Z - box[5],
+                2.0D * WORKSHOP_CENTER_X - box[0],
+                box[4],
+                2.0D * DOOR_CENTER_Z - box[2]
+        };
+    }
+
+    private static double[] rotateLeaf(double[] box, double pivotX,
+            double pivotZ, double degrees) {
+        double radians = Math.toRadians(degrees);
+        double cos = Math.cos(radians);
+        double sin = Math.sin(radians);
+        double minX = Double.POSITIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+
+        for (int xi = 0; xi < 2; xi++) {
+            for (int zi = 0; zi < 2; zi++) {
+                double x = xi == 0 ? box[0] : box[3];
+                double z = zi == 0 ? box[2] : box[5];
+                double dx = x - pivotX;
+                double dz = z - pivotZ;
+                double transformedX = pivotX + dx * cos - dz * sin;
+                double transformedZ = pivotZ + dx * sin + dz * cos;
+                minX = Math.min(minX, transformedX);
+                minZ = Math.min(minZ, transformedZ);
+                maxX = Math.max(maxX, transformedX);
+                maxZ = Math.max(maxZ, transformedZ);
+            }
+        }
+        return new double[] {
+                minX, box[1], minZ, maxX, box[4], maxZ
+        };
+    }
+
+    private record Geometry(double[][] frame, double[][] leaf,
+            double hingeX, double openAngleDegrees, boolean flipModel) {
+    }
+
+    private static final double[][] NORMAL_FRAME = {
+            {15.75D, 0.0D, 12.25D, 16.75D, 32.0D, 13.75D},
+            {-0.75D, 0.0D, 12.25D, 0.25D, 32.0D, 13.75D},
+            {-0.75D, 32.0D, 12.25D, 16.75D, 33.0D, 13.75D}
+    };
+    private static final double[][] NORMAL_LEAF = {
+            {0.25D, 27.0D, 12.5D, 15.75D, 32.0D, 13.5D},
+            {10.75D, 17.5D, 12.5D, 15.75D, 27.0D, 13.5D},
+            {0.25D, 17.5D, 12.5D, 5.25D, 27.0D, 13.5D},
+            {0.25D, 0.0D, 12.5D, 15.75D, 17.5D, 13.5D},
+            {15.65D, 15.5D, 12.75D, 15.9D, 16.5D, 13.25D}
     };
 
-    private static final double[][] NORMAL_OPEN = {
-            {-0.5, 26.25, -1.75, 0.5, 31, 13.75},
-            {-0.5, 17, -1.75, 0.5, 26.25, 3.25},
-            {-0.5, 17, 8.75, 0.5, 26.25, 13.75},
-            {-0.5, 0, -1.75, 0.5, 17, 13.75},
-            {-1.475, 16.5, -0.375, -0.475, 17.25, 0.375},
-            {-1.975, 16.5, -0.375, -1.475, 17.25, 2.375},
-            {1.525, 16.5, -0.375, 2.025, 17.25, 2.375},
-            {0.525, 16.5, -0.375, 1.525, 17.25, 0.375},
-            {-0.25, 15.5, -2.05, 0.25, 16.5, -1.8},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {0.25, 31, 9.75, 15.75, 32, 16.25}
+    private static final double[][] LEFT_LOGISTICS_FRAME = {
+            {-0.75D, 0.0D, 12.25D, 0.25D, 32.0D, 13.75D},
+            {-0.75D, 32.0D, 12.25D, 16.0D, 33.0D, 13.75D}
+    };
+    private static final double[][] LEFT_LOGISTICS_LEAF = {
+            {0.25D, 0.0D, 12.5D, 16.0D, 32.0D, 13.5D},
+            {15.9D, 15.5D, 12.75D, 16.15D, 16.5D, 13.25D}
     };
 
-    private static final double[][] LEFT_LOGISTICS_CLOSED = {
-            {0.25, 0, 12.5, 16, 31, 13.5},
-            {14.35, 16.35, 13.5, 15.1, 17.1, 14.5},
-            {14.35, 16.35, 11.5, 15.1, 17.1, 12.5},
-            {12.35, 16.35, 11, 15.1, 17.1, 11.5},
-            {12.35, 16.35, 14.5, 15.1, 17.1, 15},
-            {15.9, 15.5, 12.75, 16.15, 16.5, 13.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {0.25, 31, 9.75, 16, 32, 16.25}
+    private static final double[][] RIGHT_LOGISTICS_FRAME = {
+            {15.75D, 0.0D, 12.25D, 16.75D, 32.0D, 13.75D},
+            {0.0D, 32.0D, 12.25D, 16.75D, 33.0D, 13.75D}
+    };
+    private static final double[][] RIGHT_LOGISTICS_LEAF = {
+            {0.0D, 0.0D, 12.5D, 15.75D, 32.0D, 13.5D},
+            {-0.2D, 15.5D, 12.75D, 0.05D, 16.5D, 13.25D}
     };
 
-    private static final double[][] LEFT_LOGISTICS_OPEN = {
-            {-0.5, 0, -2.75, 0.5, 31, 12.75},
-            {0.425, 16.35, -1.875, 1.425, 17.1, -1.125},
-            {-1.475, 16.35, -1.875, -0.475, 17.1, -1.125},
-            {-1.975, 16.35, -1.875, -1.475, 17.1, 0.875},
-            {1.425, 16.35, -1.875, 1.925, 17.1, 0.875},
-            {-0.25, 15.5, -2.95, 0.25, 16.5, -2.7},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {0.25, 31, 9.75, 15.75, 32, 16.25}
+    private static final double[][] OFFICE_FRAME = {
+            {15.75D, 0.0D, 12.25D, 16.75D, 32.0D, 13.75D},
+            {-0.75D, 0.0D, 12.25D, 0.25D, 32.0D, 13.75D},
+            {-0.75D, 32.0D, 12.25D, 16.75D, 33.0D, 13.75D}
+    };
+    private static final double[][] OFFICE_LEAF = {
+            {0.25D, 30.0D, 12.5D, 15.75D, 32.0D, 13.5D},
+            {14.25D, 9.5D, 12.5D, 15.75D, 30.0D, 13.5D},
+            {0.25D, 9.5D, 12.5D, 1.75D, 30.0D, 13.5D},
+            {0.25D, 0.0D, 12.5D, 15.75D, 9.5D, 13.5D},
+            {15.65D, 15.5D, 12.75D, 15.9D, 16.5D, 13.25D}
     };
 
-    private static final double[][] RIGHT_LOGISTICS_CLOSED = {
-            {0, 0, 12.5, 15.75, 31, 13.5},
-            {0.9, 16.35, 13.5, 1.65, 17.1, 14.5},
-            {0.9, 16.35, 11.5, 1.65, 17.1, 12.5},
-            {0.9, 16.35, 11, 3.65, 17.1, 11.5},
-            {0.9, 16.35, 14.5, 3.65, 17.1, 15},
-            {-0.2, 15.5, 12.75, 0.05, 16.5, 13.25},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {0, 31, 9.75, 15.75, 32, 16.25}
+    private static final double[][] BATHROOM_FRAME = {
+            {15.75D, 0.0D, 12.25D, 16.75D, 32.0D, 13.75D},
+            {-0.75D, 0.0D, 12.25D, 0.25D, 32.0D, 13.75D},
+            {-0.75D, 32.0D, 12.25D, 16.75D, 33.0D, 13.75D},
+            {0.25D, 0.0D, 12.2D, 0.75D, 32.0D, 13.8D},
+            {15.25D, 0.0D, 12.2D, 15.75D, 32.0D, 13.8D},
+            {0.75D, 31.45D, 12.2D, 15.25D, 32.05D, 13.8D},
+            {0.75D, -0.05D, 12.2D, 15.25D, 0.55D, 13.8D}
+    };
+    private static final double[][] BATHROOM_LEAF = {
+            {0.25D, 0.0D, 12.5D, 15.75D, 32.0D, 13.5D}
     };
 
-    private static final double[][] RIGHT_LOGISTICS_OPEN = {
-            {15.5, 0, -2.75, 16.5, 31, 12.75},
-            {14.575, 16.35, -1.875, 15.575, 17.1, -1.125},
-            {16.475, 16.35, -1.875, 17.475, 17.1, -1.125},
-            {17.475, 16.35, -1.875, 17.975, 17.1, 0.875},
-            {14.075, 16.35, -1.875, 14.575, 17.1, 0.875},
-            {15.75, 15.5, -2.95, 16.25, 16.5, -2.7},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {0.25, 31, 9.75, 15.75, 32, 16.25}
+    private static final double[][] WORKSHOP_FRAME = {
+            {15.75D, 0.0D, 12.25D, 16.75D, 32.0D, 13.75D},
+            {-0.75D, 0.0D, 12.25D, 0.25D, 32.0D, 13.75D},
+            {-0.75D, 32.0D, 12.25D, 16.75D, 33.0D, 13.75D}
     };
-
-    private static final double[][] OFFICE_CLOSED = {
-            {0.25, 29.5, 12.5, 15.75, 31, 13.5},
-            {14.25, 9.5, 12.5, 15.75, 29.5, 13.5},
-            {0.25, 9.5, 12.5, 1.75, 29.5, 13.5},
-            {0.25, 0, 12.5, 15.75, 9.5, 13.5},
-            {14.65, 16.5, 13.5, 15.4, 17.25, 14.5},
-            {14.65, 16.5, 11.5, 15.4, 17.25, 12.5},
-            {12.65, 16.5, 11, 15.4, 17.25, 11.5},
-            {12.65, 16.5, 14.5, 15.4, 17.25, 15},
-            {15.65, 15.5, 12.75, 15.9, 16.5, 13.25},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {0.25, 31, 9.75, 15.75, 32, 16.25}
-    };
-
-    private static final double[][] OFFICE_OPEN = {
-            {-0.5, 29.5, -2.75, 0.5, 31, 12.75},
-            {-0.5, 9.5, -2.75, 0.5, 29.5, -1.25},
-            {-0.5, 9.5, 11.25, 0.5, 29.5, 12.75},
-            {-0.5, 0, -2.75, 0.5, 9.5, 12.75},
-            {0.425, 16.5, -2.475, 1.425, 17.25, -1.725},
-            {-1.475, 16.5, -2.475, -0.475, 17.25, -1.725},
-            {-1.975, 16.5, -2.475, -1.475, 17.25, 0.275},
-            {1.425, 16.5, -2.475, 1.925, 17.25, 0.275},
-            {-0.2, 15.5, -2.95, 0.3, 16.5, -2.7},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {0.25, 31, 9.75, 15.75, 32, 16.25}
-    };
-
-    private static final double[][] BATHROOM_CLOSED = {
-            {0.75, 0.5, 12.5, 15.25, 30.5, 13.5},
-            {12.15, 18.65, 13.5, 12.9, 19.4, 14.5},
-            {12.15, 14.15, 13.5, 12.9, 14.9, 14.5},
-            {12.15, 14.15, 14.5, 12.9, 19.4, 15},
-            {0.25, 31, 9.75, 15.75, 32, 16.25},
-            {0.25, 0, 12.2, 0.75, 32, 13.8},
-            {15.25, 0, 12.2, 15.75, 32, 13.8},
-            {0.75, 30.45, 12.2, 15.25, 31.05, 13.8},
-            {0.75, -0.05, 12.2, 15.25, 0.55, 13.8},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25}
-    };
-
-    private static final double[][] BATHROOM_OPEN = {
-            {0.25, 0.5, 13, 1.25, 30.5, 27.5},
-            {-0.6, 18.65, 24.25, 0.4, 19.4, 25},
-            {-0.6, 14.15, 24.25, 0.4, 14.9, 25},
-            {-1.1, 14.15, 24.25, -0.6, 19.4, 25},
-            {0.25, 31, 9.75, 15.75, 32, 16.25},
-            {0.25, 0, 12.2, 0.75, 32, 13.8},
-            {15.25, 0, 12.2, 15.75, 32, 13.8},
-            {0.75, 30.45, 12.2, 15.25, 31.05, 13.8},
-            {0.75, -0.05, 12.2, 15.25, 0.55, 13.8},
-            {15.75, 0, 9.75, 16.75, 32, 16.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25}
-    };
-
-    private static final double[][] WORKSHOP_CLOSED = {
-            {0.25, 0, 12.5, 16, 31, 13.5},
-            {0.7, 16.35, 13.5, 1.45, 17.1, 14.5},
-            {0.7, 16.35, 11.5, 1.45, 17.1, 12.5},
-            {0.7, 16.35, 11, 3.45, 17.1, 11.5},
-            {0.7, 16.35, 14.5, 3.45, 17.1, 15},
-            {-0.15, 15.5, 12.75, 0.1, 16.5, 13.25},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {16, 0, 9.75, 17, 32, 16.25},
-            {0.25, 31, 9.75, 16, 32, 16.25}
-    };
-
-    private static final double[][] WORKSHOP_OPEN = {
-            {15.75, 0, -3, 16.75, 31, 12.75},
-            {14.55, 16.35, -2.35, 15.55, 17.1, -1.6},
-            {16.55, 16.35, -2.35, 17.55, 17.1, -1.6},
-            {17.55, 16.35, -2.35, 18.05, 17.1, 0.4},
-            {14.05, 16.35, -2.35, 14.55, 17.1, 0.4},
-            {16, 15.5, -3.4, 16.5, 16.5, -3.15},
-            {-0.75, 0, 9.75, 0.25, 32, 16.25},
-            {16, 0, 9.75, 17, 32, 16.25},
-            {0.25, 31, 9.75, 16, 32, 16.25}
+    private static final double[][] WORKSHOP_LEAF = {
+            {0.25D, 0.0D, 12.5D, 15.75D, 32.0D, 13.5D},
+            {15.65D, 15.5D, 12.75D, 15.9D, 16.5D, 13.25D}
     };
 }

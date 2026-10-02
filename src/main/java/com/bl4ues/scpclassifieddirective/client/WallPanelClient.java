@@ -7,10 +7,16 @@ import com.bl4ues.scpclassifieddirective.facility.WallPanelModule.WallPanelItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -33,6 +39,8 @@ import software.bernie.geckolib.renderer.GeoItemRenderer;
 public final class WallPanelClient {
     private static final ResourceLocation GEO = id(
             "geo/block/wall_panel.geo.json");
+    private static final ResourceLocation ITEM_GEO = id(
+            "geo/item/wall_panel.geo.json");
     private static final ResourceLocation TEXTURE = id(
             "textures/block/wall_panel.png");
     private static final ResourceLocation ANIMATION = id(
@@ -110,12 +118,35 @@ public final class WallPanelClient {
                         Minecraft.getInstance().getBlockRenderer()
                                 .renderSingleBlock(panel.materialState(),
                                         poseStack, bufferSource,
-                                        packedLight, packedOverlay);
+                                        copiedLight(panel),
+                                        packedOverlay);
                     } finally {
                         poseStack.popPose();
                     }
                 }
             });
+        }
+
+        private static int copiedLight(WallPanelBlockEntity panel) {
+            Level level = panel.getLevel();
+            if (level == null) return LightTexture.FULL_BRIGHT;
+
+            BlockPos sourcePos = panel.getBlockPos();
+            Direction face = panel.getBlockState().getValue(
+                    HorizontalDirectionalBlock.FACING);
+            BlockPos exposedPos = sourcePos.relative(face);
+
+            int source = LevelRenderer.getLightColor(level,
+                    panel.materialState(), sourcePos);
+            int exposed = level.hasChunkAt(exposedPos)
+                    ? LevelRenderer.getLightColor(level, exposedPos)
+                    : source;
+
+            return LightTexture.pack(
+                    Math.max(LightTexture.block(source),
+                            LightTexture.block(exposed)),
+                    Math.max(LightTexture.sky(source),
+                            LightTexture.sky(exposed)));
         }
 
         @Override
@@ -129,7 +160,7 @@ public final class WallPanelClient {
     private static final class ItemModel extends GeoModel<WallPanelItem> {
         @Override
         public ResourceLocation getModelResource(WallPanelItem animatable) {
-            return GEO;
+            return ITEM_GEO;
         }
 
         @Override

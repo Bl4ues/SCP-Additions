@@ -162,16 +162,16 @@ public final class FacilityGeckoDoorGeometry {
             box(4.65D, 16.5D, -9.5D, 2.75D, 0.75D, 0.5D));
 
     private static final List<AuthoredBox> LEFT_LOGISTICS_HANDLE = List.of(
-            box(5.9D, 17.25D, -9.0D, 0.75D, 0.75D, 1.0D),
-            box(5.9D, 17.25D, -7.0D, 0.75D, 0.75D, 1.0D),
-            box(3.9D, 17.25D, -6.0D, 2.75D, 0.75D, 0.5D),
-            box(3.9D, 17.25D, -9.5D, 2.75D, 0.75D, 0.5D));
+            box(5.4D, 17.75D, -9.0D, 0.75D, 0.75D, 1.0D),
+            box(5.4D, 17.75D, -7.0D, 0.75D, 0.75D, 1.0D),
+            box(3.4D, 17.75D, -6.0D, 2.75D, 0.75D, 0.5D),
+            box(3.4D, 17.75D, -9.5D, 2.75D, 0.75D, 0.5D));
 
     private static final List<AuthoredBox> RIGHT_LOGISTICS_HANDLE = List.of(
-            box(-6.65D, 17.25D, -9.0D, 0.75D, 0.75D, 1.0D),
-            box(-6.65D, 17.25D, -7.0D, 0.75D, 0.75D, 1.0D),
-            box(-6.65D, 17.25D, -6.0D, 2.75D, 0.75D, 0.5D),
-            box(-6.65D, 17.25D, -9.5D, 2.75D, 0.75D, 0.5D));
+            box(-6.15D, 17.75D, -9.0D, 0.75D, 0.75D, 1.0D),
+            box(-6.15D, 17.75D, -7.0D, 0.75D, 0.75D, 1.0D),
+            box(-6.15D, 17.75D, -6.0D, 2.75D, 0.75D, 0.5D),
+            box(-6.15D, 17.75D, -9.5D, 2.75D, 0.75D, 0.5D));
 
     private static final List<AuthoredBox> BATHROOM_HANDLE = List.of(
             box(4.4D, 14.9D, -9.0D, 0.75D, 0.75D, 1.0D),

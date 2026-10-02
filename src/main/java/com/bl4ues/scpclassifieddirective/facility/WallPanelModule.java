@@ -2,7 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.WallPanelClient;
-import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
+import com.bl4ues.scpclassifieddirective.item.ScrewdriverItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -152,7 +152,7 @@ public final class WallPanelModule {
             }
 
             ItemStack held = player.getItemInHand(hand);
-            if (held.is(UnifiedReaderItems.SCREWDRIVER.get())) {
+            if (held.getItem() instanceof ScrewdriverItem) {
                 if (!panel.hasMaterial()) return InteractionResult.PASS;
                 if (level.isClientSide) return InteractionResult.SUCCESS;
 

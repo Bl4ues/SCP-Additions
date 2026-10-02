@@ -373,17 +373,26 @@ public final class FacilityGeckoDoorModule {
             super.onRemove(state, level, pos, newState, moving);
         }
 
-        @Override
-        public VoxelShape getShape(BlockState state, BlockGetter level,
-                BlockPos pos, CollisionContext context) {
+        private VoxelShape physicalShape(BlockState state) {
             return FacilityDoorShapes.shape(family.shapeId(),
                     isPassable(state), state.getValue(FACING));
         }
 
         @Override
+        public VoxelShape getShape(BlockState state, BlockGetter level,
+                BlockPos pos, CollisionContext context) {
+            // Collision keeps the established door envelope. Selection also
+            // includes the exact 100-degree Gecko endpoint of the handle so a
+            // raw use click can still acquire the visible handle when open.
+            return Shapes.or(physicalShape(state),
+                    FacilityGeckoDoorGeometry.handleSelectionShape(state))
+                    .optimize();
+        }
+
+        @Override
         public VoxelShape getCollisionShape(BlockState state,
                 BlockGetter level, BlockPos pos, CollisionContext context) {
-            return getShape(state, level, pos, context);
+            return physicalShape(state);
         }
 
         @Override

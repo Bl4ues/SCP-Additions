@@ -2,7 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.WallPanelClient;
-import com.bl4ues.scpclassifieddirective.item.ScrewdriverItem;
+import com.bl4ues.scpclassifieddirective.init.UnifiedReaderItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -63,6 +63,8 @@ import java.util.function.Consumer;
  * block while retaining its own geometry.
  */
 public final class WallPanelModule {
+    public static final String REMOVE_INTERACTION =
+            "remove_wall_panel_material";
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(
             ForgeRegistries.BLOCKS, ScpClassifiedDirectiveMod.MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(
@@ -152,7 +154,7 @@ public final class WallPanelModule {
             }
 
             ItemStack held = player.getItemInHand(hand);
-            if (held.getItem() instanceof ScrewdriverItem) {
+            if (held.is(UnifiedReaderItems.SCREWDRIVER.get())) {
                 if (!panel.hasMaterial()) return InteractionResult.PASS;
                 if (level.isClientSide) return InteractionResult.SUCCESS;
 

@@ -82,15 +82,24 @@ public final class DoubleWallPanelClient {
                 frame.setHidden(animatable.hasMaterial(Side.FRONT));
             }
             if (frame2 != null) {
-                frame2.setHidden(animatable.hasMaterial(Side.BACK));
+                // Rear fallback is rendered in a separate darker pass.
+                frame2.setHidden(true);
             }
         }
     }
 
     public static final class BlockRenderer
             extends GeoBlockRenderer<DoubleWallPanelBlockEntity> {
+        private final BlockModel panelModel;
+
         public BlockRenderer(BlockEntityRendererProvider.Context context) {
-            super(new BlockModel());
+            this(new BlockModel());
+        }
+
+        private BlockRenderer(BlockModel model) {
+            super(model);
+            this.panelModel = model;
+            addRearFallbackLayer();
             addRenderLayer(new GeoRenderLayer<>(this) {
                 @Override
                 public void render(PoseStack poseStack,
@@ -106,16 +115,53 @@ public final class DoubleWallPanelClient {
                                 panel.material(Side.FRONT),
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
-                                packedOverlay, 0.0D, 0.5D,
-                                Direction.SOUTH);
+                                packedOverlay, 0.0D,
+                                0.5D - 1.0D / 2048.0D,
+                                Direction.SOUTH, 1.0F);
                     }
                     if (panel.hasMaterial(Side.BACK)) {
                         CopycatPanelRenderUtil.render(
                                 panel.material(Side.BACK),
                                 panel.getLevel(), panel.getBlockPos(),
                                 facing, poseStack, bufferSource,
-                                packedOverlay, 0.5D, 1.0D,
-                                Direction.NORTH);
+                                packedOverlay,
+                                0.5D + 1.0D / 2048.0D, 1.0D,
+                                Direction.NORTH, 0.82F);
+                    }
+                }
+            });
+        }
+
+        private void addRearFallbackLayer() {
+            addRenderLayer(new GeoRenderLayer<>(this) {
+                @Override
+                public void render(PoseStack poseStack,
+                        DoubleWallPanelBlockEntity panel,
+                        BakedGeoModel bakedModel, RenderType renderType,
+                        MultiBufferSource bufferSource, VertexConsumer buffer,
+                        float partialTick, int packedLight,
+                        int packedOverlay) {
+                    if (panel.hasMaterial(Side.BACK)) return;
+
+                    CoreGeoBone front = panelModel.getAnimationProcessor()
+                            .getBone("frame");
+                    CoreGeoBone rear = panelModel.getAnimationProcessor()
+                            .getBone("frame2");
+                    if (front != null) front.setHidden(true);
+                    if (rear != null) rear.setHidden(false);
+                    try {
+                        RenderType tinted = RenderType.entityCutoutNoCull(
+                                TEXTURE);
+                        getRenderer().reRender(bakedModel, poseStack,
+                                bufferSource, panel, tinted,
+                                bufferSource.getBuffer(tinted), partialTick,
+                                packedLight, packedOverlay,
+                                0.82F, 0.82F, 0.82F, 1.0F);
+                    } finally {
+                        if (front != null) {
+                            front.setHidden(panel.hasMaterial(Side.FRONT));
+                        }
+                        if (rear != null) rear.setHidden(true);
                     }
                 }
             });

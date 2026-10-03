@@ -291,6 +291,7 @@
 ## Facility construction
 
 - Rebuilt the **Facility Door**, **Logistics Door**, **Office Door**, **Bathroom Door**, and **Workshop Door** as GeckoLib-animated manual doors with physical handle-only interactions; the Logistics Door now uses one Creative item and selects its left/right hinge variant from the clicked side during placement;
+- Added a default-enabled server-side **Linked Double Doors** module: adjacent Left/Right Logistics Doors in the same state open or close together from one interaction, while crouch-use keeps the interaction limited to the selected door;
 - Added a redstone-operated **Blast Door** for large secure facility entrances;
 - Added a functional animated **Alarm** that reacts to redstone or nearby open electric doors, projects a shader-compatible rotating wall light, and can be mounted at wall centers, shared edges, or shared corners;
 - Added Creative-only transformed facility construction tools for off-grid block grids and resizable, tiltable, curved surfaces, preserving block states, collision, lighting, animated doors, Alarm behavior, compatible BlockEntity rendering, and precise Facility Mapping geometry for future procedural room placement;

@@ -77,6 +77,8 @@ public final class Scp079ModulesScreenExtension {
                     "Enables the custom PDA inventory.", true),
             new Row("interactions", "enabled", "Contextual Interactions",
                     "Enables SCP Unity-style interaction prompts.", true),
+            Row.serverToggle("double_doors", "enabled", "Linked Double Doors",
+                    "Allows double doors to open with a single interaction.", true),
             new Row("blink", "enabled", "Blink System",
                     "Enables automatic and manual blinking.", true),
             new Row("vanilla_hostile_mobs", "enabled",
@@ -290,6 +292,12 @@ public final class Scp079ModulesScreenExtension {
 
         private static Row section(String title) {
             return new Row(null, null, title, "", false, false, null);
+        }
+
+        private static Row serverToggle(String group, String key,
+                String label, String description, boolean fallback) {
+            return new Row(group, key, label, description, fallback,
+                    true, null);
         }
 
         private static Row serverEditor(String group, String key, String label,

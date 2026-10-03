@@ -72,7 +72,7 @@ public final class TransformControlRuntime {
         if (group == null || !group.dimension().equals(
                 level.dimension().location())) return false;
         BlockState state = group.cells().get(cell);
-        if (toggleAlarmSound(player, level, state,
+        if (cycleAlarmMode(player, level, state,
                 ControlHit.group(group, cell, state, group.cellCenter(cell)))) {
             return true;
         }
@@ -95,7 +95,7 @@ public final class TransformControlRuntime {
                 surface.attachments().get(slot);
         if (attachment == null) return false;
         Vec3 center = surfaceCenter(surface, slot);
-        if (toggleAlarmSound(player, level, attachment.state(),
+        if (cycleAlarmMode(player, level, attachment.state(),
                 ControlHit.surface(surface, slot, attachment.state(), center))) {
             return true;
         }
@@ -119,7 +119,7 @@ public final class TransformControlRuntime {
                 surface.overlay(slot, side);
         if (attachment == null) return false;
         Vec3 center = surfaceCenter(surface, slot, side);
-        if (toggleAlarmSound(player, level, attachment.state(),
+        if (cycleAlarmMode(player, level, attachment.state(),
                 ControlHit.surface(surface, slot, side,
                         attachment.state(), center))) {
             return true;
@@ -130,7 +130,7 @@ public final class TransformControlRuntime {
                 attachment.state(), center));
     }
 
-    private static boolean toggleAlarmSound(ServerPlayer player,
+    private static boolean cycleAlarmMode(ServerPlayer player,
             ServerLevel level, BlockState state, ControlHit hit) {
         if (!AlarmModule.isController(state)
                 || !(player.getMainHandItem().getItem() instanceof ScrewdriverItem
@@ -138,8 +138,9 @@ public final class TransformControlRuntime {
                 || player.getEyePosition().distanceToSqr(hit.center()) > 36.0D) {
             return false;
         }
-        set(level, hit, state.setValue(AlarmModule.SILENT,
-                !state.getValue(AlarmModule.SILENT)));
+        BlockState next = AlarmModule.cycleMode(state);
+        set(level, hit, next);
+        AlarmModule.showMode(player, next);
         return true;
     }
 

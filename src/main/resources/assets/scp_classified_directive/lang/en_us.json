@@ -479,7 +479,7 @@
   "subtitles.scp_classified_directive.heater": "Heater hums",
   "subtitles.scp_classified_directive.ceiling_ventilation": "Ceiling ventilation hums",
   "block.scp_classified_directive.alarm": "Alarm",
-  "tooltip.scp_classified_directive.alarm": "Activated by redstone or nearby open electric doors",
+  "tooltip.scp_classified_directive.alarm": "Configurable: redstone/doors or Containment Breach",
   "subtitles.scp_classified_directive.alarm": "Facility alarm sounds",
   "block.scp_classified_directive.pneumatic_panel": "Pneumatic Panel",
   "block.scp_classified_directive.sl2_round_lamp": "Round Lamp",

@@ -7,6 +7,7 @@ import com.bl4ues.scpclassifieddirective.facility.HeavyDoorPowerRelay;
 import com.bl4ues.scpclassifieddirective.facility.alarm.AlarmModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.transform.network.TransformConstructionNetwork;
+import com.bl4ues.scpclassifieddirective.roamer.RoamerManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
@@ -65,7 +66,7 @@ public final class TransformAlarmRuntime {
             if (!isAlarm(state)) continue;
 
             Vec3 center = group.cellCenter(alarm.cell());
-            boolean active = shouldBeActive(level, center,
+            boolean active = shouldBeActive(level, center, state,
                     groupAlarmPowered(level, group, alarm.cell(), state)
                             || adjacentOpenDoor(group, alarm.cell(), state));
             boolean wasActive = state.getValue(AlarmModule.ACTIVE);
@@ -98,6 +99,7 @@ public final class TransformAlarmRuntime {
             Vec3 center = TransformSurfaceGeometry.cellCenter(surface,
                     alarm.slot(), side, alarm.normalSign() != 0);
             boolean active = shouldBeActive(level, center,
+                    attachment.state(),
                     TransformPowerQuery.powered(level, surface, alarm.slot())
                             || adjacentOpenDoor(surface, alarm.slot()));
             BlockState state = attachment.state();
@@ -415,7 +417,11 @@ public final class TransformAlarmRuntime {
     }
 
     private static boolean shouldBeActive(ServerLevel level, Vec3 center,
-            boolean logicalPower) {
+            BlockState state, boolean logicalPower) {
+        if (state != null && state.hasProperty(AlarmModule.BREACH_MODE)
+                && state.getValue(AlarmModule.BREACH_MODE)) {
+            return RoamerManager.hasContainmentBreach(level.getServer());
+        }
         return logicalPower || hasVanillaDoor(level, center);
     }
 

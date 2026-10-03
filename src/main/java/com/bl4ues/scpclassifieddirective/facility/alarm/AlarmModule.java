@@ -8,6 +8,7 @@ import com.bl4ues.scpclassifieddirective.facility.FacilityModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorModule;
 import com.bl4ues.scpclassifieddirective.facility.blastdoor.BlastDoorStructure;
 import com.bl4ues.scpclassifieddirective.item.ScrewdriverItem;
+import com.bl4ues.scpclassifieddirective.roamer.RoamerManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -84,6 +85,9 @@ public final class AlarmModule {
     /** Configuration survives save/load and is shared by normal and transformed Alarms. */
     public static final BooleanProperty SILENT =
             BooleanProperty.create("silent");
+    /** When true, the Alarm ignores local triggers and follows containment breach state. */
+    public static final BooleanProperty BREACH_MODE =
+            BooleanProperty.create("breach_mode");
     /** 0/1/2 encode left-center-right and bottom-center-top. */
     public static final IntegerProperty MOUNT_X =
             IntegerProperty.create("mount_x", 0, 2);
@@ -142,6 +146,30 @@ public final class AlarmModule {
         return state != null && state.is(PART.get());
     }
 
+    public static BlockState cycleMode(BlockState state) {
+        if (state == null || !state.hasProperty(SILENT)
+                || !state.hasProperty(BREACH_MODE)) {
+            return state;
+        }
+        int current = (state.getValue(BREACH_MODE) ? 2 : 0)
+                + (state.getValue(SILENT) ? 1 : 0);
+        int next = (current + 1) & 3;
+        return state.setValue(SILENT, (next & 1) != 0)
+                .setValue(BREACH_MODE, (next & 2) != 0);
+    }
+
+    public static void showMode(Player player, BlockState state) {
+        if (player == null || state == null
+                || !state.hasProperty(SILENT)
+                || !state.hasProperty(BREACH_MODE)) {
+            return;
+        }
+        String sound = state.getValue(SILENT) ? "Silent" : "Sound";
+        String trigger = state.getValue(BREACH_MODE) ? "Breach" : "Redstone";
+        player.displayClientMessage(Component.literal(
+                "Alarm: " + sound + " / " + trigger), true);
+    }
+
     public static final class AlarmBlock extends BaseEntityBlock {
         // Authored NORTH model: X -1.75..1.75, Y 6.25..9.75 and
         // Z 4.75..8.0. Convert the compact body to a simple one-piece shape.
@@ -161,6 +189,7 @@ public final class AlarmModule {
                     .setValue(FACING, Direction.NORTH)
                     .setValue(ACTIVE, false)
                     .setValue(SILENT, false)
+                    .setValue(BREACH_MODE, false)
                     .setValue(MOUNT_X,
                             AlarmMountStructure.encodeSlot(
                                     AlarmMountStructure.CENTER))
@@ -198,7 +227,7 @@ public final class AlarmModule {
         @Override
         protected void createBlockStateDefinition(
                 StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(FACING, ACTIVE, SILENT, MOUNT_X, MOUNT_Y);
+            builder.add(FACING, ACTIVE, SILENT, BREACH_MODE, MOUNT_X, MOUNT_Y);
         }
 
         @Nullable
@@ -215,6 +244,7 @@ public final class AlarmModule {
                     .setValue(FACING, clicked)
                     .setValue(ACTIVE, false)
                     .setValue(SILENT, false)
+                    .setValue(BREACH_MODE, false)
                     .setValue(MOUNT_X,
                             AlarmMountStructure.encodeSlot(horizontal))
                     .setValue(MOUNT_Y,
@@ -253,8 +283,9 @@ public final class AlarmModule {
                 return InteractionResult.PASS;
             }
             if (!level.isClientSide) {
-                level.setBlock(pos, state.setValue(SILENT,
-                        !state.getValue(SILENT)), Block.UPDATE_CLIENTS);
+                BlockState next = cycleMode(state);
+                level.setBlock(pos, next, Block.UPDATE_CLIENTS);
+                showMode(player, next);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
@@ -491,9 +522,7 @@ public final class AlarmModule {
             // At most three helper cells are repaired. Door/redstone checks
             // then use the complete physical footprint of the mounted Alarm.
             AlarmMountStructure.ensureParts(server, pos, state);
-            alarm.applyActive(server,
-                    AlarmMountStructure.hasNeighborSignal(server, pos, state)
-                    || alarm.hasAdjacentOpenElectricDoor(server));
+            alarm.applyActive(server, alarm.shouldBeActive(server, state));
         }
 
         private static void clientTick(Level level, BlockPos pos,
@@ -506,10 +535,17 @@ public final class AlarmModule {
         private void refresh(ServerLevel server,
                 boolean ignoredRefreshDoors) {
             BlockState state = getBlockState();
-            applyActive(server,
-                    AlarmMountStructure.hasNeighborSignal(
-                            server, worldPosition, state)
-                    || hasAdjacentOpenElectricDoor(server));
+            applyActive(server, shouldBeActive(server, state));
+        }
+
+        private boolean shouldBeActive(ServerLevel server, BlockState state) {
+            if (state.hasProperty(BREACH_MODE)
+                    && state.getValue(BREACH_MODE)) {
+                return RoamerManager.hasContainmentBreach(server.getServer());
+            }
+            return AlarmMountStructure.hasNeighborSignal(
+                    server, worldPosition, state)
+                    || hasAdjacentOpenElectricDoor(server);
         }
 
         /**
@@ -686,7 +722,7 @@ public final class AlarmModule {
                     "tooltip.scp_classified_directive.alarm")
                     .withStyle(ChatFormatting.GRAY));
             tooltip.add(Component.literal(
-                    "Use a Screwdriver to toggle alarm sound.")
+                    "Use a Screwdriver to cycle alarm mode.")
                     .withStyle(ChatFormatting.AQUA));
             super.appendHoverText(stack, level, tooltip, flag);
         }

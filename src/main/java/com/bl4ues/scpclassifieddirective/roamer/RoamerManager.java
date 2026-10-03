@@ -325,12 +325,22 @@ public final class RoamerManager {
     public static boolean isOperationallyUncontained(MinecraftServer server,
             RoamerType type) {
         if (server == null || type == null || !type.spawnImplemented()
-                || !moduleEnabled(type) || !isSpawnRuleEnabled(server, type)) {
+                || !moduleEnabled(type) || !isSpawnRuleEnabled(server, type)
+                || !RoamerDifficultyPolicy.schedulesEnabled(
+                        currentDifficulty(server))) {
             return false;
         }
         synchronized (STATES) {
             return !data(server, type).contained;
         }
+    }
+
+    public static boolean hasContainmentBreach(MinecraftServer server) {
+        if (server == null) return false;
+        for (RoamerType type : RoamerType.values()) {
+            if (isOperationallyUncontained(server, type)) return true;
+        }
+        return false;
     }
 
     public static int despawn(MinecraftServer server, RoamerType type) {

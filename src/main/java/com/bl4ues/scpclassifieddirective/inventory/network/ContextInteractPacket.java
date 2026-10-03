@@ -271,7 +271,8 @@ public class ContextInteractPacket {
         if (FacilityGeckoDoorModule.isDoor(state)) {
             InteractionResult result =
                     FacilityGeckoDoorModule.handleContextInteraction(
-                            (ServerLevel) level, pos, state, shiftDown);
+                            (ServerLevel) level, pos, state,
+                            shiftDown || player.isShiftKeyDown());
             if (result.consumesAction()) {
                 player.swing(hand, true);
             }

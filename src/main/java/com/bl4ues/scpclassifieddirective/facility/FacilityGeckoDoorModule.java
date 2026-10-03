@@ -2,6 +2,7 @@ package com.bl4ues.scpclassifieddirective.facility;
 
 import com.bl4ues.scpclassifieddirective.ScpClassifiedDirectiveMod;
 import com.bl4ues.scpclassifieddirective.client.FacilityGeckoDoorClient;
+import com.bl4ues.scpclassifieddirective.config.ScpClassifiedDirectiveModulesConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -272,11 +273,16 @@ public final class FacilityGeckoDoorModule {
      */
     public static InteractionResult handleContextInteraction(ServerLevel level,
             BlockPos pos, BlockState state) {
+        return handleContextInteraction(level, pos, state, false);
+    }
+
+    public static InteractionResult handleContextInteraction(ServerLevel level,
+            BlockPos pos, BlockState state, boolean singleDoorOnly) {
         if (level == null || pos == null || state == null
                 || !(state.getBlock() instanceof DoorBlock door)) {
             return InteractionResult.PASS;
         }
-        return door.trigger(level, pos, state);
+        return door.trigger(level, pos, state, singleDoorOnly);
     }
 
     public static Item itemFor(Family family) {
@@ -342,22 +348,73 @@ public final class FacilityGeckoDoorModule {
             if (!(level instanceof ServerLevel server)) {
                 return InteractionResult.PASS;
             }
-            return trigger(server, pos, state);
+            return trigger(server, pos, state,
+                    player.isShiftKeyDown());
         }
 
         private InteractionResult trigger(ServerLevel level, BlockPos pos,
-                BlockState state) {
+                BlockState state, boolean singleDoorOnly) {
             if (!isInteractable(state)) return InteractionResult.PASS;
+
             boolean opening = phase(state) == Phase.CLOSED;
+            LinkedDoor linked = !singleDoorOnly
+                    && ScpClassifiedDirectiveModulesConfig.get()
+                            .doubleDoors.enabled
+                    ? matchingLogisticsDoor(level, pos, state)
+                    : null;
+
+            if (!startTransition(level, pos, state, opening)) {
+                return InteractionResult.CONSUME;
+            }
+            if (linked != null) {
+                linked.door().startTransition(level, linked.pos(),
+                        linked.state(), opening);
+            }
+            return InteractionResult.CONSUME;
+        }
+
+        private boolean startTransition(ServerLevel level, BlockPos pos,
+                BlockState state, boolean opening) {
             BlockState next = beginTransition(state, opening);
-            if (next == state) return InteractionResult.CONSUME;
+            if (next == state) return false;
+
             level.setBlock(pos, next, Block.UPDATE_ALL);
             Scp079ActivityPingManager.emitDoorAt(level,
                     Vec3.atCenterOf(pos));
             playTransitionSound(level, Vec3.atCenterOf(pos), family,
                     opening);
             level.scheduleTick(pos, this, transitionTicks(opening));
-            return InteractionResult.CONSUME;
+            return true;
+        }
+
+        @Nullable
+        private LinkedDoor matchingLogisticsDoor(ServerLevel level,
+                BlockPos pos, BlockState state) {
+            Family currentFamily = family(state);
+            if (currentFamily != Family.LOGISTICS_LEFT
+                    && currentFamily != Family.LOGISTICS_RIGHT) {
+                return null;
+            }
+
+            Direction facing = state.getValue(FACING);
+            Direction towardPartner = currentFamily == Family.LOGISTICS_LEFT
+                    ? facing.getCounterClockWise()
+                    : facing.getClockWise();
+            BlockPos partnerPos = pos.relative(towardPartner);
+            BlockState partnerState = level.getBlockState(partnerPos);
+            Family expected = currentFamily == Family.LOGISTICS_LEFT
+                    ? Family.LOGISTICS_RIGHT : Family.LOGISTICS_LEFT;
+
+            if (family(partnerState) != expected
+                    || !partnerState.hasProperty(FACING)
+                    || partnerState.getValue(FACING) != facing
+                    || phase(partnerState) != phase(state)
+                    || !isInteractable(partnerState)
+                    || !(partnerState.getBlock()
+                    instanceof DoorBlock partnerDoor)) {
+                return null;
+            }
+            return new LinkedDoor(partnerPos, partnerState, partnerDoor);
         }
 
         @Override
@@ -455,6 +512,10 @@ public final class FacilityGeckoDoorModule {
                 BlockGetter level, BlockPos pos, Player player) {
             return new ItemStack(itemFor(family));
         }
+    }
+
+    private record LinkedDoor(BlockPos pos, BlockState state,
+            DoorBlock door) {
     }
 
     public static final class DoorBlockEntity extends BlockEntity

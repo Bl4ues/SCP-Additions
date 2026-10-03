@@ -114,6 +114,7 @@ public final class ScpClassifiedDirectiveReloadCommand {
         if (root == null) return;
         requireObjectIfPresent(root, "inventory", path, errors);
         requireObjectIfPresent(root, "interactions", path, errors);
+        requireObjectIfPresent(root, "double_doors", path, errors);
         requireObjectIfPresent(root, "hud", path, errors);
         requireObjectIfPresent(root, "vitals", path, errors);
         requireObjectIfPresent(root, "hunger", path, errors);
@@ -124,6 +125,7 @@ public final class ScpClassifiedDirectiveReloadCommand {
         requireObjectIfPresent(root, "scp_173", path, errors);
         validateBooleanMember(root, "inventory", "enabled", path, errors);
         validateBooleanMember(root, "inventory", "remember_ui_state", path, errors);
+        validateBooleanMember(root, "double_doors", "enabled", path, errors);
         validateBooleanMember(root, "hunger", "disabled", path, errors);
         validateBooleanMember(root, "audio", "enter_sound_enabled", path, errors);
         validateBooleanMember(root, "audio", "replace_player_hurt_sounds", path, errors);

@@ -249,6 +249,19 @@ public final class PauseMenuModsPanelClient {
             state.mods.sort(comparator);
         } else if (state.sortMode == SortMode.Z_TO_A) {
             state.mods.sort(comparator.reversed());
+        } else {
+            int ownIndex = -1;
+            for (int i = 0; i < state.mods.size(); i++) {
+                if (ScpClassifiedDirectiveMod.MODID.equals(
+                        state.mods.get(i).info.getModId())) {
+                    ownIndex = i;
+                    break;
+                }
+            }
+            if (ownIndex > 0) {
+                ModEntry own = state.mods.remove(ownIndex);
+                state.mods.add(0, own);
+            }
         }
         if (state.selectedId != null && state.mods.stream().noneMatch(entry ->
                 state.selectedId.equals(entry.info.getModId()))) {

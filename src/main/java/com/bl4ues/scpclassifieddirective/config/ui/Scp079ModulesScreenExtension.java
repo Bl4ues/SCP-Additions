@@ -531,17 +531,9 @@ public final class Scp079ModulesScreenExtension {
                     graphics.fill(lineX, rowY + 14,
                             panelX + panelWidth - 18, rowY + 15, BORDER);
                 } else {
-                    Component server = row.serverOwned()
-                            ? ScpFonts.roboto("SERVER-SIDE") : null;
-                    int reserved = server == null ? 0 : font.width(server) + 12;
                     drawFittedDescription(graphics, font, row.description(),
                             panelX + 18, rowY + 24,
-                            panelWidth - 36 - reserved, MUTED);
-                    if (server != null) {
-                        graphics.drawString(font, server,
-                                panelX + panelWidth - 18 - font.width(server),
-                                rowY + 24, PALE_GOLD, false);
-                    }
+                            panelWidth - 36, MUTED);
                 }
             }
 

@@ -220,8 +220,8 @@ public final class ConfigCenterService {
     }
 
     private static void validateModules(JsonObject root, List<String> errors) {
-        for (String group : List.of("inventory", "interactions", "hud", "vitals",
-                "hunger", "vanilla_hostile_mobs", "blink", "audio",
+        for (String group : List.of("inventory", "interactions", "double_doors",
+                "hud", "vitals", "hunger", "vanilla_hostile_mobs", "blink", "audio",
                 "accessibility", "debug", "scp_173")) {
             if (root.has(group) && !root.get(group).isJsonObject()) errors.add(group + " must be an object");
         }
@@ -229,6 +229,7 @@ public final class ConfigCenterService {
         checkBoolean(root, "inventory", "remember_ui_state", errors);
         checkBoolean(root, "interactions", "enabled", errors);
         checkBoolean(root, "interactions", "disable_in_creative", errors);
+        checkBoolean(root, "double_doors", "enabled", errors);
         checkBoolean(root, "hud", "enabled", errors);
         checkBoolean(root, "hud", "hide_active_effect_indicators", errors);
         checkBoolean(root, "vitals", "custom_health_enabled", errors);
@@ -530,7 +531,7 @@ public final class ConfigCenterService {
     }
 
     private static JsonObject defaultModules() {
-        return JsonParser.parseString("{\"inventory\":{\"enabled\":true,\"remember_ui_state\":true},\"interactions\":{\"enabled\":true,\"disable_in_creative\":false},\"hud\":{\"enabled\":true,\"hide_active_effect_indicators\":true},\"vitals\":{\"custom_health_enabled\":true,\"stamina_enabled\":true,\"horror_movement_enabled\":true},\"hunger\":{\"disabled\":true},\"blink\":{\"enabled\":true},\"audio\":{\"enter_sound_enabled\":true,\"save_game_sound_enabled\":true,\"replace_player_hurt_sounds\":true,\"mute_non_player_hit_sounds\":false,\"disable_vanilla_music\":true,\"main_menu_music_enabled\":true,\"facility_ambience_enabled\":true},\"accessibility\":{\"reduce_scp_012_visual_effects\":false},\"scp_173\":{\"enabled\":true,\"natural_spawn_enabled\":true}}").getAsJsonObject();
+        return JsonParser.parseString("{\"inventory\":{\"enabled\":true,\"remember_ui_state\":true},\"interactions\":{\"enabled\":true,\"disable_in_creative\":false},\"double_doors\":{\"enabled\":true},\"hud\":{\"enabled\":true,\"hide_active_effect_indicators\":true},\"vitals\":{\"custom_health_enabled\":true,\"stamina_enabled\":true,\"horror_movement_enabled\":true},\"hunger\":{\"disabled\":true},\"blink\":{\"enabled\":true},\"audio\":{\"enter_sound_enabled\":true,\"save_game_sound_enabled\":true,\"replace_player_hurt_sounds\":true,\"mute_non_player_hit_sounds\":false,\"disable_vanilla_music\":true,\"main_menu_music_enabled\":true,\"facility_ambience_enabled\":true},\"accessibility\":{\"reduce_scp_012_visual_effects\":false},\"scp_173\":{\"enabled\":true,\"natural_spawn_enabled\":true}}").getAsJsonObject();
     }
 
     private static JsonObject defaultInventory() {

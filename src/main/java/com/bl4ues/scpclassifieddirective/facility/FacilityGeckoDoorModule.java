@@ -390,7 +390,7 @@ public final class FacilityGeckoDoorModule {
         @Nullable
         private LinkedDoor matchingLogisticsDoor(ServerLevel level,
                 BlockPos pos, BlockState state) {
-            Family currentFamily = family(state);
+            Family currentFamily = FacilityGeckoDoorModule.family(state);
             if (currentFamily != Family.LOGISTICS_LEFT
                     && currentFamily != Family.LOGISTICS_RIGHT) {
                 return null;
@@ -405,7 +405,7 @@ public final class FacilityGeckoDoorModule {
             Family expected = currentFamily == Family.LOGISTICS_LEFT
                     ? Family.LOGISTICS_RIGHT : Family.LOGISTICS_LEFT;
 
-            if (family(partnerState) != expected
+            if (FacilityGeckoDoorModule.family(partnerState) != expected
                     || !partnerState.hasProperty(FACING)
                     || partnerState.getValue(FACING) != facing
                     || phase(partnerState) != phase(state)

@@ -78,6 +78,10 @@ public final class ScpClassifiedDirectiveModulesConfig {
 		public Crosshair crosshair = new Crosshair();
 		public Inventory inventory = new Inventory();
 		public Interactions interactions = new Interactions();
+
+		@SerializedName("double_doors")
+		public Toggle doubleDoors = new Toggle();
+
 		public Hud hud = new Hud();
 		public Vitals vitals = new Vitals();
 		public Hunger hunger = new Hunger();
@@ -107,6 +111,7 @@ public final class ScpClassifiedDirectiveModulesConfig {
 			crosshair.normalize();
 			if (inventory == null) inventory = new Inventory();
 			if (interactions == null) interactions = new Interactions();
+			if (doubleDoors == null) doubleDoors = new Toggle();
 			if (hud == null) hud = new Hud();
 			if (vitals == null) vitals = new Vitals();
 			if (hunger == null) hunger = new Hunger();

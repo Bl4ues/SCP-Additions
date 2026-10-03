@@ -150,25 +150,28 @@ public final class ConfigurationHomePolish {
                     ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT_BRIGHT), false);
 
             Button hovered = hoveredNavigation(screen, mouseX, mouseY);
-            Info info = infoFor(hovered == null ? "General & Modules"
-                    : hovered.getMessage().getString());
-            int cardY = l.startY;
-            int cardH = 146;
-            graphics.fill(infoX, cardY, infoX + l.infoWidth, cardY + cardH,
-                    fade(0x8A0B0E12, alpha));
-            graphics.fill(infoX, cardY, infoX + 4, cardY + cardH,
-                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT));
-            graphics.drawString(font, ScpFonts.titillium("SECTION"),
-                    infoX + 16, cardY + 16,
-                    ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT_BRIGHT), false);
-            ConfigCenterVisuals.drawScaledText(graphics, font,
-                    ScpFonts.montserrat(info.title), infoX + 16, cardY + 37,
-                    1.12F, ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.TEXT));
-            int bodyY = cardY + 67;
-            for (var line : font.split(ScpFonts.roboto(info.description), l.infoWidth - 32)) {
-                graphics.drawString(font, line, infoX + 16, bodyY,
-                        ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
-                bodyY += font.lineHeight + 3;
+            Info info = hovered == null
+                    ? null : infoFor(hovered.getMessage().getString());
+            if (info != null) {
+                int cardY = l.startY;
+                int cardH = 146;
+                graphics.fill(infoX, cardY, infoX + l.infoWidth, cardY + cardH,
+                        fade(0x8A0B0E12, alpha));
+                graphics.fill(infoX, cardY, infoX + 4, cardY + cardH,
+                        ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT));
+                graphics.drawString(font, ScpFonts.titillium("SECTION"),
+                        infoX + 16, cardY + 16,
+                        ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.ACCENT_BRIGHT), false);
+                ConfigCenterVisuals.drawScaledText(graphics, font,
+                        ScpFonts.montserrat(info.title), infoX + 16, cardY + 37,
+                        1.12F, ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.TEXT));
+                int bodyY = cardY + 67;
+                for (var line : font.split(ScpFonts.roboto(info.description),
+                        l.infoWidth - 32)) {
+                    graphics.drawString(font, line, infoX + 16, bodyY,
+                            ConfigCenterVisuals.fadeColor(ConfigCenterVisuals.MUTED), false);
+                    bodyY += font.lineHeight + 3;
+                }
             }
 
             graphics.drawString(font, ScpFonts.titillium("TOOLS & SESSION"),
@@ -207,8 +210,9 @@ public final class ConfigurationHomePolish {
                 case "Reload Snapshot" -> new Info("Reload Snapshot",
                         "Discard the current snapshot and request a fresh configuration state.");
                 case "Done" -> new Info("Done", "Return to the previous screen.");
-                default -> new Info("General & Modules",
+                case "General & Modules" -> new Info("General & Modules",
                         "Configure the main gameplay systems, survival mechanics and feature modules used by SCP: Classified Directive.");
+                default -> null;
             };
         }
 
